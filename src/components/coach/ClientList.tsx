@@ -19,7 +19,7 @@ interface ClientListProps {
   initialView?: "deduct";
 }
 
-type FilterOption = "All" | "PT only" | "Group only" | "Both";
+type FilterOption = "All" | "PT only";
 
 export function ClientList({ initialView }: ClientListProps) {
   const dispatch = useAppDispatch();
@@ -92,7 +92,7 @@ export function ClientList({ initialView }: ClientListProps) {
     <div className="space-y-4">
       {/* Filter Bar */}
       <div className="flex flex-wrap gap-2">
-        {(["All", "PT only", "Group only", "Both"] as FilterOption[]).map((opt) => (
+        {(["All", "PT only"] as FilterOption[]).map((opt) => (
           <Button
             key={opt}
             variant={filter === opt ? "default" : "outline"}

@@ -16,8 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Users,
-  Package,
-  MinusCircle,
   Bell,
   Calendar,
   LogOut,
@@ -30,7 +28,7 @@ import { CoachCalendar } from "@/components/coach/CoachCalendar";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
-type ActiveView = "clients" | "schedule" | "packages" | "deduct" | "notifications";
+type ActiveView = "clients" | "schedule" | "notifications";
 
 interface CoachNewPackagePayload {
   memberName: string;
@@ -46,11 +44,13 @@ export function CoachDashboardShell() {
   const router = useRouter();
   const coachApi = useCoachApi();
 
-  const { coachId, name, notifications } = useAppSelector(
+  const { coachId, name, notifications, hasPtSessions } = useAppSelector(
     (state: RootState) => state.coach
   );
 
-  const [activeView, setActiveView] = useState<ActiveView>("clients");
+  const [activeView, setActiveView] = useState<ActiveView>(
+    hasPtSessions ? "clients" : "schedule"
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const unreadCount = (notifications as { read: boolean }[]).filter((n: { read: boolean }) => !n.read).length;
@@ -100,10 +100,10 @@ export function CoachDashboardShell() {
     label: string;
     icon: React.ElementType;
   }[] = [
-    { id: "clients", label: "My Clients", icon: Users },
+    ...(hasPtSessions ? [
+      { id: "clients" as ActiveView, label: "My Clients", icon: Users },
+    ] : []),
     { id: "schedule", label: "Schedule", icon: Calendar },
-    { id: "packages", label: "Packages", icon: Package },
-    { id: "deduct", label: "Deduct Class", icon: MinusCircle },
     { id: "notifications", label: "Notifications", icon: Bell },
   ];
 
@@ -232,8 +232,8 @@ export function CoachDashboardShell() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4">
-          {(activeView === "clients" || activeView === "packages" || activeView === "deduct") && (
-            <ClientList initialView={activeView === "deduct" ? "deduct" : undefined} />
+          {activeView === "clients" && (
+            <ClientList />
           )}
           {activeView === "schedule" && <CoachCalendar />}
           {activeView === "notifications" && <NotificationPanel />}

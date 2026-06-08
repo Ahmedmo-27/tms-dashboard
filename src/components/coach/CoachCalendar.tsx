@@ -11,12 +11,22 @@ import { startOfWeek, addDays, format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DeductionModal } from "@/components/coach/DeductionModal";
+import { SessionClientsModal } from "@/components/coach/SessionClientsModal";
 import type { RootState } from "@/lib/store/store";
 import type { MemberPackageData } from "@/components/coach/PackageDetail";
-import type { DayDto, SessionDto, CalendarClientDto } from "@/types/coach.types";
+import type { DayDto, SessionDto } from "@/types/coach.types";
 import { cn } from "@/lib/utils";
+
+function formatTime12h(time: string): string {
+  const [hourStr, minuteStr] = time.split(":");
+  const hour = parseInt(hourStr, 10);
+  const minute = minuteStr ?? "00";
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minute} ${period}`;
+}
 
 export function CoachCalendar() {
   const coachApi = useCoachApi();
@@ -29,8 +39,8 @@ export function CoachCalendar() {
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
 
-  // Expanded sessions tracker
-  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  // Session clients modal state
+  const [clientsModalSession, setClientsModalSession] = useState<SessionDto | null>(null);
 
   // Mobile active day
   const [mobileActiveDate, setMobileActiveDate] = useState<string>(() =>
@@ -53,8 +63,8 @@ export function CoachCalendar() {
         const res = await coachApi.get(`/api/coach/schedule?weekStart=${mondayISO}`);
         dispatch(setSchedule(res.data.data));
         
-        // Reset expanded sessions on new week
-        setExpandedSessions(new Set());
+        // Reset clients modal on new week
+        setClientsModalSession(null);
       } catch (err) {
         console.error("Failed to load schedule", err);
       } finally {
@@ -64,15 +74,6 @@ export function CoachCalendar() {
 
     fetchSchedule();
   }, [coachApi, currentWeekStart, dispatch]);
-
-  const toggleSession = (sessionId: string) => {
-    setExpandedSessions((prev) => {
-      const next = new Set(prev);
-      if (next.has(sessionId)) next.delete(sessionId);
-      else next.add(sessionId);
-      return next;
-    });
-  };
 
   const handlePrevWeek = () => setCurrentWeekStart((prev) => addDays(prev, -7));
   const handleNextWeek = () => setCurrentWeekStart((prev) => addDays(prev, 7));
@@ -218,7 +219,6 @@ export function CoachCalendar() {
                   <div className="flex flex-col gap-3 mt-2 md:mt-0">
                     {day.sessions.map((session: SessionDto) => {
                       const fullyBooked = session.bookedCount === session.capacity;
-                      const expanded = expandedSessions.has(session.scheduledClassId);
 
                       return (
                         <div
@@ -232,7 +232,7 @@ export function CoachCalendar() {
                             </Badge>
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {session.startTime} – {session.endTime}
+                            {formatTime12h(session.startTime)} – {formatTime12h(session.endTime)}
                           </div>
                           <div
                             className={cn(
@@ -246,64 +246,11 @@ export function CoachCalendar() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="mt-1 h-7 text-xs w-full justify-between px-2"
-                            onClick={() => toggleSession(session.scheduledClassId)}
+                            className="mt-1 h-7 text-xs w-full justify-center px-2"
+                            onClick={() => setClientsModalSession(session)}
                           >
-                            {expanded ? "Hide clients" : "Show clients"}
-                            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                            Show clients
                           </Button>
-
-                          {expanded && (
-                            <div className="flex flex-col gap-2 mt-2 pt-2 border-t">
-                              {session.clients.length === 0 ? (
-                                <p className="text-xs text-muted-foreground text-center py-2">No bookings yet</p>
-                              ) : (
-                                session.clients.map((client: CalendarClientDto) => {
-                                  const pkg = client.activePackage;
-                                  return (
-                                    <div key={client.memberId} className="flex flex-col gap-1 p-2 bg-muted/30 rounded-md border text-xs">
-                                      <div className="flex justify-between items-start">
-                                        <p className="font-bold">{client.name}</p>
-                                        <span className="text-[10px] text-muted-foreground max-w-[80px] truncate" title={client.bookingMethod}>
-                                          {client.bookingMethod}
-                                        </span>
-                                      </div>
-                                      <p className="text-muted-foreground">{client.phoneNumber}</p>
-                                      
-                                      <div className="flex justify-between items-center mt-1">
-                                        {pkg ? (
-                                          <span className="text-muted-foreground">
-                                            {pkg.remainingClasses} classes remaining
-                                          </span>
-                                        ) : (
-                                          <span className="text-destructive font-medium">
-                                            No active package
-                                          </span>
-                                        )}
-                                        <Button
-                                          size="sm"
-                                          className="h-6 text-[10px] px-2"
-                                          disabled={!pkg}
-                                          title={!pkg ? "No active package" : undefined}
-                                          onClick={() => {
-                                            if (pkg) {
-                                              setDeductTarget({
-                                                memberId: client.memberId,
-                                                memberPackageStartDate: pkg.pkgStartDate,
-                                                pkgId: pkg.pkgId,
-                                              });
-                                            }
-                                          }}
-                                        >
-                                          Deduct
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  );
-                                })
-                              )}
-                            </div>
-                          )}
                         </div>
                       );
                     })}
@@ -314,6 +261,12 @@ export function CoachCalendar() {
           })}
         </div>
       </div>
+
+      {/* Session Clients Modal */}
+      <SessionClientsModal
+        session={clientsModalSession}
+        onClose={() => setClientsModalSession(null)}
+      />
 
       {/* Deduction Modal */}
       {deductTarget && (

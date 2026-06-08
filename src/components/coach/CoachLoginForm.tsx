@@ -62,12 +62,13 @@ export function CoachLoginForm({
         }
       );
 
-      const { token: coachToken, coachId } = response.data.data as {
+      const { token: coachToken, coachId, hasPtSessions } = response.data.data as {
         token: string;
         coachId: string;
+        hasPtSessions: boolean;
       };
 
-      dispatch(setCoachCredentials({ token: coachToken, coachId }));
+      dispatch(setCoachCredentials({ token: coachToken, coachId, hasPtSessions }));
       router.replace("/coach/dashboard");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
