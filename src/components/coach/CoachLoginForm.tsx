@@ -62,7 +62,7 @@ export function CoachLoginForm({
         }
       );
 
-      const { token: coachToken, coachId } = response.data as {
+      const { token: coachToken, coachId } = response.data.data as {
         token: string;
         coachId: string;
       };

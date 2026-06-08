@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { ClientDto, ScheduleResponseDto } from "@/types/coach.types";
 
 export interface CoachNotification {
   id: string;
@@ -9,12 +10,7 @@ export interface CoachNotification {
   read: boolean;
 }
 
-export interface CoachClient {
-  memberId: string;
-  name: string;
-  phone: string;
-  activePackagesCount: number;
-}
+export type CoachClient = ClientDto;
 
 interface CoachState {
   coachId: string | null;
@@ -22,6 +18,8 @@ interface CoachState {
   token: string | null;
   clients: CoachClient[];
   notifications: CoachNotification[];
+  schedule: ScheduleResponseDto | null;
+  scheduleLoading: boolean;
 }
 
 const initialState: CoachState = {
@@ -30,6 +28,8 @@ const initialState: CoachState = {
   token: null,
   clients: [],
   notifications: [],
+  schedule: null,
+  scheduleLoading: false,
 };
 
 const coachSlice = createSlice({
@@ -58,6 +58,8 @@ const coachSlice = createSlice({
       state.token = null;
       state.clients = [];
       state.notifications = [];
+      state.schedule = null;
+      state.scheduleLoading = false;
     },
     addNotification: (
       state,
@@ -75,6 +77,15 @@ const coachSlice = createSlice({
         read: true,
       }));
     },
+    setSchedule: (state, action: PayloadAction<ScheduleResponseDto>) => {
+      state.schedule = action.payload;
+    },
+    clearSchedule: (state) => {
+      state.schedule = null;
+    },
+    setScheduleLoading: (state, action: PayloadAction<boolean>) => {
+      state.scheduleLoading = action.payload;
+    },
   },
 });
 
@@ -85,6 +96,9 @@ export const {
   logoutCoach,
   addNotification,
   markAllNotificationsRead,
+  setSchedule,
+  clearSchedule,
+  setScheduleLoading,
 } = coachSlice.actions;
 
 export default coachSlice.reducer;

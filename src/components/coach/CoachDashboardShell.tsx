@@ -19,16 +19,18 @@ import {
   Package,
   MinusCircle,
   Bell,
+  Calendar,
   LogOut,
   Menu,
   X,
 } from "lucide-react";
 import { ClientList } from "@/components/coach/ClientList";
 import { NotificationPanel } from "@/components/coach/NotificationPanel";
+import { CoachCalendar } from "@/components/coach/CoachCalendar";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
-type ActiveView = "clients" | "packages" | "deduct" | "notifications";
+type ActiveView = "clients" | "schedule" | "packages" | "deduct" | "notifications";
 
 interface CoachNewPackagePayload {
   memberName: string;
@@ -58,7 +60,7 @@ export function CoachDashboardShell() {
     const fetchClients = async () => {
       try {
         const res = await coachApi.get("/api/coach/clients");
-        dispatch(setCoachClients(res.data));
+        dispatch(setCoachClients(res.data.data?.clients || []));
       } catch {
         toast.error("Failed to load clients.");
       }
@@ -110,6 +112,7 @@ export function CoachDashboardShell() {
     icon: React.ElementType;
   }[] = [
     { id: "clients", label: "My Clients", icon: Users },
+    { id: "schedule", label: "Schedule", icon: Calendar },
     { id: "packages", label: "Packages", icon: Package },
     { id: "deduct", label: "Deduct Class", icon: MinusCircle },
     { id: "notifications", label: "Notifications", icon: Bell },
@@ -243,6 +246,7 @@ export function CoachDashboardShell() {
           {(activeView === "clients" || activeView === "packages" || activeView === "deduct") && (
             <ClientList initialView={activeView === "deduct" ? "deduct" : undefined} />
           )}
+          {activeView === "schedule" && <CoachCalendar />}
           {activeView === "notifications" && <NotificationPanel />}
         </main>
 

@@ -38,7 +38,11 @@ interface DeductionModalProps {
 }
 
 interface DeductResponse {
-  package: MemberPackageData;
+  statusCode: number;
+  message: string;
+  data: {
+    package: MemberPackageData;
+  };
 }
 
 export function DeductionModal({
@@ -85,7 +89,7 @@ export function DeductionModal({
       );
 
       toast.success("Class deducted successfully.");
-      onSuccess(res.data.package);
+      onSuccess(res.data.data.package);
       handleClose();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {

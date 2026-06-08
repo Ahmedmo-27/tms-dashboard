@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { DeductionModal } from "@/components/coach/DeductionModal";
-import type { CoachClient } from "@/lib/store/features/coachSlice";
+import type { ClientDto } from "@/types/coach.types";
 import toast from "react-hot-toast";
 
 export interface MemberPackageData {
@@ -24,7 +24,7 @@ export interface MemberPackageData {
 }
 
 interface PackageDetailProps {
-  client: CoachClient;
+  client: ClientDto;
   openDeductOnMount?: boolean;
   onBack: () => void;
 }
@@ -78,7 +78,8 @@ export function PackageDetail({
         const res = await coachApi.get(
           `/api/coach/clients/${client.memberId}/packages`
         );
-        const data = res.data as MemberPackageData[];
+        const raw = res.data.data?.packages;
+        const data = Array.isArray(raw) ? raw as MemberPackageData[] : [];
         setPackages(data);
 
         // If opened from "Deduct Class" nav, auto-open modal on first package
@@ -117,7 +118,7 @@ export function PackageDetail({
         </Button>
         <div>
           <h2 className="font-semibold">{client.name}</h2>
-          <p className="text-xs text-muted-foreground">{client.phone}</p>
+          <p className="text-xs text-muted-foreground">{client.phoneNumber}</p>
         </div>
       </div>
 
@@ -125,7 +126,7 @@ export function PackageDetail({
         <div className="flex justify-center items-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : packages.length === 0 ? (
+      ) : !Array.isArray(packages) || packages.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">
           No packages found for this member.
         </p>
