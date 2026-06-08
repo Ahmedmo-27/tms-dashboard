@@ -196,18 +196,17 @@ function ClassScanCard({ data }: { data: CoachClassScanData }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Package</TableHead>
-                  <TableHead>Check-in Time</TableHead>
-                  <TableHead className="text-right">Status</TableHead>
+                  <TableHead className="w-[35%]">Member</TableHead>
+                  <TableHead className="w-[25%]">Phone</TableHead>
+                  <TableHead className="w-[25%]">Check-in Time</TableHead>
+                  <TableHead className="w-[15%] text-right">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.scans.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={4}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No members checked in yet
@@ -216,10 +215,9 @@ function ClassScanCard({ data }: { data: CoachClassScanData }) {
                 ) : (
                   data.scans.map((scan, i) => (
                     <TableRow key={i}>
-                      <TableCell className="font-medium">{scan.member}</TableCell>
-                      <TableCell>{scan.phone}</TableCell>
-                      <TableCell>{scan.method}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium truncate max-w-0">{scan.member}</TableCell>
+                      <TableCell className="text-muted-foreground">{scan.phone}</TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {format(new Date(scan.time), "hh:mm a")}
                       </TableCell>
                       <TableCell className="text-right">
