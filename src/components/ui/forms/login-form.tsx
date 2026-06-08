@@ -15,6 +15,7 @@ import { useActionState, useEffect } from "react";
 import { redirect } from "next/navigation";
 import { useAppDispatch } from "@/lib/hooks";
 import { setCredentials } from "@/lib/store/features/authSlice";
+import { setCoachCredentials } from "@/lib/store/features/coachSlice";
 import { ApiError } from "@/core/api-error";
 
 interface ActionState {
@@ -52,8 +53,23 @@ export function LoginForm({
 
       if (result.success) {
         const userData = result.data;
-        dispatch(setCredentials(userData));
-        redirect("/dashboard/scans-monitor");
+
+        if (userData?.role === "coach") {
+          // Coach login: store token + coachId in coachSlice, redirect to coach portal
+          dispatch(
+            setCoachCredentials({
+              token: userData.token,
+              coachId: userData.id ?? userData._id,
+              name: userData.name,
+            })
+          );
+          redirect("/coach/dashboard");
+        } else {
+          // Admin / other roles: store in authSlice, redirect to admin dashboard
+          dispatch(setCredentials(userData));
+          redirect("/dashboard/scans-monitor");
+        }
+
         return initialState;
       }
       return {
