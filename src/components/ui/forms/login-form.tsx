@@ -27,6 +27,7 @@ interface LoginResponseData {
   token: string;
   userId: string;
   role: LoginRole;
+  name?: string;
   [key: string]: unknown;
 }
 
@@ -81,6 +82,7 @@ export function LoginForm({
             setCoachCredentials({
               token: loginData.token,
               coachId: loginData.userId,
+              name: loginData.name,
             })
           );
           router.push("/coach/dashboard");

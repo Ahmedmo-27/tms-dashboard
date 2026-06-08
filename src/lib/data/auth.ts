@@ -7,6 +7,7 @@ interface LoginResponsePayload {
   token: string;
   userId: string;
   role: string;
+  name: string;
   [key: string]: unknown;
 }
 

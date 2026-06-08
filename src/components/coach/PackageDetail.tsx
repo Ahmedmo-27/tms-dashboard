@@ -21,6 +21,7 @@ export interface MemberPackageData {
   isExpired: boolean;
   daysUntilExpiry: number;
   name?: string;
+  isPtPackage?: boolean;
 }
 
 interface PackageDetailProps {
@@ -79,7 +80,7 @@ export function PackageDetail({
           `/api/coach/clients/${client.memberId}/packages`
         );
         const raw = res.data.data?.packages;
-        const data = Array.isArray(raw) ? raw as MemberPackageData[] : [];
+        const data = Array.isArray(raw) ? (raw as MemberPackageData[]).filter(p => !p.isExpired) : [];
         setPackages(data);
 
         // If opened from "Deduct Class" nav, auto-open modal on first package
@@ -181,21 +182,23 @@ export function PackageDetail({
                 </p>
 
                 {/* Deduct button */}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-auto w-full"
-                  disabled={pkg.isExpired || pkg.remainingClasses === 0}
-                  onClick={() =>
-                    setDeductTarget({
-                      memberId: client.memberId,
-                      memberPackageStartDate: pkg.pkgStartDate,
-                      pkgId: pkg.pkgId,
-                    })
-                  }
-                >
-                  Deduct class
-                </Button>
+                {pkg.isPtPackage && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-auto w-full"
+                    disabled={pkg.isExpired || pkg.remainingClasses === 0}
+                    onClick={() =>
+                      setDeductTarget({
+                        memberId: client.memberId,
+                        memberPackageStartDate: pkg.pkgStartDate,
+                        pkgId: pkg.pkgId,
+                      })
+                    }
+                  >
+                    Deduct class
+                  </Button>
+                )}
               </div>
             );
           })}
