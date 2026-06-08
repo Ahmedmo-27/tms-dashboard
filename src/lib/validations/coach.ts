@@ -15,9 +15,6 @@ export const deductionSchema = z.object({
     .refine((date) => date <= new Date(), {
       message: "Session date cannot be in the future",
     }),
-  sessionType: z.enum(["INDIVIDUAL", "GROUP"], {
-    required_error: "Session type is required",
-  }),
 });
 
 export type CoachLoginFormValues = z.infer<typeof coachLoginSchema>;

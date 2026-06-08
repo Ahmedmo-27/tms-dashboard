@@ -70,6 +70,7 @@ export function PackageDetail({
     memberId: string;
     memberPackageStartDate: string;
     pkgId: string;
+    pkgName?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export function PackageDetail({
             memberId: client.memberId,
             memberPackageStartDate: first.pkgStartDate,
             pkgId: first.pkgId,
+            pkgName: first.name,
           });
         }
       } catch {
@@ -212,6 +214,7 @@ export function PackageDetail({
           memberId={deductTarget.memberId}
           memberPackageStartDate={deductTarget.memberPackageStartDate}
           pkgId={deductTarget.pkgId}
+          pkgName={deductTarget.pkgName}
           onClose={() => setDeductTarget(null)}
           onSuccess={handlePackageUpdated}
         />

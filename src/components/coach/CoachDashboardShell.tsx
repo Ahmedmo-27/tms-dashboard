@@ -44,12 +44,12 @@ export function CoachDashboardShell() {
   const router = useRouter();
   const coachApi = useCoachApi();
 
-  const { coachId, name, notifications, hasPtSessions } = useAppSelector(
+  const { coachId, name, notifications, hasPtSessions, hasScheduledClasses } = useAppSelector(
     (state: RootState) => state.coach
   );
 
   const [activeView, setActiveView] = useState<ActiveView>(
-    hasPtSessions ? "clients" : "schedule"
+    hasPtSessions ? "clients" : (hasScheduledClasses ? "schedule" : "clients")
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -103,7 +103,9 @@ export function CoachDashboardShell() {
     ...(hasPtSessions ? [
       { id: "clients" as ActiveView, label: "My Clients", icon: Users },
     ] : []),
-    { id: "schedule", label: "Schedule", icon: Calendar },
+    ...(hasScheduledClasses ? [
+      { id: "schedule" as ActiveView, label: "Schedule", icon: Calendar },
+    ] : []),
     // { id: "notifications", label: "Notifications", icon: Bell },
   ];
 

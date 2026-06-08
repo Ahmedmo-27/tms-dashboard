@@ -83,6 +83,8 @@ export function LoginForm({
               token: loginData.token,
               coachId: loginData.userId,
               name: loginData.name,
+              hasPtSessions: loginData.hasPtSessions as boolean | undefined,
+              hasScheduledClasses: loginData.hasScheduledClasses as boolean | undefined,
             })
           );
           router.push("/coach/dashboard");

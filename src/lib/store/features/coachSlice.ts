@@ -23,6 +23,7 @@ interface CoachState {
   schedule: ScheduleResponseDto | null;
   scheduleLoading: boolean;
   hasPtSessions: boolean;
+  hasScheduledClasses: boolean;
 }
 
 const initialState: CoachState = {
@@ -36,6 +37,7 @@ const initialState: CoachState = {
   schedule: null,
   scheduleLoading: false,
   hasPtSessions: true, // Default to true so it doesn't immediately hide without knowing
+  hasScheduledClasses: true,
 };
 
 const coachSlice = createSlice({
@@ -44,7 +46,7 @@ const coachSlice = createSlice({
   reducers: {
     setCoachCredentials: (
       state,
-      action: PayloadAction<{ token: string; coachId: string; name?: string; hasPtSessions?: boolean }>
+      action: PayloadAction<{ token: string; coachId: string; name?: string; hasPtSessions?: boolean; hasScheduledClasses?: boolean }>
     ) => {
       state.token = action.payload.token;
       state.coachId = action.payload.coachId;
@@ -53,6 +55,9 @@ const coachSlice = createSlice({
       }
       if (action.payload.hasPtSessions !== undefined) {
         state.hasPtSessions = action.payload.hasPtSessions;
+      }
+      if (action.payload.hasScheduledClasses !== undefined) {
+        state.hasScheduledClasses = action.payload.hasScheduledClasses;
       }
     },
     setCoachName: (state, action: PayloadAction<string>) => {
@@ -76,6 +81,7 @@ const coachSlice = createSlice({
       state.schedule = null;
       state.scheduleLoading = false;
       state.hasPtSessions = true;
+      state.hasScheduledClasses = true;
     },
     addNotification: (
       state,

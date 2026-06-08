@@ -33,6 +33,7 @@ interface DeductionModalProps {
   memberId: string;
   memberPackageStartDate: string;
   pkgId: string;
+  pkgName?: string;
   onClose: () => void;
   onSuccess: (updatedPackage: MemberPackageData) => void;
 }
@@ -50,6 +51,7 @@ export function DeductionModal({
   memberId,
   memberPackageStartDate,
   pkgId,
+  pkgName,
   onClose,
   onSuccess,
 }: DeductionModalProps) {
@@ -80,7 +82,6 @@ export function DeductionModal({
         memberPackageStartDate,
         reason: values.reason,
         sessionDate: values.sessionDate.toISOString(),
-        sessionType: values.sessionType,
       };
 
       const res = await coachApi.post<DeductResponse>(
@@ -119,7 +120,7 @@ export function DeductionModal({
         <DialogHeader>
           <DialogTitle>Deduct Class</DialogTitle>
           <DialogDescription>
-            Package: <span className="font-medium">{pkgId}</span>
+            Package: <span className="font-medium">{pkgName || pkgId}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -168,35 +169,6 @@ export function DeductionModal({
               {errors.sessionDate && (
                 <p className="text-destructive text-xs">
                   {errors.sessionDate.message}
-                </p>
-              )}
-            </div>
-
-            {/* Session type */}
-            <div className="grid gap-2">
-              <Label htmlFor="sessionType">Session Type</Label>
-              <Controller
-                name="sessionType"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={isSubmitting}
-                  >
-                    <SelectTrigger id="sessionType">
-                      <SelectValue placeholder="Select session type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INDIVIDUAL">INDIVIDUAL</SelectItem>
-                      <SelectItem value="GROUP">GROUP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.sessionType && (
-                <p className="text-destructive text-xs">
-                  {errors.sessionType.message}
                 </p>
               )}
             </div>

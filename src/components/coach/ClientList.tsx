@@ -19,7 +19,7 @@ interface ClientListProps {
   initialView?: "deduct";
 }
 
-type FilterOption = "All" | "PT only";
+
 
 export function ClientList({ initialView }: ClientListProps) {
   const dispatch = useAppDispatch();
@@ -30,7 +30,6 @@ export function ClientList({ initialView }: ClientListProps) {
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [filter, setFilter] = useState<FilterOption>("All");
   const [page, setPage] = useState(1);
   const [selectedClient, setSelectedClient] = useState<ClientDto | null>(null);
 
@@ -43,10 +42,7 @@ export function ClientList({ initialView }: ClientListProps) {
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Reset page when filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [filter]);
+
 
   // Fetch clients
   useEffect(() => {
@@ -57,7 +53,6 @@ export function ClientList({ initialView }: ClientListProps) {
         params.set("page", page.toString());
         params.set("limit", "10");
         if (debouncedQuery) params.set("search", debouncedQuery);
-        if (filter !== "All") params.set("filter", filter);
 
         const res = await coachApi.get(`/api/coach/clients?${params.toString()}`);
         dispatch(
@@ -73,7 +68,7 @@ export function ClientList({ initialView }: ClientListProps) {
       }
     };
     fetchClients();
-  }, [debouncedQuery, filter, page, coachApi, dispatch]);
+  }, [debouncedQuery, page, coachApi, dispatch]);
 
   const safeClients = Array.isArray(clients) ? clients : [];
 
@@ -90,20 +85,6 @@ export function ClientList({ initialView }: ClientListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Filter Bar */}
-      <div className="flex flex-wrap gap-2">
-        {(["All", "PT only"] as FilterOption[]).map((opt) => (
-          <Button
-            key={opt}
-            variant={filter === opt ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter(opt)}
-            className={cn("rounded-full text-xs h-8", filter === opt && "pointer-events-none")}
-          >
-            {opt}
-          </Button>
-        ))}
-      </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -122,7 +103,7 @@ export function ClientList({ initialView }: ClientListProps) {
         </div>
       ) : safeClients.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">
-          {debouncedQuery || filter !== "All"
+          {debouncedQuery
             ? "No clients match your criteria."
             : "No clients assigned yet."}
         </p>
@@ -152,11 +133,6 @@ export function ClientList({ initialView }: ClientListProps) {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{client.phoneNumber}</span>
-                    <span>&bull;</span>
-                    <span>
-                      {client.activePackagesCount} active package
-                      {client.activePackagesCount !== 1 ? "s" : ""}
-                    </span>
                   </div>
                 </div>
 

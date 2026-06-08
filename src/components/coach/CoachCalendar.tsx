@@ -52,6 +52,7 @@ export function CoachCalendar() {
     memberId: string;
     memberPackageStartDate: string;
     pkgId: string;
+    pkgName?: string;
   } | null>(null);
 
   // Fetch data whenever currentWeekStart changes
@@ -62,9 +63,6 @@ export function CoachCalendar() {
         const mondayISO = format(currentWeekStart, "yyyy-MM-dd");
         const res = await coachApi.get(`/api/coach/schedule?weekStart=${mondayISO}`);
         dispatch(setSchedule(res.data.data));
-        
-        // Reset clients modal on new week
-        setClientsModalSession(null);
       } catch (err) {
         console.error("Failed to load schedule", err);
       } finally {
@@ -75,8 +73,131 @@ export function CoachCalendar() {
     fetchSchedule();
   }, [coachApi, currentWeekStart, dispatch]);
 
-  const handlePrevWeek = () => setCurrentWeekStart((prev) => addDays(prev, -7));
-  const handleNextWeek = () => setCurrentWeekStart((prev) => addDays(prev, 7));
+  const handlePrevWeek = () => {
+    setClientsModalSession(null);
+    setCurrentWeekStart((prev) => addDays(prev, -7));
+  };
+  
+  const handleNextWeek = () => {
+    setClientsModalSession(null);
+    setCurrentWeekStart((prev) => addDays(prev, 7));
+  };
+
+  const handleShowLatestSession = async () => {
+    if (!schedule) return;
+    const now = new Date();
+    let foundSession: SessionDto | null = null;
+    let foundDate: string | null = null;
+    let checkWeekStart = currentWeekStart;
+    let weeksSearched = 0;
+
+    dispatch(setScheduleLoading(true));
+    try {
+      while (weeksSearched < 4 && !foundSession) {
+        const mondayISO = format(checkWeekStart, "yyyy-MM-dd");
+        let daysToSearch: DayDto[] = [];
+        
+        if (weeksSearched === 0) {
+          daysToSearch = schedule.days;
+        } else {
+          const res = await coachApi.get(`/api/coach/schedule?weekStart=${mondayISO}`);
+          daysToSearch = res.data.data.days;
+        }
+
+        let latestDiff = Infinity;
+        daysToSearch.forEach((day: DayDto) => {
+          day.sessions.forEach((session: SessionDto) => {
+            const sessionStart = new Date(`${day.date}T${session.startTime}`);
+            if (sessionStart <= now) {
+              const diff = now.getTime() - sessionStart.getTime();
+              if (diff < latestDiff) {
+                latestDiff = diff;
+                foundSession = session;
+                foundDate = day.date;
+              }
+            }
+          });
+        });
+
+        if (foundSession) break;
+
+        checkWeekStart = addDays(checkWeekStart, -7);
+        weeksSearched++;
+      }
+
+      if (foundSession && foundDate) {
+        if (weeksSearched > 0) {
+          setCurrentWeekStart(checkWeekStart);
+        }
+        setMobileActiveDate(foundDate);
+        setTimeout(() => setClientsModalSession(foundSession), 50);
+      } else {
+        alert("No past sessions found in the recent weeks.");
+      }
+    } catch (err) {
+      console.error("Failed to find latest session", err);
+    } finally {
+      dispatch(setScheduleLoading(false));
+    }
+  };
+
+  const handleShowNextSession = async () => {
+    if (!schedule) return;
+    const now = new Date();
+    let foundSession: SessionDto | null = null;
+    let foundDate: string | null = null;
+    let checkWeekStart = currentWeekStart;
+    let weeksSearched = 0;
+
+    dispatch(setScheduleLoading(true));
+    try {
+      while (weeksSearched < 4 && !foundSession) {
+        const mondayISO = format(checkWeekStart, "yyyy-MM-dd");
+        let daysToSearch: DayDto[] = [];
+        
+        if (weeksSearched === 0) {
+          daysToSearch = schedule.days;
+        } else {
+          const res = await coachApi.get(`/api/coach/schedule?weekStart=${mondayISO}`);
+          daysToSearch = res.data.data.days;
+        }
+
+        let nextDiff = Infinity;
+        daysToSearch.forEach((day: DayDto) => {
+          day.sessions.forEach((session: SessionDto) => {
+            const sessionStart = new Date(`${day.date}T${session.startTime}`);
+            if (sessionStart > now) {
+              const diff = sessionStart.getTime() - now.getTime();
+              if (diff < nextDiff) {
+                nextDiff = diff;
+                foundSession = session;
+                foundDate = day.date;
+              }
+            }
+          });
+        });
+
+        if (foundSession) break;
+
+        checkWeekStart = addDays(checkWeekStart, 7);
+        weeksSearched++;
+      }
+
+      if (foundSession && foundDate) {
+        if (weeksSearched > 0) {
+          setCurrentWeekStart(checkWeekStart);
+        }
+        setMobileActiveDate(foundDate);
+        setTimeout(() => setClientsModalSession(foundSession), 50);
+      } else {
+        alert("No upcoming sessions found in the next few weeks.");
+      }
+    } catch (err) {
+      console.error("Failed to find next session", err);
+    } finally {
+      dispatch(setScheduleLoading(false));
+    }
+  };
 
   const handlePackageUpdated = (updated: MemberPackageData) => {
     if (!schedule || !deductTarget) return;
@@ -120,14 +241,24 @@ export function CoachCalendar() {
     }
 
     return (
-      <div className="flex items-center justify-between py-4">
-        <Button variant="outline" size="sm" onClick={handlePrevWeek} disabled={scheduleLoading}>
-          <ChevronLeft className="h-4 w-4 mr-1" /> Prev
-        </Button>
-        <h2 className="font-semibold text-sm md:text-base">{title}</h2>
-        <Button variant="outline" size="sm" onClick={handleNextWeek} disabled={scheduleLoading}>
-          Next <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
+      <div className="flex flex-col gap-3 py-4">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" size="sm" onClick={handlePrevWeek} disabled={scheduleLoading}>
+            <ChevronLeft className="h-4 w-4 mr-1" /> Prev
+          </Button>
+          <h2 className="font-semibold text-sm md:text-base">{title}</h2>
+          <Button variant="outline" size="sm" onClick={handleNextWeek} disabled={scheduleLoading}>
+            Next <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+        <div className="flex items-center justify-center gap-2">
+          <Button variant="secondary" size="sm" onClick={handleShowLatestSession} disabled={scheduleLoading}>
+            Show Latest Session
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleShowNextSession} disabled={scheduleLoading}>
+            Show Next Session
+          </Button>
+        </div>
       </div>
     );
   };
@@ -275,6 +406,7 @@ export function CoachCalendar() {
           memberId={deductTarget.memberId}
           memberPackageStartDate={deductTarget.memberPackageStartDate}
           pkgId={deductTarget.pkgId}
+          pkgName={deductTarget.pkgName}
           onClose={() => setDeductTarget(null)}
           onSuccess={handlePackageUpdated}
         />
