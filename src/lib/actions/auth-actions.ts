@@ -7,7 +7,7 @@ import { parseStateError } from "@/lib/utils/state-errors";
 import { registerMember } from "../data/member";
 import { ApiError, NotFoundError } from "@/core/api-error";
 
-export const registerUser = async (_prevState: any, formData: FormData) => {
+export const registerUser = async (_prevState: unknown, formData: FormData) => {
   try {
     const userData = {
       name: formData.get("name") as string,
@@ -37,7 +37,7 @@ export const registerUser = async (_prevState: any, formData: FormData) => {
   }
 };
 
-export const loginAction = async (_prevState: any, formData: FormData) => {
+export const loginAction = async (_prevState: unknown, formData: FormData) => {
   console.log("LoginAction called with formData:", {
     phoneNumber: formData.get("phoneNumber"),
     hasPassword: !!formData.get("password"),

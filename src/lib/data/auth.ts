@@ -2,13 +2,21 @@
 
 import { tms } from "@/lib/tms-api";
 import { deleteToken, setToken } from "../cookie";
+
+interface LoginResponsePayload {
+  token: string;
+  userId: string;
+  role: string;
+  [key: string]: unknown;
+}
+
 export const login = async ({
   phoneNumber,
   password,
 }: {
   phoneNumber: string;
   password: string;
-}) => {
+}): Promise<LoginResponsePayload> => {
   try {
     console.log('Attempting login with:', { phoneNumber, hasPassword: !!password });
     const response = await tms.post("/auth/login", {
@@ -16,17 +24,23 @@ export const login = async ({
       password,
     });
     console.log('Login response received:', response.status);
-    const resData = response.data;
-    await setToken(resData.data.token);
-    return resData.data.user;
-  } catch (error: any) {
+    const loginData = response.data?.data as LoginResponsePayload;
+
+    if (!loginData?.token) {
+      throw new Error("Invalid login response");
+    }
+
+    await setToken(loginData.token);
+    return loginData;
+  } catch (error: unknown) {
+    const loginError = error instanceof Error ? error : new Error("Login failed");
+
     console.error('Login error details:', {
-      message: error.message,
-      type: error.constructor.name,
-      context: error.context || 'No context',
-      stack: error.stack
+      message: loginError.message,
+      type: loginError.constructor.name,
+      stack: loginError.stack,
     });
-    throw error
+    throw loginError
   }
 };
 

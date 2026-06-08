@@ -11,17 +11,29 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginAction } from "@/lib/actions/auth-actions";
-import { useActionState, useEffect } from "react";
-import { redirect } from "next/navigation";
+import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/lib/hooks";
 import { setCredentials } from "@/lib/store/features/authSlice";
-import { setCoachCredentials } from "@/lib/store/features/coachSlice";
+import {
+  logoutCoach,
+  setCoachCredentials,
+} from "@/lib/store/features/coachSlice";
 import { ApiError } from "@/core/api-error";
+
+type LoginRole = "coach" | "admin" | "fd" | string;
+
+interface LoginResponseData {
+  token: string;
+  userId: string;
+  role: LoginRole;
+  [key: string]: unknown;
+}
 
 interface ActionState {
   success: boolean;
   errors: Record<string, string> | null | ApiError;
-  data: any | null;
+  data: LoginResponseData | null;
   defaultValues?: {
     phoneNumber: string;
     password: string;
@@ -42,35 +54,52 @@ export function LoginForm({
     },
   };
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(
-    async (currentState: any, formData: FormData) => {
+    async (currentState: ActionState, formData: FormData) => {
       const defaultValues = {
         phoneNumber: formData.get("phoneNumber") as string,
         password: formData.get("password") as string,
       };
 
-      const result = await loginAction(currentState, formData);
+      const result = (await loginAction(currentState, formData)) as ActionState;
 
       if (result.success) {
-        const userData = result.data;
+        const loginData = result.data;
 
-        if (userData?.role === "coach") {
-          // Coach login: store token + coachId in coachSlice, redirect to coach portal
-          dispatch(
-            setCoachCredentials({
-              token: userData.token,
-              coachId: userData.id ?? userData._id,
-              name: userData.name,
-            })
-          );
-          redirect("/coach/dashboard");
-        } else {
-          // Admin / other roles: store in authSlice, redirect to admin dashboard
-          dispatch(setCredentials(userData));
-          redirect("/dashboard/scans-monitor");
+        if (!loginData) {
+          return {
+            success: false,
+            errors: { message: "Invalid login response" },
+            data: null,
+            defaultValues,
+          };
         }
 
-        return initialState;
+        if (loginData.role === "coach") {
+          dispatch(
+            setCoachCredentials({
+              token: loginData.token,
+              coachId: loginData.userId,
+            })
+          );
+          router.push("/coach/dashboard");
+          return initialState;
+        }
+
+        if (loginData.role === "admin" || loginData.role === "fd") {
+          dispatch(logoutCoach());
+          dispatch(setCredentials(loginData));
+          router.push("/dashboard");
+          return initialState;
+        }
+
+        return {
+          success: false,
+          errors: { message: "Unauthorized role" },
+          data: null,
+          defaultValues,
+        };
       }
       return {
         ...result,
@@ -82,6 +111,7 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      {/* Flow: POST /api/auth/login → response.role === "coach" → dispatch setCoachCredentials → push("/coach/dashboard") → RequireCoachAuth validates coachSlice.token → CoachDashboardShell renders */}
       <div className="text-3xl font-bold">Welcome Spacer 👋</div>
       <Card>
         <CardHeader>
