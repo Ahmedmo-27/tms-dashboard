@@ -55,18 +55,7 @@ export function CoachDashboardShell() {
 
   const unreadCount = (notifications as { read: boolean }[]).filter((n: { read: boolean }) => !n.read).length;
 
-  // Fetch clients on mount
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const res = await coachApi.get("/api/coach/clients");
-        dispatch(setCoachClients(res.data.data?.clients || []));
-      } catch {
-        toast.error("Failed to load clients.");
-      }
-    };
-    fetchClients();
-  }, [coachApi, dispatch]);
+
 
   // Socket.io – join coach room and listen for new package events
   useEffect(() => {
