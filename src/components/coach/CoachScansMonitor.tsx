@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useCoachApi } from "@/hooks/useCoachApi";
+import { useAppSelector } from "@/lib/hooks";
+import type { RootState } from "@/lib/store/store";
 import { io } from "socket.io-client";
 import { format } from "date-fns";
 import {
@@ -243,6 +245,7 @@ function ClassScanCard({ data }: { data: CoachClassScanData }) {
 
 export function CoachScansMonitor() {
   const coachApi = useCoachApi();
+  const hasPtSessions = useAppSelector((state: RootState) => state.coach.hasPtSessions);
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [classes, setClasses] = useState<CoachClassScanData[]>([]);
@@ -255,12 +258,15 @@ export function CoachScansMonitor() {
     setError(null);
     try {
       const dateStr = format(date, "yyyy-MM-dd");
-      const [scansRes, ptRes] = await Promise.all([
+      const requests: Promise<any>[] = [
         coachApi.get(`/api/coach/scans?date=${dateStr}`),
-        coachApi.get(`/api/coach/pt-attendance?date=${dateStr}`),
-      ]);
+      ];
+      if (hasPtSessions) {
+        requests.push(coachApi.get(`/api/coach/pt-attendance?date=${dateStr}`));
+      }
+      const [scansRes, ptRes] = await Promise.all(requests);
       setClasses(scansRes.data.data ?? []);
-      setPtScans(ptRes.data.data ?? []);
+      setPtScans(hasPtSessions && ptRes ? ptRes.data.data ?? [] : []);
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Failed to load scans monitor.";
       setError(msg);
@@ -342,15 +348,17 @@ export function CoachScansMonitor() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* ── Personal Training section ── */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Personal Training
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <PtAttendanceCard scans={ptScans} />
+          {/* ── Personal Training section (only for coaches with PT clients) ── */}
+          {hasPtSessions && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Personal Training
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <PtAttendanceCard scans={ptScans} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ── Scheduled Classes section ── */}
           {classes.length > 0 && (
