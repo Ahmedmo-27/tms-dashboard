@@ -4,14 +4,12 @@ import { useState, useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Search, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { PackageDetail } from "@/components/coach/PackageDetail";
 import type { RootState } from "@/lib/store/store";
 import type { ClientDto } from "@/types/coach.types";
 import { setCoachClients, setClientsLoading } from "@/lib/store/features/coachSlice";
 import { useCoachApi } from "@/hooks/useCoachApi";
-import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 interface ClientListProps {
@@ -52,6 +50,7 @@ export function ClientList({ initialView }: ClientListProps) {
         const params = new URLSearchParams();
         params.set("page", page.toString());
         params.set("limit", "10");
+        params.set("type", "PT");
         if (debouncedQuery) params.set("search", debouncedQuery);
 
         const res = await coachApi.get(`/api/coach/clients?${params.toString()}`);
@@ -118,18 +117,6 @@ export function ClientList({ initialView }: ClientListProps) {
                 <div className="min-w-0 flex-1 pr-4">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-medium text-sm truncate">{client.name}</p>
-                    <div className="flex gap-1 shrink-0">
-                      {client.source.includes("PT") && (
-                        <Badge className="bg-purple-500 hover:bg-purple-600 border-none text-[10px] px-1.5 py-0">
-                          PT
-                        </Badge>
-                      )}
-                      {client.source.includes("GROUP") && (
-                        <Badge className="bg-teal-500 hover:bg-teal-600 border-none text-[10px] px-1.5 py-0">
-                          Group
-                        </Badge>
-                      )}
-                    </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{client.phoneNumber}</span>

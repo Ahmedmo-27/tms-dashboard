@@ -81,7 +81,7 @@ export function PackageDetail({
           `/api/coach/clients/${client.memberId}/packages`
         );
         const raw = res.data.data?.packages;
-        const data = Array.isArray(raw) ? (raw as MemberPackageData[]).filter(p => !p.isExpired) : [];
+        const data = Array.isArray(raw) ? (raw as MemberPackageData[]).filter(p => !p.isExpired && p.isPtPackage) : [];
         setPackages(data);
 
         // If opened from "Deduct Class" nav, auto-open modal on first package
