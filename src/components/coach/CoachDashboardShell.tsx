@@ -104,7 +104,7 @@ export function CoachDashboardShell() {
       { id: "clients" as ActiveView, label: "My Clients", icon: Users },
     ] : []),
     { id: "schedule", label: "Schedule", icon: Calendar },
-    { id: "notifications", label: "Notifications", icon: Bell },
+    // { id: "notifications", label: "Notifications", icon: Bell },
   ];
 
   const SidebarContent = (
@@ -236,7 +236,7 @@ export function CoachDashboardShell() {
             <ClientList />
           )}
           {activeView === "schedule" && <CoachCalendar />}
-          {activeView === "notifications" && <NotificationPanel />}
+          {/* {activeView === "notifications" && <NotificationPanel />} */}
         </main>
 
         {/* ── Mobile bottom nav ── */}
