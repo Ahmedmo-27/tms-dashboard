@@ -8,8 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Users, Search, UserX, UserCheck } from "lucide-react";
 import { useState } from "react";
 import { MemberListEntry } from "../../schedule/show-booked-members";
-import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
-import { DialogContent } from "../../dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "../../dialog";
 import { attendNonUserBooking } from "@/lib/data/bookings";
 import { AddWalkIn } from "./add-walk-in";
 
@@ -23,7 +27,6 @@ export function CheckInsSelector({
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
   const filteredMembers = members.filter((member) =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -40,15 +43,12 @@ export function CheckInsSelector({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <Button
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-        variant="outline"
-        className="cursor-pointer"
-      >
-        Manage Bookings
-      </Button>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="cursor-pointer">
+          Manage Bookings
+        </Button>
+      </DialogTrigger>
       <DialogContent className="pt-10 pb-5 px-5">
         <DialogTitle></DialogTitle>
         <Card className="w-full border shadow-sm">
