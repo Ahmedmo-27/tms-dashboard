@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { PaymentDatePicker } from "./date-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, formatDate } from "date-fns";
+import { isOutflowTransaction } from "@/lib/utils/parsers/payments-parser";
 
 export default function PaymentsContainer({
   payments,
@@ -43,6 +44,8 @@ export default function PaymentsContainer({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<"all" | "payments" | "refunds">("all");
+
+  const isOutflow = (payment: Payment) => isOutflowTransaction(payment);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     initialDate ? new Date(initialDate) : undefined
@@ -51,7 +54,7 @@ export default function PaymentsContainer({
   // Calculate payment statistics
   const stats = useMemo(() => {
     const totalAmount = payments.reduce((sum, payment) => {
-      if (payment.isRefunded) return sum;
+      if (isOutflow(payment)) return sum;
       
       const amount = typeof payment.amount === 'string'
         ? parseFloat(payment.amount.replace(/[^0-9.-]+/g, ""))
@@ -75,7 +78,7 @@ export default function PaymentsContainer({
 
     return {
       totalAmount,
-      totalPayments: payments.filter(p => !p.isRefunded).length,
+      totalPayments: payments.filter((p) => !isOutflow(p)).length,
       todayPayments: todayPayments.length,
       uniqueMembers,
       paymentMethods,
@@ -87,17 +90,18 @@ export default function PaymentsContainer({
     return payments.filter((payment) => {
       const matchesSearch =
         searchTerm === "" ||
-        payment.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.phone.includes(searchTerm) ||
-        payment.purpose.toLowerCase().includes(searchTerm.toLowerCase());
+        (payment.memberName ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.phone ?? "").includes(searchTerm) ||
+        (payment.purpose ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.refundReason ?? "").toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesMethod =
         selectedMethod === null || payment.paymentMethod === selectedMethod;
 
       const matchesType = 
         selectedType === "all" || 
-        (selectedType === "payments" && !payment.isRefunded) || 
-        (selectedType === "refunds" && payment.isRefunded);
+        (selectedType === "payments" && !isOutflow(payment)) ||
+        (selectedType === "refunds" && isOutflow(payment));
 
       return matchesSearch && matchesMethod && matchesType;
     });
@@ -105,7 +109,7 @@ export default function PaymentsContainer({
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    // Simulate refresh
+    router.refresh();
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
@@ -251,7 +255,7 @@ export default function PaymentsContainer({
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full lg:w-auto justify-between lg:justify-center">
                     <span className="truncate">
-                      {selectedType === "all" ? "All Types" : selectedType === "payments" ? "Payments Only" : "Refunds Only"}
+                      {selectedType === "all" ? "All Types" : selectedType === "payments" ? "Payments Only" : "Refunds & Cash Outs"}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -267,13 +271,13 @@ export default function PaymentsContainer({
                   <DropdownMenuItem onClick={() => setSelectedType("payments")}>
                     Payments Only
                     <Badge variant="outline" className="ml-auto">
-                      {payments.filter(p => !p.isRefunded).length}
+                      {payments.filter((p) => !isOutflow(p)).length}
                     </Badge>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setSelectedType("refunds")}>
-                    Refunds Only
+                    Refunds & Cash Outs
                     <Badge variant="outline" className="ml-auto">
-                      {payments.filter(p => p.isRefunded).length}
+                      {payments.filter((p) => isOutflow(p)).length}
                     </Badge>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

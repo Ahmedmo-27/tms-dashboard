@@ -9,8 +9,8 @@ import {
   Building2,
   Phone,
   MapPin,
-  Clock,
 } from "lucide-react";
+import { OutflowPurposeCell } from "./outflow-details-dialog";
 
 export type Payment = {
   memberName: string;
@@ -22,6 +22,7 @@ export type Payment = {
   location: string;
   classTime: string;
   isRefunded?: boolean;
+  isCashOut?: boolean;
   refundReason?: string;
 };
 
@@ -59,8 +60,8 @@ export const columns: ColumnDef<Payment>[] = [
     header: "Member",
     enableSorting: true,
     cell: ({ row }) => {
-      const name = row.getValue("memberName") as string;
-      const phone = row.getValue("phone") as string;
+      const name = (row.getValue("memberName") as string | undefined) ?? "—";
+      const phone = (row.getValue("phone") as string | undefined) ?? "—";
       const initials = name
         .split(" ")
         .map((n) => n[0])
@@ -96,24 +97,7 @@ export const columns: ColumnDef<Payment>[] = [
     accessorKey: "purpose",
     header: "Purpose",
     enableSorting: true,
-    cell: ({ row }) => {
-      const purpose = row.getValue("purpose") as string;
-      const isRefunded = row.original.isRefunded;
-      const refundReason = row.original.refundReason;
-
-      return (
-        <div className="max-w-[120px] flex flex-col gap-1">
-          <Badge variant="outline" className="font-normal text-xs truncate w-fit">
-            {purpose}
-          </Badge>
-          {isRefunded && (
-            <Badge variant="destructive" className="font-normal text-[10px] px-1 py-0 h-4 truncate w-fit" title={refundReason || "Refunded"}>
-              Refunded
-            </Badge>
-          )}
-        </div>
-      );
-    },
+    cell: ({ row }) => <OutflowPurposeCell payment={row.original} />,
   },
   {
     accessorKey: "paymentTime",
@@ -139,16 +123,15 @@ export const columns: ColumnDef<Payment>[] = [
     enableSorting: true,
     cell: ({ row }) => {
       const amount = row.getValue("amount");
-      const isRefunded = row.original.isRefunded;
-      
-      // Handle both string and number types
+      const isOutflow = row.original.isRefunded || row.original.isCashOut;
+
       let numericAmount = typeof amount === 'string'
         ? parseFloat(amount.replace(/[^0-9.-]+/g, ""))
         : parseFloat(String(amount));
 
       return (
-        <div className={`font-mono font-semibold min-w-[80px] max-w-[120px] text-right ${isRefunded ? 'text-muted-foreground line-through' : 'text-green-600 dark:text-green-400'}`}>
-          ${numericAmount.toLocaleString()}
+        <div className={`font-mono font-semibold min-w-[80px] max-w-[120px] text-right ${isOutflow ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+          {isOutflow ? "-" : ""}EGP {numericAmount.toLocaleString()}
         </div>
       );
     },

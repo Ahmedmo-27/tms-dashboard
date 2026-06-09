@@ -7,6 +7,7 @@ import {
   Package,
   Dumbbell,
   DollarSign,
+  Undo2,
   ShoppingCart,
   Receipt,
   Barcode
@@ -63,6 +64,11 @@ export const pagesMetadata = {
           title: "Payments",
           url: "/dashboard/payments",
           icon: DollarSign,
+        },
+        {
+          title: "Refunds",
+          url: "/dashboard/refunds",
+          icon: Undo2,
         },
       ],
     },

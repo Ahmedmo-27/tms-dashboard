@@ -11,9 +11,11 @@ import {
   MapPin,
 } from "lucide-react";
 import { Payment } from "./columns";
+import { OutflowPurposeCell } from "./outflow-details-dialog";
+import { isOutflowTransaction } from "@/lib/utils/parsers/payments-parser";
 
 const getPaymentMethodIcon = (method: string) => {
-  switch (method.toLowerCase()) {
+  switch ((method ?? "").toLowerCase()) {
     case "cash":
       return <Banknote className="h-4 w-4" />;
     case "instapay":
@@ -27,7 +29,7 @@ const getPaymentMethodIcon = (method: string) => {
 };
 
 const getPaymentMethodColor = (method: string) => {
-  switch (method.toLowerCase()) {
+  switch ((method ?? "").toLowerCase()) {
     case "cash":
       return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
     case "instapay":
@@ -45,7 +47,8 @@ interface MobilePaymentCardProps {
 }
 
 export function MobilePaymentCard({ payment }: MobilePaymentCardProps) {
-  const initials = payment.memberName
+  const memberName = payment.memberName ?? "—";
+  const initials = memberName
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -54,9 +57,10 @@ export function MobilePaymentCard({ payment }: MobilePaymentCardProps) {
   const numericAmount = typeof payment.amount === 'string'
     ? parseFloat(payment.amount.replace(/[^0-9.-]+/g, ""))
     : parseFloat(String(payment.amount));
+  const isOutflow = isOutflowTransaction(payment);
 
   return (
-    <Card className="w-full hover:shadow-md transition-shadow touch-manipulation" role="article" aria-label={`Payment from ${payment.memberName}`}>
+    <Card className="w-full hover:shadow-md transition-shadow touch-manipulation" role="article" aria-label={`Payment from ${memberName}`}>
       <CardContent className="p-4">
         <div className="space-y-3">
           {/* Header with member info and amount */}
@@ -69,7 +73,7 @@ export function MobilePaymentCard({ payment }: MobilePaymentCardProps) {
               </Avatar>
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-sm truncate">
-                  {payment.memberName}
+                  {memberName}
                 </h3>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Phone className="h-3 w-3 flex-shrink-0" />
@@ -78,8 +82,8 @@ export function MobilePaymentCard({ payment }: MobilePaymentCardProps) {
               </div>
             </div>
             <div className="text-right flex-shrink-0">
-              <div className="font-mono font-bold text-lg text-green-600 dark:text-green-400">
-                ${numericAmount.toLocaleString()}
+              <div className={`font-mono font-bold text-lg ${isOutflow ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                {isOutflow ? "-" : ""}EGP {numericAmount.toLocaleString()}
               </div>
             </div>
           </div>
@@ -89,9 +93,10 @@ export function MobilePaymentCard({ payment }: MobilePaymentCardProps) {
             <div className="space-y-2">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Purpose</p>
-                <Badge variant="outline" className="text-xs">
-                  {payment.purpose}
-                </Badge>
+                <OutflowPurposeCell
+                  payment={payment}
+                  badgeClassName="text-[10px]"
+                />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Method</p>
