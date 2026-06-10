@@ -134,7 +134,7 @@ export const columns: ColumnDef<Payment>[] = [
 
       return (
         <div className={`font-mono font-semibold min-w-[80px] max-w-[120px] text-right ${isOutflow ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-          {isOutflow ? "-" : ""}EGP {numericAmount.toLocaleString()}
+          {isOutflow ? "-" : ""}EGP {Math.abs(numericAmount).toLocaleString()}
         </div>
       );
     },

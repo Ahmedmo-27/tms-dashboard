@@ -121,9 +121,10 @@ function getTransactionFlags(record: RawPaymentRecord) {
     type === "CASH_OUT" ||
     type === "CASHOUT";
 
-  const explicitMemberRefund =
-    (record.isRefunded === true || record.isRefund === true) &&
-    !explicitCashOut;
+  // NOTE: record.isRefunded / record.isRefund are intentionally NOT used here.
+  // On a payment document those flags just mean "this purchase was refunded" — they
+  // are informational only and must not cause the row to render as an outflow.
+  // Outflow rendering is exclusively driven by the primary path above (entryType / isMoneyOut).
 
   const typedMemberRefund =
     type === "REFUND" ||
@@ -134,7 +135,6 @@ function getTransactionFlags(record: RawPaymentRecord) {
 
   const reason = record.refundReason ?? record.reason;
   const inferredCashOut =
-    !explicitMemberRefund &&
     !typedMemberRefund &&
     !isPackageOrClassPayment(record) &&
     !hasMemberContext(record) &&
@@ -148,12 +148,10 @@ function getTransactionFlags(record: RawPaymentRecord) {
     !typedCashOut &&
     !!reason &&
     !isPackageOrClassPayment(record) &&
-    (explicitMemberRefund ||
-      typedMemberRefund ||
-      hasMemberContext(record));
+    (typedMemberRefund || hasMemberContext(record));
 
   const isCashOut = typedCashOut || inferredCashOut;
-  const isRefunded = explicitMemberRefund || typedMemberRefund || inferredMemberRefund || isCashOut;
+  const isRefunded = typedMemberRefund || inferredMemberRefund || isCashOut;
 
   return { isCashOut, isRefunded };
 }

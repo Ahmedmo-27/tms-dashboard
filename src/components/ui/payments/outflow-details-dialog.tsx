@@ -76,7 +76,7 @@ function OutflowDetailsDialog({
           <div>
             <p className="text-xs text-muted-foreground">Amount</p>
             <p className="text-sm font-mono font-semibold text-red-600 dark:text-red-400">
-              -EGP {numericAmount.toLocaleString()}
+              -EGP {Math.abs(numericAmount).toLocaleString()}
             </p>
           </div>
 

@@ -83,7 +83,7 @@ export function MobilePaymentCard({ payment }: MobilePaymentCardProps) {
             </div>
             <div className="text-right flex-shrink-0">
               <div className={`font-mono font-bold text-lg ${isOutflow ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                {isOutflow ? "-" : ""}EGP {numericAmount.toLocaleString()}
+                {isOutflow ? "-" : ""}EGP {Math.abs(numericAmount).toLocaleString()}
               </div>
             </div>
           </div>
