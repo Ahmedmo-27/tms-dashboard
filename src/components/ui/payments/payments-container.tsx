@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { PaymentDatePicker } from "./date-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, formatDate } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { isOutflowTransaction } from "@/lib/utils/parsers/payments-parser";
 
 export default function PaymentsContainer({
@@ -64,8 +65,9 @@ export default function PaymentsContainer({
     }, 0);
 
     const todayPayments = payments.filter((payment) => {
-      const paymentDate = new Date(payment.paymentTime).toLocaleDateString();
-      const today = new Date().toLocaleDateString();
+      const timeZone = "Africa/Cairo";
+      const paymentDate = formatInTimeZone(new Date(payment.paymentTime), timeZone, "MM/dd/yyyy");
+      const today = formatInTimeZone(new Date(), timeZone, "MM/dd/yyyy");
       return paymentDate === today;
     });
 

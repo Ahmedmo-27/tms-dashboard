@@ -2,6 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "../badge";
 import { Avatar, AvatarFallback } from "../avatar";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import {
   CreditCard,
   Banknote,
@@ -106,13 +107,14 @@ export const columns: ColumnDef<Payment>[] = [
     enableSorting: true,
     cell: ({ row }) => {
       const date = row.getValue("paymentTime") as Date;
+      const timeZone = "Africa/Cairo";
       return (
         <div className="flex flex-col min-w-[100px] max-w-[140px]">
           <span className="font-medium text-sm">
-            {format(new Date(date), "MMM dd, yyyy")}
+            {formatInTimeZone(new Date(date), timeZone, "MMM dd, yyyy")}
           </span>
           <span className="text-xs text-muted-foreground">
-            {format(new Date(date), "hh:mm a")}
+            {formatInTimeZone(new Date(date), timeZone, "hh:mm a")}
           </span>
         </div>
       );
@@ -177,13 +179,14 @@ export const columns: ColumnDef<Payment>[] = [
     cell: ({ row }) => {
       if (row.getValue("classTime") === null) return <span className="text-muted-foreground">--</span>;
       const date = row.getValue("classTime") as Date;
+      const timeZone = "Africa/Cairo";
       return (
         <div className="flex flex-col min-w-[100px] max-w-[140px]">
           <span className="font-medium text-sm">
-            {format(new Date(date), "MMM dd, yyyy")}
+            {formatInTimeZone(new Date(date), timeZone, "MMM dd, yyyy")}
           </span>
           <span className="text-xs text-muted-foreground">
-            {format(new Date(date), "hh:mm a")}
+            {formatInTimeZone(new Date(date), timeZone, "hh:mm a")}
           </span>
         </div>
       );

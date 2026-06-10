@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -83,7 +83,7 @@ function OutflowDetailsDialog({
           <div>
             <p className="text-xs text-muted-foreground">Recorded at</p>
             <p className="text-sm font-medium">
-              {format(new Date(payment.paymentTime), "dd MMM yyyy, HH:mm")}
+              {formatInTimeZone(new Date(payment.paymentTime), "Africa/Cairo", "dd MMM yyyy, HH:mm")}
             </p>
           </div>
 
