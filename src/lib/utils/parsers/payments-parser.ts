@@ -27,6 +27,7 @@ export interface RawPaymentRecord {
   kind?: string;
   refundReason?: string;
   reason?: string;
+  paymentLabel?: string | null;
 }
 
 export function normalizePaymentsPayload(data: unknown): RawPaymentRecord[] {
@@ -190,6 +191,7 @@ export const parsePayments = (payments: unknown): Payment[] => {
       isRefunded,
       isCashOut,
       refundReason,
+      paymentLabel: payment.paymentLabel ?? null,
     };
   });
 };

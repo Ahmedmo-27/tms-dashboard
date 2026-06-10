@@ -24,6 +24,7 @@ export type Payment = {
   isRefunded?: boolean;
   isCashOut?: boolean;
   refundReason?: string;
+  paymentLabel?: string | null;
 };
 
 const getPaymentMethodIcon = (method: string) => {

@@ -7,8 +7,8 @@ import {
 } from "../utils/parsers/payments-parser";
 
 const REFUND_LIST_ENDPOINTS = [
-  "/api/admin/refunds",
-  "/admin/refunds",
+  "/api/admin/refunds/list",
+  "/admin/refunds/list",
 ] as const;
 
 const CASHOUT_LIST_ENDPOINTS = [

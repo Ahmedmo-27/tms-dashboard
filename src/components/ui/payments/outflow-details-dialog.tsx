@@ -64,6 +64,12 @@ function OutflowDetailsDialog({
                 <p className="text-xs text-muted-foreground">Phone</p>
                 <p className="text-sm font-medium">{payment.phone}</p>
               </div>
+              {payment.paymentLabel && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Refunded for</p>
+                  <p className="text-sm font-medium">{payment.paymentLabel}</p>
+                </div>
+              )}
             </>
           )}
 
