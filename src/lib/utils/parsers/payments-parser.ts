@@ -19,9 +19,15 @@ export interface RawPaymentRecord {
   recordedAt?: string | Date;
   amount: number | string;
   paymentMethod?: string;
+  // isRefunded on a payment row means "this purchase was refunded" (informational).
+  // It does NOT make the row render as an outflow — only entryType/isMoneyOut do that.
   isRefunded?: boolean;
   isRefund?: boolean;
   isCashOut?: boolean;
+  // entryType comes from the API on refund/cashout rows
+  entryType?: "REFUND" | "CASHOUT";
+  // isMoneyOut is set by the API on refund/cashout rows
+  isMoneyOut?: boolean;
   type?: string;
   transactionType?: string;
   kind?: string;
@@ -99,6 +105,15 @@ function isPackageOrClassPayment(record: RawPaymentRecord): boolean {
 }
 
 function getTransactionFlags(record: RawPaymentRecord) {
+  // Primary signal: entryType or isMoneyOut set by the API on dedicated refund/cashout rows.
+  // A raw payment row with isRefunded=true is just "this purchase was refunded" — it stays
+  // as a positive purchase entry. The separate refund row carries the negative amount.
+  if (record.isMoneyOut === true || record.entryType === "REFUND" || record.entryType === "CASHOUT") {
+    const isCashOut = record.entryType === "CASHOUT" || record.isCashOut === true;
+    return { isCashOut, isRefunded: true };
+  }
+
+  // Fallback heuristics for legacy / supplemental data sources (refunds/cashouts endpoints)
   const type = normalizeType(record);
 
   const explicitCashOut =
@@ -178,16 +193,17 @@ export const parsePayments = (payments: unknown): Payment[] => {
         purpose ||
         refundReason ||
         (isCashOut ? "Cash Out" : isRefunded ? "Refund" : ""),
-      paymentTime:
-        payment.paymentTime ?? payment.createdAt ?? payment.recordedAt ?? new Date(),
-      amount: payment.amount,
+      paymentTime: new Date(
+        (payment.paymentTime ?? payment.createdAt ?? payment.recordedAt ?? new Date()) as string | Date
+      ),
+      amount: String(payment.amount),
       paymentMethod:
         payment.paymentMethod ??
         (isCashOut ? "Cash Out" : isRefunded ? "Refund" : "—"),
       location: payment.scid
         ? payment.scid.cid.locations[0]?.branchName ?? " -- "
         : " -- ",
-      classTime: payment.scid ? payment.scid.startTime : null,
+      classTime: payment.scid ? payment.scid.startTime : "",
       isRefunded,
       isCashOut,
       refundReason,

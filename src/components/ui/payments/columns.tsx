@@ -177,7 +177,7 @@ export const columns: ColumnDef<Payment>[] = [
     accessorKey: "classTime",
     header: "Class Time",
     cell: ({ row }) => {
-      if (row.getValue("classTime") === null) return <span className="text-muted-foreground">--</span>;
+      if (!row.getValue("classTime")) return <span className="text-muted-foreground">--</span>;
       const date = row.getValue("classTime") as Date;
       const timeZone = "Africa/Cairo";
       return (
