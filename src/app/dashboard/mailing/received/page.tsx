@@ -67,13 +67,13 @@ export default function ReceivedPage() {
   return (
     <>
       <Card className="border-none shadow-sm h-full flex flex-col">
-        <CardHeader className="px-0 pt-0 pb-4 border-b">
-          <div className="flex items-center justify-between">
+        <CardHeader className="px-4 sm:px-6 pt-0 pb-4 border-b">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-2xl">Inbox</CardTitle>
               <CardDescription>Emails received at your administrative address.</CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -149,14 +149,14 @@ export default function ReceivedPage() {
                 </div>
               </DialogHeader>
               
-              <div className="px-6 py-4 border-b text-sm bg-muted/5 flex items-center justify-between">
+              <div className="px-6 py-4 border-b text-sm bg-muted/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">From:</span>
-                    <span className="font-medium">{selectedEmail.from}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <span className="text-muted-foreground shrink-0">From:</span>
+                    <span className="font-medium break-all">{selectedEmail.from}</span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => handleReply(selectedEmail)} className="shrink-0 gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleReply(selectedEmail)} className="shrink-0 gap-2 self-start sm:self-auto">
                   <Reply className="h-4 w-4" />
                   Reply
                 </Button>

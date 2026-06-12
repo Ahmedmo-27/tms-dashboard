@@ -55,13 +55,13 @@ export default function SentPage() {
   return (
     <>
       <Card className="border-none shadow-sm h-full flex flex-col">
-        <CardHeader className="px-0 pt-0 pb-4 border-b">
-          <div className="flex items-center justify-between">
+        <CardHeader className="px-4 sm:px-6 pt-0 pb-4 border-b">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-2xl">Sent Mail</CardTitle>
               <CardDescription>History of all broadcasted and manually sent emails.</CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -158,19 +158,21 @@ export default function SentPage() {
                 </div>
               </DialogHeader>
               
-              <div className="px-6 py-3 border-b text-sm bg-muted/10 grid grid-cols-[80px_1fr] gap-2">
-                <span className="text-muted-foreground font-medium">To:</span>
-                <span className="text-foreground">
-                  {Array.isArray(selectedMail.recipients) 
-                    ? selectedMail.recipients.join(", ") 
-                    : `${selectedMail.recipients} recipients (Broadcast)`}
-                </span>
+              <div className="px-6 py-3 border-b text-sm bg-muted/10 flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <span className="text-muted-foreground font-medium shrink-0">To:</span>
+                  <span className="text-foreground break-all">
+                    {Array.isArray(selectedMail.recipients) 
+                      ? selectedMail.recipients.join(", ") 
+                      : `${selectedMail.recipients} recipients (Broadcast)`}
+                  </span>
+                </div>
                 
                 {selectedMail.error_msg && (
-                  <>
-                    <span className="text-red-500 font-medium mt-2">Error:</span>
-                    <span className="text-red-500 mt-2">{selectedMail.error_msg}</span>
-                  </>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
+                    <span className="text-red-500 font-medium shrink-0">Error:</span>
+                    <span className="text-red-500 break-all">{selectedMail.error_msg}</span>
+                  </div>
                 )}
               </div>
 

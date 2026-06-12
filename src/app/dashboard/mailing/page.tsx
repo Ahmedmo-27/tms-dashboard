@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { Send } from "lucide-react";
 
 // UI Components
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -139,22 +139,29 @@ function ComposeForm() {
           <CardDescription>Compose and send an email to your members or coaches.</CardDescription>
         </CardHeader>
         <CardContent className="px-0">
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4 h-12 bg-muted/50">
-              <TabsTrigger value="broadcast" className="data-[state=active]:bg-background">📢 Broadcast</TabsTrigger>
-              <TabsTrigger value="members" className="data-[state=active]:bg-background">👥 Members</TabsTrigger>
-              <TabsTrigger value="coaches" className="data-[state=active]:bg-background">🏋️ Coaches</TabsTrigger>
-              <TabsTrigger value="manual" className="data-[state=active]:bg-background">✏️ Manual</TabsTrigger>
-            </TabsList>
+          <div className="px-6 mb-6">
+            <Label className="text-sm font-semibold mb-2 block">Send Mode</Label>
+            <Select value={activeTab} onValueChange={handleTabChange}>
+              <SelectTrigger className="w-full h-12 bg-muted/20">
+                <SelectValue placeholder="Select who to send to" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="broadcast">📢 Broadcast</SelectItem>
+                <SelectItem value="members">👥 Members</SelectItem>
+                <SelectItem value="coaches">🏋️ Coaches</SelectItem>
+                <SelectItem value="manual">✏️ Manual</SelectItem>
+              </SelectContent>
+            </Select>
 
-            <div className="text-sm text-muted-foreground mb-4 mt-2 px-2">
+            <div className="text-sm text-muted-foreground mt-2 px-1">
               {activeTab === "broadcast" && "Send to all active members and all coaches."}
               {activeTab === "members" && "Send to all active members only."}
               {activeTab === "coaches" && "Send to all coaches only."}
               {activeTab === "manual" && "Compose and send to specific email addresses."}
             </div>
+          </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 bg-card border rounded-lg p-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 bg-card border rounded-none sm:rounded-lg sm:mx-6 p-4 sm:p-6 shadow-sm">
               {activeTab === "manual" && (
                 <div className="space-y-2">
                   <Label htmlFor="to" className="text-sm font-semibold">To</Label>
@@ -216,7 +223,6 @@ function ComposeForm() {
                 </Button>
               </div>
             </form>
-          </Tabs>
         </CardContent>
       </Card>
 
