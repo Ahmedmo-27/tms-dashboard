@@ -48,7 +48,7 @@ export const parseDailyAttendance = (scans: any) => {
       phone: scan.uid?.phoneNumber || "No Phone",
       time: new Date(scan.time).toString(),
       method: scan.method,
-      status: scan.status,
+      status: typeof scan.status === "boolean" ? (scan.status ? "SUCCESS" : "FAILED") : scan.status,
     };
     output.pt.push(parsedScan);
   });
@@ -58,7 +58,7 @@ export const parseDailyAttendance = (scans: any) => {
       phone: scan.uid?.phoneNumber || "No Phone",
       time: new Date(scan.time).toString(),
       method: scan.method,
-      status: scan.status,
+      status: typeof scan.status === "boolean" ? (scan.status ? "SUCCESS" : "FAILED") : scan.status,
     };
     output.openGym.push(parsedScan);
   });

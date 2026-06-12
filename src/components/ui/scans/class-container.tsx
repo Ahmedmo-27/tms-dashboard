@@ -41,6 +41,8 @@ export const ClassContainer = ({
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       case "FAILED":
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "WILL_PAY":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
       default:
         return "";
     }
@@ -69,12 +71,12 @@ export const ClassContainer = ({
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
                 <span>
-                  {classScans.filter((scan) => scan.status === "SUCCESS").length}/{classData.bookedMembers.length}
+                  {classScans.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length}/{classData.bookedMembers.length}
                 </span>
               </div>
               <div className="flex items-center gap-1">
                 <UserCheck className="h-4 w-4" />
-                <span>{classScans.filter((scan) => scan.status === "SUCCESS").length} checked in</span>
+                <span>{classScans.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length} checked in</span>
               </div>
             </div>
           </div>
