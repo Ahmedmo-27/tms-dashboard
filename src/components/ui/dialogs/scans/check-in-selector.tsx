@@ -211,21 +211,21 @@ export function CheckInsSelector({
                           <>
                             <Button
                               type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-6 w-6 text-green-800"
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-[10px] px-2 text-green-600 hover:bg-green-50"
                               onClick={() => handleAttendGuest(member.bookingId as string)}
                             >
-                              <UserCheck className="h-4 w-4" />
+                              Record
                             </Button>
                             <Button
                               type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-[10px] px-2 text-red-600 hover:bg-red-50"
                               onClick={() => handleCancelBooking(member.bookingId as string)}
                             >
-                              <X className="h-4 w-4" />
+                              Cancel
                             </Button>
                           </>
                         )}
