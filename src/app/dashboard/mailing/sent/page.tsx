@@ -74,8 +74,7 @@ export default function SentPage() {
           </div>
         </CardHeader>
         <CardContent className="px-0 py-0 flex-1 overflow-auto">
-          <div className="min-w-[700px]">
-            <Table>
+          <Table>
             <TableHeader className="bg-muted/30 sticky top-0">
               <TableRow>
                 <TableHead className="w-[100px]">Mode</TableHead>
@@ -107,7 +106,7 @@ export default function SentPage() {
                         {log.mode}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-medium truncate max-w-[300px]" title={log.subject}>
+                    <TableCell className="font-medium min-w-[300px]">
                       {log.subject}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -132,7 +131,6 @@ export default function SentPage() {
               )}
             </TableBody>
           </Table>
-          </div>
         </CardContent>
       </Card>
 

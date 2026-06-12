@@ -86,8 +86,7 @@ export default function ReceivedPage() {
           </div>
         </CardHeader>
         <CardContent className="px-0 py-0 flex-1 overflow-auto">
-          <div className="min-w-[700px]">
-            <Table>
+          <Table>
             <TableHeader className="bg-muted/30 sticky top-0">
               <TableRow>
                 <TableHead className="w-[250px]">From</TableHead>
@@ -113,13 +112,13 @@ export default function ReceivedPage() {
                     className={`cursor-pointer transition-colors ${email.isRead ? 'opacity-80' : 'bg-muted/10 font-medium'}`}
                     onClick={() => setSelectedEmail(email)}
                   >
-                    <TableCell className="truncate max-w-[250px]" title={email.from}>
+                    <TableCell className="min-w-[200px]">
                       <div className="flex items-center gap-2">
                         {!email.isRead && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
                         {email.from.replace(/<.*>/, "")}
                       </div>
                     </TableCell>
-                    <TableCell className="truncate max-w-[400px]" title={email.subject}>
+                    <TableCell className="min-w-[300px]">
                       {email.subject || "(No Subject)"}
                     </TableCell>
                     <TableCell className="text-right text-xs whitespace-nowrap text-muted-foreground">
@@ -130,7 +129,6 @@ export default function ReceivedPage() {
               )}
             </TableBody>
           </Table>
-          </div>
         </CardContent>
       </Card>
 
