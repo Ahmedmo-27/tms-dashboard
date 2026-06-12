@@ -55,12 +55,13 @@ export default function PaymentsContainer({
   // Calculate payment statistics
   const stats = useMemo(() => {
     const totalAmount = payments.reduce((sum, payment) => {
-      if (isOutflow(payment)) return sum;
+      const amountStr = typeof payment.amount === 'string' ? payment.amount : String(payment.amount);
+      const numericAmount = parseFloat(amountStr.replace(/[^0-9.-]+/g, ""));
+      const val = isNaN(numericAmount) ? 0 : Math.abs(numericAmount);
       
-      const amount = typeof payment.amount === 'string'
-        ? parseFloat(payment.amount.replace(/[^0-9.-]+/g, ""))
-        : parseFloat(String(payment.amount));
-      const val = isNaN(amount) ? 0 : amount;
+      if (isOutflow(payment)) {
+        return sum - val;
+      }
       return sum + val;
     }, 0);
 
