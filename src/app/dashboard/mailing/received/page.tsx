@@ -86,7 +86,8 @@ export default function ReceivedPage() {
           </div>
         </CardHeader>
         <CardContent className="px-0 py-0 flex-1 overflow-auto">
-          <Table>
+          <div className="min-w-[700px]">
+            <Table>
             <TableHeader className="bg-muted/30 sticky top-0">
               <TableRow>
                 <TableHead className="w-[250px]">From</TableHead>
@@ -129,6 +130,7 @@ export default function ReceivedPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

@@ -74,7 +74,8 @@ export default function SentPage() {
           </div>
         </CardHeader>
         <CardContent className="px-0 py-0 flex-1 overflow-auto">
-          <Table>
+          <div className="min-w-[700px]">
+            <Table>
             <TableHeader className="bg-muted/30 sticky top-0">
               <TableRow>
                 <TableHead className="w-[100px]">Mode</TableHead>
@@ -131,6 +132,7 @@ export default function SentPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
