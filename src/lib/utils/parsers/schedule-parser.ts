@@ -16,9 +16,16 @@ export const parseSchedule = (
           phone: member.phoneNumber,
         };
       } else {
+        const hasAttended = cls.scans.some(
+          (scan: any) =>
+            scan.uid?._id?.toString() === member.uid._id?.toString() &&
+            scan.status === true
+        );
         parsedBookedMember = {
           name: member.uid.name,
           phone: member.uid.phoneNumber,
+          uid: member.uid._id?.toString(),
+          attended: hasAttended,
         };
       }
       parsedBookedMembers.push(parsedBookedMember);
