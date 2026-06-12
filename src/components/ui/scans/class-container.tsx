@@ -69,12 +69,12 @@ export const ClassContainer = ({
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
                 <span>
-                  {classScans.length}/{classData.bookedMembers.length}
+                  {classScans.filter((scan) => scan.status === "SUCCESS").length}/{classData.bookedMembers.length}
                 </span>
               </div>
               <div className="flex items-center gap-1">
                 <UserCheck className="h-4 w-4" />
-                <span>{classScans.length} checked in</span>
+                <span>{classScans.filter((scan) => scan.status === "SUCCESS").length} checked in</span>
               </div>
             </div>
           </div>

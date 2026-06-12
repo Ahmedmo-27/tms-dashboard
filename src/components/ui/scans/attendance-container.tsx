@@ -45,12 +45,12 @@ export const AttendanceContainer = ({
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               <span>
-                {classScans?.length || 0}
+                {classScans?.filter((scan) => scan.status === "SUCCESS").length || 0}
               </span>
             </div>
             <div className="flex items-center gap-1">
               <UserCheck className="h-4 w-4" />
-              <span>{classScans?.length || 0} checked in</span>
+              <span>{classScans?.filter((scan) => scan.status === "SUCCESS").length || 0} checked in</span>
             </div>
           </div>
         </div>
