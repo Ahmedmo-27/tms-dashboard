@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 type ReceivedEmail = {
@@ -85,8 +85,9 @@ export default function ReceivedPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="px-0 py-0 flex-1 overflow-auto">
-          <Table>
+        <CardContent className="px-0 py-0 flex-1">
+          <ScrollArea className="h-full w-full">
+            <Table>
             <TableHeader className="bg-muted/30 sticky top-0">
               <TableRow>
                 <TableHead className="w-[250px]">From</TableHead>
@@ -112,13 +113,13 @@ export default function ReceivedPage() {
                     className={`cursor-pointer transition-colors ${email.isRead ? 'opacity-80' : 'bg-muted/10 font-medium'}`}
                     onClick={() => setSelectedEmail(email)}
                   >
-                    <TableCell className="min-w-[200px]">
+                    <TableCell className="truncate max-w-[250px]" title={email.from}>
                       <div className="flex items-center gap-2">
                         {!email.isRead && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
                         {email.from.replace(/<.*>/, "")}
                       </div>
                     </TableCell>
-                    <TableCell className="min-w-[300px]">
+                    <TableCell className="truncate max-w-[400px]" title={email.subject}>
                       {email.subject || "(No Subject)"}
                     </TableCell>
                     <TableCell className="text-right text-xs whitespace-nowrap text-muted-foreground">
@@ -129,6 +130,9 @@ export default function ReceivedPage() {
               )}
             </TableBody>
           </Table>
+          <ScrollBar orientation="horizontal" />
+          <ScrollBar orientation="vertical" />
+          </ScrollArea>
         </CardContent>
       </Card>
 

@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 type MailLog = {
   _id: string;
@@ -73,8 +73,9 @@ export default function SentPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="px-0 py-0 flex-1 overflow-auto">
-          <Table>
+        <CardContent className="px-0 py-0 flex-1">
+          <ScrollArea className="h-full w-full">
+            <Table>
             <TableHeader className="bg-muted/30 sticky top-0">
               <TableRow>
                 <TableHead className="w-[100px]">Mode</TableHead>
@@ -106,7 +107,7 @@ export default function SentPage() {
                         {log.mode}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-medium min-w-[300px]">
+                    <TableCell className="font-medium truncate max-w-[300px]" title={log.subject}>
                       {log.subject}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -131,6 +132,9 @@ export default function SentPage() {
               )}
             </TableBody>
           </Table>
+          <ScrollBar orientation="horizontal" />
+          <ScrollBar orientation="vertical" />
+          </ScrollArea>
         </CardContent>
       </Card>
 
