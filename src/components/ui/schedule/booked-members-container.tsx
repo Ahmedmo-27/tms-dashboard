@@ -23,7 +23,7 @@ export function BookedMembersContainer({
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const filteredMembers = members.filter((member) =>
-    member.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (member.name || "Unknown").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCopy = (phone: string, index: number) => {
@@ -123,7 +123,7 @@ export function BookedMembersContainer({
                   {/* Avatar + Info */}
                   <div className="flex items-center gap-2">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-medium">
-                      {member.name.charAt(0).toUpperCase()}
+                      {(member.name || "U").charAt(0).toUpperCase()}
                     </div>
                     <div className="flex flex-col">
                       <p className="truncate text-xs font-medium leading-none">
