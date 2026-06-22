@@ -74,15 +74,15 @@ export const parseSchedule = (
     const allScans = [...cls.scans, ...walkInScans];
     const parsedClass: ScheduledClass = {
       _id: cls._id,
-      cid: cls.cid._id,
+      cid: cls.cid?._id ?? "",
       availableSlots: cls.availableSlots,
-      className: cls.cid.title,
-      coachName: cls.coachId.coachName,
-      coachId: cls.coachId._id,
-      location: cls.cid.locations[0]?.branchName ?? "No location",
+      className: cls.cid?.title ?? "Unknown Class",
+      coachName: cls.coachId?.coachName ?? "Unknown Coach",
+      coachId: cls.coachId?._id ?? "",
+      location: cls.cid?.locations?.[0]?.branchName ?? "No location",
       startTime: new Date(cls.startTime).toString(),
       endTime: new Date(cls.endTime).toString(),
-      category: cls.cid.category,
+      category: cls.cid?.category ?? "Unknown Category",
       bookedMembers: parsedBookedMembers,
       scans: allScans,
     };
