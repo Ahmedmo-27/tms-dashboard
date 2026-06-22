@@ -18,7 +18,7 @@ export function DatePicker({
             selected={date}
             onSelect={onSelect}
             initialFocus
-            disabled={(date) => date < new Date()}
+            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
           />
     </div>
   )

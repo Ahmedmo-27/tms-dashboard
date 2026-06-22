@@ -54,7 +54,7 @@ export function PopoverDatePicker({
           {date ? format(date, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-        {date && date < new Date() && (
+        {date && date < new Date(new Date().setHours(0, 0, 0, 0)) && (
           <span className="text-xs text-yellow-500">
             Warning: Selected a past date
           </span>

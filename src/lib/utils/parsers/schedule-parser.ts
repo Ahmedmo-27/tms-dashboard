@@ -36,7 +36,7 @@ export const parseSchedule = (
           name: entry.name,
           phone: entry.phoneNumber,
           bookingId: entry._id,
-          attended: entry.status === "ATTENDED",
+          attended: entry.status === "ATTENDED" || entry.status === "PAID",
           canceled: entry.status === "CANCELLED",
           paid: entry.status === "PAID",
         });
