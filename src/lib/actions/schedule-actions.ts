@@ -15,7 +15,7 @@ export const scheduleClassAction = async (
       startTime: formData.get("startTime"),
       endTime: formData.get("endTime"),
       availableSlots: Number(formData.get("availableSlots")),
-      coachId: formData.get("coachId"),
+      coachId: formData.getAll("coachId"),
     };
     const validatedData = scheduledClassSchema.parse(scls);
     const validatedScls = {
@@ -74,7 +74,7 @@ export const editClassAction = async (
     const scls = {
       startTime: formData.get("startTime")?.toString(),
       endTime: formData.get("endTime")?.toString(),
-      coachId: formData.get("coachId")?.toString(),
+      coachId: formData.getAll("coachId"),
     };
 
     const response = await editClass(scid, scls);

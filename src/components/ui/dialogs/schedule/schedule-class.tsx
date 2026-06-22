@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "../../multiselect";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
@@ -29,7 +30,7 @@ interface ActionState {
   data: any | null;
   defaultValues?: {
     clsId: string;
-    coachId: string;
+    coachId: string[];
     startTime: string;
     endTime: string;
     availableSlots: string;
@@ -51,7 +52,7 @@ export function ScheduleClass({
     data: null,
     defaultValues: {
       clsId: "",
-      coachId: "",
+      coachId: [],
       startTime: "",
       endTime: "",
       availableSlots: "",
@@ -60,7 +61,8 @@ export function ScheduleClass({
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState("");
-  const [selectedCoach, setSelectedCoach] = useState("");
+  const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([]);
+  const [selectedCoachNames, setSelectedCoachNames] = useState<string[]>([]);
   const [selectedStartDate, setSelectedStartDate] = useState<
     string | undefined
   >(date?.toString());
@@ -78,7 +80,7 @@ export function ScheduleClass({
       const defaultValues = {
         className: formData.get("className") as string,
         clsId: formData.get("clsId") as string,
-        coachId: formData.get("coachId") as string,
+        coachId: formData.getAll("coachId") as string[],
         startTime: formData.get("startTime") as string,
         endTime: formData.get("endTime") as string,
         availableSlots: Number(formData.get("availableSlots") as string),
@@ -105,6 +107,9 @@ export function ScheduleClass({
   const handleEndDateChange = (date: string) => {
     setSelectedEndDate(date);
   };
+
+  const coachOptions = coaches.map((c) => c.coachName);
+  const coachMap = new Map(coaches.map((c) => [c.coachName, c._id]));
 
   return (
     
@@ -196,39 +201,28 @@ export function ScheduleClass({
                 ) : null}
               </div>
 
-              <input type="hidden" name="coachId" defaultValue={selectedCoach} />
+              {selectedCoachIds.map((id) => (
+                <input key={id} type="hidden" name="coachId" value={id} />
+              ))}
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Coach</Label>
-                  <Select
-                    name="coachId"
-                    defaultValue={
-                      state?.defaultValues?.coachId || selectedCoach
-                    }
-                    disabled={pending}
-                    onValueChange={setSelectedCoach}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {coaches.map((coach) => (
-                        <SelectItem
-                          key={coach._id}
-                          value={coach._id}
-                          className="hover:bg-accent"
-                          onChange={() => setSelectedCoach(coach._id)}
-                        >
-                          {coach.coachName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelect
+                    placeholder="Select coaches"
+                    selected={selectedCoachNames}
+                    options={coachOptions}
+                    onChange={(selected) => {
+                      setSelectedCoachNames(selected);
+                      setSelectedCoachIds(
+                        selected.map((name) => coachMap.get(name) || "")
+                      );
+                    }}
+                  />
                   {state?.errors &&
                   typeof state.errors == "object" &&
-                  "clsId" in state.errors ? (
+                  "coachId" in state.errors ? (
                     <p className="text-destructive text-sm">
-                      {(state.errors as any).clsId}
+                      {(state.errors as any).coachId}
                     </p>
                   ) : null}
                 </div>
