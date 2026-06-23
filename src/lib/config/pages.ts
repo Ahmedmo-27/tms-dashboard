@@ -10,7 +10,8 @@ import {
   Undo2,
   ShoppingCart,
   Receipt,
-  Barcode
+  Barcode,
+  Ticket
 } from "lucide-react";
 export const pagesMetadata = {
   navMain: [
@@ -90,6 +91,17 @@ export const pagesMetadata = {
           title: "Products",
           url: "/dashboard/products",
           icon: Barcode,
+        },
+      ],
+    },
+    {
+      title: "Support",
+      url: "/dashboard/tickets",
+      items: [
+        {
+          title: "Tickets",
+          url: "/dashboard/tickets",
+          icon: Ticket,
         },
       ],
     },
