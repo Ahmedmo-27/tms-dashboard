@@ -23,7 +23,9 @@ import {
   FileText,
   Calendar,
   NotebookPen,
+  Pencil,
   Save,
+  X,
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -58,7 +60,6 @@ export interface TicketDetailModalProps {
   ticket: Ticket | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Called after notes are saved so the parent can refresh the table */
   onUpdated?: () => void;
 }
 
@@ -90,15 +91,15 @@ export function TicketDetailModal({
   onOpenChange,
   onUpdated,
 }: TicketDetailModalProps) {
-  const [notes, setNotes] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftNotes, setDraftNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
 
-  // Sync notes textarea whenever the modal opens with a (new) ticket
+  // Reset state whenever the modal opens with a ticket
   useEffect(() => {
     if (open && ticket) {
-      setNotes(ticket.adminNotes ?? "");
-      setIsDirty(false);
+      setDraftNotes(ticket.adminNotes ?? "");
+      setIsEditing(false);
     }
   }, [open, ticket]);
 
@@ -110,17 +111,26 @@ export function TicketDetailModal({
       ? `Other: ${ticket.otherDetails}`
       : ticket.category;
 
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNotes(e.target.value);
-    setIsDirty(e.target.value.trim() !== (ticket.adminNotes ?? "").trim());
+  const hasNotes = !!ticket.adminNotes?.trim();
+
+  const handleEdit = () => {
+    setDraftNotes(ticket.adminNotes ?? "");
+    setIsEditing(true);
   };
 
-  const handleSaveNotes = async () => {
+  const handleCancel = () => {
+    setDraftNotes(ticket.adminNotes ?? "");
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateTicketStatus(ticket._id, ticket.status, notes.trim());
+      await updateTicketStatus(ticket._id, ticket.status, draftNotes.trim());
+      // Reflect saved value immediately so view mode shows updated text
+      ticket.adminNotes = draftNotes.trim();
       toast.success("Notes saved");
-      setIsDirty(false);
+      setIsEditing(false);
       onUpdated?.();
     } catch {
       toast.error("Failed to save notes");
@@ -150,22 +160,10 @@ export function TicketDetailModal({
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Member Info
             </p>
-            <InfoRow
-              icon={<User className="h-4 w-4" />}
-              label="Name"
-              value={ticket.name}
-            />
-            <InfoRow
-              icon={<Phone className="h-4 w-4" />}
-              label="Phone"
-              value={ticket.phone}
-            />
+            <InfoRow icon={<User className="h-4 w-4" />} label="Name" value={ticket.name} />
+            <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={ticket.phone} />
             {ticket.email && (
-              <InfoRow
-                icon={<Mail className="h-4 w-4" />}
-                label="Email"
-                value={ticket.email}
-              />
+              <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={ticket.email} />
             )}
           </div>
 
@@ -174,11 +172,7 @@ export function TicketDetailModal({
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Ticket Details
             </p>
-            <InfoRow
-              icon={<Tag className="h-4 w-4" />}
-              label="Problem Category"
-              value={problemText}
-            />
+            <InfoRow icon={<Tag className="h-4 w-4" />} label="Problem Category" value={problemText} />
             <InfoRow
               icon={<Calendar className="h-4 w-4" />}
               label="Submitted"
@@ -194,56 +188,90 @@ export function TicketDetailModal({
             </div>
             <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
               {ticket.description || (
-                <span className="italic text-muted-foreground">
-                  No description provided.
-                </span>
+                <span className="italic text-muted-foreground">No description provided.</span>
               )}
             </p>
           </div>
 
-          {/* Admin Notes — editable */}
-          <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-4 space-y-3">
+          {/* Admin Notes */}
+          <div className="rounded-lg border border-slate-600 bg-slate-700 p-4 space-y-3">
+            {/* Header row */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-700">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 <NotebookPen className="h-3.5 w-3.5" />
                 Admin Notes
               </div>
-              {isDirty && (
-                <span className="text-xs text-amber-600 font-medium">
-                  Unsaved changes
-                </span>
+
+              {/* Edit / Cancel button — only show when not saving */}
+              {!isEditing ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleEdit}
+                  className="h-7 gap-1.5 px-2 text-xs text-slate-300 hover:text-white hover:bg-slate-600"
+                >
+                  <Pencil className="h-3 w-3" />
+                  {hasNotes ? "Edit" : "Add Note"}
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  className="h-7 gap-1.5 px-2 text-xs text-slate-300 hover:text-white hover:bg-slate-600"
+                >
+                  <X className="h-3 w-3" />
+                  Cancel
+                </Button>
               )}
             </div>
 
-            <Textarea
-              id="admin-notes-textarea"
-              value={notes}
-              onChange={handleNotesChange}
-              placeholder="Add internal notes about this ticket… (only visible to admins)"
-              className="min-h-[100px] resize-y bg-white text-sm leading-relaxed placeholder:text-muted-foreground/60 border-blue-200 focus-visible:ring-blue-400"
-              disabled={isSaving}
-            />
-
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs text-muted-foreground">
-                {notes.length > 0
-                  ? `${notes.length} character${notes.length !== 1 ? "s" : ""}`
-                  : "No notes yet"}
-              </p>
-              <Button
-                size="sm"
-                onClick={handleSaveNotes}
-                disabled={isSaving || !isDirty}
-                className="gap-1.5"
+            {/* View mode — show existing note as white text */}
+            {!isEditing && (
+              <p
+                className={`whitespace-pre-wrap break-words text-sm leading-relaxed ${
+                  hasNotes ? "text-white" : "italic text-slate-400"
+                }`}
               >
-                {isSaving ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Save className="h-3.5 w-3.5" />
-                )}
-                {isSaving ? "Saving…" : "Save Notes"}
-              </Button>
-            </div>
+                {hasNotes ? ticket.adminNotes : "No notes yet. Click 'Add Note' to write one."}
+              </p>
+            )}
+
+            {/* Edit mode — grey textarea + Save button */}
+            {isEditing && (
+              <div className="space-y-3">
+                <Textarea
+                  id="admin-notes-textarea"
+                  value={draftNotes}
+                  onChange={(e) => setDraftNotes(e.target.value)}
+                  placeholder="Write internal notes about this ticket…"
+                  className="min-h-[110px] resize-y border-slate-500 bg-slate-600 text-white placeholder:text-slate-400 focus-visible:ring-slate-400"
+                  disabled={isSaving}
+                  autoFocus
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-slate-400">
+                    {draftNotes.length > 0
+                      ? `${draftNotes.length} character${draftNotes.length !== 1 ? "s" : ""}`
+                      : ""}
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="gap-1.5 bg-white text-slate-800 hover:bg-slate-100"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Save className="h-3.5 w-3.5" />
+                    )}
+                    {isSaving ? "Saving…" : "Save Notes"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
