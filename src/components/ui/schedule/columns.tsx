@@ -23,7 +23,7 @@ export type ScheduledClass = {
   availableSlots: number;
   bookedMembers: Member[];
   coachName: string;
-  coachId?: string;
+  coachId?: string | string[];
   category?: string;
   className?: string;
   location?: string;

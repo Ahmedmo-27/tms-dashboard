@@ -36,7 +36,7 @@ export const parseSchedule = (
           name: entry.name,
           phone: entry.phoneNumber,
           bookingId: entry._id,
-          attended: entry.status === "ATTENDED",
+          attended: entry.status === "ATTENDED" || entry.status === "PAID",
           canceled: entry.status === "CANCELLED",
           paid: entry.status === "PAID",
         });
@@ -74,15 +74,15 @@ export const parseSchedule = (
     const allScans = [...cls.scans, ...walkInScans];
     const parsedClass: ScheduledClass = {
       _id: cls._id,
-      cid: cls.cid._id,
+      cid: cls.cid?._id ?? "",
       availableSlots: cls.availableSlots,
-      className: cls.cid.title,
-      coachName: cls.coachId.coachName,
-      coachId: cls.coachId._id,
-      location: cls.cid.locations[0]?.branchName ?? "No location",
+      className: cls.cid?.title ?? "Unknown Class",
+      coachName: Array.isArray(cls.coachId) ? cls.coachId.map((c: any) => c.coachName).filter(Boolean).join(", ") || "Unknown Coach" : (cls.coachId?.coachName ?? "Unknown Coach"),
+      coachId: Array.isArray(cls.coachId) ? cls.coachId.map((c: any) => c._id) : (cls.coachId?._id ?? ""),
+      location: cls.cid?.locations?.[0]?.branchName ?? "No location",
       startTime: new Date(cls.startTime).toString(),
       endTime: new Date(cls.endTime).toString(),
-      category: cls.cid.category,
+      category: cls.cid?.category ?? "Unknown Category",
       bookedMembers: parsedBookedMembers,
       scans: allScans,
     };

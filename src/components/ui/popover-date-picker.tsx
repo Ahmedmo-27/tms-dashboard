@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -54,7 +54,7 @@ export function PopoverDatePicker({
           {date ? format(date, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-        {date && date < new Date() && (
+        {date && date < startOfDay(new Date()) && (
           <span className="text-xs text-yellow-500">
             Warning: Selected a past date
           </span>

@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "../../multiselect";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +34,7 @@ interface ActionState {
   data: any | null;
   defaultValues?: {
     scid: string;
-    coachId: string;
+    coachId: string | string[];
     startTime: string;
     endTime: string;
   };
@@ -47,7 +48,17 @@ export function EditClassComponent({
   scheduledClass: ScheduledClass;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCoach, setSelectedCoach] = useState(scheduledClass.coachId);
+  const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>(
+    Array.isArray(scheduledClass.coachId)
+      ? scheduledClass.coachId
+      : scheduledClass.coachId
+      ? [scheduledClass.coachId]
+      : []
+  );
+  const coachNameArray = scheduledClass.coachName ? scheduledClass.coachName.split(", ") : [];
+  const [selectedCoachNames, setSelectedCoachNames] = useState<string[]>(
+    coachNameArray
+  );
   const [selectedStartDate, setSelectedStartDate] = useState<string>(
     scheduledClass?.startTime?.toString() || new Date().toString()
   );
@@ -61,7 +72,7 @@ export function EditClassComponent({
     data: null,
     defaultValues: {
       scid: scheduledClass?._id || "",
-      coachId: scheduledClass?.coachName || "",
+      coachId: scheduledClass?.coachId || "",
       startTime: scheduledClass?.startTime || "",
       endTime: scheduledClass?.endTime || "",
     },
@@ -71,7 +82,7 @@ export function EditClassComponent({
     async (currentState: any, formData: FormData) => {
       const defaultValues = {
         scid: formData.get("scid") as string,
-        coachId: formData.get("coachId") as string,
+        coachId: formData.getAll("coachId") as string[],
         startTime: formData.get("startTime") as string,
         endTime: formData.get("endTime") as string,
       };
@@ -96,6 +107,9 @@ export function EditClassComponent({
   const handleEndDateChange = (date: string) => {
     setSelectedEndDate(date);
   };
+
+  const coachOptions = coaches.map((c) => c.coachName);
+  const coachMap = new Map(coaches.map((c) => [c.coachName, c._id]));
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -128,36 +142,27 @@ export function EditClassComponent({
             defaultValue={selectedEndDate || scheduledClass?.endTime}
           />
           <div className="grid grid-cols-2 gap-6">
-            <input type="hidden" name="coachId" defaultValue={selectedCoach} />
+            {selectedCoachIds.map((id) => (
+              <input key={id} type="hidden" name="coachId" value={id} />
+            ))}
             <div className="space-y-6 col-span-2">
               <Label className="text-sm font-medium">Coach</Label>
-              <Select
-                name="coachId"
-                defaultValue={state?.defaultValues?.coachId || selectedCoach}
-                disabled={pending}
-                onValueChange={setSelectedCoach}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {coaches.map((coach) => (
-                    <SelectItem
-                      key={coach._id}
-                      value={coach._id}
-                      className="hover:bg-accent"
-                      onChange={() => setSelectedCoach(coach._id)}
-                    >
-                      {coach.coachName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MultiSelect
+                placeholder="Select coaches"
+                selected={selectedCoachNames}
+                options={coachOptions}
+                onChange={(selected) => {
+                  setSelectedCoachNames(selected);
+                  setSelectedCoachIds(
+                    selected.map((name) => coachMap.get(name) || "")
+                  );
+                }}
+              />
               {state?.errors &&
               typeof state.errors == "object" &&
-              "clsId" in state.errors ? (
+              "coachId" in state.errors ? (
                 <p className="text-destructive text-sm">
-                  {(state.errors as any).clsId}
+                  {(state.errors as any).coachId}
                 </p>
               ) : null}
             </div>

@@ -15,7 +15,7 @@ export function AuthHydrator() {
         try {
           const res = await tms.get("/auth/verifyToken"); 
           console.log("Hydration succeded: ", res.data)
-          dispatch(setCredentials(res.data));
+          dispatch(setCredentials(res.data?.data?.user || res.data));
         } catch (err) {
           dispatch(logout());
           console.warn("Auth hydration failed:", err);

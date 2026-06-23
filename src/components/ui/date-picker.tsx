@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Calendar } from "@/components/ui/calendar";
+import { startOfDay } from "date-fns";
 
 
 export function DatePicker({
@@ -18,7 +19,7 @@ export function DatePicker({
             selected={date}
             onSelect={onSelect}
             initialFocus
-            disabled={(date) => date < new Date()}
+            disabled={(date) => date < startOfDay(new Date())}
           />
     </div>
   )
