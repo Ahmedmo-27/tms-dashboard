@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Ticket, TicketStatus, updateTicketStatus } from "@/lib/data/tickets";
 import { Badge } from "../badge";
@@ -16,8 +19,10 @@ import {
   CircleDot,
   CheckCircle2,
   XCircle,
+  Eye,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { TicketDetailModal } from "./ticket-detail-modal";
 
 const STATUS_META: Record<TicketStatus, { label: string; className: string }> = {
   pending: {
@@ -46,9 +51,11 @@ function StatusBadge({ status }: { status: TicketStatus }) {
 function TicketActions({
   ticket,
   onChanged,
+  onViewDetails,
 }: {
   ticket: Ticket;
   onChanged: () => void;
+  onViewDetails: (ticket: Ticket) => void;
 }) {
   const setStatus = async (status: TicketStatus) => {
     try {
@@ -68,6 +75,10 @@ function TicketActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onViewDetails(ticket)}>
+          <Eye className="h-4 w-4" /> View Details
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>Set status</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setStatus("in_progress")}>
@@ -88,7 +99,35 @@ function TicketActions({
   );
 }
 
-export function createColumns(onChanged: () => void): ColumnDef<Ticket>[] {
+// Wrapper that owns modal state so columns can stay as a pure factory
+export function TicketColumnsWrapper({
+  onChanged,
+}: {
+  onChanged: () => void;
+}) {
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openModal = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setModalOpen(true);
+  };
+
+  const columns = createColumns(onChanged, openModal);
+
+  return { columns, modal: (
+    <TicketDetailModal
+      ticket={selectedTicket}
+      open={modalOpen}
+      onOpenChange={setModalOpen}
+    />
+  )};
+}
+
+export function createColumns(
+  onChanged: () => void,
+  onViewDetails: (ticket: Ticket) => void = () => {}
+): ColumnDef<Ticket>[] {
   return [
     { accessorKey: "name", header: "Name" },
     { accessorKey: "phone", header: "Phone" },
@@ -112,14 +151,18 @@ export function createColumns(onChanged: () => void): ColumnDef<Ticket>[] {
     {
       accessorKey: "description",
       header: "Description",
-      cell: ({ row }) => (
-        <span
-          title={row.original.description}
-          className="block max-w-[240px] truncate text-muted-foreground"
-        >
-          {row.original.description}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const desc = row.original.description;
+        return (
+          <button
+            onClick={() => onViewDetails(row.original)}
+            title="Click to view full description"
+            className="block max-w-[240px] truncate text-left text-muted-foreground transition-colors hover:text-foreground hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {desc || <span className="italic">No description</span>}
+          </button>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -139,7 +182,11 @@ export function createColumns(onChanged: () => void): ColumnDef<Ticket>[] {
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <TicketActions ticket={row.original} onChanged={onChanged} />
+        <TicketActions
+          ticket={row.original}
+          onChanged={onChanged}
+          onViewDetails={onViewDetails}
+        />
       ),
     },
   ];

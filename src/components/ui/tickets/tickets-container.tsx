@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getTickets, Ticket } from "@/lib/data/tickets";
-import { createColumns } from "./columns";
+import { TicketColumnsWrapper } from "./columns";
 import { DataTable } from "./data-table";
 import { Card, CardContent, CardHeader, CardTitle } from "../card";
 import { Button } from "../button";
@@ -60,101 +60,104 @@ export default function TicketsContainer() {
     setIsRefreshing(false);
   };
 
-  const columns = useMemo(() => createColumns(fetchData), [fetchData]);
+  const { columns, modal } = TicketColumnsWrapper({ onChanged: fetchData });
   const maxPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <TicketIcon className="h-6 w-6 text-muted-foreground" />
-            <div>
-              <CardTitle>Support Tickets</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Review and resolve problems reported from the app
-              </p>
+    <>
+      <Card className="w-full">
+        <CardHeader className="pb-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <TicketIcon className="h-6 w-6 text-muted-foreground" />
+              <div>
+                <CardTitle>Support Tickets</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Review and resolve problems reported from the app
+                </p>
+              </div>
             </div>
+            <Badge variant="secondary" className="font-normal">
+              Total: {total}
+            </Badge>
           </div>
-          <Badge variant="secondary" className="font-normal">
-            Total: {total}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-6">
-        {/* Status filter tabs */}
-        <div className="flex flex-wrap gap-2">
-          {STATUS_TABS.map((tab) => (
-            <Button
-              key={tab.value}
-              variant={status === tab.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatus(tab.value)}
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </div>
-
-        {/* Search + refresh */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search name, phone, email..."
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+        </CardHeader>
+        <CardContent className="space-y-4 pt-6">
+          {/* Status filter tabs */}
+          <div className="flex flex-wrap gap-2">
+            {STATUS_TABS.map((tab) => (
+              <Button
+                key={tab.value}
+                variant={status === tab.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatus(tab.value)}
+              >
+                {tab.label}
+              </Button>
+            ))}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
-            Refresh
-          </Button>
-        </div>
 
-        {/* Table */}
-        <div className="rounded-md border">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              Loading tickets...
+          {/* Search + refresh */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search name, phone, email..."
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
             </div>
-          ) : (
-            <DataTable columns={columns} data={data} />
-          )}
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {page} of {maxPages} · {total} total
-          </p>
-          <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={handleRefresh}
+              disabled={isRefreshing}
             >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= maxPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
+              <RefreshCw className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
+              Refresh
             </Button>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+
+          {/* Table */}
+          <div className="rounded-md border">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                Loading tickets...
+              </div>
+            ) : (
+              <DataTable columns={columns} data={data} />
+            )}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Page {page} of {maxPages} · {total} total
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= maxPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      {modal}
+    </>
   );
 }
