@@ -120,6 +120,7 @@ export function TicketColumnsWrapper({
       ticket={selectedTicket}
       open={modalOpen}
       onOpenChange={setModalOpen}
+      onUpdated={onChanged}
     />
   )};
 }

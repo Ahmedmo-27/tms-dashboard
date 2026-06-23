@@ -1,6 +1,7 @@
 "use client";
 
-import { Ticket, TicketStatus } from "@/lib/data/tickets";
+import { useEffect, useState } from "react";
+import { Ticket, TicketStatus, updateTicketStatus } from "@/lib/data/tickets";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Clock,
   CircleDot,
@@ -19,9 +22,16 @@ import {
   Tag,
   FileText,
   Calendar,
+  NotebookPen,
+  Save,
+  Loader2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
-const STATUS_META: Record<TicketStatus, { label: string; icon: React.ReactNode; className: string }> = {
+const STATUS_META: Record<
+  TicketStatus,
+  { label: string; icon: React.ReactNode; className: string }
+> = {
   pending: {
     label: "Pending",
     icon: <Clock className="h-3.5 w-3.5" />,
@@ -44,10 +54,12 @@ const STATUS_META: Record<TicketStatus, { label: string; icon: React.ReactNode; 
   },
 };
 
-interface TicketDetailModalProps {
+export interface TicketDetailModalProps {
   ticket: Ticket | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Called after notes are saved so the parent can refresh the table */
+  onUpdated?: () => void;
 }
 
 function InfoRow({
@@ -76,7 +88,20 @@ export function TicketDetailModal({
   ticket,
   open,
   onOpenChange,
+  onUpdated,
 }: TicketDetailModalProps) {
+  const [notes, setNotes] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Sync notes textarea whenever the modal opens with a (new) ticket
+  useEffect(() => {
+    if (open && ticket) {
+      setNotes(ticket.adminNotes ?? "");
+      setIsDirty(false);
+    }
+  }, [open, ticket]);
+
   if (!ticket) return null;
 
   const meta = STATUS_META[ticket.status] ?? STATUS_META.pending;
@@ -84,6 +109,25 @@ export function TicketDetailModal({
     ticket.category === "Other" && ticket.otherDetails
       ? `Other: ${ticket.otherDetails}`
       : ticket.category;
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNotes(e.target.value);
+    setIsDirty(e.target.value.trim() !== (ticket.adminNotes ?? "").trim());
+  };
+
+  const handleSaveNotes = async () => {
+    setIsSaving(true);
+    try {
+      await updateTicketStatus(ticket._id, ticket.status, notes.trim());
+      toast.success("Notes saved");
+      setIsDirty(false);
+      onUpdated?.();
+    } catch {
+      toast.error("Failed to save notes");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,17 +201,50 @@ export function TicketDetailModal({
             </p>
           </div>
 
-          {/* Admin notes (if any) */}
-          {ticket.adminNotes && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+          {/* Admin Notes — editable */}
+          <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-700">
+                <NotebookPen className="h-3.5 w-3.5" />
                 Admin Notes
-              </p>
-              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-blue-900">
-                {ticket.adminNotes}
-              </p>
+              </div>
+              {isDirty && (
+                <span className="text-xs text-amber-600 font-medium">
+                  Unsaved changes
+                </span>
+              )}
             </div>
-          )}
+
+            <Textarea
+              id="admin-notes-textarea"
+              value={notes}
+              onChange={handleNotesChange}
+              placeholder="Add internal notes about this ticket… (only visible to admins)"
+              className="min-h-[100px] resize-y bg-white text-sm leading-relaxed placeholder:text-muted-foreground/60 border-blue-200 focus-visible:ring-blue-400"
+              disabled={isSaving}
+            />
+
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {notes.length > 0
+                  ? `${notes.length} character${notes.length !== 1 ? "s" : ""}`
+                  : "No notes yet"}
+              </p>
+              <Button
+                size="sm"
+                onClick={handleSaveNotes}
+                disabled={isSaving || !isDirty}
+                className="gap-1.5"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
+                {isSaving ? "Saving…" : "Save Notes"}
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
