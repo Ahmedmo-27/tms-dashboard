@@ -66,23 +66,23 @@ export default function TicketsContainer() {
   return (
     <>
       <Card className="w-full">
-        <CardHeader className="pb-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <TicketIcon className="h-6 w-6 text-muted-foreground" />
-              <div>
-                <CardTitle>Support Tickets</CardTitle>
-                <p className="text-sm text-muted-foreground">
+        <CardHeader className="pb-0 p-4 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <TicketIcon className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-lg sm:text-xl truncate">Support Tickets</CardTitle>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   Review and resolve problems reported from the app
                 </p>
               </div>
             </div>
-            <Badge variant="secondary" className="font-normal">
+            <Badge variant="secondary" className="font-normal text-xs sm:text-sm w-fit">
               Total: {total}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 pt-6">
+        <CardContent className="space-y-4 pt-4 sm:pt-6 p-4 sm:p-6">
           {/* Status filter tabs */}
           <div className="flex flex-wrap gap-2">
             {STATUS_TABS.map((tab) => (
@@ -99,14 +99,14 @@ export default function TicketsContainer() {
 
           {/* Search + refresh */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative max-w-md flex-1">
+            <div className="relative flex-1 lg:max-w-md">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search name, phone, email..."
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className="pl-9 pr-4 min-h-[40px]"
               />
             </div>
             <Button
@@ -132,11 +132,11 @@ export default function TicketsContainer() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground text-center sm:text-left">
               Page {page} of {maxPages} · {total} total
             </p>
-            <div className="flex gap-2">
+            <div className="flex justify-center sm:justify-end gap-2">
               <Button
                 variant="outline"
                 size="sm"
