@@ -97,7 +97,7 @@ export default function AddClasses({
               variant={type === "DEDUCT" ? "destructive" : "outline"}
               className="flex-1 cursor-pointer"
               onClick={() => setType("DEDUCT")}
-              disabled={pkg.status === "POSTPONED"}
+
             >
               Deduct
             </Button>
