@@ -5,7 +5,8 @@ export const scheduledClassSchema = z.object({
   startTime: z.string().min(1, "Choose start Time").refine((date) => new Date(date) > new Date(new Date().toLocaleDateString()), "Start time must be in the future"),
   endTime:  z.string().min(1, "Choose end Time"),
   coachId: z.array(z.string()).min(1, "Choose at least one coach"),
-  availableSlots: z.number().min(1, "Enter available slots")
+  availableSlots: z.number().min(1, "Enter available slots"),
+  locationId: z.string().trim().min(1, "Choose location"),
 }).superRefine((data, ctx) => {
   if (new Date(data.endTime) < new Date(data.startTime)) {
     ctx.addIssue({

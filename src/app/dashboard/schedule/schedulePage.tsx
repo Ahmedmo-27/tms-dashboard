@@ -15,12 +15,13 @@ import { Label } from "@/components/ui/label";
 import EditSlots from "@/components/ui/dialogs/schedule/edit-slots";
 import { format } from "date-fns";
 import { EditClassComponent } from "@/components/ui/dialogs/schedule/edit-class";
+import type { Location } from "@/lib/data/locations";
 
 interface SchedulePageProps {
   scheduledClasses: ScheduledClass[];
   classIdsMap: Map<string, string>;
   coaches: any[];
-  locations: string[];
+  locations: Location[];
 }
 
 export function SchedulePage({
@@ -30,7 +31,13 @@ export function SchedulePage({
   locations,
 }: SchedulePageProps) {
   const [date, setDate] = useState<Date>(new Date());
-  const [location, setLocation] = useState<string>(locations[0]);
+  const [location, setLocation] = useState<string>(
+    locations[0]?.branchName ?? ""
+  );
+  const selectedLocationId =
+    locations.find((l) => l.branchName === location)?._id ??
+    locations[0]?._id ??
+    "";
   const [selectedScheduledClasses, setSelectedScheduledClasses] = useState<
     ScheduledClass[]
   >([]);
@@ -53,6 +60,8 @@ export function SchedulePage({
           classIdsMap={classIdsMap}
           date={date || new Date()}
           coaches={coaches}
+          locations={locations}
+          defaultLocationId={selectedLocationId}
         />
       </div>
 
@@ -94,20 +103,20 @@ export function SchedulePage({
         <div className="flex flex-col gap-2">
           <Select
             name="location"
-            defaultValue={location}
+            value={location}
             onValueChange={(value) => setLocation(value as string)}
           >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {locations.map((location) => (
+              {locations.map((loc) => (
                 <SelectItem
-                  key={location}
-                  value={location}
+                  key={loc._id}
+                  value={loc.branchName}
                   className="hover:bg-accent"
                 >
-                  {location}
+                  {loc.branchName}
                 </SelectItem>
               ))}
             </SelectContent>
