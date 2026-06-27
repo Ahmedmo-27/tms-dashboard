@@ -47,11 +47,14 @@ export function SchedulePage({
     const targetLocation = location;
     const filtered = scheduledClasses.filter((cls) => {
       const clsDateStr = new Date(cls.startTime).toLocaleDateString();
-      return clsDateStr === targetDateStr && cls.location === targetLocation;
+      const locationMatch =
+        cls.locationId === selectedLocationId ||
+        cls.location === targetLocation;
+      return clsDateStr === targetDateStr && locationMatch;
     });
 
     setSelectedScheduledClasses(filtered);
-  }, [scheduledClasses, date, location]);
+  }, [scheduledClasses, date, location, selectedLocationId]);
   return (
     <div className="flex flex-col-reverse overflow-y-auto md:flex-row h-[calc(100vh-4rem)] gap-4 p-3">
       <div className="flex-[2] h-full">
