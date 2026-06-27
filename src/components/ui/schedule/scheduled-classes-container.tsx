@@ -2,6 +2,7 @@ import { ScheduledClass, getColumns } from "./columns";
 import { DataTable } from "./data-table";
 import { ScheduleClass } from "../dialogs/schedule/schedule-class";
 import { MobileScheduledClassCard } from "./mobile-scheduled-class-card";
+import type { Location } from "@/lib/data/locations";
 
 export function ScheduledClassesContainer({
   scheduledClasses,
@@ -9,12 +10,16 @@ export function ScheduledClassesContainer({
   date,
   isLoading = false,
   coaches,
+  locations,
+  defaultLocationId,
 }: {
   scheduledClasses: ScheduledClass[];
   classIdsMap: Map<string, string>;
   isLoading?: boolean;
   date: Date;
   coaches: any[];
+  locations: Location[];
+  defaultLocationId?: string;
 }) {
   return (
     <div className="h-full flex flex-col">
@@ -27,7 +32,13 @@ export function ScheduledClassesContainer({
           </p>
         </div>
         <div className="flex-shrink-0">
-          <ScheduleClass classIdsMap={classIdsMap} date={date} coaches={coaches}/>
+          <ScheduleClass
+            classIdsMap={classIdsMap}
+            date={date}
+            coaches={coaches}
+            locations={locations}
+            defaultLocationId={defaultLocationId}
+          />
         </div>
       </div>
 
