@@ -16,12 +16,16 @@ export const scheduleClassAction = async (
       endTime: formData.get("endTime"),
       availableSlots: Number(formData.get("availableSlots")),
       coachId: formData.getAll("coachId"),
+      locationId: formData.get("locationId"),
     };
     const validatedData = scheduledClassSchema.parse(scls);
     const validatedScls = {
       cid: validatedData.clsId,
-      bookedMembers: [],
-      ...validatedData,
+      startTime: validatedData.startTime,
+      endTime: validatedData.endTime,
+      availableSlots: validatedData.availableSlots,
+      coachId: validatedData.coachId,
+      locationId: validatedData.locationId,
     };
 
     const response = await scheduleClass(validatedScls);

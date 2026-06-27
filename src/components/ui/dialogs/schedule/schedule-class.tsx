@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { ApiError } from "@/core/api-error";
+import type { Location } from "@/lib/data/locations";
 
 interface ActionState {
   success: boolean;
@@ -34,6 +35,7 @@ interface ActionState {
     startTime: string;
     endTime: string;
     availableSlots: string;
+    locationId: string;
   };
 }
 
@@ -41,10 +43,14 @@ export function ScheduleClass({
   classIdsMap,
   date,
   coaches,
+  locations = [],
+  defaultLocationId = "",
 }: {
   classIdsMap: Map<string, string>;
   date?: Date;
   coaches: any[];
+  locations?: Location[];
+  defaultLocationId?: string;
 }) {
   const initialState: ActionState = {
     success: false,
@@ -56,6 +62,7 @@ export function ScheduleClass({
       startTime: "",
       endTime: "",
       availableSlots: "",
+      locationId: defaultLocationId,
     },
   };
 
@@ -63,6 +70,9 @@ export function ScheduleClass({
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([]);
   const [selectedCoachNames, setSelectedCoachNames] = useState<string[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState(
+    defaultLocationId
+  );
   const [selectedStartDate, setSelectedStartDate] = useState<
     string | undefined
   >(date?.toString());
@@ -75,6 +85,10 @@ export function ScheduleClass({
     setSelectedEndDate(date?.toString());
   }, [date]);
 
+  useEffect(() => {
+    setSelectedLocationId(defaultLocationId);
+  }, [defaultLocationId]);
+
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
       const defaultValues = {
@@ -84,11 +98,12 @@ export function ScheduleClass({
         startTime: formData.get("startTime") as string,
         endTime: formData.get("endTime") as string,
         availableSlots: Number(formData.get("availableSlots") as string),
-        location: formData.get("location") as string,
+        locationId: formData.get("locationId") as string,
       };
       const result = await scheduleClassAction(currentState, formData);
       if (result.success) {
         setIsOpen(false);
+        setSelectedLocationId(defaultLocationId);
         return initialState;
       }
 
@@ -176,6 +191,46 @@ export function ScheduleClass({
                 "clsId" in state.errors ? (
                   <p className="text-destructive text-sm">
                     {(state.errors as any).clsId}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Location</Label>
+                <Select
+                  name="locationId"
+                  value={
+                    state?.defaultValues?.locationId || selectedLocationId
+                  }
+                  disabled={pending}
+                  onValueChange={setSelectedLocationId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.length === 0 ? (
+                      <SelectItem value="" disabled>
+                        No locations available
+                      </SelectItem>
+                    ) : (
+                      locations.map((location) => (
+                        <SelectItem
+                          key={location._id}
+                          value={location._id}
+                          className="hover:bg-accent"
+                        >
+                          {location.branchName}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {state?.errors &&
+                typeof state.errors == "object" &&
+                "locationId" in state.errors ? (
+                  <p className="text-destructive text-sm">
+                    {(state.errors as any).locationId}
                   </p>
                 ) : null}
               </div>

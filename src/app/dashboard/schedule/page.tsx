@@ -28,8 +28,6 @@ export default async function Page() {
       getLocations().catch(() => []),
     ]);
 
-    const locations = locationDocs.map((l) => l.branchName);
-
     // ✅ Explicitly type Map<string, string>
     const classIdsMap: Map<string, string> = new Map(
       (classes as Class[]).map((cls) => [cls.title, cls._id])
@@ -40,7 +38,7 @@ export default async function Page() {
         scheduledClasses={scheduledClasses}
         classIdsMap={classIdsMap}
         coaches={coaches}
-        locations={locations}
+        locations={locationDocs}
       />
     );
   } catch (error) {
