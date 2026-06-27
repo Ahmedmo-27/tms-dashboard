@@ -85,10 +85,6 @@ export function ScheduleClass({
     setSelectedEndDate(date?.toString());
   }, [date]);
 
-  useEffect(() => {
-    setSelectedLocationId(defaultLocationId);
-  }, [defaultLocationId]);
-
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
       const defaultValues = {
@@ -130,7 +126,10 @@ export function ScheduleClass({
     
     <div>
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setSelectedLocationId(defaultLocationId);
+          setIsOpen(true);
+        }}
         disabled={
           !date || date.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
         }
@@ -199,9 +198,7 @@ export function ScheduleClass({
                 <Label className="text-sm font-medium">Location</Label>
                 <Select
                   name="locationId"
-                  value={
-                    state?.defaultValues?.locationId || selectedLocationId
-                  }
+                  value={selectedLocationId}
                   disabled={pending}
                   onValueChange={setSelectedLocationId}
                 >

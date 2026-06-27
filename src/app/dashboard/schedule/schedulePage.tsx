@@ -103,7 +103,7 @@ export function SchedulePage({
         <div className="flex flex-col gap-2">
           <Select
             name="location"
-            defaultValue={location}
+            value={location}
             onValueChange={(value) => setLocation(value as string)}
           >
             <SelectTrigger className="w-full">
