@@ -85,6 +85,10 @@ export function ScheduleClass({
     setSelectedEndDate(date?.toString());
   }, [date]);
 
+  useEffect(() => {
+    setSelectedLocationId(defaultLocationId);
+  }, [defaultLocationId]);
+
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
       const defaultValues = {
@@ -148,7 +152,8 @@ export function ScheduleClass({
             <DialogDescription>Add class data</DialogDescription>
           </DialogHeader>
           <form action={formAction} className="mt-4">
-            <input type="hidden" name="clsId" defaultValue={selectedClass} />
+            <input type="hidden" name="clsId" value={selectedClass} />
+            <input type="hidden" name="locationId" value={selectedLocationId} />
             <input
               type="hidden"
               name="startTime"
@@ -164,8 +169,7 @@ export function ScheduleClass({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Class</Label>
                 <Select
-                  name="clsId"
-                  defaultValue={state?.defaultValues?.clsId || selectedClass}
+                  value={selectedClass}
                   disabled={pending}
                   onValueChange={setSelectedClass}
                 >
@@ -197,7 +201,6 @@ export function ScheduleClass({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Location</Label>
                 <Select
-                  name="locationId"
                   value={selectedLocationId}
                   disabled={pending}
                   onValueChange={setSelectedLocationId}

@@ -199,7 +199,10 @@ export const parsePayments = (payments: unknown): Payment[] => {
         payment.paymentMethod ??
         (isCashOut ? "Cash Out" : isRefunded ? "Refund" : "—"),
       location: payment.scid
-        ? payment.scid.cid.locations[0]?.branchName ?? " -- "
+        ? payment.scid.locationId?.branchName ??
+          payment.scid.locationId?.location ??
+          payment.scid.cid?.locations?.[0]?.branchName ??
+          " -- "
         : " -- ",
       classTime: payment.scid ? payment.scid.startTime : "",
       isRefunded,
