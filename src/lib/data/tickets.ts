@@ -15,6 +15,14 @@ export interface Ticket {
   description: string;
   status: TicketStatus;
   adminNotes?: string;
+  handledByName?: string;
+  handledByRole?: string;
+  statusUpdatedByName?: string;
+  statusUpdatedByRole?: string;
+  statusUpdatedAt?: string;
+  notesUpdatedByName?: string;
+  notesUpdatedByRole?: string;
+  notesUpdatedAt?: string;
   createdAt: string;
   updatedAt: string;
   branchLabel?: string;

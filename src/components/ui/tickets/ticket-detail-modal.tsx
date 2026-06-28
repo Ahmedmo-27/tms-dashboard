@@ -34,6 +34,7 @@ import {
   getCreatorDisplayName,
   getCreatorRole,
   getCreatorRoleLabel,
+  formatHandlerAttribution,
 } from "@/lib/utils/ticket-utils";
 
 const STATUS_META: Record<
@@ -150,6 +151,16 @@ export function TicketDetailModal({
   };
 
   const creatorBranch = getCreatorBranchLabel(ticket);
+  const statusAttribution = formatHandlerAttribution(
+    ticket.statusUpdatedByName,
+    ticket.statusUpdatedByRole,
+    ticket.statusUpdatedAt
+  );
+  const notesAttribution = formatHandlerAttribution(
+    ticket.notesUpdatedByName,
+    ticket.notesUpdatedByRole,
+    ticket.notesUpdatedAt
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,10 +170,17 @@ export function TicketDetailModal({
             <DialogTitle className="text-base font-semibold">
               Support Ticket
             </DialogTitle>
-            <Badge className={`flex items-center gap-1.5 ${meta.className}`}>
-              {meta.icon}
-              {meta.label}
-            </Badge>
+            <div className="flex flex-col items-end gap-1">
+              <Badge className={`flex items-center gap-1.5 ${meta.className}`}>
+                {meta.icon}
+                {meta.label}
+              </Badge>
+              {statusAttribution && (
+                <p className="text-[11px] text-muted-foreground text-right max-w-[220px]">
+                  Updated by {statusAttribution}
+                </p>
+              )}
+            </div>
           </div>
         </DialogHeader>
 
@@ -265,13 +283,20 @@ export function TicketDetailModal({
 
             {/* View mode — show existing note as white text */}
             {!isEditing && (
-              <p
-                className={`whitespace-pre-wrap break-words text-sm leading-relaxed ${
-                  hasNotes ? "text-white" : "italic text-slate-400"
-                }`}
-              >
-                {hasNotes ? ticket.adminNotes : "No notes yet. Click 'Add Note' to write one."}
-              </p>
+              <>
+                <p
+                  className={`whitespace-pre-wrap break-words text-sm leading-relaxed ${
+                    hasNotes ? "text-white" : "italic text-slate-400"
+                  }`}
+                >
+                  {hasNotes ? ticket.adminNotes : "No notes yet. Click 'Add Note' to write one."}
+                </p>
+                {notesAttribution && hasNotes && (
+                  <p className="text-[11px] text-slate-400">
+                    Written by {notesAttribution}
+                  </p>
+                )}
+              </>
             )}
 
             {/* Edit mode — grey textarea + Save button */}
@@ -318,6 +343,11 @@ export function TicketDetailModal({
               <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
                 {ticket.adminNotes}
               </p>
+              {notesAttribution && (
+                <p className="text-[11px] text-muted-foreground">
+                  Written by {notesAttribution}
+                </p>
+              )}
             </div>
           ) : null}
         </div>

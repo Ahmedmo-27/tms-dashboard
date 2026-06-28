@@ -26,4 +26,17 @@ export function getCreatorBranchLabel(ticket: Ticket): string | null {
   return getBranchLabel(ticket.locationId) ?? ticket.branchLabel ?? null;
 }
 
+export function formatHandlerAttribution(
+  name?: string,
+  role?: string,
+  at?: string
+): string | null {
+  if (!name && !role) return null;
+  const who = role
+    ? `${name ?? "Unknown"} (${getCreatorRoleLabel(role)})`
+    : (name ?? "Unknown");
+  if (!at) return who;
+  return `${who} · ${new Date(at).toLocaleString()}`;
+}
+
 export type { CreatorRole };

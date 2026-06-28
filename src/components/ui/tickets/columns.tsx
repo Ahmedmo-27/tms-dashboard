@@ -29,6 +29,7 @@ import {
   getCreatorDisplayName,
   getCreatorRole,
   getCreatorRoleLabel,
+  formatHandlerAttribution,
 } from "@/lib/utils/ticket-utils";
 
 const STATUS_META: Record<TicketStatus, { label: string; className: string }> = {
@@ -57,9 +58,24 @@ const ROLE_BADGE_CLASS: Record<string, string> = {
   management: "bg-indigo-100 text-indigo-800 border-indigo-200",
 };
 
-function StatusBadge({ status }: { status: TicketStatus }) {
-  const meta = STATUS_META[status] ?? STATUS_META.pending;
-  return <Badge className={meta.className}>{meta.label}</Badge>;
+function StatusCell({ ticket }: { ticket: Ticket }) {
+  const meta = STATUS_META[ticket.status] ?? STATUS_META.pending;
+  const attribution = formatHandlerAttribution(
+    ticket.statusUpdatedByName,
+    ticket.statusUpdatedByRole,
+    ticket.statusUpdatedAt
+  );
+
+  return (
+    <div className="min-w-[120px] space-y-1">
+      <Badge className={meta.className}>{meta.label}</Badge>
+      {attribution && (
+        <p className="text-[11px] text-muted-foreground leading-snug">
+          By {attribution}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function CreatorCell({ ticket }: { ticket: Ticket }) {
@@ -245,7 +261,7 @@ export function createColumns(
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      cell: ({ row }) => <StatusCell ticket={row.original} />,
     },
     {
       accessorKey: "createdAt",
