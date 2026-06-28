@@ -12,7 +12,6 @@ import { useState } from "react";
 import { formatDate } from "date-fns";
 import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
-import AddGuestPackage from "../dialogs/package/add-guest-package";
 import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog";
 import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
 
@@ -128,7 +127,6 @@ export function ScanContainer({
         <div className="flex flex-row justify-between text-2xl font-bold mx-5 py-4 border-b-2">
           Check Ins
           <div className="flex space-x-2">
-            <AddGuestPackage packages={packages} openGymOnly />
             <OpenGymSubscribeDialog packages={packages} />
             <PaymentDatePicker
               selectedDate={selectedCheckInsDate}
