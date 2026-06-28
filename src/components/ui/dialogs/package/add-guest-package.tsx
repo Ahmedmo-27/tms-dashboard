@@ -24,6 +24,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "../../checkbox";
 import { subscribeGuestPackageAction } from "@/lib/actions/member-actions";
+import {
+  formatCatalogPackageLabel,
+  getPackageEndDateFromStart,
+  isOpenGymPackage,
+  sortPackagesWithOpenGymFirst,
+} from "@/lib/utils/open-gym";
 import { ApiError } from "@/core/api-error";
 
 const paymentMethods = [
@@ -33,7 +39,13 @@ const paymentMethods = [
   { value: "CASH", header: "Cash" },
 ];
 
-export default function addGuestPackage({ packages }: { packages: Package[] }) {
+export default function addGuestPackage({
+  packages,
+  openGymOnly = false,
+}: {
+  packages: Package[];
+  openGymOnly?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [pkg, setPkg] = useState<Package | null>(null);
 
@@ -74,11 +86,8 @@ export default function addGuestPackage({ packages }: { packages: Package[] }) {
   const handleStartDate = (date: string) => {
     if (!pkg) return;
 
-    const end = new Date(date);
-    end.setDate(end.getDate() + Number(pkg.expiryPeriod));
-
     setSelectedStartDate(date);
-    setSelectedEndDate(end.toISOString());
+    setSelectedEndDate(getPackageEndDateFromStart(date, pkg));
   };
 
   useEffect(() => {
@@ -115,6 +124,10 @@ export default function addGuestPackage({ packages }: { packages: Package[] }) {
     initialState
   );
 
+  const catalogPackages = openGymOnly
+    ? packages.filter((p) => isOpenGymPackage(p.category))
+    : sortPackagesWithOpenGymFirst(packages);
+
   return (
     <div>
       <Button
@@ -123,15 +136,19 @@ export default function addGuestPackage({ packages }: { packages: Package[] }) {
         size="sm"
         onClick={() => toggleOpen(true)}
       >
-        Add Package
+        {openGymOnly ? "Guest open gym package" : "Add Package"}
       </Button>
 
       <Dialog open={open} onOpenChange={toggleOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Subscribe to a package</DialogTitle>
+            <DialogTitle>
+              {openGymOnly ? "Guest open gym package" : "Subscribe to a package"}
+            </DialogTitle>
             <DialogDescription>
-              Select the package details below.
+              {openGymOnly
+                ? "Register a non-member with weekly or monthly open gym access."
+                : "Select the package details below."}
             </DialogDescription>
           </DialogHeader>
 
@@ -214,13 +231,13 @@ export default function addGuestPackage({ packages }: { packages: Package[] }) {
                   <SelectValue placeholder="Select a package" />
                 </SelectTrigger>
                 <SelectContent>
-                  {packages.map((pkg) => (
+                  {catalogPackages.map((pkg) => (
                     <SelectItem
                       key={pkg._id}
                       value={pkg._id}
                       className="hover:bg-accent"
                     >
-                      {`${pkg.name}: ${pkg.numberOfSessions} sessions • EGP${pkg.price}`}
+                      {formatCatalogPackageLabel(pkg)}
                     </SelectItem>
                   ))}
                 </SelectContent>

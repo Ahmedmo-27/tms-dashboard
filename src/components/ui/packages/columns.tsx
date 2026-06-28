@@ -21,6 +21,7 @@ export type Package = {
   name: string;
   numberOfSessions: string;
   expiryPeriod: string;
+  renewalPeriod?: "WEEKLY" | "MONTHLY";
   category: string;
   price: string;
   hidden?: boolean;

@@ -29,6 +29,7 @@ export const adjustClassesAction = async (_prevState: any, formData: FormData) =
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return { success: true, errors: null, data: response };
   } catch (error) {
@@ -49,6 +50,7 @@ export const changePkgEndDate = async (_prevState: any, formData: FormData) => {
     // Revalidate the member's page and the members list
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,
@@ -94,6 +96,9 @@ export const subscribeGuestPackageAction = async (
       priceChanged ? amount : undefined
     );
 
+    revalidatePath("/dashboard/scans-monitor");
+    revalidatePath("/dashboard/member-requests");
+
     return {
       success: true,
       errors: null,
@@ -133,6 +138,10 @@ export const subscribePackageAction = async (
       paymentDate === "" ? undefined : paymentDate,
       priceChanged ? amount : undefined
     );
+
+    revalidatePath(`/dashboard/our-members/${uid}`);
+    revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,
@@ -174,6 +183,7 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,
@@ -194,6 +204,7 @@ export const bookDropInAction = async (_prevState: any, formData: FormData) => {
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,
@@ -218,6 +229,7 @@ export const cancelBookingAction = async (
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,

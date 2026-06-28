@@ -10,6 +10,7 @@ import { getDailyAttendance } from "@/lib/data/scans";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
 import { NetworkError, UnauthorizedError } from "@/core/api-error";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
+import { getPackages } from "@/lib/data/package";
 
 export default async function Page({
   searchParams,
@@ -18,6 +19,7 @@ export default async function Page({
 }) {
   let scans: any = [];
   let checkIns: any = [];
+  let packages: any = [];
 
   const params = await searchParams;
   const locationId = params.locationId;
@@ -27,6 +29,7 @@ export default async function Page({
     : new Date();
   try {
     const scheduledClasses = await getScheduledClasses(locationId);
+    packages = await getPackages();
     if (scheduledClasses.length > 0) {
       scans = parseScans(scheduledClasses, dateParam);
     } else {
@@ -40,7 +43,11 @@ export default async function Page({
     }
     return (
       <div>
-        <ScanContainer scans={scans} dailyAttendance={checkIns} />
+        <ScanContainer
+          scans={scans}
+          dailyAttendance={checkIns}
+          packages={packages}
+        />
       </div>
     );
   } catch (error) {

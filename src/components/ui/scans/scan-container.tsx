@@ -12,6 +12,9 @@ import { useState } from "react";
 import { formatDate } from "date-fns";
 import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
+import AddGuestPackage from "../dialogs/package/add-guest-package";
+import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog";
+import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
 
 interface ScanError {
   code: string;
@@ -26,9 +29,11 @@ const socket = io(process.env.NEXT_PUBLIC_TMS_API_URL!, {
 export function ScanContainer({
   scans,
   dailyAttendance,
+  packages,
 }: {
   scans: ClassContainerProps[];
   dailyAttendance: { pt: ClassScan[]; openGym: ClassScan[] };
+  packages: any;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -123,6 +128,8 @@ export function ScanContainer({
         <div className="flex flex-row justify-between text-2xl font-bold mx-5 py-4 border-b-2">
           Check Ins
           <div className="flex space-x-2">
+            <AddGuestPackage packages={packages} openGymOnly />
+            <OpenGymSubscribeDialog packages={packages} />
             <PaymentDatePicker
               selectedDate={selectedCheckInsDate}
               onDateChange={handleCheckInsDateChange}
@@ -138,6 +145,12 @@ export function ScanContainer({
           <AttendanceContainer
             title="Open Gym"
             classScans={dailyAttendance.openGym}
+            headerActions={
+              <OpenGymDropInDialog
+                triggerLabel="Add drop-in"
+                triggerClassName="min-h-[36px]"
+              />
+            }
           />
         </div>
         <div className="flex flex-row justify-between text-2xl font-bold mx-5 py-4 border-b-2">

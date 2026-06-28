@@ -57,17 +57,16 @@ export function SchedulePage({
 
   useEffect(() => {
     const targetDateStr = date.toLocaleDateString();
-    const targetLocation = location;
     const filtered = scheduledClasses.filter((cls) => {
       const clsDateStr = new Date(cls.startTime).toLocaleDateString();
       const locationMatch =
         cls.locationId === selectedLocationId ||
-        cls.location === targetLocation;
+        (!cls.locationId && cls.location === selectedLocationName);
       return clsDateStr === targetDateStr && locationMatch;
     });
 
     setSelectedScheduledClasses(filtered);
-  }, [scheduledClasses, date, location, selectedLocationId]);
+  }, [scheduledClasses, date, selectedLocationId, selectedLocationName]);
   return (
     <div className="flex flex-col-reverse overflow-y-auto md:flex-row h-[calc(100vh-4rem)] gap-4 p-3">
       <div className="flex-[2] h-full">
