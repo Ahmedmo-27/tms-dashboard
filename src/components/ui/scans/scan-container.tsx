@@ -12,7 +12,6 @@ import { useState } from "react";
 import { formatDate } from "date-fns";
 import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
-import AddGuestPackage from "../dialogs/package/add-guest-package";
 
 interface ScanError {
   code: string;
@@ -27,11 +26,9 @@ const socket = io(process.env.NEXT_PUBLIC_TMS_API_URL!, {
 export function ScanContainer({
   scans,
   dailyAttendance,
-  packages,
 }: {
   scans: ClassContainerProps[];
   dailyAttendance: { pt: ClassScan[]; openGym: ClassScan[] };
-  packages: any;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -126,7 +123,6 @@ export function ScanContainer({
         <div className="flex flex-row justify-between text-2xl font-bold mx-5 py-4 border-b-2">
           Check Ins
           <div className="flex space-x-2">
-            <AddGuestPackage packages={packages} />
             <PaymentDatePicker
               selectedDate={selectedCheckInsDate}
               onDateChange={handleCheckInsDateChange}

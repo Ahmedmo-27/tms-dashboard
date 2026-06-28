@@ -33,8 +33,11 @@ export function UserInfo() {
           <p className="text-lg">
             Welcome <span className="text-md opacity-60">{user.name}</span>
           </p>
-          {isBranchScopedRole(user.role as string) && (
-            <p className="text-xs text-muted-foreground">Branch-scoped access</p>
+          {isBranchScopedRole(user.role as string) &&
+            (user as { branchName?: string }).branchName && (
+            <p className="text-xs text-muted-foreground">
+              {(user as { branchName?: string }).branchName} branch
+            </p>
           )}
         </div>
         <button type="submit" disabled={pending}>
