@@ -33,6 +33,7 @@ import { Search } from "lucide-react";
 import { ApiError } from "@/core/api-error";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -55,7 +56,17 @@ export function OpenGymSubscribeDialog({
   triggerLabel?: string;
 }) {
   const router = useRouter();
-  const openGymPackages = packages.filter((p) => isOpenGymPackage(p.category));
+  const { effectiveLocationId, isViewingAllBranches } = useBranchContext();
+  const openGymPackages = packages
+    .filter((p) => isOpenGymPackage(p.category))
+    .filter((p) => {
+      if (!effectiveLocationId || !p.locationId) return true;
+      const pkgLocationId =
+        typeof p.locationId === "string"
+          ? p.locationId
+          : (p.locationId as { _id?: string })._id;
+      return !pkgLocationId || pkgLocationId === effectiveLocationId;
+    });
 
   const [open, setOpen] = useState(false);
   const [pkg, setPkg] = useState<Package | null>(null);
@@ -186,6 +197,12 @@ export function OpenGymSubscribeDialog({
             </DialogDescription>
           </DialogHeader>
 
+          {isViewingAllBranches && (
+            <p className="text-sm text-destructive">
+              Select a branch from the header filter before adding an open gym package.
+            </p>
+          )}
+
           {openGymPackages.length === 0 ? (
             <p className="text-sm text-destructive">
               No OPEN_GYM packages in catalog. Create one under Catalog →
@@ -194,6 +211,7 @@ export function OpenGymSubscribeDialog({
           ) : (
             <form action={formAction} className="space-y-4">
               <input type="hidden" name="uid" value={selectedUid} />
+              <input type="hidden" name="locationId" value={effectiveLocationId ?? ""} />
               <input type="hidden" name="pkgId" value={pkg?._id ?? ""} />
               <input type="hidden" name="startDate" value={selectedStartDate} />
               <input type="hidden" name="endDate" value={selectedEndDate} />
@@ -370,7 +388,13 @@ export function OpenGymSubscribeDialog({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={pending || !selectedUid || !pkg || !selectedStartDate}
+                  disabled={
+                    pending ||
+                    !selectedUid ||
+                    !pkg ||
+                    !selectedStartDate ||
+                    !effectiveLocationId
+                  }
                 >
                   {pending ? "Saving…" : "Add package"}
                 </Button>

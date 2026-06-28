@@ -30,6 +30,7 @@ import {
   isOpenGymPackage,
   sortPackagesWithOpenGymFirst,
 } from "@/lib/utils/open-gym";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -45,6 +46,7 @@ export default function SubPackage({
   packages: Package[];
   uid: string;
 }) {
+  const { effectiveLocationId } = useBranchContext();
   const [open, setOpen] = useState(false);
   const [pkg, setPkg] = useState<Package | null>(null);
 
@@ -138,6 +140,7 @@ export default function SubPackage({
           <form action={formAction}>
             {/* Hidden fields */}
             <input type="hidden" name="uid" value={uid} />
+            <input type="hidden" name="locationId" value={effectiveLocationId ?? ""} />
             <input type="hidden" name="pkgId" value={pkg?._id ?? ""} />
             <input type="hidden" name="startDate" value={selectedStartDate} />
             <input type="hidden" name="endDate" value={selectedEndDate} />

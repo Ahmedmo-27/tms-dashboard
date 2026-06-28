@@ -133,6 +133,7 @@ export const subscribeMemberToPackage = async (
   paymentMethod: string,
   paymentDate?: string,
   amount?: string,
+  locationId?: string,
 ) => {
   try {
     type RequestBody = {
@@ -142,6 +143,7 @@ export const subscribeMemberToPackage = async (
       paymentMethod: string;
       paymentDate: string | undefined;
       amount: string | undefined;
+      locationId: string | undefined;
     };
     const requestBody: RequestBody = {
       uid,
@@ -150,10 +152,10 @@ export const subscribeMemberToPackage = async (
       paymentMethod,
       paymentDate,
       amount,
+      locationId,
     };
     const response = await tms.post("admin/member-packages", requestBody);
     return response.data;
-    return {}
   } catch (error) {
     console.error(error);
     throw error;

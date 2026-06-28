@@ -7,7 +7,7 @@ import {
   recordOpenGymGuestDropIn,
   recordOpenGymMemberDropIn,
 } from "../data/open-gym";
-import { ApiError } from "@/core/api-error";
+import { ApiError, BadRequestError } from "@/core/api-error";
 import { nonUserDataSchema } from "../schemas/newUserSchema";
 
 export const openGymMemberDropInAction = async (
@@ -17,13 +17,19 @@ export const openGymMemberDropInAction = async (
   try {
     const uid = formData.get("uid") as string;
     const paymentMethod = formData.get("paymentMethod") as string;
+    const locationId = formData.get("locationId") as string;
     const amountRaw = formData.get("amount") as string;
     const paymentDate = (formData.get("paymentDate") as string) || undefined;
     const priceChanged = (formData.get("priceChanged") as string) === "true";
 
+    if (!locationId) {
+      throw new BadRequestError("Select a branch to record drop-in");
+    }
+
     const response = await recordOpenGymMemberDropIn(
       uid,
       paymentMethod,
+      locationId,
       priceChanged && amountRaw ? Number(amountRaw) : undefined,
       paymentDate
     );
@@ -42,9 +48,14 @@ export const openGymGuestDropInAction = async (
     const name = formData.get("name") as string;
     const phoneNumber = formData.get("phoneNumber") as string;
     const paymentMethod = formData.get("paymentMethod") as string;
+    const locationId = formData.get("locationId") as string;
     const amountRaw = formData.get("amount") as string;
     const paymentDate = (formData.get("paymentDate") as string) || undefined;
     const priceChanged = (formData.get("priceChanged") as string) === "true";
+
+    if (!locationId) {
+      throw new BadRequestError("Select a branch to record drop-in");
+    }
 
     nonUserDataSchema.parse({ name, phoneNumber });
 
@@ -52,6 +63,7 @@ export const openGymGuestDropInAction = async (
       name,
       phoneNumber,
       paymentMethod,
+      locationId,
       priceChanged && amountRaw ? Number(amountRaw) : undefined,
       paymentDate
     );

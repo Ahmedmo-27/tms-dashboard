@@ -3,14 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { tms } from "../tms-api";
 
-export const getOpenGymDropInPrice = async (): Promise<number> => {
-  const response = await tms.get("/admin/openGym/dropInPrice");
+export const getOpenGymDropInPrice = async (
+  locationId?: string
+): Promise<number> => {
+  const params = locationId ? { locationId } : undefined;
+  const response = await tms.get("/admin/openGym/dropInPrice", { params });
   return response.data.data.price;
 };
 
 export const recordOpenGymMemberDropIn = async (
   uid: string,
   paymentMethod: string,
+  locationId: string,
   amount?: number,
   paymentDate?: string
 ) => {
@@ -19,6 +23,7 @@ export const recordOpenGymMemberDropIn = async (
     paymentMethod,
     amount,
     paymentDate,
+    locationId,
   });
   revalidatePath("/dashboard/scans-monitor");
   revalidatePath(`/dashboard/our-members/${uid}`);
@@ -30,6 +35,7 @@ export const recordOpenGymGuestDropIn = async (
   name: string,
   phoneNumber: string,
   paymentMethod: string,
+  locationId: string,
   amount?: number,
   paymentDate?: string
 ) => {
@@ -39,6 +45,7 @@ export const recordOpenGymGuestDropIn = async (
     paymentMethod,
     amount,
     paymentDate,
+    locationId,
   });
   revalidatePath("/dashboard/scans-monitor");
   return response.data;

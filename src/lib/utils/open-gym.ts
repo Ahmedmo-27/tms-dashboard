@@ -53,3 +53,27 @@ export function getPackageEndDateFromStart(
   end.setDate(end.getDate() + Number(pkg.expiryPeriod));
   return end.toISOString();
 }
+
+export function resolveOpenGymPaymentPurpose(record: {
+  purpose?: string;
+  note?: string;
+  pkgId?: Pick<Package, "category" | "renewalPeriod" | "name">;
+}): string | null {
+  if (
+    record.purpose === "DROPIN" &&
+    record.note?.toLowerCase().includes("open gym")
+  ) {
+    return "Open Gym Drop-in";
+  }
+
+  if (record.purpose === "PACKAGE" && record.pkgId?.category === "OPEN_GYM") {
+    const renewal = formatRenewalLabel(record.pkgId);
+    return `Open Gym ${renewal} Package`;
+  }
+
+  if (record.note?.toLowerCase().includes("open gym")) {
+    return record.note;
+  }
+
+  return null;
+}

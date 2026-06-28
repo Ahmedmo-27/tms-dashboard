@@ -127,16 +127,17 @@ export const subscribePackageAction = async (
     const paymentMethod = formData.get("paymentMethod") as string;
     const paymentDate = formData.get("paymentDate") as string;
     const amount = formData.get("amount") as string;
+    const locationId = (formData.get("locationId") as string) || undefined;
     const priceChanged = (formData.get("priceChanged") as string) === "true";
 
-    console.log(formData);
     const response = await subscribeMemberToPackage(
       uid,
       pkgId,
       startDate,
       paymentMethod,
       paymentDate === "" ? undefined : paymentDate,
-      priceChanged ? amount : undefined
+      priceChanged ? amount : undefined,
+      locationId
     );
 
     revalidatePath(`/dashboard/our-members/${uid}`);

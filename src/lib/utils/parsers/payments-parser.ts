@@ -1,4 +1,5 @@
 import { Payment } from "@/components/ui/payments/columns";
+import { resolveOpenGymPaymentPurpose } from "@/lib/utils/open-gym";
 
 type LocationRef =
   | { branchName?: string; location?: string }
@@ -17,6 +18,8 @@ export interface RawPaymentRecord {
   phone?: string;
   pkgId?: {
     name: string;
+    category?: string;
+    renewalPeriod?: string;
     locationId?: { branchName?: string; location?: string };
   };
   scid?: {
@@ -25,6 +28,8 @@ export interface RawPaymentRecord {
     startTime: string;
   };
   locationId?: { branchName?: string; location?: string };
+  purpose?: string;
+  note?: string;
   paymentTime?: string | Date;
   createdAt?: string | Date;
   recordedAt?: string | Date;
@@ -189,11 +194,13 @@ export const parsePayments = (payments: unknown): Payment[] => {
   return records.map((payment) => {
     const { isCashOut, isRefunded } = getTransactionFlags(payment);
 
-    let purpose = "";
-    if (payment.pkgId) {
+    let purpose = resolveOpenGymPaymentPurpose(payment) ?? "";
+    if (!purpose && payment.pkgId) {
       purpose = payment.pkgId.name;
-    } else if (payment.scid) {
+    } else if (!purpose && payment.scid) {
       purpose = payment.scid.cid.title;
+    } else if (!purpose && payment.note) {
+      purpose = payment.note;
     }
 
     const refundReason = payment.refundReason ?? payment.reason ?? "";
