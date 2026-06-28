@@ -31,30 +31,27 @@ export function SchedulePage({
   locations,
 }: SchedulePageProps) {
   const [date, setDate] = useState<Date>(new Date());
-  const [location, setLocation] = useState<string>(
-    locations[0]?.branchName ?? ""
+  const [selectedLocationId, setSelectedLocationId] = useState<string>(
+    locations[0]?._id ?? ""
   );
-  const selectedLocationId =
-    locations.find((l) => l.branchName === location)?._id ??
-    locations[0]?._id ??
-    "";
+  const selectedLocationName =
+    locations.find((l) => l._id === selectedLocationId)?.branchName ?? "";
   const [selectedScheduledClasses, setSelectedScheduledClasses] = useState<
     ScheduledClass[]
   >([]);
 
   useEffect(() => {
     const targetDateStr = date.toLocaleDateString();
-    const targetLocation = location;
     const filtered = scheduledClasses.filter((cls) => {
       const clsDateStr = new Date(cls.startTime).toLocaleDateString();
       const locationMatch =
         cls.locationId === selectedLocationId ||
-        cls.location === targetLocation;
+        (!cls.locationId && cls.location === selectedLocationName);
       return clsDateStr === targetDateStr && locationMatch;
     });
 
     setSelectedScheduledClasses(filtered);
-  }, [scheduledClasses, date, location, selectedLocationId]);
+  }, [scheduledClasses, date, selectedLocationId, selectedLocationName]);
   return (
     <div className="flex flex-col-reverse overflow-y-auto md:flex-row h-[calc(100vh-4rem)] gap-4 p-3">
       <div className="flex-[2] h-full">
@@ -105,18 +102,17 @@ export function SchedulePage({
         </div>
         <div className="flex flex-col gap-2">
           <Select
-            name="location"
-            value={location}
-            onValueChange={(value) => setLocation(value as string)}
+            value={selectedLocationId}
+            onValueChange={setSelectedLocationId}
           >
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue placeholder="Select location" />
             </SelectTrigger>
             <SelectContent>
               {locations.map((loc) => (
                 <SelectItem
                   key={loc._id}
-                  value={loc.branchName}
+                  value={loc._id}
                   className="hover:bg-accent"
                 >
                   {loc.branchName}

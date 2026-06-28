@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import type { ReactNode } from "react";
 import {
   Table,
   TableBody,
@@ -18,11 +19,13 @@ import { ClassScan } from "./class-container";
 export interface AttendanceContainerProps {
   title: string;
   classScans: ClassScan[];
+  headerActions?: ReactNode;
 }
 
 export const AttendanceContainer = ({
   title,
   classScans,
+  headerActions,
 }: AttendanceContainerProps) => {
   const getStatusColor = (status: ClassScan["status"]) => {
     switch (status) {
@@ -43,7 +46,9 @@ export const AttendanceContainer = ({
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold">{title}</h3>
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3">
+            {headerActions}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               <span>
@@ -53,6 +58,7 @@ export const AttendanceContainer = ({
             <div className="flex items-center gap-1">
               <UserCheck className="h-4 w-4" />
               <span>{classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0} checked in</span>
+            </div>
             </div>
           </div>
         </div>

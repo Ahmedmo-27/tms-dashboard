@@ -20,6 +20,7 @@ export default async function Page({
   let scans: any = [];
   let checkIns: any = [];
   let packages: any = [];
+  let scheduledClasses: Awaited<ReturnType<typeof getScheduledClasses>> = [];
 
   const params = await searchParams;
   const dateParam = params.date ? new Date(params.date) : new Date();
@@ -27,8 +28,10 @@ export default async function Page({
     ? new Date(params.checkInsDate)
     : new Date();
   try {
-    const scheduledClasses = await getScheduledClasses();
-    packages = await getPackages();     // Get packages
+    [scheduledClasses, packages] = await Promise.all([
+      getScheduledClasses(),
+      getPackages(),
+    ]);
     if (scheduledClasses.length > 0) {
       scans = parseScans(scheduledClasses, dateParam);
     } else {
@@ -42,7 +45,11 @@ export default async function Page({
     }
     return (
       <div>
-        <ScanContainer scans={scans} dailyAttendance={checkIns} packages={packages} />
+        <ScanContainer
+          scans={scans}
+          dailyAttendance={checkIns}
+          packages={packages}
+        />
       </div>
     );
   } catch (error) {

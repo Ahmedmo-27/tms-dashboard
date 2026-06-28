@@ -85,6 +85,7 @@ export const addWalkIn = async (
       name: formData.get("name") as string,
       phoneNumber: formData.get("phoneNumber") as string,
       scid: formData.get("scid") as string,
+      paymentMethod: (formData.get("paymentMethod") as string) || undefined,
       amount: formData.get("amount") || undefined,
       paymentDate: formData.get("paymentDate") || undefined,
     };
@@ -93,9 +94,11 @@ export const addWalkIn = async (
       validatedBookingData.name,
       validatedBookingData.phoneNumber,
       validatedBookingData.scid,
+      validatedBookingData.paymentMethod,
       validatedBookingData.amount,
       validatedBookingData.paymentDate
     );
+    revalidatePath("/dashboard/scans-monitor");
     return {
       success: true,
       errors: null,
