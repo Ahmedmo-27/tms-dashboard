@@ -22,15 +22,17 @@ import {
   Menu,
   X,
   ScanLine,
+  Ticket,
 } from "lucide-react";
 import { ClientList } from "@/components/coach/ClientList";
 import { NotificationPanel } from "@/components/coach/NotificationPanel";
 import { CoachCalendar } from "@/components/coach/CoachCalendar";
 import { CoachScansMonitor } from "@/components/coach/CoachScansMonitor";
+import { CoachTicketsView } from "@/components/coach/CoachTicketsView";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
-type ActiveView = "clients" | "schedule" | "scansMonitor" | "notifications";
+type ActiveView = "clients" | "schedule" | "scansMonitor" | "notifications" | "tickets";
 
 interface CoachNewPackagePayload {
   memberName: string;
@@ -51,7 +53,7 @@ export function CoachDashboardShell() {
   );
 
   const [activeView, setActiveView] = useState<ActiveView>(
-    hasPtSessions ? "clients" : (hasScheduledClasses ? "schedule" : "clients")
+    hasPtSessions ? "clients" : hasScheduledClasses ? "schedule" : "tickets"
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -109,6 +111,7 @@ export function CoachDashboardShell() {
       { id: "schedule" as ActiveView, label: "Schedule", icon: Calendar },
       { id: "scansMonitor" as ActiveView, label: "Scans Monitor", icon: ScanLine },
     ] : []),
+    { id: "tickets" as ActiveView, label: "Tickets", icon: Ticket },
     // { id: "notifications", label: "Notifications", icon: Bell },
   ];
 
@@ -242,6 +245,7 @@ export function CoachDashboardShell() {
           )}
           {activeView === "schedule" && <CoachCalendar />}
           {activeView === "scansMonitor" && <CoachScansMonitor />}
+          {activeView === "tickets" && <CoachTicketsView />}
           {/* {activeView === "notifications" && <NotificationPanel />} */}
         </main>
 

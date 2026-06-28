@@ -45,6 +45,7 @@ export function isManagementRole(role: string | undefined): boolean {
 export const SHARED_GLOBAL_PAGES = [
   "/dashboard/our-members",
   "/dashboard/member-requests",
+  "/dashboard/tickets",
 ] as const;
 
 /** Pages where management acts as branch_admin after selecting a branch. */
@@ -53,13 +54,11 @@ export const BRANCH_SCOPED_PAGES = [
   "/dashboard/qr-codes",
   "/dashboard/schedule",
   "/dashboard/catalog",
-  "/dashboard/tickets",
   "/dashboard/payments",
   "/dashboard/refunds",
   "/dashboard/checkout",
   "/dashboard/orders",
   "/dashboard/products",
-  "/dashboard/mailing",
 ] as const;
 
 export function isSharedGlobalPage(path: string): boolean {
@@ -104,9 +103,9 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/checkout": ["management", "branch_admin"],
   "/dashboard/orders": ["management", "branch_admin"],
   "/dashboard/products": ["management", "branch_admin"],
-  "/dashboard/mailing": ["management", "branch_admin"],
-  "/dashboard/mailing/sent": ["management", "branch_admin"],
-  "/dashboard/mailing/received": ["management", "branch_admin"],
+  "/dashboard/mailing": ["management"],
+  "/dashboard/mailing/sent": ["management"],
+  "/dashboard/mailing/received": ["management"],
 };
 
 export function canAccessPage(
@@ -134,6 +133,7 @@ export function canAccessPage(
 export const MANAGEMENT_ONLY_ACTIONS = {
   locationCrud: ["management"] as const,
   ticketCategoryCrud: ["management"] as const,
+  mail: ["management"] as const,
 } as const;
 
 /** Branch operational actions — management needs a selected branch. */
@@ -146,7 +146,6 @@ export const ACTION_ROLES = {
   refunds: ["management", "branch_admin"] as const,
   products: ["management", "branch_admin"] as const,
   orders: ["management", "branch_admin"] as const,
-  mail: ["management", "branch_admin"] as const,
 } as const;
 
 export type ActionKey = keyof typeof ACTION_ROLES;

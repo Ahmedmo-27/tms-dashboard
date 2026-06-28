@@ -29,6 +29,12 @@ import {
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import {
+  getCreatorBranchLabel,
+  getCreatorDisplayName,
+  getCreatorRole,
+  getCreatorRoleLabel,
+} from "@/lib/utils/ticket-utils";
 
 const STATUS_META: Record<
   TicketStatus,
@@ -61,6 +67,8 @@ export interface TicketDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated?: () => void;
+  canUpdate?: boolean;
+  updateTicketStatusFn?: typeof updateTicketStatus;
 }
 
 function InfoRow({
@@ -90,6 +98,8 @@ export function TicketDetailModal({
   open,
   onOpenChange,
   onUpdated,
+  canUpdate = true,
+  updateTicketStatusFn = updateTicketStatus,
 }: TicketDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftNotes, setDraftNotes] = useState("");
@@ -126,7 +136,7 @@ export function TicketDetailModal({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateTicketStatus(ticket._id, ticket.status, draftNotes.trim());
+      await updateTicketStatusFn(ticket._id, ticket.status, draftNotes.trim());
       // Reflect saved value immediately so view mode shows updated text
       ticket.adminNotes = draftNotes.trim();
       toast.success("Notes saved");
@@ -138,6 +148,8 @@ export function TicketDetailModal({
       setIsSaving(false);
     }
   };
+
+  const creatorBranch = getCreatorBranchLabel(ticket);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -155,10 +167,33 @@ export function TicketDetailModal({
         </DialogHeader>
 
         <div className="mt-2 space-y-4">
-          {/* Member info */}
           <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Member Info
+              Submitted By
+            </p>
+            <InfoRow
+              icon={<User className="h-4 w-4" />}
+              label="Creator"
+              value={getCreatorDisplayName(ticket)}
+            />
+            <InfoRow
+              icon={<Tag className="h-4 w-4" />}
+              label="Role"
+              value={getCreatorRoleLabel(getCreatorRole(ticket))}
+            />
+            {creatorBranch && (
+              <InfoRow
+                icon={<Calendar className="h-4 w-4" />}
+                label="Branch"
+                value={creatorBranch}
+              />
+            )}
+          </div>
+
+          {/* Contact info */}
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Contact Info
             </p>
             <InfoRow icon={<User className="h-4 w-4" />} label="Name" value={ticket.name} />
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={ticket.phone} />
@@ -194,6 +229,7 @@ export function TicketDetailModal({
           </div>
 
           {/* Admin Notes */}
+          {canUpdate ? (
           <div className="rounded-lg border border-slate-600 bg-slate-700 p-4 space-y-3">
             {/* Header row */}
             <div className="flex items-center justify-between">
@@ -273,6 +309,17 @@ export function TicketDetailModal({
               </div>
             )}
           </div>
+          ) : hasNotes ? (
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <NotebookPen className="h-3.5 w-3.5" />
+                Admin Notes
+              </div>
+              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                {ticket.adminNotes}
+              </p>
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
