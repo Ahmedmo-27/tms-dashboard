@@ -85,10 +85,6 @@ export function ScheduleClass({
     setSelectedEndDate(date?.toString());
   }, [date]);
 
-  useEffect(() => {
-    setSelectedLocationId(defaultLocationId);
-  }, [defaultLocationId]);
-
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
       const defaultValues = {
@@ -143,7 +139,15 @@ export function ScheduleClass({
         <span className="hidden sm:inline">Schedule Class</span>
         <span className="sm:hidden">Schedule</span>
       </Button>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (open) {
+            setSelectedLocationId(defaultLocationId);
+          }
+        }}
+      >
         <DialogContent className="z-50 max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
@@ -201,7 +205,7 @@ export function ScheduleClass({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Location</Label>
                 <Select
-                  value={selectedLocationId}
+                  value={selectedLocationId || undefined}
                   disabled={pending}
                   onValueChange={setSelectedLocationId}
                 >

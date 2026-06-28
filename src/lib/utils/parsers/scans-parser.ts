@@ -54,8 +54,8 @@ export const parseDailyAttendance = (scans: any) => {
   });
   scans[0].openGymAttendance.forEach((scan: any) => {
     const parsedScan: ClassScan = {
-      member: scan.uid?.name || "Unknown Member",
-      phone: scan.uid?.phoneNumber || "No Phone",
+      member: scan.uid?.name || scan.guestName || "Unknown Member",
+      phone: scan.uid?.phoneNumber || scan.guestPhone || "No Phone",
       time: new Date(scan.time).toString(),
       method: scan.method,
       status: typeof scan.status === "boolean" ? (scan.status ? "SUCCESS" : "FAILED") : scan.status,

@@ -20,6 +20,7 @@ export default async function Page({
   let scans: any = [];
   let checkIns: any = [];
   let packages: any = [];
+  let scheduledClasses: Awaited<ReturnType<typeof getScheduledClasses>> = [];
 
   const params = await searchParams;
   const locationId = params.locationId;
@@ -43,7 +44,11 @@ export default async function Page({
     }
     return (
       <div>
-        <ScanContainer scans={scans} dailyAttendance={checkIns} packages={packages} />
+        <ScanContainer
+          scans={scans}
+          dailyAttendance={checkIns}
+          packages={packages}
+        />
       </div>
     );
   } catch (error) {
