@@ -22,7 +22,11 @@ const STATUS_TABS = [
 
 const PAGE_SIZE = 10;
 
-export default function TicketsContainer() {
+export default function TicketsContainer({
+  locationId,
+}: {
+  locationId?: string;
+}) {
   const [data, setData] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +39,7 @@ export default function TicketsContainer() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await getTickets(status, debouncedSearch || null, page, PAGE_SIZE);
+      const res = await getTickets(status, debouncedSearch || null, page, PAGE_SIZE, locationId);
       setData(res.data);
       setTotal(res.total);
     } catch {
@@ -43,7 +47,7 @@ export default function TicketsContainer() {
       setTotal(0);
     }
     setIsLoading(false);
-  }, [status, debouncedSearch, page]);
+  }, [status, debouncedSearch, page, locationId]);
 
   useEffect(() => {
     fetchData();

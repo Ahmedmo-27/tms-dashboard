@@ -1,9 +1,10 @@
 import { tms } from "@/lib/tms-api";
 import { Class } from "@/components/ui/classes/columns";
 
-export const getClasses = async () => {
+export const getClasses = async (locationId?: string) => {
   try {
-    const response = await tms.get("/admin/class");
+    const params = locationId ? { locationId } : undefined;
+    const response = await tms.get("/admin/class", { params });
     return response.data.data;
   } catch (error) {
     console.error(error);
