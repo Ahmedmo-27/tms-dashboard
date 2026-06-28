@@ -27,6 +27,7 @@ export type ScheduledClass = {
   category?: string;
   className?: string;
   location?: string;
+  locationId?: string;
   scans: any;
 };
 

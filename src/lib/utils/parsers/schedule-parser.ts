@@ -72,6 +72,7 @@ export const parseSchedule = (
       }
     });
     const allScans = [...cls.scans, ...walkInScans];
+    const sessionLocation = cls.locationId;
     const parsedClass: ScheduledClass = {
       _id: cls._id,
       cid: cls.cid?._id ?? "",
@@ -79,7 +80,13 @@ export const parseSchedule = (
       className: cls.cid?.title ?? "Unknown Class",
       coachName: Array.isArray(cls.coachId) ? cls.coachId.map((c: any) => c.coachName).filter(Boolean).join(", ") || "Unknown Coach" : (cls.coachId?.coachName ?? "Unknown Coach"),
       coachId: Array.isArray(cls.coachId) ? cls.coachId.map((c: any) => c._id) : (cls.coachId?._id ?? ""),
-      location: cls.cid?.locations?.[0]?.branchName ?? "No location",
+      locationId:
+        sessionLocation?._id?.toString() ??
+        (typeof sessionLocation === "string" ? sessionLocation : ""),
+      location:
+        sessionLocation?.branchName ??
+        sessionLocation?.location ??
+        "No location",
       startTime: new Date(cls.startTime).toString(),
       endTime: new Date(cls.endTime).toString(),
       category: cls.cid?.category ?? "Unknown Category",
