@@ -14,6 +14,7 @@ import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
 import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog";
 import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 interface ScanError {
   code: string;
@@ -36,6 +37,7 @@ export function ScanContainer({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isViewingAllBranches } = useBranchContext();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date()
   );
@@ -139,10 +141,12 @@ export function ScanContainer({
           <AttendanceContainer
             title="Personal Training"
             classScans={dailyAttendance.pt}
+            showBranch={isViewingAllBranches}
           />
           <AttendanceContainer
             title="Open Gym"
             classScans={dailyAttendance.openGym}
+            showBranch={isViewingAllBranches}
             headerActions={
               <OpenGymDropInDialog
                 triggerLabel="Add drop-in"
@@ -164,6 +168,7 @@ export function ScanContainer({
               key={index}
               classData={scan.classData}
               classScans={scan.classScans}
+              showBranch={isViewingAllBranches}
             />
           ))}
         </div>

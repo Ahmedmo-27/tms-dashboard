@@ -1,6 +1,6 @@
 "use client";
 
-import { Order, OrderItem, columns } from "./columns";
+import { Order, OrderItem, createColumns } from "./columns";
 import { DataTable } from "./data-table";
 import { Card, CardHeader, CardTitle, CardContent } from "../card";
 import { Input } from "../input";
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { PaymentDatePicker } from "@/components/ui/payments/date-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, formatDate } from "date-fns";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 export default function OrdersContainer({
   orders,
@@ -29,6 +30,11 @@ export default function OrdersContainer({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isViewingAllBranches } = useBranchContext();
+  const columns = useMemo(
+    () => createColumns(isViewingAllBranches),
+    [isViewingAllBranches]
+  );
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);

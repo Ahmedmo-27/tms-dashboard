@@ -33,7 +33,7 @@ export function SchedulePage({
   locations,
   initialLocationId = "",
 }: SchedulePageProps) {
-  const { isManagement } = useBranchContext();
+  const { isManagement, isViewingAllBranches } = useBranchContext();
   const initialLocation =
     locations.find((l) => l._id === initialLocationId) ?? locations[0];
   const [date, setDate] = useState<Date>(new Date());
@@ -41,16 +41,20 @@ export function SchedulePage({
     initialLocation?.branchName ?? ""
   );
 
-  const managementLocation =
-    locations.find((l) => l._id === initialLocationId) ?? locations[0];
+  const managementLocation = initialLocationId
+    ? locations.find((l) => l._id === initialLocationId)
+    : undefined;
   const location = isManagement
     ? (managementLocation?.branchName ?? "")
     : branchLocation;
   const selectedLocationId = isManagement
-    ? (initialLocationId ?? locations[0]?._id ?? "")
+    ? (initialLocationId || "")
     : (locations.find((l) => l.branchName === branchLocation)?._id ??
       locations[0]?._id ??
       "");
+  const selectedLocationName = isManagement
+    ? (managementLocation?.branchName ?? "")
+    : branchLocation;
   const [selectedScheduledClasses, setSelectedScheduledClasses] = useState<
     ScheduledClass[]
   >([]);
@@ -59,14 +63,23 @@ export function SchedulePage({
     const targetDateStr = date.toLocaleDateString();
     const filtered = scheduledClasses.filter((cls) => {
       const clsDateStr = new Date(cls.startTime).toLocaleDateString();
-      const locationMatch =
+      if (clsDateStr !== targetDateStr) return false;
+      if (isManagement && isViewingAllBranches) return true;
+      return (
         cls.locationId === selectedLocationId ||
-        (!cls.locationId && cls.location === selectedLocationName);
-      return clsDateStr === targetDateStr && locationMatch;
+        (!cls.locationId && cls.location === selectedLocationName)
+      );
     });
 
     setSelectedScheduledClasses(filtered);
-  }, [scheduledClasses, date, selectedLocationId, selectedLocationName]);
+  }, [
+    scheduledClasses,
+    date,
+    selectedLocationId,
+    selectedLocationName,
+    isManagement,
+    isViewingAllBranches,
+  ]);
   return (
     <div className="flex flex-col-reverse overflow-y-auto md:flex-row h-[calc(100vh-4rem)] gap-4 p-3">
       <div className="flex-[2] h-full">

@@ -16,12 +16,17 @@ export function useBranchContext() {
   const userLocationId = (user as { locationId?: string } | null)?.locationId;
   const selectedLocationId = searchParams.get("locationId");
 
+  const isManagement = isManagementRole(role);
+  const branchScopedPage = isBranchScopedPage(pathname);
+
   return {
     role,
     selectedLocationId,
     userLocationId,
-    isManagement: isManagementRole(role),
-    isBranchScopedPage: isBranchScopedPage(pathname),
+    isManagement,
+    isBranchScopedPage: branchScopedPage,
+    isViewingAllBranches:
+      isManagement && branchScopedPage && !selectedLocationId,
     canActAsBranchAdmin: canActAsBranchAdmin(
       role,
       selectedLocationId,

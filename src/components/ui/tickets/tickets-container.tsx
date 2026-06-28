@@ -11,6 +11,7 @@ import { Badge } from "../badge";
 import { Search, RefreshCw, Ticket as TicketIcon } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
@@ -35,6 +36,7 @@ export default function TicketsContainer({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 400);
+  const { isViewingAllBranches } = useBranchContext();
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -64,7 +66,10 @@ export default function TicketsContainer({
     setIsRefreshing(false);
   };
 
-  const { columns, modal } = TicketColumnsWrapper({ onChanged: fetchData });
+  const { columns, modal } = TicketColumnsWrapper({
+    onChanged: fetchData,
+    showBranch: isViewingAllBranches,
+  });
   const maxPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (

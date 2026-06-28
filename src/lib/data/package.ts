@@ -13,10 +13,18 @@ export interface UpdatePackagePayload {
   classRestrictions?: { cid: string; limit: number }[];
 }
 
-export const getPackages = async (): Promise<Package[]> => {
+export const getPackages = async (locationId?: string): Promise<Package[]> => {
   try {
-    const response = await tms.get("/admin/packages");
-    return response.data.data;
+    const params = locationId ? { locationId } : undefined;
+    const response = await tms.get("/admin/packages", { params });
+    const packages = response.data.data as Package[];
+    return packages.map((pkg) => ({
+      ...pkg,
+      branchLabel:
+        typeof pkg.locationId === "object" && pkg.locationId
+          ? pkg.locationId.branchName ?? pkg.locationId.location ?? undefined
+          : undefined,
+    }));
   } catch (error) {
     console.error(error);
     throw error;

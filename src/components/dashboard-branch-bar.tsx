@@ -33,9 +33,9 @@ export function DashboardBranchBar() {
     <div className="flex flex-col gap-2 border-b bg-muted/30 px-4 py-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          Management: select a branch to use the same abilities as a branch admin.
+          Management: browse all branches or select one to perform branch operations.
         </p>
-        <BranchLocationFilter locations={locations} requireSelection />
+        <BranchLocationFilter locations={locations} />
       </div>
       <BranchActionBanner />
     </div>

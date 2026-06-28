@@ -1,4 +1,5 @@
 import { tms } from "@/lib/tms-api";
+import { getBranchLabel } from "@/lib/utils/location-label";
 
 export type TicketStatus = "pending" | "in_progress" | "resolved" | "rejected";
 
@@ -14,6 +15,8 @@ export interface Ticket {
   adminNotes?: string;
   createdAt: string;
   updatedAt: string;
+  branchLabel?: string;
+  locationId?: { branchName?: string; location?: string } | string;
 }
 
 export const getTickets = async (
@@ -29,8 +32,12 @@ export const getTickets = async (
   if (locationId) params.locationId = locationId;
 
   const response = await tms.get("/admin/tickets", { params });
+  const rawTickets = response.data.data.tickets as Ticket[];
   return {
-    data: response.data.data.tickets as Ticket[],
+    data: rawTickets.map((ticket) => ({
+      ...ticket,
+      branchLabel: getBranchLabel(ticket.locationId) ?? undefined,
+    })),
     total: response.data.data.total as number,
   };
 };

@@ -2,6 +2,7 @@ import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { ClassScan } from "@/components/ui/scans/class-container";
 import { ClassContainerProps } from "@/components/ui/scans/class-container";
 import { formatDate } from "date-fns";
+import { getBranchLabel } from "@/lib/utils/location-label";
 
 export const parseScans = (scheduledClasses: ScheduledClass[], date: Date) => {
   const output: ClassContainerProps[] = [];
@@ -49,6 +50,7 @@ export const parseDailyAttendance = (scans: any) => {
       time: new Date(scan.time).toString(),
       method: scan.method,
       status: typeof scan.status === "boolean" ? (scan.status ? "SUCCESS" : "FAILED") : scan.status,
+      branchLabel: getBranchLabel(scan.locationId) ?? undefined,
     };
     output.pt.push(parsedScan);
   });
@@ -59,6 +61,7 @@ export const parseDailyAttendance = (scans: any) => {
       time: new Date(scan.time).toString(),
       method: scan.method,
       status: typeof scan.status === "boolean" ? (scan.status ? "SUCCESS" : "FAILED") : scan.status,
+      branchLabel: getBranchLabel(scan.locationId) ?? undefined,
     };
     output.openGym.push(parsedScan);
   });

@@ -17,6 +17,7 @@ import { AddClass } from "@/components/ui/dialogs/class/add-class";
 import { AddPackageDialog } from "@/components/ui/dialogs/package/add-package";
 import { AddCoachDialog } from "@/components/ui/dialogs/coach/add-coach";
 import type { Location } from "@/lib/data/locations";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 interface CatalogPageProps {
   classes: Class[];
@@ -38,9 +39,14 @@ function CatalogPageInner({
   const searchParams = useSearchParams();
   const router = useRouter();
   const activeTab = searchParams.get("tab") ?? "classes";
+  const { isViewingAllBranches } = useBranchContext();
 
   const classColumns = createClassColumns(packages, classCategories, locations);
-  const packageColumns = createPackageColumns(classes, packageCategories);
+  const packageColumns = createPackageColumns(
+    classes,
+    packageCategories,
+    isViewingAllBranches
+  );
   const coachColumns = createCoachColumns();
 
   const handleTabChange = (value: string) => {

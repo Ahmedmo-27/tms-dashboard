@@ -33,7 +33,7 @@ export default async function Page({
         if (e instanceof NotFoundError) return [];
         throw e;
       }),
-      getPackages().catch((e) => {
+      getPackages(locationId).catch((e) => {
         if (e instanceof NotFoundError) return [];
         throw e;
       }),

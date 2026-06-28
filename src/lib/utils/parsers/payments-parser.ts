@@ -1,5 +1,11 @@
 import { Payment } from "@/components/ui/payments/columns";
 
+type LocationRef =
+  | { branchName?: string; location?: string }
+  | string
+  | null
+  | undefined;
+
 export interface RawPaymentRecord {
   _id?: string;
   id?: string;
@@ -9,11 +15,16 @@ export interface RawPaymentRecord {
   nonMemberPhone?: string;
   phoneNumber?: string;
   phone?: string;
-  pkgId?: { name: string };
+  pkgId?: {
+    name: string;
+    locationId?: { branchName?: string; location?: string };
+  };
   scid?: {
     cid: { title: string; locations: { branchName: string }[] };
+    locationId?: { branchName?: string; location?: string };
     startTime: string;
   };
+  locationId?: { branchName?: string; location?: string };
   paymentTime?: string | Date;
   createdAt?: string | Date;
   recordedAt?: string | Date;
@@ -156,6 +167,22 @@ function getTransactionFlags(record: RawPaymentRecord) {
   return { isCashOut, isRefunded };
 }
 
+function getLocationLabel(loc: LocationRef): string | null {
+  if (!loc) return null;
+  if (typeof loc === "string") return null;
+  return loc.branchName ?? loc.location ?? null;
+}
+
+export function resolvePaymentLocation(record: RawPaymentRecord): string {
+  return (
+    getLocationLabel(record.scid?.locationId) ??
+    record.scid?.cid?.locations?.[0]?.branchName ??
+    getLocationLabel(record.locationId) ??
+    getLocationLabel(record.pkgId?.locationId) ??
+    " -- "
+  );
+}
+
 export const parsePayments = (payments: unknown): Payment[] => {
   const records = normalizePaymentsPayload(payments);
 
@@ -198,12 +225,7 @@ export const parsePayments = (payments: unknown): Payment[] => {
       paymentMethod:
         payment.paymentMethod ??
         (isCashOut ? "Cash Out" : isRefunded ? "Refund" : "—"),
-      location: payment.scid
-        ? payment.scid.locationId?.branchName ??
-          payment.scid.locationId?.location ??
-          payment.scid.cid?.locations?.[0]?.branchName ??
-          " -- "
-        : " -- ",
+      location: resolvePaymentLocation(payment),
       classTime: payment.scid ? payment.scid.startTime : "",
       isRefunded,
       isCashOut,

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { TicketDetailModal } from "./ticket-detail-modal";
+import { createBranchColumn } from "../branch-column";
 
 const STATUS_META: Record<TicketStatus, { label: string; className: string }> = {
   pending: {
@@ -102,8 +103,10 @@ function TicketActions({
 // Wrapper that owns modal state so columns can stay as a pure factory
 export function TicketColumnsWrapper({
   onChanged,
+  showBranch = false,
 }: {
   onChanged: () => void;
+  showBranch?: boolean;
 }) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -113,7 +116,7 @@ export function TicketColumnsWrapper({
     setModalOpen(true);
   };
 
-  const columns = createColumns(onChanged, openModal);
+  const columns = createColumns(onChanged, openModal, showBranch);
 
   return { columns, modal: (
     <TicketDetailModal
@@ -127,9 +130,11 @@ export function TicketColumnsWrapper({
 
 export function createColumns(
   onChanged: () => void,
-  onViewDetails: (ticket: Ticket) => void = () => {}
+  onViewDetails: (ticket: Ticket) => void = () => {},
+  showBranch = false
 ): ColumnDef<Ticket>[] {
   return [
+    ...createBranchColumn<Ticket>(showBranch, (ticket) => ticket.branchLabel),
     { accessorKey: "name", header: "Name" },
     { accessorKey: "phone", header: "Phone" },
     { accessorKey: "email", header: "Email" },

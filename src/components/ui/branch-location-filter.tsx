@@ -60,11 +60,11 @@ export function BranchLocationFilter({
         loading={isPending}
         aria-busy={isPending}
       >
-        <SelectValue placeholder="All branches" />
+        <SelectValue placeholder="All" />
       </SelectTrigger>
       <SelectContent>
         {!requireSelection && (
-          <SelectItem value="all">All branches</SelectItem>
+          <SelectItem value="all">All</SelectItem>
         )}
         {locations.map((location) => (
           <SelectItem key={location._id} value={location._id}>

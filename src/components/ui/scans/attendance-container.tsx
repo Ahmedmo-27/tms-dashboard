@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Clock, Users, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ClassScan } from "./class-container";
+import { BranchPill } from "../branch-pill";
 
 
 export interface AttendanceContainerProps {
@@ -26,7 +27,8 @@ export const AttendanceContainer = ({
   title,
   classScans,
   headerActions,
-}: AttendanceContainerProps) => {
+  showBranch = false,
+}: AttendanceContainerProps & { showBranch?: boolean }) => {
   const getStatusColor = (status: ClassScan["status"]) => {
     switch (status) {
       case "SUCCESS":
@@ -72,6 +74,7 @@ export const AttendanceContainer = ({
                   <TableHead>Member</TableHead>
                   <TableHead>Phone Number</TableHead>
                   <TableHead>Package</TableHead>
+                  {showBranch ? <TableHead>Branch</TableHead> : null}
                   <TableHead>Check-in Time</TableHead>
                   <TableHead className="text-right">Status</TableHead>
                 </TableRow>
@@ -80,7 +83,7 @@ export const AttendanceContainer = ({
                 {classScans.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={showBranch ? 6 : 5}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No members checked in yet
@@ -94,6 +97,15 @@ export const AttendanceContainer = ({
                       </TableCell>
                       <TableCell>{scan.phone}</TableCell>
                       <TableCell>{scan.method}</TableCell>
+                      {showBranch ? (
+                        <TableCell>
+                          {scan.branchLabel ? (
+                            <BranchPill label={scan.branchLabel} />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      ) : null}
                       <TableCell>
                         {format(new Date(scan.time), "hh:mm a")}
                       </TableCell>
