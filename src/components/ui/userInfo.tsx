@@ -6,6 +6,7 @@ import { logoutAction } from "@/lib/actions/auth-actions";
 import { logout } from "@/lib/store/features/authSlice";
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { isBranchScopedRole } from "@/lib/config/roles";
 
 export function UserInfo() {
   const router = useRouter();
@@ -28,9 +29,14 @@ export function UserInfo() {
   return (
     <form action={formAction}>
         {user?<div className="flex space-x-1 justify-between items-center">
-        <p className="text-lg">
-          Welcome <span className="text-md opacity-60">{user.name}</span>
-        </p>
+        <div>
+          <p className="text-lg">
+            Welcome <span className="text-md opacity-60">{user.name}</span>
+          </p>
+          {isBranchScopedRole(user.role as string) && (
+            <p className="text-xs text-muted-foreground">Branch-scoped access</p>
+          )}
+        </div>
         <button type="submit" disabled={pending}>
           <LogOut className="size-5 mr-4 cursor-pointer" />
         </button>

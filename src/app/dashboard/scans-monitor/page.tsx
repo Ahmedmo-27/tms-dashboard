@@ -15,26 +15,27 @@ import { getPackages } from "@/lib/data/package";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: { date?: string; checkInsDate?: string };
+  searchParams: { date?: string; checkInsDate?: string; locationId?: string };
 }) {
   let scans: any = [];
   let checkIns: any = [];
   let packages: any = [];
 
   const params = await searchParams;
+  const locationId = params.locationId;
   const dateParam = params.date ? new Date(params.date) : new Date();
   const checkInsDateParam = params.checkInsDate
     ? new Date(params.checkInsDate)
     : new Date();
   try {
-    const scheduledClasses = await getScheduledClasses();
-    packages = await getPackages();     // Get packages
+    const scheduledClasses = await getScheduledClasses(locationId);
+    packages = await getPackages();
     if (scheduledClasses.length > 0) {
       scans = parseScans(scheduledClasses, dateParam);
     } else {
       scans = [];
     }
-    const dailyAttendance = await getDailyAttendance(checkInsDateParam);
+    const dailyAttendance = await getDailyAttendance(checkInsDateParam, locationId);
     if (dailyAttendance.length > 0) {
       checkIns = parseDailyAttendance(dailyAttendance);
     } else {

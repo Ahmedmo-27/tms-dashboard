@@ -20,6 +20,8 @@ export class ApiError extends Error {
           return new NotFoundError(data.message || "Not Found", data);
         case 401:
           return new UnauthorizedError(data.message || "Unauthorized", data);
+        case 403:
+          return new UnauthorizedError(data.message || "Forbidden", data);
         case 409:
           return new ConflictError(data.message || "Conflict Error", data)
         default:

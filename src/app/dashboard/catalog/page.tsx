@@ -14,7 +14,14 @@ import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 import { deriveUniqueCategories } from "@/lib/utils/catalog";
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: { locationId?: string };
+}) {
+  const params = await searchParams;
+  const locationId = params.locationId;
+
   let classes: Class[] = [];
   let packages: Package[] = [];
   let coaches: Coach[] = [];
@@ -22,7 +29,7 @@ export default async function Page() {
 
   try {
     [classes, packages, coaches, locations] = await Promise.all([
-      getClasses().catch((e) => {
+      getClasses(locationId).catch((e) => {
         if (e instanceof NotFoundError) return [];
         throw e;
       }),

@@ -3,8 +3,13 @@
 import TicketsContainer from "@/components/ui/tickets/tickets-container";
 import { Separator } from "@/components/ui/separator";
 import { Ticket } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function Page() {
+function TicketsPageContent() {
+  const searchParams = useSearchParams();
+  const locationId = searchParams.get("locationId") ?? undefined;
+
   return (
     <div className="flex min-h-full flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:gap-8 lg:p-8">
       <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
@@ -22,8 +27,16 @@ export default function Page() {
       <Separator className="hidden sm:block" />
 
       <div className="flex-1">
-        <TicketsContainer />
+        <TicketsContainer locationId={locationId} />
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <TicketsPageContent />
+    </Suspense>
   );
 }

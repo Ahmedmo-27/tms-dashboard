@@ -22,6 +22,7 @@ interface SchedulePageProps {
   classIdsMap: Map<string, string>;
   coaches: any[];
   locations: Location[];
+  initialLocationId?: string;
 }
 
 export function SchedulePage({
@@ -29,10 +30,13 @@ export function SchedulePage({
   coaches,
   scheduledClasses,
   locations,
+  initialLocationId = "",
 }: SchedulePageProps) {
+  const initialLocation =
+    locations.find((l) => l._id === initialLocationId) ?? locations[0];
   const [date, setDate] = useState<Date>(new Date());
   const [location, setLocation] = useState<string>(
-    locations[0]?.branchName ?? ""
+    initialLocation?.branchName ?? ""
   );
   const selectedLocationId =
     locations.find((l) => l.branchName === location)?._id ??
@@ -104,26 +108,32 @@ export function SchedulePage({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Select
-            name="location"
-            value={location}
-            onValueChange={(value) => setLocation(value as string)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {locations.map((loc) => (
-                <SelectItem
-                  key={loc._id}
-                  value={loc.branchName}
-                  className="hover:bg-accent"
-                >
-                  {loc.branchName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {locations.length > 1 ? (
+            <Select
+              name="location"
+              value={location}
+              onValueChange={(value) => setLocation(value as string)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map((loc) => (
+                  <SelectItem
+                    key={loc._id}
+                    value={loc.branchName}
+                    className="hover:bg-accent"
+                  >
+                    {loc.branchName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : locations[0] ? (
+            <p className="text-sm text-muted-foreground px-1">
+              Branch: {locations[0].branchName}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

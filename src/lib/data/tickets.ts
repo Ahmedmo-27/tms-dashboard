@@ -20,11 +20,13 @@ export const getTickets = async (
   status: string | undefined,
   search: string | undefined | null,
   page: number,
-  limit: number
+  limit: number,
+  locationId?: string
 ) => {
   const params: Record<string, string | number> = { page, limit };
   if (status && status !== "all") params.status = status;
   if (search?.trim()) params.search = search.trim();
+  if (locationId) params.locationId = locationId;
 
   const response = await tms.get("/admin/tickets", { params });
   return {

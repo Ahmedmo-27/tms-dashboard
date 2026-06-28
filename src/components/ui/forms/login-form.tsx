@@ -20,8 +20,9 @@ import {
   setCoachCredentials,
 } from "@/lib/store/features/coachSlice";
 import { ApiError } from "@/core/api-error";
+import { isCoachRole, isStaffRole } from "@/lib/config/roles";
 
-type LoginRole = "coach" | "admin" | "fd" | string;
+type LoginRole = "coach" | "management" | "branch_admin" | "admin" | string;
 
 interface LoginResponseData {
   token: string;
@@ -77,7 +78,7 @@ export function LoginForm({
           };
         }
 
-        if (loginData.role === "coach") {
+        if (isCoachRole(loginData.role)) {
           dispatch(
             setCoachCredentials({
               token: loginData.token,
@@ -91,7 +92,7 @@ export function LoginForm({
           return initialState;
         }
 
-        if (loginData.role === "admin" || loginData.role === "fd") {
+        if (isStaffRole(loginData.role)) {
           dispatch(logoutCoach());
           dispatch(setCredentials(loginData));
           router.push("/dashboard");
