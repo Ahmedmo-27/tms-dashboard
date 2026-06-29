@@ -43,6 +43,7 @@ export default function PendingMembersContainer() {
           name: users[user].name,
           phone: users[user].phoneNumber,
           email: users[user].email,
+          pendingPackages: users[user].pendingPackages ?? [],
         });
       }
       setData(renderedUsers);
