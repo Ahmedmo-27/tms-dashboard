@@ -13,6 +13,9 @@ import { formatDate } from "date-fns";
 import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
 import AddGuestPackage from "../dialogs/package/add-guest-package";
+import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog";
+import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
+import { OpenGymPricingDialog } from "../dialogs/open-gym/open-gym-pricing-dialog";
 
 interface ScanError {
   code: string;
@@ -125,7 +128,10 @@ export function ScanContainer({
       <div className="flex flex-col">
         <div className="flex flex-row justify-between text-2xl font-bold mx-5 py-4 border-b-2">
           Check Ins
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <OpenGymPricingDialog packages={packages} />
+            <OpenGymDropInDialog />
+            <OpenGymSubscribeDialog packages={packages} />
             <AddGuestPackage packages={packages} />
             <PaymentDatePicker
               selectedDate={selectedCheckInsDate}
