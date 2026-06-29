@@ -5,10 +5,9 @@ import {
   ClassContainerProps,
   ClassScan,
 } from "./class-container";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { formatDate } from "date-fns";
 import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
@@ -16,90 +15,90 @@ import AddGuestPackage from "../dialogs/package/add-guest-package";
 import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog";
 import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
 import { OpenGymPricingDialog } from "../dialogs/open-gym/open-gym-pricing-dialog";
-
-interface ScanError {
-  code: string;
-  message: string;
-  time: string;
-}
+import { fetchScansMonitorData } from "@/lib/data/scans";
 
 const socket = io(process.env.NEXT_PUBLIC_TMS_API_URL!, {
   transports: ["websocket"],
 });
 
+function parseDateParam(value: string | null): Date {
+  return value ? new Date(value) : new Date();
+}
+
 export function ScanContainer({
-  scans,
-  dailyAttendance,
+  scans: initialScans,
+  dailyAttendance: initialDailyAttendance,
   packages,
 }: {
   scans: ClassContainerProps[];
   dailyAttendance: { pt: ClassScan[]; openGym: ClassScan[] };
   packages: any;
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date()
+
+  const [scans, setScans] = useState(initialScans);
+  const [dailyAttendance, setDailyAttendance] = useState(initialDailyAttendance);
+  const [selectedDate, setSelectedDate] = useState<Date>(() =>
+    parseDateParam(searchParams.get("date"))
   );
-  const [selectedCheckInsDate, setSelectedCheckInsDate] = useState<
-    Date | undefined
-  >(new Date());
+  const [selectedCheckInsDate, setSelectedCheckInsDate] = useState<Date>(() =>
+    parseDateParam(searchParams.get("checkInsDate"))
+  );
+
+  // Sync when server props refresh (e.g. after dialog actions)
+  useEffect(() => {
+    setScans(initialScans);
+    setDailyAttendance(initialDailyAttendance);
+  }, [initialScans, initialDailyAttendance]);
+
+  const fetchAll = useCallback(
+    async (classDate: Date, checkInsDate: Date, silent = false) => {
+      try {
+        const data = await fetchScansMonitorData(classDate, checkInsDate);
+        setScans(data.scans);
+        setDailyAttendance(data.dailyAttendance);
+      } catch {
+        if (!silent) {
+          toast.error("Failed to refresh scans.");
+        }
+      }
+    },
+    []
+  );
+
+  const updateUrlParam = (key: string, date: Date) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(key, formatDate(date, "yyyy-MM-dd"));
+    window.history.replaceState(
+      null,
+      "",
+      `/dashboard/scans-monitor?${params.toString()}`
+    );
+  };
 
   const handleDateChange = (date: Date | undefined) => {
+    if (!date) return;
     setSelectedDate(date);
-
-    const params = new URLSearchParams(searchParams.toString());
-    if (date) {
-      // Convert to UTC date string (YYYY-MM-DD format)
-      const utcDateString = formatDate(date, "yyyy-MM-dd");
-      params.set("date", utcDateString);
-    } else {
-      params.delete("date");
-    }
-
-    // Navigate to new URL
-    router.push(`/dashboard/scans-monitor?${params.toString()}`);
+    updateUrlParam("date", date);
+    fetchAll(date, selectedCheckInsDate);
   };
 
   const handleCheckInsDateChange = (date: Date | undefined) => {
+    if (!date) return;
     setSelectedCheckInsDate(date);
-
-    const params = new URLSearchParams(searchParams.toString());
-    if (date) {
-      // Convert to UTC date string (YYYY-MM-DD format)
-      const utcDateString = formatDate(date, "yyyy-MM-dd");
-      params.set("checkInsDate", utcDateString);
-    } else {
-      params.delete("checkInsDate");
-    }
-
-    // Navigate to new URL
-    router.push(`/dashboard/scans-monitor?${params.toString()}`);
+    updateUrlParam("checkInsDate", date);
+    fetchAll(selectedDate, date);
   };
 
-  const handleRefresh = () => {
-    const scrollY = window.scrollY;
-    router.refresh();
-
-    requestAnimationFrame(() => {
-      window.scrollTo(0, scrollY);
-    });
-  };
-
+  // Real-time updates on scan events
   useEffect(() => {
-    socket.on("connect", () => {
-      console.log("Connected to server");
-    });
+    const handleRefresh = () => fetchAll(selectedDate, selectedCheckInsDate, true);
 
-    socket.on("SUCCESS-SCAN", () => {
-      console.log("SUCCESS-SCAN");
-      handleRefresh();
-    });
+    socket.on("SUCCESS-SCAN", handleRefresh);
 
     socket.on(
       "FAILED-SCAN",
       (payload: { code: string; member: string; message: string }) => {
-        console.log("Failed Scan");
         toast.error(`❌ ${payload.member}: ${payload.message}`, {
           duration: 5000,
           style: {
@@ -117,11 +116,10 @@ export function ScanContainer({
     );
 
     return () => {
-      socket.off("connect");
-      socket.off("SUCCESS-SCAN");
-      socket.off("FAILED-SCAN");
+      socket.off("SUCCESS-SCAN", handleRefresh);
+      socket.off("FAILED-SCAN", handleRefresh);
     };
-  }, []);
+  }, [selectedDate, selectedCheckInsDate, fetchAll]);
 
   return (
     <div>
@@ -160,7 +158,7 @@ export function ScanContainer({
         <div className="grid grid-cols-1 md:grid-cols-2 justify-center gap-4 p-4">
           {scans.map((scan, index) => (
             <ClassContainer
-              key={index}
+              key={scan.classData._id ?? index}
               classData={scan.classData}
               classScans={scan.classScans}
             />

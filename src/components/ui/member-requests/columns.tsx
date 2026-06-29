@@ -3,11 +3,17 @@ import { Button } from "../button";
 import { Check } from "lucide-react";
 import { addMember } from "@/lib/data/users";
 
+export type PendingPackage = {
+  pkgName: string;
+  remainingClasses: number;
+};
+
 export type User = {
   id: string;
   name: string;
   phone: string;
   email: string;
+  pendingPackages: PendingPackage[];
 };
 
 export const columns: ColumnDef<User>[] = [
@@ -22,6 +28,25 @@ export const columns: ColumnDef<User>[] = [
   {
     accessorKey: "email",
     header: "Email",
+  },
+  {
+    id: "pendingPackages",
+    header: "Assigned Packages",
+    cell: ({ row }) => {
+      const packages = row.original.pendingPackages;
+      if (!packages?.length) {
+        return <span className="text-muted-foreground text-sm">—</span>;
+      }
+      return (
+        <div className="flex flex-col gap-1">
+          {packages.map((pkg, index) => (
+            <span key={index} className="text-sm">
+              {pkg.pkgName} ({pkg.remainingClasses} left)
+            </span>
+          ))}
+        </div>
+      );
+    },
   },
   {
     id: "actions",

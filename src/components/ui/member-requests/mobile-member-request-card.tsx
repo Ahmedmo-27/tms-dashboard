@@ -101,6 +101,17 @@ export function MobileMemberRequestCard({ memberRequest }: MobileMemberRequestCa
                 <span className="truncate">{memberRequest.email}</span>
               </div>
             )}
+            {memberRequest.pendingPackages?.length > 0 && (
+              <div className="text-sm text-foreground">
+                <span className="text-muted-foreground">Packages: </span>
+                {memberRequest.pendingPackages.map((pkg, index) => (
+                  <span key={index}>
+                    {index > 0 ? ", " : ""}
+                    {pkg.pkgName} ({pkg.remainingClasses} left)
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Action button */}

@@ -94,6 +94,8 @@ export const subscribeGuestPackageAction = async (
       priceChanged ? amount : undefined
     );
 
+    revalidatePath("/dashboard/member-requests");
+
     return {
       success: true,
       errors: null,
