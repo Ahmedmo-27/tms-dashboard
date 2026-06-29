@@ -123,15 +123,16 @@ export const subscribePackageAction = async (
     const paymentDate = formData.get("paymentDate") as string;
     const amount = formData.get("amount") as string;
     const priceChanged = (formData.get("priceChanged") as string) === "true";
+    const locationId = (formData.get("locationId") as string) || undefined;
 
-    console.log(formData);
     const response = await subscribeMemberToPackage(
       uid,
       pkgId,
       startDate,
       paymentMethod,
       paymentDate === "" ? undefined : paymentDate,
-      priceChanged ? amount : undefined
+      priceChanged ? amount : undefined,
+      locationId
     );
 
     return {
