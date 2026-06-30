@@ -92,14 +92,21 @@ export const AttendanceContainer = ({
                         {format(new Date(scan.time), "hh:mm a")}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge
-                          className={cn(
-                            "font-normal",
-                            getStatusColor(scan.status)
-                          )}
-                        >
-                          {scan.status}
-                        </Badge>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge
+                            className={cn(
+                              "font-normal",
+                              getStatusColor(scan.status)
+                            )}
+                          >
+                            {scan.status}
+                          </Badge>
+                          {scan.statusDetail ? (
+                            <span className="text-xs text-muted-foreground max-w-[160px] text-right">
+                              {scan.statusDetail}
+                            </span>
+                          ) : null}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

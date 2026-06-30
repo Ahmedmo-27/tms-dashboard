@@ -6,12 +6,14 @@ import {
   Phone,
   Mail,
   Check,
-  UserPlus
+  UserPlus,
+  Loader2,
 } from "lucide-react";
 import { User as MemberRequest } from "./columns";
-import { cn } from "@/lib/utils";
-import { addMember } from "@/lib/data/users";
+import { acceptMemberAction } from "@/lib/actions/member-actions";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { ApiError } from "@/core/api-error";
 
 interface MobileMemberRequestCardProps {
   memberRequest: MemberRequest;
@@ -30,10 +32,20 @@ export function MobileMemberRequestCard({ memberRequest }: MobileMemberRequestCa
     e.stopPropagation();
     setIsProcessing(true);
     try {
-      await addMember(memberRequest.id);
-      window.location.reload();
-    } catch (error) {
-      console.error('Failed to add member:', error);
+      const result = await acceptMemberAction(memberRequest.id);
+      if (result.success) {
+        toast.success(`${memberRequest.name} was accepted as a member.`);
+        window.location.reload();
+        return;
+      }
+
+      const message =
+        result.errors instanceof ApiError
+          ? result.errors.message
+          : result.errors?.message || "Failed to accept member request.";
+      toast.error(message);
+    } catch {
+      toast.error("Failed to accept member request.");
     } finally {
       setIsProcessing(false);
     }
@@ -59,7 +71,6 @@ export function MobileMemberRequestCard({ memberRequest }: MobileMemberRequestCa
     >
       <CardContent className="p-4">
         <div className="space-y-3">
-          {/* Header with member info and status */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <Avatar className="h-10 w-10 flex-shrink-0">
@@ -81,7 +92,6 @@ export function MobileMemberRequestCard({ memberRequest }: MobileMemberRequestCa
             </div>
           </div>
 
-          {/* Contact details */}
           <div className="grid grid-cols-1 gap-2 text-sm">
             <div 
               className="flex items-center gap-2 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
@@ -114,7 +124,6 @@ export function MobileMemberRequestCard({ memberRequest }: MobileMemberRequestCa
             )}
           </div>
 
-          {/* Action button */}
           <div className="pt-3 border-t">
             <Button
               onClick={handleAddMember}
@@ -122,12 +131,15 @@ export function MobileMemberRequestCard({ memberRequest }: MobileMemberRequestCa
               className="w-full bg-green-600 hover:bg-green-700 text-white"
               size="sm"
             >
-              <Check className="h-4 w-4 mr-2" />
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
               {isProcessing ? "Adding Member..." : "Add Member"}
             </Button>
           </div>
 
-          {/* Request info */}
           <div className="pt-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>New member request</span>

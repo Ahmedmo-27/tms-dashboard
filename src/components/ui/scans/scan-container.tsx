@@ -1,5 +1,4 @@
 "use client";
-import { io } from "socket.io-client";
 import {
   ClassContainer,
   ClassContainerProps,
@@ -16,14 +15,28 @@ import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog
 import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
 import { OpenGymPricingDialog } from "../dialogs/open-gym/open-gym-pricing-dialog";
 import { fetchScansMonitorData } from "@/lib/data/scans";
-
-const socket = io(process.env.NEXT_PUBLIC_TMS_API_URL!, {
-  transports: ["websocket"],
-});
+import {
+  createTmsSocket,
+  formatFailedScanToast,
+  type FailedScanPayload,
+} from "@/lib/socket";
 
 function parseDateParam(value: string | null): Date {
   return value ? new Date(value) : new Date();
 }
+
+const failedScanToastStyle = {
+  duration: 5000,
+  style: {
+    border: "1px solid #f87171",
+    padding: "12px",
+    color: "#b91c1c",
+  },
+  iconTheme: {
+    primary: "#b91c1c",
+    secondary: "#ffe4e6",
+  },
+};
 
 export function ScanContainer({
   scans: initialScans,
@@ -38,6 +51,7 @@ export function ScanContainer({
 
   const [scans, setScans] = useState(initialScans);
   const [dailyAttendance, setDailyAttendance] = useState(initialDailyAttendance);
+  const [socketConnected, setSocketConnected] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(() =>
     parseDateParam(searchParams.get("date"))
   );
@@ -92,32 +106,35 @@ export function ScanContainer({
 
   // Real-time updates on scan events
   useEffect(() => {
-    const handleRefresh = () => fetchAll(selectedDate, selectedCheckInsDate, true);
+    const socket = createTmsSocket();
 
+    const handleRefresh = () =>
+      fetchAll(selectedDate, selectedCheckInsDate, true);
+
+    const handleFailedScan = (payload: FailedScanPayload) => {
+      toast.error(formatFailedScanToast(payload), failedScanToastStyle);
+      handleRefresh();
+    };
+
+    const handleConnect = () => setSocketConnected(true);
+    const handleDisconnect = () => setSocketConnected(false);
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
     socket.on("SUCCESS-SCAN", handleRefresh);
+    socket.on("FAILED-SCAN", handleFailedScan);
 
-    socket.on(
-      "FAILED-SCAN",
-      (payload: { code: string; member: string; message: string }) => {
-        toast.error(`❌ ${payload.member}: ${payload.message}`, {
-          duration: 5000,
-          style: {
-            border: "1px solid #f87171",
-            padding: "12px",
-            color: "#b91c1c",
-          },
-          iconTheme: {
-            primary: "#b91c1c",
-            secondary: "#ffe4e6",
-          },
-        });
-        handleRefresh();
-      }
-    );
+    if (socket.connected) {
+      setSocketConnected(true);
+    }
 
     return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
       socket.off("SUCCESS-SCAN", handleRefresh);
-      socket.off("FAILED-SCAN", handleRefresh);
+      socket.off("FAILED-SCAN", handleFailedScan);
+      socket.disconnect();
+      setSocketConnected(false);
     };
   }, [selectedDate, selectedCheckInsDate, fetchAll]);
 
@@ -125,7 +142,23 @@ export function ScanContainer({
     <div>
       <div className="flex flex-col">
         <div className="flex flex-row justify-between text-2xl font-bold mx-5 py-4 border-b-2">
-          Check Ins
+          <div className="flex items-center gap-3">
+            Check Ins
+            <span
+              className={`text-xs font-normal px-2 py-1 rounded-full ${
+                socketConnected
+                  ? "bg-green-100 text-green-800"
+                  : "bg-amber-100 text-amber-800"
+              }`}
+              title={
+                socketConnected
+                  ? "Live scan updates connected"
+                  : "Live scan updates disconnected — error toasts may not appear"
+              }
+            >
+              {socketConnected ? "Live" : "Offline"}
+            </span>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <OpenGymPricingDialog packages={packages} />
             <OpenGymDropInDialog />

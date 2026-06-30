@@ -7,10 +7,42 @@ import {
   subscribeMemberToPackage,
   unsubscribeMemberFromPackage,
 } from "../data/member";
+import { addMember as addMemberRequest } from "../data/users";
 import { parseStateError } from "../utils/state-errors";
 import { bookClass, bookDropIn, cancelBooking } from "../data/bookings";
 import { nonUserDataSchema } from "../schemas/newUserSchema";
 import { ApiError } from "@/core/api-error";
+
+export const acceptMemberAction = async (uid: string) => {
+  try {
+    if (!uid?.trim()) {
+      return {
+        success: false,
+        errors: { message: "Member id is required" },
+        data: null,
+      };
+    }
+
+    const response = await addMemberRequest(uid);
+    revalidatePath("/dashboard/member-requests");
+    revalidatePath("/dashboard/our-members");
+
+    return {
+      success: true,
+      errors: null,
+      data: response,
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return {
+        success: false,
+        errors: error,
+        data: null,
+      };
+    }
+    return parseStateError(error as Error);
+  }
+};
 
 export const adjustClassesAction = async (_prevState: any, formData: FormData) => {
   try {

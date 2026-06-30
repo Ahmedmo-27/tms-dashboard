@@ -91,7 +91,12 @@ export function LoginForm({
           return initialState;
         }
 
-        if (loginData.role === "admin" || loginData.role === "fd") {
+        if (
+          loginData.role === "admin" ||
+          loginData.role === "fd" ||
+          loginData.role === "management" ||
+          loginData.role === "branch_admin"
+        ) {
           dispatch(logoutCoach());
           dispatch(setCredentials(loginData));
           router.push("/dashboard");

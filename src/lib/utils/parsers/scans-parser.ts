@@ -1,7 +1,27 @@
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { ClassScan } from "@/components/ui/scans/class-container";
 import { ClassContainerProps } from "@/components/ui/scans/class-container";
-import { formatDate } from "date-fns";
+
+function parseScanStatus(
+  status: boolean | string | undefined
+): ClassScan["status"] {
+  if (typeof status === "boolean") {
+    return status ? "SUCCESS" : "FAILED";
+  }
+  if (status === "SUCCESS" || status === "FAILED" || status === "WILL_PAY") {
+    return status;
+  }
+  return "FAILED";
+}
+
+function getFailedStatusDetail(
+  status: ClassScan["status"],
+  method?: string
+): string | undefined {
+  if (status !== "FAILED" || !method) return undefined;
+  if (method === "No Active Package") return "No active package found";
+  return undefined;
+}
 
 export const parseScans = (scheduledClasses: ScheduledClass[], date: Date) => {
   const output: ClassContainerProps[] = [];
@@ -9,13 +29,14 @@ export const parseScans = (scheduledClasses: ScheduledClass[], date: Date) => {
   scheduledClasses.forEach((cls) => {
     const parsedScans: ClassScan[] = [];
     cls.scans.forEach((scan: any) => {
-       
+      const status = parseScanStatus(scan.status);
       const parsedScan: ClassScan = {
         member: scan.uid?.name || "Unknown Member",
         phone: scan.uid?.phoneNumber || "No Phone",
         time: new Date(scan.scanTime).toString(),
         method: scan.method,
-        status: typeof scan.status === "boolean"?(scan.status?"SUCCESS":"FAILED"):scan.status,
+        status,
+        statusDetail: getFailedStatusDetail(status, scan.method),
         bookingId: scan.bookingId,
       };
       parsedScans.push(parsedScan);
@@ -42,26 +63,37 @@ export const parseDailyAttendance = (scans: any) => {
     pt: [],
     openGym: [],
   };
-  scans[0].ptAttendance.forEach((scan: any) => {
+
+  const record = scans?.[0];
+  if (!record) {
+    return output;
+  }
+
+  (record.ptAttendance ?? []).forEach((scan: any) => {
+    const status = parseScanStatus(scan.status);
     const parsedScan: ClassScan = {
       member: scan.uid?.name || "Unknown Member",
       phone: scan.uid?.phoneNumber || "No Phone",
       time: new Date(scan.time).toString(),
       method: scan.method,
-      status: typeof scan.status === "boolean" ? (scan.status ? "SUCCESS" : "FAILED") : scan.status,
+      status,
+      statusDetail: getFailedStatusDetail(status, scan.method),
     };
     output.pt.push(parsedScan);
   });
-  scans[0].openGymAttendance.forEach((scan: any) => {
+
+  (record.openGymAttendance ?? []).forEach((scan: any) => {
+    const status = parseScanStatus(scan.status);
     const parsedScan: ClassScan = {
       member: scan.uid?.name || "Unknown Member",
       phone: scan.uid?.phoneNumber || "No Phone",
       time: new Date(scan.time).toString(),
       method: scan.method,
-      status: typeof scan.status === "boolean" ? (scan.status ? "SUCCESS" : "FAILED") : scan.status,
+      status,
+      statusDetail: getFailedStatusDetail(status, scan.method),
     };
     output.openGym.push(parsedScan);
   });
-  console.log(output);
+
   return output;
 };
