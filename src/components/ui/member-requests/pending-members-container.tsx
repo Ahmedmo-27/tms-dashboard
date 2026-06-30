@@ -36,16 +36,13 @@ export default function PendingMembersContainer() {
     try {
       const response = await getUsers(debouncedTerm || null, page, 10);
       const users = response.data;
-      const renderedUsers: User[] = [];
-      for (const user in users) {
-        renderedUsers.push({
-          id: users[user]._id,
-          name: users[user].name,
-          phone: users[user].phoneNumber,
-          email: users[user].email,
-          pendingPackages: users[user].pendingPackages ?? [],
-        });
-      }
+      const renderedUsers: User[] = users.map((user: any) => ({
+        id: user._id,
+        name: user.name,
+        phone: user.phoneNumber,
+        email: user.email,
+        pendingPackages: user.pendingPackages ?? [],
+      }));
       setData(renderedUsers);
       setTotalUsers(response.total);
     } catch (error) {
