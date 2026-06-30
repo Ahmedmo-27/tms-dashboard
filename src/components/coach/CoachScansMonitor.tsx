@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useCoachApi } from "@/hooks/useCoachApi";
 import { useAppSelector } from "@/lib/hooks";
 import type { RootState } from "@/lib/store/store";
-import { io } from "socket.io-client";
 import { format } from "date-fns";
 import {
   Card,
@@ -34,6 +33,11 @@ import {
   Dumbbell,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import {
+  createTmsSocket,
+  formatFailedScanToast,
+  type FailedScanPayload,
+} from "@/lib/socket";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,9 +61,6 @@ interface CoachClassScanData {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const API_URL = process.env.NEXT_PUBLIC_TMS_API_URL as string;
-const socket = io(API_URL, { transports: ["websocket"] });
 
 function formatTime12h(time: string): string {
   const [hourStr, minuteStr] = time.split(":");
@@ -281,12 +282,20 @@ export function CoachScansMonitor() {
 
   // Real-time: refresh on any scan event
   useEffect(() => {
+    const socket = createTmsSocket();
     const handleRefresh = () => fetchAll(selectedDate);
+    const handleFailedScan = (payload: FailedScanPayload) => {
+      toast.error(formatFailedScanToast(payload));
+      handleRefresh();
+    };
+
     socket.on("SUCCESS-SCAN", handleRefresh);
-    socket.on("FAILED-SCAN", handleRefresh);
+    socket.on("FAILED-SCAN", handleFailedScan);
+
     return () => {
       socket.off("SUCCESS-SCAN", handleRefresh);
-      socket.off("FAILED-SCAN", handleRefresh);
+      socket.off("FAILED-SCAN", handleFailedScan);
+      socket.disconnect();
     };
   }, [selectedDate, fetchAll]);
 
