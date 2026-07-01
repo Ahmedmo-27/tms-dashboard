@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
 import { Package } from "@/components/ui/packages/columns";
+import { Class } from "@/components/ui/classes/columns";
+import { MultiSelect } from "@/components/ui/multiselect";
 import {
   createOpenGymPackage,
   deleteOpenGymPackage,
@@ -45,6 +47,9 @@ type PackageRow = {
   durationValue: string;
   durationUnit: DurationUnit;
   price: string;
+  sessions: string;
+  selectedClassTitles: string[];
+  selectedClassIds: string[];
 };
 
 function packageLocationId(pkg: Package): string {
@@ -61,11 +66,19 @@ function newPackageRow(): PackageRow {
     durationValue: "1",
     durationUnit: "weeks",
     price: "",
+    sessions: "",
+    selectedClassTitles: [],
+    selectedClassIds: [],
   };
 }
 
 function packageToRow(pkg: Package): PackageRow {
   const { value, unit } = daysToDuration(pkg.expiryPeriod);
+  const validClasses = (pkg.opensClasses ?? []).filter((c) => c?._id);
+  const sessions = Number(pkg.numberOfSessions);
+  const hasClassBundle =
+    validClasses.length > 0 && Number.isFinite(sessions) && sessions < 1000;
+
   return {
     key: pkg._id,
     pkgId: pkg._id,
@@ -73,6 +86,9 @@ function packageToRow(pkg: Package): PackageRow {
     durationValue: value,
     durationUnit: unit,
     price: String(pkg.price ?? ""),
+    sessions: hasClassBundle ? String(sessions) : "",
+    selectedClassTitles: validClasses.map((c) => c.title),
+    selectedClassIds: validClasses.map((c) => c._id),
   };
 }
 
@@ -83,9 +99,11 @@ function isPositiveNumber(value: string): boolean {
 
 export function OpenGymPricingDialog({
   packages = [],
+  classes = [],
   triggerLabel = "Open gym pricing",
 }: {
   packages?: Package[];
+  classes?: Class[];
   triggerLabel?: string;
 }) {
   const router = useRouter();
@@ -96,6 +114,19 @@ export function OpenGymPricingDialog({
   const [rows, setRows] = useState<PackageRow[]>([]);
   const [deletedPkgIds, setDeletedPkgIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const bookableClasses = useMemo(
+    () => classes.filter((cls) => cls.category !== "WORKSPACE"),
+    [classes],
+  );
+  const classMap = useMemo(
+    () => new Map(bookableClasses.map((cls) => [cls.title, cls._id])),
+    [bookableClasses],
+  );
+  const classOptions = useMemo(
+    () => bookableClasses.map((cls) => cls.title),
+    [bookableClasses],
+  );
 
   const branchPackages = useMemo(() => {
     if (!locationId) return [];
@@ -138,13 +169,27 @@ export function OpenGymPricingDialog({
     setDeletedPkgIds([]);
   }, [locationId, prices, branchPackages]);
 
-  const updateRow = (
+  const updateRow = <K extends keyof PackageRow>(
     key: string,
-    field: keyof Omit<PackageRow, "key" | "pkgId">,
-    value: string,
+    field: K,
+    value: PackageRow[K],
   ) => {
     setRows((prev) =>
       prev.map((row) => (row.key === key ? { ...row, [field]: value } : row)),
+    );
+  };
+
+  const updateRowClasses = (key: string, titles: string[]) => {
+    setRows((prev) =>
+      prev.map((row) =>
+        row.key === key
+          ? {
+              ...row,
+              selectedClassTitles: titles,
+              selectedClassIds: titles.map((title) => classMap.get(title) ?? ""),
+            }
+          : row,
+      ),
     );
   };
 
@@ -179,7 +224,11 @@ export function OpenGymPricingDialog({
         (!row.pkgId || !deletedPkgIds.includes(row.pkgId)),
     );
 
-    if (!isPositiveNumber(dropInPrice) && rowsToSave.length === 0 && deletedPkgIds.length === 0) {
+    if (
+      !isPositiveNumber(dropInPrice) &&
+      rowsToSave.length === 0 &&
+      deletedPkgIds.length === 0
+    ) {
       toast.error("Add at least one package or drop-in price");
       return;
     }
@@ -191,6 +240,21 @@ export function OpenGymPricingDialog({
       );
       if (expiryPeriod < 1) {
         toast.error(`Invalid duration for "${row.name || "package"}"`);
+        return;
+      }
+      if (row.selectedClassIds.length > 0 && !isPositiveNumber(row.sessions)) {
+        toast.error(
+          `Enter how many class sessions are included in "${row.name || "package"}"`,
+        );
+        return;
+      }
+      if (
+        row.selectedClassIds.length === 0 &&
+        row.sessions.trim().length > 0
+      ) {
+        toast.error(
+          `Select classes for "${row.name || "package"}" or clear the session count`,
+        );
         return;
       }
     }
@@ -208,6 +272,7 @@ export function OpenGymPricingDialog({
       }
 
       for (const row of rowsToSave) {
+        const hasClasses = row.selectedClassIds.length > 0;
         const payload = {
           name: row.name.trim(),
           price: Number(row.price),
@@ -216,6 +281,13 @@ export function OpenGymPricingDialog({
             row.durationUnit,
           ),
           locationId,
+          ...(hasClasses
+            ? {
+                opensClasses: row.selectedClassIds,
+                numberOfSessions: Number(row.sessions),
+                classRestrictions: [],
+              }
+            : { opensClasses: [] }),
         };
 
         if (row.pkgId) {
@@ -248,9 +320,9 @@ export function OpenGymPricingDialog({
           <DialogHeader>
             <DialogTitle>Open gym pricing</DialogTitle>
             <DialogDescription>
-              Choose a branch, then create as many open gym packages as you
-              need. Each package has its own name, duration (weeks or months),
-              and price.
+              Create open gym packages per branch. Each package can be gym-only,
+              or a combo with class sessions — set the duration, price, name,
+              and optionally pick which classes are included.
             </DialogDescription>
           </DialogHeader>
 
@@ -296,6 +368,7 @@ export function OpenGymPricingDialog({
                         row.durationUnit,
                       )
                     : null;
+                  const isCombo = row.selectedClassIds.length > 0;
 
                   return (
                     <div
@@ -306,10 +379,18 @@ export function OpenGymPricingDialog({
                         <div>
                           <p className="text-sm font-medium">
                             {row.pkgId ? "Existing package" : "New package"}
+                            {isCombo ? (
+                              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                combo
+                              </span>
+                            ) : null}
                           </p>
                           {durationPreview ? (
                             <p className="text-xs text-muted-foreground">
-                              Duration: {durationPreview}
+                              Open gym: {durationPreview}
+                              {isCombo && isPositiveNumber(row.sessions)
+                                ? ` • ${row.sessions} class sessions`
+                                : ""}
                             </p>
                           ) : null}
                         </div>
@@ -335,14 +416,14 @@ export function OpenGymPricingDialog({
                             onChange={(e) =>
                               updateRow(row.key, "name", e.target.value)
                             }
-                            placeholder="e.g. Open Gym 2 Months — Maadi"
+                            placeholder="e.g. Open Gym + 8 Studio Sessions"
                             disabled={!locationId}
                           />
                         </div>
 
                         <div className="space-y-1.5">
                           <Label className="text-xs text-muted-foreground">
-                            Duration
+                            Open gym duration
                           </Label>
                           <div className="flex gap-2">
                             <Input
@@ -390,6 +471,40 @@ export function OpenGymPricingDialog({
                             }
                             placeholder="0"
                             disabled={!locationId}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs text-muted-foreground">
+                            Included class sessions (optional)
+                          </Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={row.sessions}
+                            onChange={(e) =>
+                              updateRow(row.key, "sessions", e.target.value)
+                            }
+                            placeholder="Leave empty for gym-only package"
+                            disabled={!locationId}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Open gym visits stay unlimited for the package
+                            duration. This count is only for booking classes.
+                          </p>
+                        </div>
+
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs text-muted-foreground">
+                            Classes included (optional)
+                          </Label>
+                          <MultiSelect
+                            placeholder="Select classes for combo packages"
+                            options={classOptions}
+                            selected={row.selectedClassTitles}
+                            onChange={(titles) =>
+                              updateRowClasses(row.key, titles)
+                            }
                           />
                         </div>
                       </div>

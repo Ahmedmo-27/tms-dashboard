@@ -24,6 +24,17 @@ export function formatRenewalLabel(
 }
 
 export function formatCatalogPackageLabel(pkg: Package): string {
+  if (pkg.category === "OPEN_GYM") {
+    const duration = formatRenewalLabel(pkg);
+    const classIds = pkg.opensClasses?.filter(Boolean) ?? [];
+    const sessions = Number(pkg.numberOfSessions);
+    const hasClassBundle =
+      classIds.length > 0 && Number.isFinite(sessions) && sessions < 1000;
+    if (hasClassBundle) {
+      return `${pkg.name}: ${duration} open gym + ${sessions} class sessions • EGP${pkg.price}`;
+    }
+    return `${pkg.name}: ${duration} open gym access • EGP${pkg.price}`;
+  }
   if (isOpenGymPackage(pkg.category)) {
     return `${pkg.name}: ${formatRenewalLabel(pkg)} access • EGP${pkg.price}`;
   }
