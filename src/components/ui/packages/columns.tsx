@@ -24,7 +24,7 @@ export type Package = {
   category: string;
   price: string;
   hidden?: boolean;
-  renewalPeriod?: "WEEKLY" | "MONTHLY";
+  renewalPeriod?: string;
   locationId?: string | { _id?: string; branchName?: string; location?: string };
   opensClasses: { _id: string; title: string }[];
   classRestrictions?: { cid: string; limit: number }[];

@@ -26,7 +26,6 @@ import { subscribePackageAction } from "@/lib/actions/member-actions";
 import {
   formatCatalogPackageLabel,
   getPackageEndDateFromStart,
-  isOpenGymPackage,
 } from "@/lib/utils/open-gym";
 import { tms } from "@/lib/tms-api";
 import { Search } from "lucide-react";
@@ -58,7 +57,7 @@ export function OpenGymSubscribeDialog({
   const [effectiveLocationId, setEffectiveLocationId] = useState("");
   const isViewingAllBranches = !effectiveLocationId;
   const openGymPackages = packages
-    .filter((p) => isOpenGymPackage(p.category))
+    .filter((p) => p.category === "OPEN_GYM")
     .filter((p) => {
       if (!effectiveLocationId || !p.locationId) return true;
       const pkgLocationId =
@@ -192,8 +191,8 @@ export function OpenGymSubscribeDialog({
           <DialogHeader>
             <DialogTitle>Add open gym package to member</DialogTitle>
             <DialogDescription>
-              Search for a member and subscribe them to a weekly or monthly open
-              gym package.
+              Search for a member and subscribe them to any open gym package
+              you have configured for this branch.
             </DialogDescription>
           </DialogHeader>
 

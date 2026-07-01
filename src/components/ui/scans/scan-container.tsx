@@ -15,6 +15,7 @@ import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog
 import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
 import { OpenGymPricingDialog } from "../dialogs/open-gym/open-gym-pricing-dialog";
 import { fetchScansMonitorData } from "@/lib/data/scans";
+import { Class } from "../classes/columns";
 import {
   createTmsSocket,
   formatFailedScanToast,
@@ -42,10 +43,12 @@ export function ScanContainer({
   scans: initialScans,
   dailyAttendance: initialDailyAttendance,
   packages,
+  classes = [],
 }: {
   scans: ClassContainerProps[];
   dailyAttendance: { pt: ClassScan[]; openGym: ClassScan[] };
   packages: any;
+  classes?: Class[];
 }) {
   const searchParams = useSearchParams();
 
@@ -160,7 +163,7 @@ export function ScanContainer({
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <OpenGymPricingDialog packages={packages} />
+            <OpenGymPricingDialog packages={packages} classes={classes} />
             <OpenGymDropInDialog />
             <OpenGymSubscribeDialog packages={packages} />
             <AddGuestPackage packages={packages} />
