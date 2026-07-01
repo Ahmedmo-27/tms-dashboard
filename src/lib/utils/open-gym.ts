@@ -1,4 +1,5 @@
 import { Package } from "@/components/ui/packages/columns";
+import { formatExpiryPeriodLabel } from "./open-gym-duration";
 
 export const OPEN_GYM_PACKAGE_CATEGORIES = [
   "OPEN_GYM",
@@ -17,14 +18,9 @@ export function isUnlimitedSessions(sessions: string | number): boolean {
 }
 
 export function formatRenewalLabel(
-  pkg: Pick<Package, "renewalPeriod"> & Partial<Pick<Package, "expiryPeriod">>
+  pkg: Pick<Package, "expiryPeriod"> & Partial<Pick<Package, "name">>
 ): string {
-  if (pkg.renewalPeriod === "WEEKLY") return "Weekly";
-  if (pkg.renewalPeriod === "MONTHLY") return "Monthly";
-  const days = Number(pkg.expiryPeriod);
-  if (days === 7) return "Weekly";
-  if (days === 30) return "Monthly";
-  return `${pkg.expiryPeriod} days`;
+  return formatExpiryPeriodLabel(pkg.expiryPeriod);
 }
 
 export function formatCatalogPackageLabel(pkg: Package): string {
@@ -59,7 +55,7 @@ export function getPackageEndDateFromStart(
 export function resolveOpenGymPaymentPurpose(record: {
   purpose?: string;
   note?: string;
-  pkgId?: Pick<Package, "category" | "renewalPeriod" | "name">;
+  pkgId?: Pick<Package, "category" | "name" | "expiryPeriod">;
 }): string | null {
   if (
     record.purpose === "DROPIN" &&
@@ -69,8 +65,11 @@ export function resolveOpenGymPaymentPurpose(record: {
   }
 
   if (record.purpose === "PACKAGE" && record.pkgId?.category === "OPEN_GYM") {
-    const renewal = formatRenewalLabel(record.pkgId);
-    return `Open Gym ${renewal} Package`;
+    if (record.pkgId.name?.trim()) {
+      return record.pkgId.name;
+    }
+    const duration = formatRenewalLabel(record.pkgId);
+    return `Open Gym ${duration} package`;
   }
 
   if (record.note?.toLowerCase().includes("open gym")) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,16 +11,41 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
 import { Package } from "@/components/ui/packages/columns";
 import {
+  createOpenGymPackage,
+  deleteOpenGymPackage,
   getOpenGymDropInPrices,
   setOpenGymDropInPrice,
-  upsertOpenGymPackage,
+  updateOpenGymPackage,
   type OpenGymBranchPrice,
 } from "@/lib/data/open-gym";
+import {
+  daysToDuration,
+  durationToDays,
+  DurationUnit,
+  formatDurationLabel,
+} from "@/lib/utils/open-gym-duration";
+import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+
+type PackageRow = {
+  key: string;
+  pkgId?: string;
+  name: string;
+  durationValue: string;
+  durationUnit: DurationUnit;
+  price: string;
+};
 
 function packageLocationId(pkg: Package): string {
   if (!pkg.locationId) return "";
@@ -29,17 +54,31 @@ function packageLocationId(pkg: Package): string {
     : pkg.locationId._id ?? "";
 }
 
-function findBranchPackage(
-  packages: Package[],
-  locationId: string,
-  renewalPeriod: "WEEKLY" | "MONTHLY",
-): Package | undefined {
-  return packages.find(
-    (p) =>
-      p.category === "OPEN_GYM" &&
-      p.renewalPeriod === renewalPeriod &&
-      packageLocationId(p) === locationId,
-  );
+function newPackageRow(): PackageRow {
+  return {
+    key: `new-${crypto.randomUUID()}`,
+    name: "",
+    durationValue: "1",
+    durationUnit: "weeks",
+    price: "",
+  };
+}
+
+function packageToRow(pkg: Package): PackageRow {
+  const { value, unit } = daysToDuration(pkg.expiryPeriod);
+  return {
+    key: pkg._id,
+    pkgId: pkg._id,
+    name: pkg.name,
+    durationValue: value,
+    durationUnit: unit,
+    price: String(pkg.price ?? ""),
+  };
+}
+
+function isPositiveNumber(value: string): boolean {
+  const parsed = Number(value);
+  return value !== "" && Number.isFinite(parsed) && parsed > 0;
 }
 
 export function OpenGymPricingDialog({
@@ -54,16 +93,20 @@ export function OpenGymPricingDialog({
   const [prices, setPrices] = useState<OpenGymBranchPrice[]>([]);
   const [locationId, setLocationId] = useState("");
   const [dropInPrice, setDropInPrice] = useState("");
-  const [weeklyPrice, setWeeklyPrice] = useState("");
-  const [monthlyPrice, setMonthlyPrice] = useState("");
+  const [rows, setRows] = useState<PackageRow[]>([]);
+  const [deletedPkgIds, setDeletedPkgIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const weeklyPkg = locationId
-    ? findBranchPackage(packages, locationId, "WEEKLY")
-    : undefined;
-  const monthlyPkg = locationId
-    ? findBranchPackage(packages, locationId, "MONTHLY")
-    : undefined;
+  const branchPackages = useMemo(() => {
+    if (!locationId) return [];
+    return packages
+      .filter(
+        (pkg) =>
+          pkg.category === "OPEN_GYM" &&
+          packageLocationId(pkg) === locationId,
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [locationId, packages]);
 
   const loadPrices = async () => {
     try {
@@ -77,22 +120,49 @@ export function OpenGymPricingDialog({
     if (open) loadPrices();
   }, [open]);
 
-  // Pre-fill all fields for the selected branch.
   useEffect(() => {
     if (!locationId) {
       setDropInPrice("");
-      setWeeklyPrice("");
-      setMonthlyPrice("");
+      setRows([]);
+      setDeletedPkgIds([]);
       return;
     }
+
     const branch = prices.find((p) => p.locationId === locationId);
     setDropInPrice(branch?.price != null ? String(branch.price) : "");
-    setWeeklyPrice(weeklyPkg?.price != null ? String(weeklyPkg.price) : "");
-    setMonthlyPrice(monthlyPkg?.price != null ? String(monthlyPkg.price) : "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationId, prices]);
+    setRows(
+      branchPackages.length > 0
+        ? branchPackages.map(packageToRow)
+        : [newPackageRow()],
+    );
+    setDeletedPkgIds([]);
+  }, [locationId, prices, branchPackages]);
 
-  const isNum = (v: string) => v !== "" && !Number.isNaN(Number(v));
+  const updateRow = (
+    key: string,
+    field: keyof Omit<PackageRow, "key" | "pkgId">,
+    value: string,
+  ) => {
+    setRows((prev) =>
+      prev.map((row) => (row.key === key ? { ...row, [field]: value } : row)),
+    );
+  };
+
+  const addRow = () => {
+    setRows((prev) => [...prev, newPackageRow()]);
+  };
+
+  const removeRow = (row: PackageRow) => {
+    if (row.pkgId) {
+      setDeletedPkgIds((prev) =>
+        prev.includes(row.pkgId!) ? prev : [...prev, row.pkgId!],
+      );
+    }
+    setRows((prev) => {
+      const next = prev.filter((item) => item.key !== row.key);
+      return next.length > 0 ? next : [newPackageRow()];
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,42 +170,59 @@ export function OpenGymPricingDialog({
       toast.error("Select a branch first");
       return;
     }
-    if (!isNum(dropInPrice) && !isNum(weeklyPrice) && !isNum(monthlyPrice)) {
-      toast.error("Enter at least one price");
+
+    const rowsToSave = rows.filter(
+      (row) =>
+        row.name.trim().length > 0 &&
+        isPositiveNumber(row.durationValue) &&
+        isPositiveNumber(row.price) &&
+        (!row.pkgId || !deletedPkgIds.includes(row.pkgId)),
+    );
+
+    if (!isPositiveNumber(dropInPrice) && rowsToSave.length === 0 && deletedPkgIds.length === 0) {
+      toast.error("Add at least one package or drop-in price");
       return;
     }
 
-    const branch = prices.find((p) => p.locationId === locationId);
-    const branchName = branch?.branchName ?? "Branch";
+    for (const row of rowsToSave) {
+      const expiryPeriod = durationToDays(
+        Number(row.durationValue),
+        row.durationUnit,
+      );
+      if (expiryPeriod < 1) {
+        toast.error(`Invalid duration for "${row.name || "package"}"`);
+        return;
+      }
+    }
 
     setSaving(true);
     try {
       const tasks: Promise<unknown>[] = [];
 
-      if (isNum(dropInPrice)) {
+      if (isPositiveNumber(dropInPrice)) {
         tasks.push(setOpenGymDropInPrice(locationId, Number(dropInPrice)));
       }
-      if (isNum(weeklyPrice)) {
-        tasks.push(
-          upsertOpenGymPackage({
-            pkgId: weeklyPkg?._id,
-            name: `Open Gym Weekly — ${branchName}`,
-            price: Number(weeklyPrice),
-            renewalPeriod: "WEEKLY",
-            locationId,
-          }),
-        );
+
+      for (const pkgId of deletedPkgIds) {
+        tasks.push(deleteOpenGymPackage(pkgId));
       }
-      if (isNum(monthlyPrice)) {
-        tasks.push(
-          upsertOpenGymPackage({
-            pkgId: monthlyPkg?._id,
-            name: `Open Gym Monthly — ${branchName}`,
-            price: Number(monthlyPrice),
-            renewalPeriod: "MONTHLY",
-            locationId,
-          }),
-        );
+
+      for (const row of rowsToSave) {
+        const payload = {
+          name: row.name.trim(),
+          price: Number(row.price),
+          expiryPeriod: durationToDays(
+            Number(row.durationValue),
+            row.durationUnit,
+          ),
+          locationId,
+        };
+
+        if (row.pkgId) {
+          tasks.push(updateOpenGymPackage({ pkgId: row.pkgId, ...payload }));
+        } else {
+          tasks.push(createOpenGymPackage(payload));
+        }
       }
 
       await Promise.all(tasks);
@@ -157,13 +244,13 @@ export function OpenGymPricingDialog({
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Open gym pricing</DialogTitle>
             <DialogDescription>
-              Choose a branch, then set its drop-in price and weekly / monthly
-              package prices. Saving creates the packages for that branch (or
-              updates them if they already exist).
+              Choose a branch, then create as many open gym packages as you
+              need. Each package has its own name, duration (weeks or months),
+              and price.
             </DialogDescription>
           </DialogHeader>
 
@@ -182,43 +269,134 @@ export function OpenGymPricingDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Weekly price (EGP)
-                  {weeklyPkg ? (
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      (update)
-                    </span>
-                  ) : null}
-                </Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={weeklyPrice}
-                  onChange={(e) => setWeeklyPrice(e.target.value)}
-                  placeholder="7 days"
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-sm font-medium">Packages</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addRow}
                   disabled={!locationId}
-                />
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add package
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Monthly price (EGP)
-                  {monthlyPkg ? (
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      (update)
-                    </span>
-                  ) : null}
-                </Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={monthlyPrice}
-                  onChange={(e) => setMonthlyPrice(e.target.value)}
-                  placeholder="30 days"
-                  disabled={!locationId}
-                />
-              </div>
+
+              {rows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Select a branch to manage packages.
+                </p>
+              ) : (
+                rows.map((row) => {
+                  const durationPreview = isPositiveNumber(row.durationValue)
+                    ? formatDurationLabel(
+                        Number(row.durationValue),
+                        row.durationUnit,
+                      )
+                    : null;
+
+                  return (
+                    <div
+                      key={row.key}
+                      className="rounded-md border p-3 space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium">
+                            {row.pkgId ? "Existing package" : "New package"}
+                          </p>
+                          {durationPreview ? (
+                            <p className="text-xs text-muted-foreground">
+                              Duration: {durationPreview}
+                            </p>
+                          ) : null}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeRow(row)}
+                          disabled={!locationId}
+                          aria-label="Remove package"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs text-muted-foreground">
+                            Package name
+                          </Label>
+                          <Input
+                            value={row.name}
+                            onChange={(e) =>
+                              updateRow(row.key, "name", e.target.value)
+                            }
+                            placeholder="e.g. Open Gym 2 Months — Maadi"
+                            disabled={!locationId}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">
+                            Duration
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="number"
+                              min={1}
+                              value={row.durationValue}
+                              onChange={(e) =>
+                                updateRow(
+                                  row.key,
+                                  "durationValue",
+                                  e.target.value,
+                                )
+                              }
+                              disabled={!locationId}
+                            />
+                            <Select
+                              value={row.durationUnit}
+                              onValueChange={(value: DurationUnit) =>
+                                updateRow(row.key, "durationUnit", value)
+                              }
+                              disabled={!locationId}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="weeks">Weeks</SelectItem>
+                                <SelectItem value="months">Months</SelectItem>
+                                <SelectItem value="days">Days</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">
+                            Price (EGP)
+                          </Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={row.price}
+                            onChange={(e) =>
+                              updateRow(row.key, "price", e.target.value)
+                            }
+                            placeholder="0"
+                            disabled={!locationId}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

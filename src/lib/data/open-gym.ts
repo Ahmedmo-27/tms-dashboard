@@ -41,47 +41,44 @@ export const setOpenGymDropInPrice = async (
 export const createOpenGymPackage = async (params: {
   name: string;
   price: number;
-  renewalPeriod: "WEEKLY" | "MONTHLY";
+  expiryPeriod: number;
   locationId: string;
 }) => {
   const response = await tms.post("/admin/packages", {
     name: params.name,
     category: "OPEN_GYM",
     price: params.price,
-    renewalPeriod: params.renewalPeriod,
+    expiryPeriod: params.expiryPeriod,
     locationId: params.locationId,
   });
   revalidatePath("/dashboard/catalog");
+  revalidatePath("/dashboard/scans-monitor");
   return response.data.data;
 };
 
-/**
- * Creates a per-branch OPEN_GYM package, or updates its price if one already
- * exists for that branch + renewalPeriod (pkgId provided). Keeps a single
- * weekly and single monthly package per branch instead of duplicating.
- */
-export const upsertOpenGymPackage = async (params: {
-  pkgId?: string;
+export const updateOpenGymPackage = async (params: {
+  pkgId: string;
   name: string;
   price: number;
-  renewalPeriod: "WEEKLY" | "MONTHLY";
+  expiryPeriod: number;
   locationId: string;
 }) => {
-  if (params.pkgId) {
-    const response = await tms.patch(`/admin/packages/${params.pkgId}`, {
-      price: String(params.price),
-      renewalPeriod: params.renewalPeriod,
-      locationId: params.locationId,
-    });
-    revalidatePath("/dashboard/catalog");
-    return response.data.data;
-  }
-  return createOpenGymPackage({
+  const response = await tms.patch(`/admin/packages/${params.pkgId}`, {
     name: params.name,
-    price: params.price,
-    renewalPeriod: params.renewalPeriod,
+    price: String(params.price),
+    expiryPeriod: params.expiryPeriod,
     locationId: params.locationId,
   });
+  revalidatePath("/dashboard/catalog");
+  revalidatePath("/dashboard/scans-monitor");
+  return response.data.data;
+};
+
+export const deleteOpenGymPackage = async (pkgId: string) => {
+  const response = await tms.delete(`/admin/packages/${pkgId}`);
+  revalidatePath("/dashboard/catalog");
+  revalidatePath("/dashboard/scans-monitor");
+  return response.data.data;
 };
 
 export const recordOpenGymMemberDropIn = async (

@@ -192,8 +192,8 @@ export function OpenGymSubscribeDialog({
           <DialogHeader>
             <DialogTitle>Add open gym package to member</DialogTitle>
             <DialogDescription>
-              Search for a member and subscribe them to a weekly or monthly open
-              gym package.
+              Search for a member and subscribe them to any open gym package
+              you have configured for this branch.
             </DialogDescription>
           </DialogHeader>
 
