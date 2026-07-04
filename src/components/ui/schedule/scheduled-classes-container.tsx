@@ -1,25 +1,31 @@
 import { ScheduledClass, getColumns } from "./columns";
 import { DataTable } from "./data-table";
 import { ScheduleClass } from "../dialogs/schedule/schedule-class";
+import { BookMemberClassDialog } from "../dialogs/schedule/book-member-class";
 import { MobileScheduledClassCard } from "./mobile-scheduled-class-card";
 import type { Location } from "@/lib/data/locations";
+import { Package } from "@/components/ui/packages/columns";
 
 export function ScheduledClassesContainer({
   scheduledClasses,
+  allScheduledClasses,
   classIdsMap,
   date,
   isLoading = false,
   coaches,
   locations,
   defaultLocationId,
+  catalogPackages,
 }: {
   scheduledClasses: ScheduledClass[];
+  allScheduledClasses: ScheduledClass[];
   classIdsMap: Map<string, string>;
   isLoading?: boolean;
   date: Date;
   coaches: any[];
   locations: Location[];
   defaultLocationId?: string;
+  catalogPackages: Package[];
 }) {
   return (
     <div className="h-full flex flex-col">
@@ -31,7 +37,13 @@ export function ScheduledClassesContainer({
             {scheduledClasses.length} classes scheduled for selected day
           </p>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+          <BookMemberClassDialog
+            scheduledClasses={scheduledClasses}
+            allScheduledClasses={allScheduledClasses}
+            catalogPackages={catalogPackages}
+            date={date}
+          />
           <ScheduleClass
             classIdsMap={classIdsMap}
             date={date}
