@@ -16,12 +16,14 @@ import EditSlots from "@/components/ui/dialogs/schedule/edit-slots";
 import { format } from "date-fns";
 import { EditClassComponent } from "@/components/ui/dialogs/schedule/edit-class";
 import type { Location } from "@/lib/data/locations";
+import { Package } from "@/components/ui/packages/columns";
 
 interface SchedulePageProps {
   scheduledClasses: ScheduledClass[];
   classIdsMap: Map<string, string>;
   coaches: any[];
   locations: Location[];
+  catalogPackages: Package[];
 }
 
 export function SchedulePage({
@@ -29,6 +31,7 @@ export function SchedulePage({
   coaches,
   scheduledClasses,
   locations,
+  catalogPackages,
 }: SchedulePageProps) {
   const [date, setDate] = useState<Date>(new Date());
   const [location, setLocation] = useState<string>(
@@ -60,11 +63,13 @@ export function SchedulePage({
       <div className="flex-[2] h-full">
         <ScheduledClassesContainer
           scheduledClasses={selectedScheduledClasses}
+          allScheduledClasses={scheduledClasses}
           classIdsMap={classIdsMap}
           date={date || new Date()}
           coaches={coaches}
           locations={locations}
           defaultLocationId={selectedLocationId}
+          catalogPackages={catalogPackages}
         />
       </div>
 
