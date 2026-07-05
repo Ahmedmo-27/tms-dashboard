@@ -1,0 +1,19 @@
+# AGENTS.md
+
+## Cursor Cloud specific instructions
+
+This repo is **only the frontend** (`tms-dashboard`) — a Next.js 15 (App Router, Turbopack) admin/coach UI for a gym management system. There is **no backend, database, or docker-compose in this repo**. The UI talks to an external TMS backend over REST (`axios`) and Socket.io.
+
+### Required environment variable
+- `NEXT_PUBLIC_TMS_API_URL` **must be set**, or the app throws at import time (`src/lib/tms-api.ts`, `src/lib/socket.ts`). Format: `http(s)://<host>:<port>/api` (the socket layer auto-strips the trailing `/api` for the realtime connection).
+- Next.js auto-loads `.env.local` (gitignored). Put `NEXT_PUBLIC_TMS_API_URL` there for local dev.
+- For real end-to-end testing you need a running external TMS backend URL plus valid login credentials (phone number + password). Without them, only the frontend UI can be exercised (login will fail at the network layer).
+
+### Run / lint / build (see `package.json` scripts)
+- Dev server: `npm run dev` → http://localhost:3000 (Next.js + Turbopack).
+- Lint: `npm run lint`. Note: the codebase currently has many pre-existing `@typescript-eslint/no-explicit-any` lint errors; `next.config.ts` sets `eslint.ignoreDuringBuilds: true` and `typescript.ignoreBuildErrors: true`, so `next build`/`next dev` are not blocked by them.
+
+### Testing without the real backend
+- To demo the login flow locally you can run a tiny mock server that answers `POST /api/auth/login` with `{ "data": { "token", "userId", "role": "admin", "name" } }`, `GET /api/auth/verifyToken` with `{ "data": { "user": { "role": "admin" } } }`, and returns `{ "data": [] }` for other `GET /api/admin/*` calls. Point `NEXT_PUBLIC_TMS_API_URL` at it (e.g. `http://localhost:4000/api`).
+- Login flow: form → `loginAction` (`src/lib/actions/auth-actions.ts`) → `login()` (`src/lib/data/auth.ts`) → `POST /auth/login` → token stored in an httpOnly `token` cookie → Redux `setCredentials` → redirect `/dashboard` → `/dashboard/scans-monitor`. Auth gating is client-side via Redux (`RequireAuth`), so a successful login response reaches the authenticated shell even if downstream data endpoints are empty.
+- The `token` cookie is set with `secure: true` (`src/lib/cookie.ts`); it is stored over plain-HTTP localhost in Chrome during dev, but be aware of this if cookie-dependent flows misbehave.
