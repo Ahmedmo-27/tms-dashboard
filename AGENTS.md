@@ -5,9 +5,10 @@
 This repo is **only the frontend** (`tms-dashboard`) — a Next.js 15 (App Router, Turbopack) admin/coach UI for a gym management system. There is **no backend, database, or docker-compose in this repo**. The UI talks to an external TMS backend over REST (`axios`) and Socket.io.
 
 ### Required environment variable
-- `NEXT_PUBLIC_TMS_API_URL` **must be set**, or the app throws at import time (`src/lib/tms-api.ts`, `src/lib/socket.ts`). Format: `http(s)://<host>:<port>/api` (the socket layer auto-strips the trailing `/api` for the realtime connection).
-- Next.js auto-loads `.env.local` (gitignored). Put `NEXT_PUBLIC_TMS_API_URL` there for local dev.
-- For real end-to-end testing you need a running external TMS backend URL plus valid login credentials (phone number + password). Without them, only the frontend UI can be exercised (login will fail at the network layer).
+- `NEXT_PUBLIC_TMS_API_URL` **must be set**, or the app throws at import time (`src/lib/tms-api.ts`, `src/lib/socket.ts`). It is used as the axios `baseURL` verbatim, so its exact shape matters: some backends expect an `/api` suffix and some serve REST from the root — match whatever the target backend uses (the socket layer strips a trailing `/api` if present). Data calls use paths like `/auth/login` and `/admin/*`.
+- It is provided as a Cursor secret and injected into the VM environment. Because it is `NEXT_PUBLIC_*`, the dev server must be started from a shell that already has the secret exported. If you start `npm run dev` inside a pre-existing tmux server that was created before the secret existed, the app will report "NEXT_PUBLIC_TMS_API_URL environment variable is not set"; restart the tmux server (or start dev from a fresh shell) so the pane inherits the secret.
+- Do not commit `.env.local`; it is gitignored. Rely on the injected secret instead.
+- The configured URL currently points at a **local** backend (`127.0.0.1:5000`) that is **not part of this repo** and must be started separately. For real end-to-end testing you need that backend running plus valid login credentials (phone number + password, provided via the `TMS_TEST_PHONE_NUMBER` / `TMS_TEST_PASSWORD` secrets). Without a running backend, only the frontend UI can be exercised (login fails at the network layer). The login phone number must be exactly 11 digits (`credentialsSchema`).
 
 ### Run / lint / build (see `package.json` scripts)
 - Dev server: `npm run dev` → http://localhost:3000 (Next.js + Turbopack).
