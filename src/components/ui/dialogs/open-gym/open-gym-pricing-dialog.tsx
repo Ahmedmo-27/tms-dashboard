@@ -73,7 +73,7 @@ function newPackageRow(): PackageRow {
 }
 
 function packageToRow(pkg: Package): PackageRow {
-  const { value, unit } = daysToDuration(pkg.expiryPeriod);
+  const { value, unit } = daysToDuration(Number(pkg.expiryPeriod));
   const validClasses = (pkg.opensClasses ?? []).filter((c) => c?._id);
   const sessions = Number(pkg.numberOfSessions);
   const hasClassBundle =

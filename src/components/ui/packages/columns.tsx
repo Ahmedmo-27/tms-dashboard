@@ -22,16 +22,14 @@ export type Package = {
   name: string;
   numberOfSessions: string;
   expiryPeriod: string;
-  renewalPeriod?: "WEEKLY" | "MONTHLY";
+  renewalPeriod?: string;
   category: string;
   price: string;
   hidden?: boolean;
-  renewalPeriod?: string;
   locationId?: string | { _id?: string; branchName?: string; location?: string };
   opensClasses: { _id: string; title: string }[];
   classRestrictions?: { cid: string; limit: number }[];
   branchLabel?: string;
-  locationId?: { branchName?: string; location?: string } | string;
 };
 
 export function createColumns(
