@@ -7,10 +7,47 @@ import {
   subscribeMemberToPackage,
   unsubscribeMemberFromPackage,
 } from "../data/member";
+import { addMember as addMemberRequest } from "../data/users";
 import { parseStateError } from "../utils/state-errors";
 import { bookClass, bookDropIn, cancelBooking } from "../data/bookings";
 import { nonUserDataSchema } from "../schemas/newUserSchema";
+import { bookClassSchema } from "../schemas/bookClassSchema";
+import { getMembers } from "../data/member";
+import { getPackages } from "../data/package";
+import { getNextScheduledClasses, getScheduledClasses } from "../data/schedule";
+import { getBookingEligibility } from "../utils/booking-eligibility";
 import { ApiError } from "@/core/api-error";
+
+export const acceptMemberAction = async (uid: string) => {
+  try {
+    if (!uid?.trim()) {
+      return {
+        success: false,
+        errors: { message: "Member id is required" },
+        data: null,
+      };
+    }
+
+    const response = await addMemberRequest(uid);
+    revalidatePath("/dashboard/member-requests");
+    revalidatePath("/dashboard/our-members");
+
+    return {
+      success: true,
+      errors: null,
+      data: response,
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return {
+        success: false,
+        errors: error,
+        data: null,
+      };
+    }
+    return parseStateError(error as Error);
+  }
+};
 
 export const adjustClassesAction = async (_prevState: any, formData: FormData) => {
   try {
@@ -180,11 +217,65 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
   try {
     const uid = formData.get("uid") as string;
     const clsId = formData.get("clsId") as string;
+
+    bookClassSchema.parse({ uid, clsId });
+
+    const [memberData, catalogPackages, fullSchedule, upcomingSchedule] =
+      await Promise.all([
+        getMembers(null, 1, 1, uid),
+        getPackages(),
+        getScheduledClasses(),
+        getNextScheduledClasses(),
+      ]);
+
+    const scheduledClasses = [
+      ...fullSchedule,
+      ...upcomingSchedule.filter(
+        (cls) => !fullSchedule.some((existing) => existing._id === cls._id)
+      ),
+    ];
+
+    const member = memberData.data[0];
+    if (!member) {
+      return {
+        success: false,
+        errors: { message: "Member not found" },
+        data: null,
+      };
+    }
+
+    const scheduledClass = scheduledClasses.find((cls) => cls._id === clsId);
+    if (!scheduledClass) {
+      return {
+        success: false,
+        errors: { message: "Scheduled class not found" },
+        data: null,
+      };
+    }
+
+    const eligibility = getBookingEligibility(
+      member,
+      scheduledClass,
+      catalogPackages,
+      scheduledClasses
+    );
+
+    if (!eligibility.eligible) {
+      return {
+        success: false,
+        errors: {
+          message: eligibility.reason ?? "Member cannot book this class",
+        },
+        data: null,
+      };
+    }
+
     const response = await bookClass(uid, clsId);
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
     revalidatePath("/dashboard/scans-monitor");
+    revalidatePath("/dashboard/schedule");
 
     return {
       success: true,
@@ -192,6 +283,13 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
       data: response,
     };
   } catch (error) {
+    if (error instanceof ApiError) {
+      return {
+        success: false,
+        errors: error,
+        data: null,
+      };
+    }
     return parseStateError(error as Error);
   }
 };

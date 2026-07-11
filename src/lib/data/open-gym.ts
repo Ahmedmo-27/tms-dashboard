@@ -11,6 +11,87 @@ export const getOpenGymDropInPrice = async (
   return response.data.data.price;
 };
 
+export type OpenGymBranchPrice = {
+  locationId: string;
+  branchName: string;
+  location: string;
+  price: number | null;
+};
+
+export const getOpenGymDropInPrices = async (): Promise<
+  OpenGymBranchPrice[]
+> => {
+  const response = await tms.get("/admin/openGym/dropInPrices");
+  return response.data.data;
+};
+
+export const setOpenGymDropInPrice = async (
+  locationId: string,
+  price: number
+) => {
+  const response = await tms.patch("/admin/openGym/dropInPrice", {
+    locationId,
+    price,
+  });
+  revalidatePath("/dashboard/scans-monitor");
+  revalidatePath("/dashboard/catalog");
+  return response.data.data;
+};
+
+export type OpenGymPackagePayload = {
+  name: string;
+  price: number;
+  expiryPeriod: number;
+  locationId: string;
+  numberOfSessions?: number;
+  opensClasses?: string[];
+  classRestrictions?: { cid: string; limit: number }[];
+};
+
+export const createOpenGymPackage = async (params: OpenGymPackagePayload) => {
+  const response = await tms.post("/admin/packages", {
+    name: params.name,
+    category: "OPEN_GYM",
+    price: params.price,
+    expiryPeriod: params.expiryPeriod,
+    locationId: params.locationId,
+    ...(params.numberOfSessions != null
+      ? { numberOfSessions: params.numberOfSessions }
+      : {}),
+    ...(params.opensClasses ? { opensClasses: params.opensClasses } : {}),
+    ...(params.classRestrictions
+      ? { classRestrictions: params.classRestrictions }
+      : {}),
+  });
+  revalidatePath("/dashboard/catalog");
+  revalidatePath("/dashboard/scans-monitor");
+  return response.data.data;
+};
+
+export const updateOpenGymPackage = async (
+  params: OpenGymPackagePayload & { pkgId: string },
+) => {
+  const response = await tms.patch(`/admin/packages/${params.pkgId}`, {
+    name: params.name,
+    price: String(params.price),
+    expiryPeriod: params.expiryPeriod,
+    locationId: params.locationId,
+    numberOfSessions: params.numberOfSessions,
+    opensClasses: params.opensClasses ?? [],
+    classRestrictions: params.classRestrictions ?? [],
+  });
+  revalidatePath("/dashboard/catalog");
+  revalidatePath("/dashboard/scans-monitor");
+  return response.data.data;
+};
+
+export const deleteOpenGymPackage = async (pkgId: string) => {
+  const response = await tms.delete(`/admin/packages/${pkgId}`);
+  revalidatePath("/dashboard/catalog");
+  revalidatePath("/dashboard/scans-monitor");
+  return response.data.data;
+};
+
 export const recordOpenGymMemberDropIn = async (
   uid: string,
   paymentMethod: string,

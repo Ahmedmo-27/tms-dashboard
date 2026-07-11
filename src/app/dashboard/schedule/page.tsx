@@ -7,6 +7,8 @@ import { Class } from "@/components/ui/classes/columns";
 import { NetworkError, NotFoundError, UnauthorizedError } from "@/core/api-error";
 import { getCoaches } from "@/lib/data/coaches";
 import { getLocations } from "@/lib/data/locations";
+import { getPackages } from "@/lib/data/package";
+import { Package } from "@/components/ui/packages/columns";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 
@@ -18,21 +20,26 @@ export default async function Page({
   try {
     const params = await searchParams;
     const locationId = params.locationId;
-    const [scheduledClasses, classes, coaches, locationDocs] = await Promise.all([
-      getScheduledClasses(locationId).catch((e) => {
-        if (e instanceof NotFoundError) return [];
-        throw e;
-      }),
-      getClasses().catch((e) => {
-        if (e instanceof NotFoundError) return [] as Class[];
-        throw e;
-      }),
-      getCoaches().catch((e) => {
-        if (e instanceof NotFoundError) return [];
-        throw e;
-      }),
-      getLocations().catch(() => []),
-    ]);
+    const [scheduledClasses, classes, coaches, locationDocs, catalogPackages] =
+      await Promise.all([
+        getScheduledClasses(locationId).catch((e) => {
+          if (e instanceof NotFoundError) return [];
+          throw e;
+        }),
+        getClasses().catch((e) => {
+          if (e instanceof NotFoundError) return [] as Class[];
+          throw e;
+        }),
+        getCoaches().catch((e) => {
+          if (e instanceof NotFoundError) return [];
+          throw e;
+        }),
+        getLocations().catch(() => []),
+        getPackages().catch((e) => {
+          if (e instanceof NotFoundError) return [] as Package[];
+          throw e;
+        }),
+      ]);
 
     // ✅ Explicitly type Map<string, string>
     const classIdsMap: Map<string, string> = new Map(
@@ -47,6 +54,7 @@ export default async function Page({
           coaches={coaches}
           locations={locationDocs}
           initialLocationId={locationId}
+          catalogPackages={catalogPackages}
         />
       </div>
     );

@@ -11,7 +11,8 @@ import {
 } from "@/lib/store/features/coachSlice";
 import { useCoachApi } from "@/hooks/useCoachApi";
 import { useRouter } from "next/navigation";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
+import { createTmsSocket } from "@/lib/socket";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,8 +42,6 @@ interface CoachNewPackagePayload {
   createdAt: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_TMS_API_URL as string;
-
 export function CoachDashboardShell() {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -65,10 +64,7 @@ export function CoachDashboardShell() {
   useEffect(() => {
     if (!coachId) return;
 
-    const socket: Socket = io(API_URL, {
-      transports: ["websocket"],
-      withCredentials: true,
-    });
+    const socket: Socket = createTmsSocket();
 
     socket.on("connect", () => {
       socket.emit("coach:joinRoom", coachId);

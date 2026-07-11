@@ -26,11 +26,9 @@ import { subscribePackageAction } from "@/lib/actions/member-actions";
 import {
   formatCatalogPackageLabel,
   getPackageEndDateFromStart,
-  isOpenGymPackage,
 } from "@/lib/utils/open-gym";
 import { tms } from "@/lib/tms-api";
 import { Search } from "lucide-react";
-import { ApiError } from "@/core/api-error";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
@@ -56,9 +54,10 @@ export function OpenGymSubscribeDialog({
   triggerLabel?: string;
 }) {
   const router = useRouter();
-  const { effectiveLocationId, isViewingAllBranches } = useBranchContext();
+  const { effectiveLocationId = "" } = useBranchContext();
+  const isViewingAllBranches = !effectiveLocationId;
   const openGymPackages = packages
-    .filter((p) => isOpenGymPackage(p.category))
+    .filter((p) => p.category === "OPEN_GYM")
     .filter((p) => {
       if (!effectiveLocationId || !p.locationId) return true;
       const pkgLocationId =
@@ -192,14 +191,14 @@ export function OpenGymSubscribeDialog({
           <DialogHeader>
             <DialogTitle>Add open gym package to member</DialogTitle>
             <DialogDescription>
-              Search for a member and subscribe them to a weekly or monthly open
-              gym package.
+              Search for a member and subscribe them to any open gym package
+              you have configured for this branch.
             </DialogDescription>
           </DialogHeader>
 
           {isViewingAllBranches && (
             <p className="text-sm text-destructive">
-              Select a branch from the header filter before adding an open gym package.
+              Select a branch above before adding an open gym package.
             </p>
           )}
 
@@ -378,7 +377,7 @@ export function OpenGymSubscribeDialog({
                 typeof state.errors === "object" &&
                 "message" in state.errors && (
                   <p className="text-destructive text-sm">
-                    {(state.errors as ApiError).message}
+                    {(state.errors as { message?: string }).message}
                   </p>
                 )}
 

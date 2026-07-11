@@ -28,7 +28,6 @@ import {
 } from "@/lib/actions/open-gym-actions";
 import { tms } from "@/lib/tms-api";
 import { Search, ArrowBigRight } from "lucide-react";
-import { ApiError } from "@/core/api-error";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
@@ -62,7 +61,8 @@ export function OpenGymDropInDialog({
   triggerClassName,
 }: OpenGymDropInDialogProps) {
   const router = useRouter();
-  const { effectiveLocationId, isViewingAllBranches } = useBranchContext();
+  const { effectiveLocationId = "" } = useBranchContext();
+  const isViewingAllBranches = !effectiveLocationId;
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"member" | "guest">("member");
   const [defaultPrice, setDefaultPrice] = useState<string>("");
@@ -111,22 +111,29 @@ export function OpenGymDropInDialog({
         setSelectedMemberName(presetMemberName ?? "");
         setSearchQuery(presetMemberName ?? "");
       }
-      tms
-        .get("/admin/openGym/dropInPrice", {
-          params: effectiveLocationId ? { locationId: effectiveLocationId } : undefined,
-        })
-        .then((res) => {
-          const price = String(res.data.data.price ?? "");
-          setDefaultPrice(price);
-          setAmount(price);
-        })
-        .catch(() => {
-          setDefaultPrice("");
-        });
     } else {
       resetForm();
     }
   };
+
+  useEffect(() => {
+    if (!open || !effectiveLocationId) {
+      setDefaultPrice("");
+      return;
+    }
+    tms
+      .get("/admin/openGym/dropInPrice", {
+        params: { locationId: effectiveLocationId },
+      })
+      .then((res) => {
+        const price = String(res.data.data.price ?? "");
+        setDefaultPrice(price);
+        setAmount(price);
+      })
+      .catch(() => {
+        setDefaultPrice("");
+      });
+  }, [open, effectiveLocationId]);
 
   useEffect(() => {
     setPriceChanged(amount !== defaultPrice && defaultPrice !== "");
@@ -240,7 +247,7 @@ export function OpenGymDropInDialog({
 
           {isViewingAllBranches && (
             <p className="text-sm text-destructive">
-              Select a branch from the header filter before recording a drop-in.
+              Select a branch above before recording a drop-in.
             </p>
           )}
 
@@ -391,7 +398,7 @@ export function OpenGymDropInDialog({
                   typeof memberState.errors === "object" &&
                   "message" in memberState.errors && (
                     <p className="text-destructive text-sm">
-                      {(memberState.errors as ApiError).message}
+                      {(memberState.errors as { message?: string }).message}
                     </p>
                   )}
 
@@ -534,7 +541,7 @@ export function OpenGymDropInDialog({
                   "message" in guestState.errors &&
                   !(guestState.errors as any).userExists && (
                     <p className="text-destructive text-sm">
-                      {(guestState.errors as ApiError).message}
+                      {(guestState.errors as { message?: string }).message}
                     </p>
                   )}
 

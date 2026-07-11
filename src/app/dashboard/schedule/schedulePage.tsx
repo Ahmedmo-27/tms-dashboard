@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { EditClassComponent } from "@/components/ui/dialogs/schedule/edit-class";
 import type { Location } from "@/lib/data/locations";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import { Package } from "@/components/ui/packages/columns";
 
 interface SchedulePageProps {
   scheduledClasses: ScheduledClass[];
@@ -24,6 +25,7 @@ interface SchedulePageProps {
   coaches: any[];
   locations: Location[];
   initialLocationId?: string;
+  catalogPackages: Package[];
 }
 
 export function SchedulePage({
@@ -32,6 +34,7 @@ export function SchedulePage({
   scheduledClasses,
   locations,
   initialLocationId = "",
+  catalogPackages,
 }: SchedulePageProps) {
   const { isManagement, isViewingAllBranches } = useBranchContext();
   const initialLocation =
@@ -85,11 +88,13 @@ export function SchedulePage({
       <div className="flex-[2] h-full">
         <ScheduledClassesContainer
           scheduledClasses={selectedScheduledClasses}
+          allScheduledClasses={scheduledClasses}
           classIdsMap={classIdsMap}
           date={date || new Date()}
           coaches={coaches}
           locations={locations}
           defaultLocationId={selectedLocationId}
+          catalogPackages={catalogPackages}
         />
       </div>
 

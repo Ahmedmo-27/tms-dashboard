@@ -84,7 +84,7 @@ export default function QRTemplateGenerator({ scls }: { scls: any }) {
   return (
     <div className="flex flex-col items-center bg-white/20 shadow-lg rounded-xl p-4">
       <h2 className="text-sm font-semibold mb-2 text-center w-full">
-        {`${clsTitle} - ${format(scls.startTime, "hh:mm a")}`}
+        {`${clsTitle}${scls.location ? ` — ${scls.location}` : ""} - ${format(scls.startTime, "hh:mm a")}`}
       </h2>
       <canvas
         ref={canvasRef}

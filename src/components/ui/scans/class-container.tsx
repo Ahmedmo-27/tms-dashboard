@@ -24,6 +24,7 @@ export interface ClassScan {
   time: string;
   method: string;
   status: "SUCCESS" | "FAILED" | "WILL_PAY";
+  statusDetail?: string;
   bookingId?: string;
   branchLabel?: string;
 }
@@ -126,14 +127,21 @@ export const ClassContainer = ({
                         {(scan.status === "WILL_PAY" && scan.bookingId) ? (
                           <PaymentSelectorDialog bookingId={scan.bookingId} />
                         ) : (
-                          <Badge
-                            className={cn(
-                              "font-normal",
-                              getStatusColor(scan.status)
-                            )}
-                          >
-                            {scan.status}
-                          </Badge>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge
+                              className={cn(
+                                "font-normal",
+                                getStatusColor(scan.status)
+                              )}
+                            >
+                              {scan.status}
+                            </Badge>
+                            {scan.statusDetail ? (
+                              <span className="text-xs text-muted-foreground max-w-[160px] text-right">
+                                {scan.statusDetail}
+                              </span>
+                            ) : null}
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
