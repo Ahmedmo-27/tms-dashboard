@@ -60,7 +60,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
         },
         {
           title: "Member Requests",
-          url: "/dashboard/member-requests",
+          url: "/dashboard/member-requests?searchString=&page=1",
           icon: UserPlus,
           roles: ["management", "branch_admin"],
         },
