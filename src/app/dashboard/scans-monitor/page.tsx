@@ -8,11 +8,22 @@ import {
 } from "@/lib/utils/parsers/scans-parser";
 import { getDailyAttendance } from "@/lib/data/scans";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
-import { NetworkError, UnauthorizedError } from "@/core/api-error";
+import {
+  NetworkError,
+  NotFoundError,
+  UnauthorizedError,
+} from "@/core/api-error";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 import { getPackages } from "@/lib/data/package";
 import { getClasses } from "@/lib/data/class";
 import { Class } from "@/components/ui/classes/columns";
+
+function emptyOnNotFound<T>(fallback: T) {
+  return (error: unknown): T => {
+    if (error instanceof NotFoundError) return fallback;
+    throw error;
+  };
+}
 
 export default async function Page({
   searchParams,
@@ -20,7 +31,7 @@ export default async function Page({
   searchParams: { date?: string; checkInsDate?: string; locationId?: string };
 }) {
   let scans: any = [];
-  let checkIns: any = [];
+  let checkIns: any = { pt: [], openGym: [] };
   let packages: any = [];
   let classes: Class[] = [];
 
@@ -31,24 +42,27 @@ export default async function Page({
     ? new Date(params.checkInsDate)
     : new Date();
   try {
+    // Catalog class/package lists may 404 for a branch with sessions but no
+    // Class.locations entry — Schedule works; don't blank Scans Monitor.
     const [scheduledClasses, packagesData, classesData] = await Promise.all([
       getScheduledClasses(locationId),
-      getPackages(),
-      getClasses(),
+      getPackages().catch(emptyOnNotFound([])),
+      getClasses().catch(emptyOnNotFound([])),
     ]);
     packages = packagesData;
     classes = classesData;
-    if (scheduledClasses.length > 0) {
-      scans = parseScans(scheduledClasses, dateParam);
-    } else {
-      scans = [];
-    }
-    const dailyAttendance = await getDailyAttendance(checkInsDateParam, locationId);
-    if (dailyAttendance.length > 0) {
-      checkIns = parseDailyAttendance(dailyAttendance);
-    } else {
-      checkIns = { pt: [], openGym: [] };
-    }
+    scans =
+      scheduledClasses.length > 0
+        ? parseScans(scheduledClasses, dateParam)
+        : [];
+    const dailyAttendance = await getDailyAttendance(
+      checkInsDateParam,
+      locationId
+    ).catch(emptyOnNotFound([]));
+    checkIns =
+      dailyAttendance.length > 0
+        ? parseDailyAttendance(dailyAttendance)
+        : { pt: [], openGym: [] };
     return (
       <div>
         <ScanContainer
@@ -63,13 +77,21 @@ export default async function Page({
     if (error instanceof NetworkError) {
       return (
         <NetworkErrorPage
-          title="Qr Codes Unavailable"
-          description="Unable to load qr codes due to network issues."
+          title="Scans Monitor Unavailable"
+          description="Unable to load scans monitor due to network issues."
           showBackButton={false}
         />
       );
-    } else if (error instanceof UnauthorizedError) {
+    }
+    if (error instanceof UnauthorizedError) {
       return <UnauthorizedPage />;
     }
+    return (
+      <NetworkErrorPage
+        title="Scans Monitor Unavailable"
+        description="Unable to load scans monitor. Please try again."
+        showBackButton={false}
+      />
+    );
   }
 }
