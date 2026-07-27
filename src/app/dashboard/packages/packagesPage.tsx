@@ -3,11 +3,14 @@ import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Package as PackageIcon } from "lucide-react";
 import { DataTable } from "@/components/ui/packages/data-table";
-import { Package, columns } from "../../../components/ui/packages/columns";
+import { Package, createColumns } from "../../../components/ui/packages/columns";
 import { AddPackageDialog } from "@/components/ui/dialogs/package/add-package";
 import { Class } from "@/components/ui/classes/columns";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 export default function PackagesPage({ packages, classes }: { packages: Package[]; classes: Class[] }) {
+  const { isViewingAllBranches } = useBranchContext();
+  const columns = createColumns(classes, [], isViewingAllBranches);
 
   return (
     <div className="flex min-h-full flex-col gap-4 sm:gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8">

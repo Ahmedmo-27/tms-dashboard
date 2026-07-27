@@ -40,6 +40,7 @@ export default function MemberPage({
             bookings={member?.bookings || []}
             scheduledClasses={scheduledClasses}
             uid={member.id}
+            memberName={member.name}
           />
         </div>
       </section>

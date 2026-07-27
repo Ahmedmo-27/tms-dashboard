@@ -16,6 +16,7 @@ import EditSlots from "@/components/ui/dialogs/schedule/edit-slots";
 import { format } from "date-fns";
 import { EditClassComponent } from "@/components/ui/dialogs/schedule/edit-class";
 import type { Location } from "@/lib/data/locations";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 import { Package } from "@/components/ui/packages/columns";
 
 interface SchedulePageProps {
@@ -23,6 +24,7 @@ interface SchedulePageProps {
   classIdsMap: Map<string, string>;
   coaches: any[];
   locations: Location[];
+  initialLocationId?: string;
   catalogPackages: Package[];
 }
 
@@ -31,33 +33,56 @@ export function SchedulePage({
   coaches,
   scheduledClasses,
   locations,
+  initialLocationId = "",
   catalogPackages,
 }: SchedulePageProps) {
+  const { isManagement, isViewingAllBranches } = useBranchContext();
+  const initialLocation =
+    locations.find((l) => l._id === initialLocationId) ?? locations[0];
   const [date, setDate] = useState<Date>(new Date());
-  const [location, setLocation] = useState<string>(
-    locations[0]?.branchName ?? ""
+  const [branchLocation, setBranchLocation] = useState<string>(
+    initialLocation?.branchName ?? ""
   );
-  const selectedLocationId =
-    locations.find((l) => l.branchName === location)?._id ??
-    locations[0]?._id ??
-    "";
+
+  const managementLocation = initialLocationId
+    ? locations.find((l) => l._id === initialLocationId)
+    : undefined;
+  const location = isManagement
+    ? (managementLocation?.branchName ?? "")
+    : branchLocation;
+  const selectedLocationId = isManagement
+    ? (initialLocationId || "")
+    : (locations.find((l) => l.branchName === branchLocation)?._id ??
+      locations[0]?._id ??
+      "");
+  const selectedLocationName = isManagement
+    ? (managementLocation?.branchName ?? "")
+    : branchLocation;
   const [selectedScheduledClasses, setSelectedScheduledClasses] = useState<
     ScheduledClass[]
   >([]);
 
   useEffect(() => {
     const targetDateStr = date.toLocaleDateString();
-    const targetLocation = location;
     const filtered = scheduledClasses.filter((cls) => {
       const clsDateStr = new Date(cls.startTime).toLocaleDateString();
-      const locationMatch =
+      if (clsDateStr !== targetDateStr) return false;
+      if (isManagement && isViewingAllBranches) return true;
+      return (
         cls.locationId === selectedLocationId ||
-        cls.location === targetLocation;
-      return clsDateStr === targetDateStr && locationMatch;
+        (!cls.locationId && cls.location === selectedLocationName)
+      );
     });
 
     setSelectedScheduledClasses(filtered);
-  }, [scheduledClasses, date, location, selectedLocationId]);
+  }, [
+    scheduledClasses,
+    date,
+    selectedLocationId,
+    selectedLocationName,
+    isManagement,
+    isViewingAllBranches,
+  ]);
   return (
     <div className="flex flex-col-reverse overflow-y-auto md:flex-row h-[calc(100vh-4rem)] gap-4 p-3">
       <div className="flex-[2] h-full">
@@ -108,28 +133,36 @@ export function SchedulePage({
             }}
           />
         </div>
-        <div className="flex flex-col gap-2">
-          <Select
-            name="location"
-            value={location}
-            onValueChange={(value) => setLocation(value as string)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {locations.map((loc) => (
-                <SelectItem
-                  key={loc._id}
-                  value={loc.branchName}
-                  className="hover:bg-accent"
-                >
-                  {loc.branchName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!isManagement && (
+          <div className="flex flex-col gap-2">
+            {locations.length > 1 ? (
+              <Select
+                name="location"
+                value={location}
+                onValueChange={(value) => setBranchLocation(value as string)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((loc) => (
+                    <SelectItem
+                      key={loc._id}
+                      value={loc.branchName}
+                      className="hover:bg-accent"
+                    >
+                      {loc.branchName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : locations[0] ? (
+              <p className="text-sm text-muted-foreground px-1">
+                Branch: {locations[0].branchName}
+              </p>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );

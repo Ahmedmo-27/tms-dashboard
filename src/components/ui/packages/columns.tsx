@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Class } from "../classes/columns";
 import { formatCategory } from "@/lib/utils/catalog";
+import { createBranchColumn } from "../branch-column";
 import {
   Tooltip,
   TooltipContent,
@@ -21,20 +22,23 @@ export type Package = {
   name: string;
   numberOfSessions: string;
   expiryPeriod: string;
+  renewalPeriod?: string;
   category: string;
   price: string;
   hidden?: boolean;
-  renewalPeriod?: string;
   locationId?: string | { _id?: string; branchName?: string; location?: string };
   opensClasses: { _id: string; title: string }[];
   classRestrictions?: { cid: string; limit: number }[];
+  branchLabel?: string;
 };
 
 export function createColumns(
   classes: Class[],
-  packageCategories: string[]
+  packageCategories: string[],
+  showBranch = false
 ): ColumnDef<Package>[] {
   return [
+    ...createBranchColumn<Package>(showBranch, (pkg) => pkg.branchLabel),
     {
       accessorKey: "name",
       header: "Name",

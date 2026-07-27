@@ -1,18 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Fragment } from "react";
 import QRTemplateGenerator from "@/components/ui/qrcode-template";
 import SpaceQRCode from "@/components/ui/space-qrcode";
 import type { Location } from "@/lib/data/locations";
 import type { ScheduledClass } from "@/components/ui/schedule/columns";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 interface QRCodesPageProps {
   locations: Location[];
@@ -23,24 +16,25 @@ export function QRCodesPage({
   locations,
   scheduledClasses,
 }: QRCodesPageProps) {
-  const [location, setLocation] = useState<string>(
-    locations[0]?.branchName ?? ""
-  );
+  const { effectiveLocationId } = useBranchContext();
 
-  const selectedLocation =
-    locations.find((loc) => loc.branchName === location) ?? locations[0];
-
-  const selectedLocationId = selectedLocation?._id ?? "";
+  const visibleLocations = effectiveLocationId
+    ? locations.filter((loc) => loc._id === effectiveLocationId)
+    : locations;
 
   const todaysClasses = scheduledClasses.filter((cls) => {
     const clsDate = new Date(cls.startTime).toLocaleDateString();
     return clsDate === new Date().toLocaleDateString();
   });
 
+  const visibleLocationIds = new Set(visibleLocations.map((l) => l._id));
+  const visibleBranchNames = new Set(visibleLocations.map((l) => l.branchName));
+
   const filteredClasses = todaysClasses.filter((cls) => {
-    const locationMatch =
-      cls.locationId === selectedLocationId || cls.location === location;
-    return locationMatch;
+    return (
+      (cls.locationId && visibleLocationIds.has(cls.locationId)) ||
+      (cls.location && visibleBranchNames.has(cls.location))
+    );
   });
 
   if (locations.length === 0) {
@@ -55,47 +49,32 @@ export function QRCodesPage({
 
   return (
     <div className="p-6 space-y-8">
-      <div className="max-w-sm space-y-2">
-        <Label className="text-sm font-medium">Location</Label>
-        <Select
-          name="location"
-          value={location}
-          onValueChange={(value) => setLocation(value)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select location" />
-          </SelectTrigger>
-          <SelectContent>
-            {locations.map((loc) => (
-              <SelectItem
-                key={loc._id}
-                value={loc.branchName}
-                className="hover:bg-accent"
-              >
-                {loc.branchName}
-                {loc.location ? ` — ${loc.location}` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       <div>
         <h2 className="text-lg font-bold mb-4">Static QR Codes</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {selectedLocation && (
-            <SpaceQRCode
-              key={selectedLocation._id}
-              locationId={selectedLocation._id}
-              branchName={selectedLocation.branchName}
-            />
-          )}
+          {visibleLocations.map((loc) => (
+            <Fragment key={loc._id}>
+              <SpaceQRCode
+                locationId={loc._id}
+                branchName={loc.branchName}
+                kind="openGym"
+              />
+              <SpaceQRCode
+                locationId={loc._id}
+                branchName={loc.branchName}
+                kind="pt"
+              />
+            </Fragment>
+          ))}
         </div>
       </div>
 
       <div>
         <h2 className="text-lg font-bold mb-4">
-          Today&apos;s Classes — {selectedLocation?.branchName}
+          Today&apos;s Classes
+          {visibleLocations.length === 1
+            ? ` — ${visibleLocations[0].branchName}`
+            : ""}
         </h2>
         {filteredClasses.length === 0 ? (
           <p className="text-muted-foreground">

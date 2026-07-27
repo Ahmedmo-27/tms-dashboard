@@ -16,6 +16,7 @@ import { ScheduledClass } from "../schedule/columns";
 import { format } from "date-fns";
 import { CheckInsSelector } from "../dialogs/scans/check-in-selector";
 import { PaymentSelectorDialog } from "../dialogs/scans/payment-selector-dialog";
+import { BranchPill } from "../branch-pill";
 
 export interface ClassScan {
   member: string;
@@ -25,6 +26,7 @@ export interface ClassScan {
   status: "SUCCESS" | "FAILED" | "WILL_PAY";
   statusDetail?: string;
   bookingId?: string;
+  branchLabel?: string;
 }
 
 export interface ClassContainerProps {
@@ -35,7 +37,8 @@ export interface ClassContainerProps {
 export const ClassContainer = ({
   classData,
   classScans,
-}: ClassContainerProps) => {
+  showBranch = false,
+}: ClassContainerProps & { showBranch?: boolean }) => {
   const getStatusColor = (status: ClassScan["status"]) => {
     switch (status) {
       case "SUCCESS":
@@ -55,6 +58,9 @@ export const ClassContainer = ({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-semibold">{classData.className}</h3>
+              {showBranch && classData.location ? (
+                <BranchPill label={classData.location} />
+              ) : null}
               <Badge variant="outline" className="font-normal">
                 {classData.coachName}
               </Badge>

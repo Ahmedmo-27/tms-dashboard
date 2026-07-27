@@ -1,14 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getTickets, Ticket } from "@/lib/data/tickets";
-import { TicketColumnsWrapper } from "./columns";
-import { DataTable } from "./data-table";
-import { CreateTicketModal } from "./create-ticket-modal";
-import { Card, CardContent, CardHeader, CardTitle } from "../card";
-import { Button } from "../button";
-import { Input } from "../input";
-import { Badge } from "../badge";
+import { useCoachApi } from "@/hooks/useCoachApi";
+import type { Ticket } from "@/lib/data/tickets";
+import {
+  getCoachTickets,
+  getCoachTicketCategories,
+  submitCoachTicket,
+  updateCoachTicketStatus,
+} from "@/lib/data/coach-tickets";
+import { TicketColumnsWrapper } from "@/components/ui/tickets/columns";
+import { DataTable } from "@/components/ui/tickets/data-table";
+import { CreateTicketModal } from "@/components/ui/tickets/create-ticket-modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Search, RefreshCw, Ticket as TicketIcon, Plus } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
@@ -23,7 +29,9 @@ const STATUS_TABS = [
 
 const PAGE_SIZE = 10;
 
-export default function TicketsContainer() {
+export function CoachTicketsView() {
+  const coachApi = useCoachApi();
+
   const [data, setData] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +45,13 @@ export default function TicketsContainer() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await getTickets(status, debouncedSearch || null, page, PAGE_SIZE);
+      const res = await getCoachTickets(
+        coachApi,
+        status,
+        debouncedSearch || null,
+        page,
+        PAGE_SIZE
+      );
       setData(res.data);
       setTotal(res.total);
     } catch {
@@ -45,7 +59,7 @@ export default function TicketsContainer() {
       setTotal(0);
     }
     setIsLoading(false);
-  }, [status, debouncedSearch, page]);
+  }, [coachApi, status, debouncedSearch, page]);
 
   useEffect(() => {
     fetchData();
@@ -61,38 +75,62 @@ export default function TicketsContainer() {
     setIsRefreshing(false);
   };
 
+  const updateStatus = useCallback(
+    async (id: string, ticketStatus: Ticket["status"], adminNotes?: string) => {
+      return updateCoachTicketStatus(coachApi, id, ticketStatus, adminNotes);
+    },
+    [coachApi]
+  );
+
+  const fetchCategories = useCallback(
+    () => getCoachTicketCategories(coachApi),
+    [coachApi]
+  );
+
+  const handleSubmit = useCallback(
+    async (payload: {
+      category: string;
+      description: string;
+      otherDetails?: string;
+    }) => {
+      await submitCoachTicket(coachApi, payload);
+    },
+    [coachApi]
+  );
+
   const { columns, modal } = TicketColumnsWrapper({
     onChanged: fetchData,
     showBranch: true,
+    updateTicketStatusFn: updateStatus,
   });
+
   const maxPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
-      <Card className="w-full">
-        <CardHeader className="pb-0 p-4 sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <TicketIcon className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground flex-shrink-0" />
-              <div className="min-w-0 flex-1">
-                <CardTitle className="text-lg sm:text-xl truncate">Support Tickets</CardTitle>
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                  Support requests from members, coaches, and staff
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="font-normal text-xs sm:text-sm w-fit">
-                Total: {total}
-              </Badge>
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Ticket
-              </Button>
+      <div className="w-full rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <TicketIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-semibold truncate">Support Tickets</h2>
+              <p className="text-xs text-muted-foreground truncate">
+                View and manage all support tickets across branches
+              </p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-4 sm:pt-6 p-4 sm:p-6">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="font-normal text-xs">
+              Total: {total}
+            </Badge>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Ticket
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-4 p-4">
           <div className="flex flex-wrap gap-2">
             {STATUS_TABS.map((tab) => (
               <Button
@@ -161,13 +199,15 @@ export default function TicketsContainer() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
       {modal}
       <CreateTicketModal
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreated={fetchData}
+        fetchCategories={fetchCategories}
+        onSubmit={handleSubmit}
       />
     </>
   );

@@ -29,10 +29,12 @@ export default function Bookings({
   bookings,
   scheduledClasses,
   uid,
+  memberName,
 }: {
   bookings: Booking[];
   scheduledClasses: ScheduledClass[];
   uid: string;
+  memberName?: string;
 }) {
   const formatDateTime = (date: string) => {
     if(date === "") return {
@@ -62,7 +64,7 @@ export default function Bookings({
           <h3 className="text-lg sm:text-xl font-semibold">Bookings</h3>
           <div className="flex gap-2">
             <BookClass uid={uid} scheduledClasses={scheduledClasses} />
-            <BookDropIn uid={uid} scheduledClasses={scheduledClasses} />
+            <BookDropIn uid={uid} memberName={memberName} />
           </div>
         </div>
       </CardHeader>

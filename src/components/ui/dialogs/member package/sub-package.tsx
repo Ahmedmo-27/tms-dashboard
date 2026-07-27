@@ -24,6 +24,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "../../checkbox";
 import { subscribePackageAction } from "@/lib/actions/member-actions";
+import {
+  formatCatalogPackageLabel,
+  getPackageEndDateFromStart,
+  isOpenGymPackage,
+  sortPackagesWithOpenGymFirst,
+} from "@/lib/utils/open-gym";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -39,6 +46,7 @@ export default function SubPackage({
   packages: Package[];
   uid: string;
 }) {
+  const { effectiveLocationId } = useBranchContext();
   const [open, setOpen] = useState(false);
   const [pkg, setPkg] = useState<Package | null>(null);
 
@@ -71,11 +79,8 @@ export default function SubPackage({
   const handleStartDate = (date: string) => {
     if (!pkg) return;
 
-    const end = new Date(date);
-    end.setDate(end.getDate() + Number(pkg.expiryPeriod));
-
     setSelectedStartDate(date);
-    setSelectedEndDate(end.toISOString());
+    setSelectedEndDate(getPackageEndDateFromStart(date, pkg));
   };
 
   useEffect(() => {
@@ -109,6 +114,8 @@ export default function SubPackage({
     initialState
   );
 
+  const sortedPackages = sortPackagesWithOpenGymFirst(packages);
+
   return (
     <div>
       <Button variant="outline" size="sm" onClick={() => toggleOpen(true)}>
@@ -118,13 +125,22 @@ export default function SubPackage({
       <Dialog open={open} onOpenChange={toggleOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Subscribe to a package</DialogTitle>
-            <DialogDescription>Select the package details below.</DialogDescription>
+            <DialogTitle>
+              {pkg && isOpenGymPackage(pkg.category)
+                ? "Add open gym package"
+                : "Subscribe to a package"}
+            </DialogTitle>
+            <DialogDescription>
+              {pkg && isOpenGymPackage(pkg.category)
+                ? "Weekly or monthly open gym access for this member."
+                : "Select the package details below."}
+            </DialogDescription>
           </DialogHeader>
 
           <form action={formAction}>
             {/* Hidden fields */}
             <input type="hidden" name="uid" value={uid} />
+            <input type="hidden" name="locationId" value={effectiveLocationId ?? ""} />
             <input type="hidden" name="pkgId" value={pkg?._id ?? ""} />
             <input type="hidden" name="startDate" value={selectedStartDate} />
             <input type="hidden" name="endDate" value={selectedEndDate} />
@@ -144,9 +160,9 @@ export default function SubPackage({
                   <SelectValue placeholder="Select a package" />
                 </SelectTrigger>
                 <SelectContent>
-                  {packages.map((pkg) => (
+                  {sortedPackages.map((pkg) => (
                     <SelectItem key={pkg._id} value={pkg._id} className="hover:bg-accent">
-                      {`${pkg.name}: ${pkg.numberOfSessions} sessions • EGP${pkg.price}`}
+                      {formatCatalogPackageLabel(pkg)}
                     </SelectItem>
                   ))}
                 </SelectContent>

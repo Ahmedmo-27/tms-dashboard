@@ -1,4 +1,11 @@
 import { Payment } from "@/components/ui/payments/columns";
+import { resolveOpenGymPaymentPurpose } from "@/lib/utils/open-gym";
+
+type LocationRef =
+  | { branchName?: string; location?: string }
+  | string
+  | null
+  | undefined;
 
 export interface RawPaymentRecord {
   _id?: string;
@@ -9,11 +16,20 @@ export interface RawPaymentRecord {
   nonMemberPhone?: string;
   phoneNumber?: string;
   phone?: string;
-  pkgId?: { name: string };
+  pkgId?: {
+    name: string;
+    category?: string;
+    renewalPeriod?: string;
+    locationId?: { branchName?: string; location?: string };
+  };
   scid?: {
     cid: { title: string; locations: { branchName: string }[] };
+    locationId?: { branchName?: string; location?: string };
     startTime: string;
   };
+  locationId?: { branchName?: string; location?: string };
+  purpose?: string;
+  note?: string;
   paymentTime?: string | Date;
   createdAt?: string | Date;
   recordedAt?: string | Date;
@@ -156,17 +172,35 @@ function getTransactionFlags(record: RawPaymentRecord) {
   return { isCashOut, isRefunded };
 }
 
+function getLocationLabel(loc: LocationRef): string | null {
+  if (!loc) return null;
+  if (typeof loc === "string") return null;
+  return loc.branchName ?? loc.location ?? null;
+}
+
+export function resolvePaymentLocation(record: RawPaymentRecord): string {
+  return (
+    getLocationLabel(record.scid?.locationId) ??
+    record.scid?.cid?.locations?.[0]?.branchName ??
+    getLocationLabel(record.locationId) ??
+    getLocationLabel(record.pkgId?.locationId) ??
+    " -- "
+  );
+}
+
 export const parsePayments = (payments: unknown): Payment[] => {
   const records = normalizePaymentsPayload(payments);
 
   return records.map((payment) => {
     const { isCashOut, isRefunded } = getTransactionFlags(payment);
 
-    let purpose = "";
-    if (payment.pkgId) {
+    let purpose = resolveOpenGymPaymentPurpose(payment) ?? "";
+    if (!purpose && payment.pkgId) {
       purpose = payment.pkgId.name;
-    } else if (payment.scid) {
+    } else if (!purpose && payment.scid) {
       purpose = payment.scid.cid.title;
+    } else if (!purpose && payment.note) {
+      purpose = payment.note;
     }
 
     const refundReason = payment.refundReason ?? payment.reason ?? "";
@@ -198,12 +232,7 @@ export const parsePayments = (payments: unknown): Payment[] => {
       paymentMethod:
         payment.paymentMethod ??
         (isCashOut ? "Cash Out" : isRefunded ? "Refund" : "—"),
-      location: payment.scid
-        ? payment.scid.locationId?.branchName ??
-          payment.scid.locationId?.location ??
-          payment.scid.cid?.locations?.[0]?.branchName ??
-          " -- "
-        : " -- ",
+      location: resolvePaymentLocation(payment),
       classTime: payment.scid ? payment.scid.startTime : "",
       isRefunded,
       isCashOut,

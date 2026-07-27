@@ -7,9 +7,12 @@ import { MemberRefundForm } from "@/components/ui/refunds/member-refund-form";
 import { CashOutForm } from "@/components/ui/refunds/cash-out-form";
 import { useAppSelector } from "@/lib/hooks";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
+import { canPerformAction, isManagementRole } from "@/lib/config/roles";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 export function RefundsPageContent() {
   const user = useAppSelector((state) => state.auth.user);
+  const { selectedLocationId, userLocationId } = useBranchContext();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -20,7 +23,16 @@ export function RefundsPageContent() {
     return null;
   }
 
-  if (!user || user.role !== "admin") {
+  if (!canPerformAction(user?.role as string | undefined, "refunds", selectedLocationId, userLocationId)) {
+    if (isManagementRole(user?.role as string)) {
+      return (
+        <div className="flex min-h-full flex-col gap-4 p-8">
+          <p className="text-muted-foreground">
+            Select a branch from the bar above to record refunds for that branch.
+          </p>
+        </div>
+      );
+    }
     return <UnauthorizedPage />;
   }
 

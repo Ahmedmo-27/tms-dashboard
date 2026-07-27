@@ -12,14 +12,15 @@ import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: { date?: string };
+  searchParams: { date?: string; locationId?: string };
 }) {
   const params = await searchParams;
   const dateParam = params.date
     ? new Date(params.date).toLocaleString().split("T")[0]
     : new Date().toLocaleString().split("T")[0];
+  const locationId = params.locationId;
   try {
-    const orders = await getOrders();
+    const orders = await getOrders(locationId);
     const products = await getProducts();
     return (
       <div className="flex min-h-full flex-col gap-8 p-8">

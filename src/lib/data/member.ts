@@ -156,7 +156,6 @@ export const subscribeMemberToPackage = async (
     };
     const response = await tms.post("admin/member-packages", requestBody);
     return response.data;
-    return {}
   } catch (error) {
     console.error(error);
     throw error;

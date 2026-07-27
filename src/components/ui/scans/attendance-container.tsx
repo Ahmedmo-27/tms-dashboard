@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import type { ReactNode } from "react";
 import {
   Table,
   TableBody,
@@ -13,17 +14,21 @@ import { cn } from "@/lib/utils";
 import { Clock, Users, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ClassScan } from "./class-container";
+import { BranchPill } from "../branch-pill";
 
 
 export interface AttendanceContainerProps {
   title: string;
   classScans: ClassScan[];
+  headerActions?: ReactNode;
 }
 
 export const AttendanceContainer = ({
   title,
   classScans,
-}: AttendanceContainerProps) => {
+  headerActions,
+  showBranch = false,
+}: AttendanceContainerProps & { showBranch?: boolean }) => {
   const getStatusColor = (status: ClassScan["status"]) => {
     switch (status) {
       case "SUCCESS":
@@ -43,7 +48,9 @@ export const AttendanceContainer = ({
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold">{title}</h3>
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3">
+            {headerActions}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               <span>
@@ -53,6 +60,7 @@ export const AttendanceContainer = ({
             <div className="flex items-center gap-1">
               <UserCheck className="h-4 w-4" />
               <span>{classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0} checked in</span>
+            </div>
             </div>
           </div>
         </div>
@@ -66,6 +74,7 @@ export const AttendanceContainer = ({
                   <TableHead>Member</TableHead>
                   <TableHead>Phone Number</TableHead>
                   <TableHead>Package</TableHead>
+                  {showBranch ? <TableHead>Branch</TableHead> : null}
                   <TableHead>Check-in Time</TableHead>
                   <TableHead className="text-right">Status</TableHead>
                 </TableRow>
@@ -74,7 +83,7 @@ export const AttendanceContainer = ({
                 {classScans.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={showBranch ? 6 : 5}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No members checked in yet
@@ -88,6 +97,15 @@ export const AttendanceContainer = ({
                       </TableCell>
                       <TableCell>{scan.phone}</TableCell>
                       <TableCell>{scan.method}</TableCell>
+                      {showBranch ? (
+                        <TableCell>
+                          {scan.branchLabel ? (
+                            <BranchPill label={scan.branchLabel} />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      ) : null}
                       <TableCell>
                         {format(new Date(scan.time), "hh:mm a")}
                       </TableCell>

@@ -21,6 +21,7 @@ import {
   formatFailedScanToast,
   type FailedScanPayload,
 } from "@/lib/socket";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 function parseDateParam(value: string | null): Date {
   return value ? new Date(value) : new Date();
@@ -51,6 +52,7 @@ export function ScanContainer({
   classes?: Class[];
 }) {
   const searchParams = useSearchParams();
+  const { isViewingAllBranches } = useBranchContext();
 
   const [scans, setScans] = useState(initialScans);
   const [dailyAttendance, setDailyAttendance] = useState(initialDailyAttendance);
@@ -178,10 +180,18 @@ export function ScanContainer({
           <AttendanceContainer
             title="Personal Training"
             classScans={dailyAttendance.pt}
+            showBranch={isViewingAllBranches}
           />
           <AttendanceContainer
             title="Open Gym"
             classScans={dailyAttendance.openGym}
+            showBranch={isViewingAllBranches}
+            headerActions={
+              <OpenGymDropInDialog
+                triggerLabel="Add drop-in"
+                triggerClassName="min-h-[36px]"
+              />
+            }
           />
         </div>
         <div className="flex flex-row justify-between text-2xl font-bold mx-5 py-4 border-b-2">
@@ -197,6 +207,7 @@ export function ScanContainer({
               key={scan.classData._id ?? index}
               classData={scan.classData}
               classScans={scan.classScans}
+              showBranch={isViewingAllBranches}
             />
           ))}
         </div>

@@ -12,14 +12,26 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { redirect, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { UserInfo } from "./ui/userInfo";
 import { pagesMetadata } from "@/lib/config/pages";
-
-// This is sample data.
+import { useAppSelector } from "@/lib/hooks";
+import { toPermissionRole } from "@/lib/config/roles";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const user = useAppSelector((state) => state.auth.user);
+  const permissionRole = toPermissionRole(user?.role as string | undefined);
+
+  const visibleGroups = pagesMetadata.navMain
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => permissionRole && item.roles.includes(permissionRole)
+      ),
+    }))
+    .filter((group) => group.items.length > 0);
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -32,7 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {pagesMetadata.navMain.map((item) => (
+            {visibleGroups.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild>
                   <a href={item.url} className="font-medium">

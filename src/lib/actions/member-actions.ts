@@ -66,6 +66,7 @@ export const adjustClassesAction = async (_prevState: any, formData: FormData) =
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return { success: true, errors: null, data: response };
   } catch (error) {
@@ -86,6 +87,7 @@ export const changePkgEndDate = async (_prevState: any, formData: FormData) => {
     // Revalidate the member's page and the members list
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,
@@ -131,6 +133,7 @@ export const subscribeGuestPackageAction = async (
       priceChanged ? amount : undefined
     );
 
+    revalidatePath("/dashboard/scans-monitor");
     revalidatePath("/dashboard/member-requests");
 
     return {
@@ -161,8 +164,8 @@ export const subscribePackageAction = async (
     const paymentMethod = formData.get("paymentMethod") as string;
     const paymentDate = formData.get("paymentDate") as string;
     const amount = formData.get("amount") as string;
-    const priceChanged = (formData.get("priceChanged") as string) === "true";
     const locationId = (formData.get("locationId") as string) || undefined;
+    const priceChanged = (formData.get("priceChanged") as string) === "true";
 
     const response = await subscribeMemberToPackage(
       uid,
@@ -173,6 +176,10 @@ export const subscribePackageAction = async (
       priceChanged ? amount : undefined,
       locationId
     );
+
+    revalidatePath(`/dashboard/our-members/${uid}`);
+    revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,
@@ -267,6 +274,7 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
     revalidatePath("/dashboard/schedule");
 
     return {
@@ -295,6 +303,7 @@ export const bookDropInAction = async (_prevState: any, formData: FormData) => {
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,
@@ -319,6 +328,7 @@ export const cancelBookingAction = async (
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
 
     return {
       success: true,

@@ -30,7 +30,7 @@ import { tms } from "@/lib/tms-api";
 import { Search, ArrowBigRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -61,7 +61,7 @@ export function OpenGymDropInDialog({
   triggerClassName,
 }: OpenGymDropInDialogProps) {
   const router = useRouter();
-  const [effectiveLocationId, setEffectiveLocationId] = useState("");
+  const { effectiveLocationId = "" } = useBranchContext();
   const isViewingAllBranches = !effectiveLocationId;
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"member" | "guest">("member");
@@ -113,7 +113,6 @@ export function OpenGymDropInDialog({
       }
     } else {
       resetForm();
-      setEffectiveLocationId("");
     }
   };
 
@@ -239,11 +238,6 @@ export function OpenGymDropInDialog({
               paid visit for members or guests.
             </DialogDescription>
           </DialogHeader>
-
-          <OpenGymBranchSelect
-            value={effectiveLocationId}
-            onChange={setEffectiveLocationId}
-          />
 
           {defaultPrice && (
             <p className="text-sm text-muted-foreground">

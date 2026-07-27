@@ -8,11 +8,15 @@ import {
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import RequireAuth from "@/components/require-auth";
+import { RequirePageAccess } from "@/components/require-page-access";
+import { DashboardBranchBar } from "@/components/dashboard-branch-bar";
+import { Suspense } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div>
       <RequireAuth>
+        <RequirePageAccess>
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
@@ -23,9 +27,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Nav />
               </div>
             </header>
+            <Suspense fallback={null}>
+              <DashboardBranchBar />
+            </Suspense>
             <ScrollArea>{children}</ScrollArea>
           </SidebarInset>
         </SidebarProvider>
+        </RequirePageAccess>
       </RequireAuth>
     </div>
   );

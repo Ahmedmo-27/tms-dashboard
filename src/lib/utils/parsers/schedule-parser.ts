@@ -90,6 +90,7 @@ export const parseSchedule = (
       startTime: new Date(cls.startTime).toString(),
       endTime: new Date(cls.endTime).toString(),
       category: cls.cid?.category ?? "Unknown Category",
+      classPrice: cls.cid?.price?.toString(),
       bookedMembers: parsedBookedMembers,
       scans: allScans,
     };

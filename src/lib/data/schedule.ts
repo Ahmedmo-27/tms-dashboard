@@ -3,11 +3,16 @@ import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { NotFoundError } from "@/core/api-error";
 import { parseSchedule } from "../utils/parsers/schedule-parser";
 
-export const getScheduledClasses = async (): Promise<ScheduledClass[]> => {
+export const getScheduledClasses = async (
+  locationId?: string
+): Promise<ScheduledClass[]> => {
   try {
     let scheduledClasses: any = [];
-    const response = await tms.get("/admin/schedule");
-    const nonUserBookingsResponse = await tms.get("/admin/nonUserBooking");
+    const params = locationId ? { locationId } : undefined;
+    const response = await tms.get("/admin/schedule", { params });
+    const nonUserBookingsResponse = await tms.get("/admin/nonUserBooking", {
+      params,
+    });
     if (response.data.data) {
       scheduledClasses = parseSchedule(
         response.data.data,

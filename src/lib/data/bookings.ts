@@ -68,6 +68,7 @@ export const bookWalkIn = async (
   name: string,
   phoneNumber: string,
   scid: string,
+  paymentMethod?: string,
   amount?: number,
   paymentDate?: string
 ) => {
@@ -76,6 +77,7 @@ export const bookWalkIn = async (
       name,
       phoneNumber,
       scid,
+      paymentMethod,
       amount,
       paymentDate,
     });

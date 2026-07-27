@@ -3,7 +3,7 @@ import { getMembers } from "@/lib/data/member";
 import MemberPage from "./memberPage";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPackages } from "@/lib/data/package";
-import { getNextScheduledClasses } from "@/lib/data/schedule";
+import { getScheduledClasses } from "@/lib/data/schedule";
 import { Package } from "@/components/ui/packages/columns";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { NetworkError, UnauthorizedError } from "@/core/api-error";
@@ -13,7 +13,7 @@ import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 export default async function Page({ params }: { params: { id: string } }) {
   const { id } = params;
   const packages: Package[] = await getPackages();
-  const scheduledClasses: ScheduledClass[] = await getNextScheduledClasses();
+  const scheduledClasses: ScheduledClass[] = await getScheduledClasses();
   if (!id) {
     return (
       <Card className="m-4 sm:m-6">

@@ -26,6 +26,7 @@ export type ScheduledClass = {
   coachId?: string | string[];
   category?: string;
   className?: string;
+  classPrice?: string;
   location?: string;
   locationId?: string;
   scans: any;

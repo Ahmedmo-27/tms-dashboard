@@ -1,6 +1,7 @@
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { ClassScan } from "@/components/ui/scans/class-container";
 import { ClassContainerProps } from "@/components/ui/scans/class-container";
+import { getBranchLabel } from "@/lib/utils/location-label";
 
 function parseScanStatus(
   status: boolean | string | undefined
@@ -28,7 +29,7 @@ export const parseScans = (scheduledClasses: ScheduledClass[], date: Date) => {
 
   scheduledClasses.forEach((cls) => {
     const parsedScans: ClassScan[] = [];
-    cls.scans.forEach((scan: any) => {
+    (cls.scans ?? []).forEach((scan: any) => {
       const status = parseScanStatus(scan.status);
       const parsedScan: ClassScan = {
         member: scan.uid?.name || "Unknown Member",
@@ -78,6 +79,7 @@ export const parseDailyAttendance = (scans: any) => {
       method: scan.method,
       status,
       statusDetail: getFailedStatusDetail(status, scan.method),
+      branchLabel: getBranchLabel(scan.locationId) ?? undefined,
     };
     output.pt.push(parsedScan);
   });
@@ -85,12 +87,13 @@ export const parseDailyAttendance = (scans: any) => {
   (record.openGymAttendance ?? []).forEach((scan: any) => {
     const status = parseScanStatus(scan.status);
     const parsedScan: ClassScan = {
-      member: scan.uid?.name || "Unknown Member",
-      phone: scan.uid?.phoneNumber || "No Phone",
+      member: scan.uid?.name || scan.guestName || "Unknown Member",
+      phone: scan.uid?.phoneNumber || scan.guestPhone || "No Phone",
       time: new Date(scan.time).toString(),
       method: scan.method,
       status,
       statusDetail: getFailedStatusDetail(status, scan.method),
+      branchLabel: getBranchLabel(scan.locationId) ?? undefined,
     };
     output.openGym.push(parsedScan);
   });

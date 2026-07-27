@@ -12,11 +12,17 @@ import { Package } from "@/components/ui/packages/columns";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: { locationId?: string };
+}) {
   try {
+    const params = await searchParams;
+    const locationId = params.locationId;
     const [scheduledClasses, classes, coaches, locationDocs, catalogPackages] =
       await Promise.all([
-        getScheduledClasses().catch((e) => {
+        getScheduledClasses(locationId).catch((e) => {
           if (e instanceof NotFoundError) return [];
           throw e;
         }),
@@ -41,13 +47,16 @@ export default async function Page() {
     );
 
     return (
-      <SchedulePage
-        scheduledClasses={scheduledClasses}
-        classIdsMap={classIdsMap}
-        coaches={coaches}
-        locations={locationDocs}
-        catalogPackages={catalogPackages}
-      />
+      <div className="flex flex-col gap-3">
+        <SchedulePage
+          scheduledClasses={scheduledClasses}
+          classIdsMap={classIdsMap}
+          coaches={coaches}
+          locations={locationDocs}
+          initialLocationId={locationId}
+          catalogPackages={catalogPackages}
+        />
+      </div>
     );
   } catch (error) {
     if (error instanceof NetworkError) {

@@ -13,7 +13,7 @@ export default function Page() {
           <div>
             <h1 className="text-xl font-bold sm:text-2xl">Support Tickets</h1>
             <p className="text-sm text-muted-foreground">
-              Problems reported by users from the app
+              Support requests from members, coaches, and staff across all branches
             </p>
           </div>
         </div>

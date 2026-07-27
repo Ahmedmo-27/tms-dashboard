@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "../button";
 import { Badge } from "../badge";
 import { format } from "date-fns";
+import { createBranchColumn } from "../branch-column";
 
 export interface OrderItem {
   barcode: string;
@@ -16,9 +17,12 @@ export interface Order {
   items: OrderItem[];
   total: number;
   date: Date;
+  branchLabel?: string;
 }
 
-export const columns: ColumnDef<Order>[] = [
+export function createColumns(showBranch = false): ColumnDef<Order>[] {
+  return [
+    ...createBranchColumn<Order>(showBranch, (order) => order.branchLabel),
   {
     id: "expander",
     header: "",
@@ -74,3 +78,4 @@ export const columns: ColumnDef<Order>[] = [
     ),
   },
 ];
+}

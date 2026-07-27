@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 import { Package } from "@/components/ui/packages/columns";
 import { Class } from "@/components/ui/classes/columns";
 import { MultiSelect } from "@/components/ui/multiselect";
@@ -73,7 +73,7 @@ function newPackageRow(): PackageRow {
 }
 
 function packageToRow(pkg: Package): PackageRow {
-  const { value, unit } = daysToDuration(pkg.expiryPeriod);
+  const { value, unit } = daysToDuration(Number(pkg.expiryPeriod));
   const validClasses = (pkg.opensClasses ?? []).filter((c) => c?._id);
   const sessions = Number(pkg.numberOfSessions);
   const hasClassBundle =
@@ -107,9 +107,10 @@ export function OpenGymPricingDialog({
   triggerLabel?: string;
 }) {
   const router = useRouter();
+  const { effectiveLocationId = "" } = useBranchContext();
+  const locationId = effectiveLocationId;
   const [open, setOpen] = useState(false);
   const [prices, setPrices] = useState<OpenGymBranchPrice[]>([]);
-  const [locationId, setLocationId] = useState("");
   const [dropInPrice, setDropInPrice] = useState("");
   const [rows, setRows] = useState<PackageRow[]>([]);
   const [deletedPkgIds, setDeletedPkgIds] = useState<string[]>([]);
@@ -327,8 +328,6 @@ export function OpenGymPricingDialog({
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <OpenGymBranchSelect value={locationId} onChange={setLocationId} />
-
             <div className="space-y-2">
               <Label className="text-sm font-medium">Drop-in price (EGP)</Label>
               <Input

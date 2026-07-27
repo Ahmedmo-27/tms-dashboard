@@ -31,7 +31,7 @@ import { tms } from "@/lib/tms-api";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -54,7 +54,7 @@ export function OpenGymSubscribeDialog({
   triggerLabel?: string;
 }) {
   const router = useRouter();
-  const [effectiveLocationId, setEffectiveLocationId] = useState("");
+  const { effectiveLocationId = "" } = useBranchContext();
   const isViewingAllBranches = !effectiveLocationId;
   const openGymPackages = packages
     .filter((p) => p.category === "OPEN_GYM")
@@ -195,11 +195,6 @@ export function OpenGymSubscribeDialog({
               you have configured for this branch.
             </DialogDescription>
           </DialogHeader>
-
-          <OpenGymBranchSelect
-            value={effectiveLocationId}
-            onChange={setEffectiveLocationId}
-          />
 
           {isViewingAllBranches && (
             <p className="text-sm text-destructive">

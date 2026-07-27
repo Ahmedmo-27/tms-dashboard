@@ -23,6 +23,14 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { TicketDetailModal } from "./ticket-detail-modal";
+import { createBranchColumn } from "../branch-column";
+import {
+  getCreatorBranchLabel,
+  getCreatorDisplayName,
+  getCreatorRole,
+  getCreatorRoleLabel,
+  formatHandlerAttribution,
+} from "@/lib/utils/ticket-utils";
 
 const STATUS_META: Record<TicketStatus, { label: string; className: string }> = {
   pending: {
@@ -43,29 +51,83 @@ const STATUS_META: Record<TicketStatus, { label: string; className: string }> = 
   },
 };
 
-function StatusBadge({ status }: { status: TicketStatus }) {
-  const meta = STATUS_META[status] ?? STATUS_META.pending;
-  return <Badge className={meta.className}>{meta.label}</Badge>;
+const ROLE_BADGE_CLASS: Record<string, string> = {
+  member: "bg-slate-100 text-slate-700 border-slate-200",
+  coach: "bg-purple-100 text-purple-800 border-purple-200",
+  branch_admin: "bg-orange-100 text-orange-800 border-orange-200",
+  management: "bg-indigo-100 text-indigo-800 border-indigo-200",
+};
+
+function StatusCell({ ticket }: { ticket: Ticket }) {
+  const meta = STATUS_META[ticket.status] ?? STATUS_META.pending;
+  const attribution = formatHandlerAttribution(
+    ticket.statusUpdatedByName,
+    ticket.statusUpdatedByRole,
+    ticket.statusUpdatedAt
+  );
+
+  return (
+    <div className="min-w-[120px] space-y-1">
+      <Badge className={meta.className}>{meta.label}</Badge>
+      {attribution && (
+        <p className="text-[11px] text-muted-foreground leading-snug">
+          By {attribution}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function CreatorCell({ ticket }: { ticket: Ticket }) {
+  const role = getCreatorRole(ticket);
+  const branchLabel = getCreatorBranchLabel(ticket);
+
+  return (
+    <div className="min-w-[140px] space-y-1">
+      <p className="text-sm font-medium">{getCreatorDisplayName(ticket)}</p>
+      <Badge
+        variant="outline"
+        className={ROLE_BADGE_CLASS[role] ?? ROLE_BADGE_CLASS.member}
+      >
+        {getCreatorRoleLabel(role)}
+      </Badge>
+      {branchLabel && (
+        <p className="text-xs text-muted-foreground">{branchLabel}</p>
+      )}
+    </div>
+  );
 }
 
 function TicketActions({
   ticket,
   onChanged,
   onViewDetails,
+  canUpdate = true,
+  updateTicketStatusFn = updateTicketStatus,
 }: {
   ticket: Ticket;
   onChanged: () => void;
   onViewDetails: (ticket: Ticket) => void;
+  canUpdate?: boolean;
+  updateTicketStatusFn?: typeof updateTicketStatus;
 }) {
   const setStatus = async (status: TicketStatus) => {
     try {
-      await updateTicketStatus(ticket._id, status);
+      await updateTicketStatusFn(ticket._id, status);
       toast.success(`Marked as ${STATUS_META[status].label}`);
       onChanged();
     } catch {
       toast.error("Failed to update ticket");
     }
   };
+
+  if (!canUpdate) {
+    return (
+      <Button variant="ghost" size="sm" onClick={() => onViewDetails(ticket)}>
+        <Eye className="h-4 w-4" />
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>
@@ -99,11 +161,16 @@ function TicketActions({
   );
 }
 
-// Wrapper that owns modal state so columns can stay as a pure factory
 export function TicketColumnsWrapper({
   onChanged,
+  showBranch = true,
+  canUpdateTicket,
+  updateTicketStatusFn = updateTicketStatus,
 }: {
   onChanged: () => void;
+  showBranch?: boolean;
+  canUpdateTicket?: (ticket: Ticket) => boolean;
+  updateTicketStatusFn?: typeof updateTicketStatus;
 }) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -113,23 +180,49 @@ export function TicketColumnsWrapper({
     setModalOpen(true);
   };
 
-  const columns = createColumns(onChanged, openModal);
+  const columns = createColumns(
+    onChanged,
+    openModal,
+    showBranch,
+    canUpdateTicket,
+    updateTicketStatusFn
+  );
 
-  return { columns, modal: (
-    <TicketDetailModal
-      ticket={selectedTicket}
-      open={modalOpen}
-      onOpenChange={setModalOpen}
-      onUpdated={onChanged}
-    />
-  )};
+  return {
+    columns,
+    modal: (
+      <TicketDetailModal
+        ticket={selectedTicket}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onUpdated={onChanged}
+        canUpdate={
+          selectedTicket
+            ? canUpdateTicket
+              ? canUpdateTicket(selectedTicket)
+              : true
+            : false
+        }
+        updateTicketStatusFn={updateTicketStatusFn}
+      />
+    ),
+  };
 }
 
 export function createColumns(
   onChanged: () => void,
-  onViewDetails: (ticket: Ticket) => void = () => {}
+  onViewDetails: (ticket: Ticket) => void = () => {},
+  showBranch = true,
+  canUpdateTicket?: (ticket: Ticket) => boolean,
+  updateTicketStatusFn: typeof updateTicketStatus = updateTicketStatus
 ): ColumnDef<Ticket>[] {
-  return [
+  const columns: ColumnDef<Ticket>[] = [
+    ...createBranchColumn<Ticket>(showBranch, (ticket) => ticket.branchLabel),
+    {
+      id: "createdBy",
+      header: "Created By",
+      cell: ({ row }) => <CreatorCell ticket={row.original} />,
+    },
     { accessorKey: "name", header: "Name" },
     { accessorKey: "phone", header: "Phone" },
     { accessorKey: "email", header: "Email" },
@@ -168,7 +261,7 @@ export function createColumns(
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      cell: ({ row }) => <StatusCell ticket={row.original} />,
     },
     {
       accessorKey: "createdAt",
@@ -187,8 +280,12 @@ export function createColumns(
           ticket={row.original}
           onChanged={onChanged}
           onViewDetails={onViewDetails}
+          canUpdate={canUpdateTicket ? canUpdateTicket(row.original) : true}
+          updateTicketStatusFn={updateTicketStatusFn}
         />
       ),
     },
   ];
+
+  return columns;
 }
