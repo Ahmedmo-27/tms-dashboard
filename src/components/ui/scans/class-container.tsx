@@ -11,12 +11,14 @@ import {
 import { Button } from "../button";
 import { ScrollArea, ScrollBar } from "../scroll-area";
 import { cn } from "@/lib/utils";
+import { buildClassSheetClipboardText } from "@/lib/utils/copy-class-for-sheet";
 import { Clock, Users, UserCheck } from "lucide-react";
 import { ScheduledClass } from "../schedule/columns";
 import { format } from "date-fns";
 import { CheckInsSelector } from "../dialogs/scans/check-in-selector";
 import { PaymentSelectorDialog } from "../dialogs/scans/payment-selector-dialog";
 import { BranchPill } from "../branch-pill";
+import { toast } from "react-hot-toast";
 
 export interface ClassScan {
   member: string;
@@ -51,6 +53,33 @@ export const ClassContainer = ({
         return "";
     }
   };
+
+  const sheetEligibleCount = classScans.filter(
+    (scan) => scan.status === "SUCCESS" || scan.status === "FAILED"
+  ).length;
+
+  const handleCopyClassForSheet = async () => {
+    if (sheetEligibleCount === 0) {
+      toast.error("No successful or failed check-ins to copy");
+      return;
+    }
+
+    const text = buildClassSheetClipboardText({
+      className: classData.className,
+      coachName: classData.coachName,
+      startTime: classData.startTime,
+      classPrice: classData.classPrice,
+      scans: classScans,
+    });
+
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Class attendance copied for sheet");
+    } catch {
+      toast.error("Failed to copy class attendance");
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader className="space-y-4 p-4">
@@ -66,6 +95,14 @@ export const ClassContainer = ({
               </Badge>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyClassForSheet}
+                disabled={sheetEligibleCount === 0}
+              >
+                Copy Class for Sheet
+              </Button>
               <CheckInsSelector members={classData.bookedMembers} classData={classData} />
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
