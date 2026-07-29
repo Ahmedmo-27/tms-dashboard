@@ -29,7 +29,7 @@ export const parseScans = (scheduledClasses: ScheduledClass[], date: Date) => {
 
   scheduledClasses.forEach((cls) => {
     const parsedScans: ClassScan[] = [];
-    (cls.scans ?? []).forEach((scan: any) => {
+    cls.scans.forEach((scan: any) => {
       const status = parseScanStatus(scan.status);
       const parsedScan: ClassScan = {
         member: scan.uid?.name || "Unknown Member",
