@@ -65,9 +65,6 @@ export const ClassContainer = ({
     }
 
     const text = buildClassSheetClipboardText({
-      className: classData.className,
-      coachName: classData.coachName,
-      startTime: classData.startTime,
       classPrice: classData.classPrice,
       scans: classScans,
     });

@@ -1,5 +1,3 @@
-import { format } from "date-fns";
-
 export type SheetScanInput = {
   member: string;
   method: string;
@@ -40,31 +38,24 @@ export function mapMethodToSheetLabel(method: string): MethodSheetMapping {
 }
 
 export function buildClassSheetClipboardText(input: {
-  className?: string;
-  coachName: string;
-  startTime: string | Date;
   classPrice?: string;
   scans: SheetScanInput[];
 }): string {
-  const timeLabel = format(new Date(input.startTime), "h a").toLowerCase();
-  const classTitle = `${input.className?.trim() || "Class"} ${timeLabel}`;
-  const header = `${classTitle}\t${input.coachName || ""}`;
-
   const price = input.classPrice?.trim() || "450";
   const eligible = input.scans.filter(
     (scan) => scan.status === "SUCCESS" || scan.status === "FAILED"
   );
 
-  const rows = eligible.map((scan, index) => {
-    const n = String(index + 1);
-    const name = scan.member || "";
-    const mapped = mapMethodToSheetLabel(scan.method);
+  return eligible
+    .map((scan, index) => {
+      const n = String(index + 1);
+      const name = scan.member || "";
+      const mapped = mapMethodToSheetLabel(scan.method);
 
-    if (mapped.kind === "dropin") {
-      return `${n}\t${name}\t\t${price}\tApp\tDrop in`;
-    }
-    return `${n}\t${name}\t${mapped.label}`;
-  });
-
-  return [header, ...rows].join("\n");
+      if (mapped.kind === "dropin") {
+        return `${n}\t${name}\t\t${price}\tApp\tDrop in`;
+      }
+      return `${n}\t${name}\t${mapped.label}`;
+    })
+    .join("\n");
 }
