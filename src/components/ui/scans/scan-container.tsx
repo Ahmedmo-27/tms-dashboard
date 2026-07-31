@@ -10,15 +10,14 @@ import { useSearchParams } from "next/navigation";
 import { formatDate } from "date-fns";
 import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
-import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import AddGuestPackage from "../dialogs/package/add-guest-package";
 import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog";
 import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
 import { OpenGymPricingDialog } from "../dialogs/open-gym/open-gym-pricing-dialog";
 import { fetchScansMonitorData } from "@/lib/data/scans";
 import {
-  buildOpenGymSheetClipboardText,
-  buildPtSheetClipboardText,
+  mapOpenGymMethodToSheetLabel,
+  mapPtMethodToSheetLabel,
 } from "@/lib/utils/copy-class-for-sheet";
 import { Class } from "../classes/columns";
 import {
@@ -186,32 +185,18 @@ export function ScanContainer({
             title="Personal Training"
             classScans={dailyAttendance.pt}
             showBranch={isViewingAllBranches}
-            headerActions={
-              <CopyAttendanceForSheetButton
-                scans={dailyAttendance.pt}
-                buildText={buildPtSheetClipboardText}
-                label="Copy PT for Sheet"
-                successMessage="PT attendance copied for sheet"
-              />
-            }
+            sheetCopy={{ mapMethod: mapPtMethodToSheetLabel }}
           />
           <AttendanceContainer
             title="Open Gym"
             classScans={dailyAttendance.openGym}
             showBranch={isViewingAllBranches}
+            sheetCopy={{ mapMethod: mapOpenGymMethodToSheetLabel }}
             headerActions={
-              <>
-                <CopyAttendanceForSheetButton
-                  scans={dailyAttendance.openGym}
-                  buildText={buildOpenGymSheetClipboardText}
-                  label="Copy Open Gym for Sheet"
-                  successMessage="Open Gym attendance copied for sheet"
-                />
-                <OpenGymDropInDialog
-                  triggerLabel="Add drop-in"
-                  triggerClassName="min-h-[36px]"
-                />
-              </>
+              <OpenGymDropInDialog
+                triggerLabel="Add drop-in"
+                triggerClassName="min-h-[36px]"
+              />
             }
           />
         </div>

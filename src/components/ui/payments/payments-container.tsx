@@ -31,13 +31,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { format, formatDate } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { isOutflowTransaction } from "@/lib/utils/parsers/payments-parser";
+import { ExportPaymentsDialog } from "./export-payments-dialog";
 
 export default function PaymentsContainer({
   payments,
   initialDate,
+  locationId,
 }: {
   payments: Payment[];
   initialDate?: string;
+  locationId?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,6 +51,7 @@ export default function PaymentsContainer({
 
   const isOutflow = (payment: Payment) => isOutflowTransaction(payment);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     initialDate ? new Date(initialDate) : undefined
   );
@@ -341,7 +345,12 @@ export default function PaymentsContainer({
                   <span className="hidden sm:inline">Refresh</span>
                 </Button>
 
-                <Button variant="outline" size="sm" className="flex-1 lg:flex-initial">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 lg:flex-initial"
+                  onClick={() => setExportOpen(true)}
+                >
                   <Download className="mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">Export</span>
                 </Button>
@@ -349,6 +358,12 @@ export default function PaymentsContainer({
             </div>
           </div>
         </CardHeader>
+
+        <ExportPaymentsDialog
+          open={exportOpen}
+          onOpenChange={setExportOpen}
+          locationId={locationId}
+        />
 
         <CardContent className="p-0 sm:p-6">
           <div className="rounded-md border overflow-hidden">
