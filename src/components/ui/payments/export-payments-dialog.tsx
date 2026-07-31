@@ -18,6 +18,7 @@ import { ExportBranchSelector } from "./export-branch-selector";
 import { getLocations, type Location } from "@/lib/data/locations";
 import { getPaymentsForDateRange } from "@/lib/data/payments";
 import { downloadPaymentsExcel } from "@/lib/utils/export-payments";
+import { isRateLimitError } from "@/lib/utils/retry-request";
 
 interface ExportPaymentsDialogProps {
   open: boolean;
@@ -114,10 +115,17 @@ export function ExportPaymentsDialog({
     setProgress(null);
 
     try {
+      const branches = locations
+        .filter((location) => selectedBranchIds.includes(location._id))
+        .map((location) => ({
+          id: location._id,
+          branchName: location.branchName,
+        }));
+
       const payments = await getPaymentsForDateRange(
         dates.from,
         dates.to,
-        selectedBranchIds,
+        branches,
         (completed, total) => setProgress({ completed, total })
       );
 
@@ -131,8 +139,14 @@ export function ExportPaymentsDialog({
         `Exported ${payments.length} payment${payments.length === 1 ? "" : "s"} to Excel.`
       );
       handleOpenChange(false);
-    } catch {
-      toast.error("Failed to export payments. Please try again.");
+    } catch (error) {
+      if (isRateLimitError(error)) {
+        toast.error(
+          "The server is receiving too many requests. Try a shorter date range or wait a minute and retry."
+        );
+      } else {
+        toast.error("Failed to export payments. Please try again.");
+      }
     } finally {
       setIsExporting(false);
       setProgress(null);
@@ -195,7 +209,7 @@ export function ExportPaymentsDialog({
 
             {isExporting && progress && (
               <p className="text-sm text-muted-foreground">
-                Fetching {progress.completed} of {progress.total} requests…
+                Fetching day {progress.completed} of {progress.total}…
               </p>
             )}
           </div>
