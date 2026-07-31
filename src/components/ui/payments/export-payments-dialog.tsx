@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { DialogDatePicker } from "./dialog-date-picker";
 import { ExportBranchSelector } from "./export-branch-selector";
-import { getLocations, type Location } from "@/lib/data/locations";
+import { useLocations } from "@/lib/hooks/use-locations";
 import { getPaymentsForDateRange } from "@/lib/data/payments";
 import { downloadPaymentsExcel } from "@/lib/utils/export-payments";
 import { isRateLimitError } from "@/lib/utils/retry-request";
@@ -31,7 +31,7 @@ export function ExportPaymentsDialog({
 }: ExportPaymentsDialogProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
-  const [locations, setLocations] = useState<Location[]>([]);
+  const { locations } = useLocations(open);
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(
@@ -39,26 +39,13 @@ export function ExportPaymentsDialog({
   );
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || locations.length === 0) return;
 
-    let active = true;
-    getLocations()
-      .then((fetchedLocations) => {
-        if (!active) return;
-        setLocations(fetchedLocations);
-        setSelectedBranchIds((current) => {
-          if (current.length > 0) return current;
-          return fetchedLocations.map((loc) => loc._id);
-        });
-      })
-      .catch(() => {
-        if (active) setLocations([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [open]);
+    setSelectedBranchIds((current) => {
+      if (current.length > 0) return current;
+      return locations.map((location) => location._id);
+    });
+  }, [open, locations]);
 
   const resetForm = () => {
     setFromDate(undefined);
