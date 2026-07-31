@@ -11,7 +11,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover-dialog";
+} from "@/components/ui/popover";
 
 interface DialogDatePickerProps {
   className?: string;
@@ -65,7 +65,10 @@ export function DialogDatePicker({
         className="min-h-[44px] w-full touch-manipulation text-base md:hidden"
       />
 
-      {/* Calendar popover: desktop only (dialog-safe popover, no portal) */}
+      {/*
+        Portaled popover for desktop: dialog-safe popover (no portal) gets clipped
+        by DialogContent's transform + overflow-hidden containing block.
+      */}
       <Popover modal open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <Button
@@ -84,10 +87,17 @@ export function DialogDatePicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0"
+          className="z-[70] w-auto p-0"
           align="start"
+          side="bottom"
           sideOffset={4}
+          collisionPadding={16}
           onOpenAutoFocus={(event) => event.preventDefault()}
+          onInteractOutside={(event) => {
+            // Keep the parent dialog open when dismissing the calendar.
+            event.preventDefault();
+            onOpenChange?.(false);
+          }}
         >
           <Calendar
             mode="single"
