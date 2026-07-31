@@ -30,7 +30,8 @@ import { tms } from "@/lib/tms-api";
 import { Search, ArrowBigRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -61,8 +62,13 @@ export function OpenGymDropInDialog({
   triggerClassName,
 }: OpenGymDropInDialogProps) {
   const router = useRouter();
-  const { effectiveLocationId = "" } = useBranchContext();
-  const isViewingAllBranches = !effectiveLocationId;
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"member" | "guest">("member");
   const [defaultPrice, setDefaultPrice] = useState<string>("");
@@ -106,6 +112,7 @@ export function OpenGymDropInDialog({
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
     if (value) {
+      resetModalBranch();
       if (presetUid) {
         setSelectedUid(presetUid);
         setSelectedMemberName(presetMemberName ?? "");
@@ -117,13 +124,13 @@ export function OpenGymDropInDialog({
   };
 
   useEffect(() => {
-    if (!open || !effectiveLocationId) {
+    if (!open || !locationId) {
       setDefaultPrice("");
       return;
     }
     tms
       .get("/admin/openGym/dropInPrice", {
-        params: { locationId: effectiveLocationId },
+        params: { locationId },
       })
       .then((res) => {
         const price = String(res.data.data.price ?? "");
@@ -133,7 +140,7 @@ export function OpenGymDropInDialog({
       .catch(() => {
         setDefaultPrice("");
       });
-  }, [open, effectiveLocationId]);
+  }, [open, locationId]);
 
   useEffect(() => {
     setPriceChanged(amount !== defaultPrice && defaultPrice !== "");
@@ -245,10 +252,12 @@ export function OpenGymDropInDialog({
             </p>
           )}
 
-          {isViewingAllBranches && (
-            <p className="text-sm text-destructive">
-              Select a branch above before recording a drop-in.
-            </p>
+          {needsBranchSelection && (
+            <OpenGymBranchSelect
+              value={locationId}
+              onChange={setModalLocationId}
+              disabled={memberPending || guestPending}
+            />
           )}
 
           <Tabs
@@ -263,11 +272,7 @@ export function OpenGymDropInDialog({
             <TabsContent value="member">
               <form action={memberFormAction} className="space-y-4 mt-2">
                 <input type="hidden" name="uid" value={selectedUid} />
-                <input
-                  type="hidden"
-                  name="locationId"
-                  value={effectiveLocationId ?? ""}
-                />
+                <input type="hidden" name="locationId" value={locationId} />
                 <input
                   type="hidden"
                   name="paymentMethod"
@@ -408,7 +413,7 @@ export function OpenGymDropInDialog({
                   </Button>
                   <Button
                     type="submit"
-                    disabled={memberPending || !selectedUid || !effectiveLocationId}
+                    disabled={memberPending || !selectedUid || !hasLocationId}
                   >
                     {memberPending ? "Saving…" : "Record drop-in"}
                   </Button>
@@ -418,11 +423,7 @@ export function OpenGymDropInDialog({
 
             <TabsContent value="guest">
               <form action={guestFormAction} className="space-y-4 mt-2">
-                <input
-                  type="hidden"
-                  name="locationId"
-                  value={effectiveLocationId ?? ""}
-                />
+                <input type="hidden" name="locationId" value={locationId} />
                 <input
                   type="hidden"
                   name="paymentMethod"
@@ -549,7 +550,7 @@ export function OpenGymDropInDialog({
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={guestPending || !effectiveLocationId}>
+                  <Button type="submit" disabled={guestPending || !hasLocationId}>
                     {guestPending ? "Saving…" : "Record guest drop-in"}
                   </Button>
                 </div>

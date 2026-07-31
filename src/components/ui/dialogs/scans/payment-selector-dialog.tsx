@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { ApiError } from "@/core/api-error";
 import { useRouter } from "next/navigation";
 import { recordNonUserBookingPaymentAction } from "@/lib/actions/booking-actions";
+import { ManagementBranchField } from "@/components/ui/management-branch-field";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 import { Badge } from "../../badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Currency } from "lucide-react";
@@ -53,6 +55,14 @@ const paymentMethods = [
 ];
 
 export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
+
   const initialState: ActionState = {
     success: false,
     errors: null,
@@ -102,7 +112,10 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
   return (
     <div>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <Badge className="font-normal cursor-pointer hover:border-yellow-500 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" onClick={() => setIsOpen(true)}>
+        <Badge className="font-normal cursor-pointer hover:border-yellow-500 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" onClick={() => {
+          resetModalBranch();
+          setIsOpen(true);
+        }}>
           Will Pay
         </Badge>
 
@@ -118,6 +131,12 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
 
           <form action={formAction} className="mt-4 space-y-6">
             <input type="hidden" name="bookingId" value={bookingId} />
+            <ManagementBranchField
+              locationId={locationId}
+              onLocationChange={setModalLocationId}
+              needsBranchSelection={needsBranchSelection}
+              disabled={pending || isLoading}
+            />
 
             <div className="grid grid-cols-1 gap-5">
               <div className="space-y-2">
@@ -204,7 +223,7 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
               <Button
                 type="submit"
                 className="px-4"
-                disabled={pending || isLoading}
+                disabled={pending || isLoading || !hasLocationId}
               >
                 {pending || isLoading ? "Saving..." : "Save Booking"}
               </Button>

@@ -94,14 +94,15 @@ export function ExportBranchSelector({
         </div>
       </div>
 
-      <div className="rounded-md border divide-y max-h-40 overflow-y-auto overscroll-contain">
+      {/* Nested max-height scroll fights the dialog body on mobile; allow full list there */}
+      <div className="rounded-md border divide-y sm:max-h-40 sm:overflow-y-auto sm:overscroll-contain">
         {locations.map((location) => {
           const checked = selectedIds.includes(location._id);
 
           return (
             <label
               key={location._id}
-              className="flex items-start gap-3 p-3 min-h-[44px] cursor-pointer hover:bg-muted/40"
+              className="flex items-start gap-3 p-3 min-h-[44px] cursor-pointer touch-manipulation hover:bg-muted/40"
             >
               <Checkbox
                 checked={checked}
