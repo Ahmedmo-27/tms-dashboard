@@ -31,7 +31,8 @@ export function ExportPaymentsDialog({
 }: ExportPaymentsDialogProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
-  const { locations } = useLocations(open);
+  const [activeDateField, setActiveDateField] = useState<"from" | "to" | null>(null);
+  const { locations, isLoading: isLoadingLocations } = useLocations(true);
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(
@@ -50,6 +51,7 @@ export function ExportPaymentsDialog({
   const resetForm = () => {
     setFromDate(undefined);
     setToDate(undefined);
+    setActiveDateField(null);
     setSelectedBranchIds([]);
     setProgress(null);
   };
@@ -154,22 +156,25 @@ export function ExportPaymentsDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
-        <div className="overflow-y-auto p-6 pb-0">
+      <DialogContent
+        className="flex max-h-[min(90dvh,100vh)] w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Export Payments to Excel</DialogTitle>
             <DialogDescription>
-              Choose a date range and the branches you want included in one combined
-              Excel sheet.
+              Choose branches and a date range for one combined Excel sheet.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 pt-4">
             <ExportBranchSelector
               locations={locations}
               selectedIds={selectedBranchIds}
               onChange={setSelectedBranchIds}
               disabled={isExporting}
+              isLoading={isLoadingLocations}
             />
 
             <DialogDatePicker
@@ -177,6 +182,8 @@ export function ExportPaymentsDialog({
               selectedDate={fromDate}
               onDateChange={setFromDate}
               placeholder="Select start date"
+              open={activeDateField === "from"}
+              onOpenChange={(isOpen) => setActiveDateField(isOpen ? "from" : null)}
             />
 
             <DialogDatePicker
@@ -184,6 +191,8 @@ export function ExportPaymentsDialog({
               selectedDate={toDate}
               onDateChange={setToDate}
               placeholder="Select end date"
+              open={activeDateField === "to"}
+              onOpenChange={(isOpen) => setActiveDateField(isOpen ? "to" : null)}
             />
 
             {rangeSummary && branchSummary && (
@@ -202,7 +211,7 @@ export function ExportPaymentsDialog({
           </div>
         </div>
 
-        <DialogFooter className="border-t bg-background p-4 sm:p-6">
+        <DialogFooter className="shrink-0 border-t bg-background p-4 sm:p-6">
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}

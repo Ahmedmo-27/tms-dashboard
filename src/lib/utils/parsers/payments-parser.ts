@@ -10,7 +10,7 @@ type LocationRef =
 export interface RawPaymentRecord {
   _id?: string;
   id?: string;
-  uid?: { name?: string; phoneNumber?: string };
+  uid?: { name?: string; phoneNumber?: string; _id?: string } | string;
   nonMemberName?: string;
   memberName?: string;
   nonMemberPhone?: string;
@@ -101,6 +101,53 @@ export function mergePaymentRecords(
   return merged;
 }
 
+function isMongoObjectId(value: string): boolean {
+  return /^[a-f0-9]{24}$/i.test(value);
+}
+
+function isPopulatedUid(
+  uid: RawPaymentRecord["uid"]
+): uid is { name?: string; phoneNumber?: string; _id?: string } {
+  return typeof uid === "object" && uid !== null;
+}
+
+function resolveMemberNameFromRecord(record: RawPaymentRecord): string | undefined {
+  if (isPopulatedUid(record.uid) && record.uid.name) {
+    return record.uid.name;
+  }
+
+  for (const candidate of [record.nonMemberName, record.memberName]) {
+    if (!candidate) continue;
+    const value = candidate.trim();
+    if (value && !isMongoObjectId(value)) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function resolvePhoneFromRecord(record: RawPaymentRecord): string {
+  const candidates = isPopulatedUid(record.uid)
+    ? [
+        record.uid.phoneNumber,
+        record.nonMemberPhone,
+        record.phoneNumber,
+        record.phone,
+      ]
+    : [record.nonMemberPhone, record.phoneNumber, record.phone];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const value = String(candidate).trim();
+    if (value && !isMongoObjectId(value)) {
+      return value;
+    }
+  }
+
+  return "—";
+}
+
 function normalizeType(record: RawPaymentRecord): string {
   return (record.type ?? record.transactionType ?? record.kind ?? "")
     .toUpperCase()
@@ -109,10 +156,8 @@ function normalizeType(record: RawPaymentRecord): string {
 
 function hasMemberContext(record: RawPaymentRecord): boolean {
   return !!(
-    record.uid?.name ||
-    record.memberName ||
-    record.nonMemberName ||
-    record.uid
+    resolveMemberNameFromRecord(record) ||
+    (isPopulatedUid(record.uid) && record.uid._id)
   );
 }
 
@@ -204,10 +249,7 @@ export const parsePayments = (payments: unknown): Payment[] => {
     }
 
     const refundReason = payment.refundReason ?? payment.reason ?? "";
-    const resolvedMemberName =
-      payment.uid?.name ??
-      payment.nonMemberName ??
-      payment.memberName;
+    const resolvedMemberName = resolveMemberNameFromRecord(payment);
 
     const memberName = isCashOut
       ? "Cash Out"
@@ -215,12 +257,7 @@ export const parsePayments = (payments: unknown): Payment[] => {
 
     return {
       memberName,
-      phone:
-        payment.uid?.phoneNumber ??
-        payment.nonMemberPhone ??
-        payment.phoneNumber ??
-        payment.phone ??
-        "—",
+      phone: resolvePhoneFromRecord(payment),
       purpose:
         purpose ||
         refundReason ||
