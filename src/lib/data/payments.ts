@@ -1,4 +1,10 @@
 import { tms } from "@/lib/tms-api";
+import type { Payment } from "@/components/ui/payments/columns";
+import {
+  isRateLimitError,
+  sleep,
+  withRetry,
+} from "@/lib/utils/retry-request";
 import {
   mergePaymentRecords,
   normalizePaymentsPayload,
@@ -18,6 +24,14 @@ const CASHOUT_LIST_ENDPOINTS = [
   "/admin/refunds/cashouts",
 ] as const;
 
+/** Delay between each day fetch during export to avoid API rate limits. */
+const EXPORT_DAY_DELAY_MS = 500;
+
+export type BranchFilter = {
+  id: string;
+  branchName: string;
+};
+
 async function fetchFromEndpoints(
   endpoints: readonly string[],
   date?: string,
@@ -32,7 +46,10 @@ async function fetchFromEndpoints(
     try {
       const response = await tms.get(`${endpoint}${query}`);
       return normalizePaymentsPayload(response.data.data);
-    } catch {
+    } catch (error) {
+      if (isRateLimitError(error)) {
+        throw error;
+      }
       // Try the next endpoint shape.
     }
   }
@@ -56,13 +73,26 @@ function tagCashOutRecords(records: RawPaymentRecord[]): RawPaymentRecord[] {
   }));
 }
 
+function filterPaymentsByBranches(
+  payments: Payment[],
+  branches: BranchFilter[]
+): Payment[] {
+  const branchNames = new Set(
+    branches.map((branch) => branch.branchName.trim().toLowerCase())
+  );
+
+  return payments.filter((payment) =>
+    branchNames.has(payment.location.trim().toLowerCase())
+  );
+}
+
 export const getPaymentsForDateRange = async (
   startDate: string,
   endDate: string,
-  locationIds: string[],
+  branches: BranchFilter[],
   onProgress?: (completed: number, total: number) => void
 ) => {
-  if (locationIds.length === 0) {
+  if (branches.length === 0) {
     return [];
   }
 
@@ -73,22 +103,19 @@ export const getPaymentsForDateRange = async (
     end: parseISO(endDate),
   });
 
-  const tasks = days.flatMap((day) =>
-    locationIds.map((locationId) => ({ day, locationId }))
-  );
+  const allPayments: Payment[] = [];
 
-  const allPayments: Awaited<ReturnType<typeof getPayments>> = [];
-  const batchSize = 5;
+  for (let i = 0; i < days.length; i++) {
+    const dateStr = format(days[i], "yyyy-MM-dd");
 
-  for (let i = 0; i < tasks.length; i += batchSize) {
-    const batch = tasks.slice(i, i + batchSize);
-    const results = await Promise.all(
-      batch.map(({ day, locationId }) =>
-        getPayments(format(day, "yyyy-MM-dd"), locationId)
-      )
-    );
-    allPayments.push(...results.flat());
-    onProgress?.(Math.min(i + batch.length, tasks.length), tasks.length);
+    const dayPayments = await withRetry(() => getPayments(dateStr));
+    allPayments.push(...filterPaymentsByBranches(dayPayments, branches));
+
+    onProgress?.(i + 1, days.length);
+
+    if (i < days.length - 1) {
+      await sleep(EXPORT_DAY_DELAY_MS);
+    }
   }
 
   return allPayments;
@@ -103,13 +130,20 @@ export const getPayments = async (date?: string, locationId?: string) => {
       Object.keys(params).length > 0
         ? `?${new URLSearchParams(params).toString()}`
         : "";
+
     const response = await tms.get(`/admin/payments${dateQuery}`);
     const paymentRecords = normalizePaymentsPayload(response.data.data);
 
-    const [refundRecords, cashOutRecords] = await Promise.all([
-      fetchFromEndpoints(REFUND_LIST_ENDPOINTS, date, locationId),
-      fetchFromEndpoints(CASHOUT_LIST_ENDPOINTS, date, locationId),
-    ]);
+    const refundRecords = await fetchFromEndpoints(
+      REFUND_LIST_ENDPOINTS,
+      date,
+      locationId
+    );
+    const cashOutRecords = await fetchFromEndpoints(
+      CASHOUT_LIST_ENDPOINTS,
+      date,
+      locationId
+    );
 
     const mergedRecords = mergePaymentRecords(
       paymentRecords,
