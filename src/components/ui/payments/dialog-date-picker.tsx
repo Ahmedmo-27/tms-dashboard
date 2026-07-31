@@ -6,11 +6,12 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover-dialog";
+} from "@/components/ui/popover";
 
 interface DialogDatePickerProps {
   className?: string;
@@ -20,6 +21,11 @@ interface DialogDatePickerProps {
   label?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+}
+
+function parseDateInputValue(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
 export function DialogDatePicker({
@@ -43,75 +49,65 @@ export function DialogDatePicker({
     onOpenChange?.(false);
   };
 
-  const triggerLabel = date ? format(date, "PPP") : placeholder;
-
   return (
     <div className={cn("space-y-2", className)}>
       {label && <p className="text-sm font-medium">{label}</p>}
 
-      {/* Mobile: tap to expand inline calendar */}
-      <div className="md:hidden">
-        <Button
-          type="button"
-          variant="outline"
-          aria-expanded={open}
-          onClick={() => onOpenChange?.(!open)}
-          className={cn(
-            "w-full justify-start text-left font-normal min-h-[44px]",
-            !date && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-          <span className="truncate">{triggerLabel}</span>
-        </Button>
+      {/* Native picker: reliable on phones/tablets inside modals */}
+      <Input
+        type="date"
+        aria-label={label ?? placeholder}
+        value={date ? format(date, "yyyy-MM-dd") : ""}
+        onChange={(event) => {
+          const value = event.target.value;
+          handleDateSelect(value ? parseDateInputValue(value) : undefined);
+        }}
+        className="min-h-[44px] w-full touch-manipulation text-base md:hidden"
+      />
 
-        {open && (
-          <div className="mt-2 flex justify-center rounded-md border bg-background p-2">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={handleDateSelect}
-              className="rounded-md"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Desktop: calendar opens in popover on click */}
-      <div className="hidden md:block">
-        <Popover modal open={open} onOpenChange={onOpenChange}>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              aria-expanded={open}
-              className={cn(
-                "w-full justify-start text-left font-normal min-h-[40px]",
-                !date && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{triggerLabel}</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-auto p-0"
-            align="start"
-            sideOffset={4}
-            onOpenAutoFocus={(event) => event.preventDefault()}
+      {/*
+        Portaled popover for desktop: dialog-safe popover (no portal) gets clipped
+        by DialogContent's transform + overflow-hidden containing block.
+      */}
+      <Popover modal open={open} onOpenChange={onOpenChange}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            aria-expanded={open}
+            className={cn(
+              "hidden w-full justify-start text-left font-normal min-h-[40px] md:flex",
+              !date && "text-muted-foreground"
+            )}
           >
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={handleDateSelect}
-              initialFocus
-              className="rounded-md border"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+            <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">
+              {date ? format(date, "PPP") : placeholder}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="z-[70] w-auto p-0"
+          align="start"
+          side="bottom"
+          sideOffset={4}
+          collisionPadding={16}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          onInteractOutside={(event) => {
+            // Keep the parent dialog open when dismissing the calendar.
+            event.preventDefault();
+            onOpenChange?.(false);
+          }}
+        >
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={handleDateSelect}
+            initialFocus
+            className="rounded-md border"
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
-
-// Keep parseDateInputValue exported for tests if needed - actually not needed, remove unused

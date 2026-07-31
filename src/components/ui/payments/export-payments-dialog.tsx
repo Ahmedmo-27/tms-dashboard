@@ -157,11 +157,11 @@ export function ExportPaymentsDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="flex max-h-[min(90dvh,100vh)] w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+        className="flex w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 max-sm:top-4 max-sm:translate-y-0 max-sm:max-h-[calc(100dvh-2rem)] sm:max-h-[min(90dvh,100vh)] sm:max-w-md"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
-          <DialogHeader>
+          <DialogHeader className="pr-8 text-left">
             <DialogTitle>Export Payments to Excel</DialogTitle>
             <DialogDescription>
               Choose branches and a date range for one combined Excel sheet.
@@ -211,12 +211,12 @@ export function ExportPaymentsDialog({
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 border-t bg-background p-4 sm:p-6">
+        <DialogFooter className="relative z-10 shrink-0 border-t bg-background p-4 sm:p-6">
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
             disabled={isExporting}
-            className="min-h-[44px] sm:min-h-9"
+            className="min-h-[44px] touch-manipulation sm:min-h-9"
           >
             Cancel
           </Button>
@@ -228,7 +228,7 @@ export function ExportPaymentsDialog({
               !toDate ||
               selectedBranchIds.length === 0
             }
-            className="min-h-[44px] sm:min-h-9"
+            className="min-h-[44px] touch-manipulation sm:min-h-9"
           >
             {isExporting ? (
               <>
