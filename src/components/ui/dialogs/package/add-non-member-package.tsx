@@ -23,6 +23,8 @@ import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package } from "@/components/ui/packages/columns";
 import { subscribeGuestPackageAction } from "@/lib/actions/member-actions";
+import { ManagementBranchField } from "@/components/ui/management-branch-field";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 import { tms } from "@/lib/tms-api";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -42,6 +44,13 @@ type PendingMemberHit = {
 };
 
 export function AddNonMemberPackage({ packages }: { packages: Package[] }) {
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pkg, setPkg] = useState<Package | null>(null);
@@ -83,6 +92,7 @@ export function AddNonMemberPackage({ packages }: { packages: Package[] }) {
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
+    if (value) resetModalBranch();
     if (!value) resetForm();
   };
 
@@ -186,6 +196,13 @@ export function AddNonMemberPackage({ packages }: { packages: Package[] }) {
           </DialogHeader>
 
           <form action={formAction} className="space-y-4">
+            <ManagementBranchField
+              locationId={locationId}
+              onLocationChange={setModalLocationId}
+              needsBranchSelection={needsBranchSelection}
+              disabled={pending}
+            />
+
             <input type="hidden" name="name" value={name} />
             <input type="hidden" name="phoneNumber" value={phoneNumber} />
             <input type="hidden" name="pkgId" value={pkg?._id ?? ""} />
@@ -402,7 +419,11 @@ export function AddNonMemberPackage({ packages }: { packages: Package[] }) {
               <Button
                 type="submit"
                 disabled={
-                  pending || !selectedMemberId || !pkg || !selectedStartDate
+                  pending ||
+                  !selectedMemberId ||
+                  !pkg ||
+                  !selectedStartDate ||
+                  !hasLocationId
                 }
               >
                 {pending ? "Saving…" : "Add package"}

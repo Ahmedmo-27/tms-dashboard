@@ -24,6 +24,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "../../checkbox";
 import { subscribeGuestPackageAction } from "@/lib/actions/member-actions";
+import { ManagementBranchField } from "@/components/ui/management-branch-field";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 import {
   formatCatalogPackageLabel,
   getPackageEndDateFromStart,
@@ -46,6 +48,13 @@ export default function addGuestPackage({
   packages: Package[];
   openGymOnly?: boolean;
 }) {
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
   const [open, setOpen] = useState(false);
   const [pkg, setPkg] = useState<Package | null>(null);
 
@@ -80,6 +89,7 @@ export default function addGuestPackage({
 
   const toggleOpen = (value: boolean) => {
     setOpen(value);
+    if (value) resetModalBranch();
     if (!value) resetForm();
   };
 
@@ -153,6 +163,13 @@ export default function addGuestPackage({
           </DialogHeader>
 
           <form action={formAction}>
+            <ManagementBranchField
+              locationId={locationId}
+              onLocationChange={setModalLocationId}
+              needsBranchSelection={needsBranchSelection}
+              disabled={pending}
+            />
+
             {/* Hidden fields */}
             <input type="hidden" name="name" value={name} />
             <input type="hidden" name="phoneNumber" value={phoneNumber} />
@@ -362,7 +379,7 @@ export default function addGuestPackage({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={pending}>
+              <Button type="submit" disabled={pending || !hasLocationId}>
                 Save changes
               </Button>
             </div>

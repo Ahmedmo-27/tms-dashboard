@@ -2,6 +2,7 @@ import { attendanceSchema, nonUserBookingSchema, walkInSchema } from "../schemas
 import { attendNonUserBooking, bookClassForNonUser, bookWalkIn, saveNonUserBookingPayment } from "../data/bookings";
 import { ApiError, ConflictError } from "@/core/api-error";
 import { parseStateError } from "../utils/state-errors";
+import { revalidatePath } from "next/cache";
 
 export const bookNonUserAction = async (
   _prevState: any,
@@ -49,12 +50,14 @@ export const recordNonUserBookingPaymentAction = async (
       amount: formData.get("amount") || undefined,
       paymentDate: formData.get("paymentDate") || undefined,
     };
+    const locationId = (formData.get("locationId") as string) || undefined;
     const validatedAttendanceData = attendanceSchema.parse(bookingData);
     const booking = await saveNonUserBookingPayment(
       validatedAttendanceData.bookingId,
       validatedAttendanceData.paymentMethod,
       validatedAttendanceData.amount,
-      validatedAttendanceData.paymentDate
+      validatedAttendanceData.paymentDate,
+      locationId,
     );
     return {
       success: true,
@@ -89,6 +92,7 @@ export const addWalkIn = async (
       amount: formData.get("amount") || undefined,
       paymentDate: formData.get("paymentDate") || undefined,
     };
+    const locationId = (formData.get("locationId") as string) || undefined;
     const validatedBookingData = walkInSchema.parse(bookingData);
     const booking = await bookWalkIn(
       validatedBookingData.name,
@@ -96,7 +100,8 @@ export const addWalkIn = async (
       validatedBookingData.scid,
       validatedBookingData.paymentMethod,
       validatedBookingData.amount,
-      validatedBookingData.paymentDate
+      validatedBookingData.paymentDate,
+      locationId,
     );
     revalidatePath("/dashboard/scans-monitor");
     return {

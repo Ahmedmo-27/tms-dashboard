@@ -8,6 +8,8 @@ import { Badge } from "../badge";
 import { Separator } from "../separator";
 import { useEffect, useState, useRef } from "react";
 import { submitOrder } from "@/lib/data/orders";
+import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 
 export interface Product {
   barcode: string;
@@ -42,6 +44,13 @@ export default function ProductsContainer({
   const [lastScanned, setLastScanned] = useState("None");
   const [typedBarcode, setTypedBarcode] = useState("");
   const [currentProducts, _setCurrentProducts] = useState<Product[]>(products);
+
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+  } = useManagementBranchSelection();
 
   const buffer = useRef("");
   useEffect(() => {
@@ -186,7 +195,11 @@ export default function ProductsContainer({
   };
 
   const handleSubmitCart = async () => {
-    await submitOrder(cart);
+    if (!hasLocationId) {
+      alert("Select a branch before completing the order.");
+      return;
+    }
+    await submitOrder(cart, locationId);
     alert("Order Submitted");
     handleClearCart();
   };
@@ -384,10 +397,17 @@ export default function ProductsContainer({
               <CardTitle className="text-lg">Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {needsBranchSelection && (
+                <OpenGymBranchSelect
+                  value={locationId}
+                  onChange={setModalLocationId}
+                />
+              )}
               <Button
                 className="w-full h-11"
                 size="lg"
                 onClick={handleSubmitCart}
+                disabled={!hasLocationId}
               >
                 <Save className="h-4 w-4 mr-2" />
                 Complete Order

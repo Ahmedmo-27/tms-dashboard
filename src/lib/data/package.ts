@@ -31,7 +31,7 @@ export const getPackages = async (locationId?: string): Promise<Package[]> => {
   }
 };
 
-export const addPackage = async (pkg: Package) => {
+export const addPackage = async (pkg: Package, locationId?: string) => {
   try {
     const requestBody = {
       name: pkg.name,
@@ -41,6 +41,7 @@ export const addPackage = async (pkg: Package) => {
       expiryPeriod: pkg.expiryPeriod,
       opensClasses: pkg.opensClasses,
       classRestrictions: pkg.classRestrictions,
+      ...(locationId ? { locationId } : {}),
     };
     const response = await tms.post("admin/packages", requestBody);
     return response.data;

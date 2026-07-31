@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { ApiError } from "@/core/api-error";
 import { useRouter } from "next/navigation";
 import { addWalkIn } from "@/lib/actions/booking-actions";
+import { ManagementBranchField } from "@/components/ui/management-branch-field";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 import { Plus, ArrowBigRight } from "lucide-react";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 
@@ -29,6 +31,14 @@ interface ActionState {
 }
 
 export function AddWalkIn({ scid }: { scid: string }) {
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
+
   const initialState: ActionState = {
     success: false,
     errors: null,
@@ -99,7 +109,10 @@ export function AddWalkIn({ scid }: { scid: string }) {
         <Button
           variant="ghost"
           onSelect={(e) => e.preventDefault()}
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            resetModalBranch();
+            setIsOpen(true);
+          }}
           className="cursor-pointer border-2 w-full"
         >
           <Plus />
@@ -118,6 +131,12 @@ export function AddWalkIn({ scid }: { scid: string }) {
 
           <form action={formAction} className="mt-4 space-y-6">
             <input type="hidden" name="scid" value={scid} />
+            <ManagementBranchField
+              locationId={locationId}
+              onLocationChange={setModalLocationId}
+              needsBranchSelection={needsBranchSelection}
+              disabled={pending || isLoading}
+            />
 
             <div className="grid grid-cols-1 gap-5">
               {/* Name field */}
@@ -229,7 +248,7 @@ export function AddWalkIn({ scid }: { scid: string }) {
               <Button
                 type="submit"
                 className="px-4"
-                disabled={pending || isLoading}
+                disabled={pending || isLoading || !hasLocationId}
               >
                 {pending || isLoading ? "Saving..." : "Save Booking"}
               </Button>
