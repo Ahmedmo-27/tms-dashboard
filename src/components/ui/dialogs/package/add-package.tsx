@@ -24,6 +24,8 @@ import { MultiSelect } from "../../multiselect";
 import { Class } from "../../classes/columns";
 import { formatCategory } from "@/lib/utils/catalog";
 import { ClassRestrictionsEditor } from "../../packages/class-restrictions-editor";
+import { ManagementBranchField } from "@/components/ui/management-branch-field";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 
 interface ActionState {
   success: boolean;
@@ -93,6 +95,14 @@ export function AddPackageDialog({
     initialState
   );
 
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
+
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [classRestrictions, setClassRestrictions] = useState<
@@ -101,7 +111,13 @@ export function AddPackageDialog({
 
   return (
     <div>
-      <Button onClick={() => setIsOpen(true)} className="w-full sm:w-auto">
+      <Button
+        onClick={() => {
+          resetModalBranch();
+          setIsOpen(true);
+        }}
+        className="w-full sm:w-auto"
+      >
         <Plus className="mr-2 h-4 w-4" />
         <span className="hidden sm:inline">Add Package</span>
         <span className="sm:hidden">Add</span>
@@ -257,6 +273,15 @@ export function AddPackageDialog({
                   </p>
                 )}
               </div>
+
+              {selectedCategory === "OPEN_GYM" && (
+                <ManagementBranchField
+                  locationId={locationId}
+                  onLocationChange={setModalLocationId}
+                  needsBranchSelection={needsBranchSelection}
+                  disabled={pending}
+                />
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
@@ -271,7 +296,10 @@ export function AddPackageDialog({
               <Button
                 type="submit"
                 className="px-4 w-full sm:w-auto"
-                disabled={pending}
+                disabled={
+                  pending ||
+                  (selectedCategory === "OPEN_GYM" && !hasLocationId)
+                }
                 variant="default"
               >
                 {pending ? "Saving..." : "Save Changes"}

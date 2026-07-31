@@ -18,7 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
+import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
 import { Package } from "@/components/ui/packages/columns";
 import { Class } from "@/components/ui/classes/columns";
 import { MultiSelect } from "@/components/ui/multiselect";
@@ -107,8 +108,13 @@ export function OpenGymPricingDialog({
   triggerLabel?: string;
 }) {
   const router = useRouter();
-  const { effectiveLocationId = "" } = useBranchContext();
-  const locationId = effectiveLocationId;
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
   const [open, setOpen] = useState(false);
   const [prices, setPrices] = useState<OpenGymBranchPrice[]>([]);
   const [dropInPrice, setDropInPrice] = useState("");
@@ -312,7 +318,14 @@ export function OpenGymPricingDialog({
 
   return (
     <div>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          resetModalBranch();
+          setOpen(true);
+        }}
+      >
         {triggerLabel}
       </Button>
 
@@ -328,6 +341,14 @@ export function OpenGymPricingDialog({
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {needsBranchSelection && (
+              <OpenGymBranchSelect
+                value={locationId}
+                onChange={setModalLocationId}
+                disabled={saving}
+              />
+            )}
+
             <div className="space-y-2">
               <Label className="text-sm font-medium">Drop-in price (EGP)</Label>
               <Input

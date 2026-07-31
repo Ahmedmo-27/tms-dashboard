@@ -114,6 +114,7 @@ export const subscribeGuestPackageAction = async (
     const priceChanged = (formData.get("priceChanged") as string) === "true";
     const pendingDeduction =
       (formData.get("pendingDeduction") as string) === "true";
+    const locationId = (formData.get("locationId") as string) || undefined;
 
     console.log(formData);
 
@@ -130,7 +131,8 @@ export const subscribeGuestPackageAction = async (
       paymentMethod,
       pendingDeduction,
       paymentDate === "" ? undefined : paymentDate,
-      priceChanged ? amount : undefined
+      priceChanged ? amount : undefined,
+      locationId,
     );
 
     revalidatePath("/dashboard/scans-monitor");
@@ -299,7 +301,8 @@ export const bookDropInAction = async (_prevState: any, formData: FormData) => {
     const uid = formData.get("uid") as string;
     const clsId = formData.get("clsId") as string;
     const paymentMethod = formData.get("paymentMethod") as string;
-    const response = await bookDropIn(uid, clsId, paymentMethod);
+    const locationId = (formData.get("locationId") as string) || undefined;
+    const response = await bookDropIn(uid, clsId, paymentMethod, locationId);
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");

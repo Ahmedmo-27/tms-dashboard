@@ -30,7 +30,8 @@ import {
   isOpenGymPackage,
   sortPackagesWithOpenGymFirst,
 } from "@/lib/utils/open-gym";
-import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import { ManagementBranchField } from "@/components/ui/management-branch-field";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -46,7 +47,13 @@ export default function SubPackage({
   packages: Package[];
   uid: string;
 }) {
-  const { effectiveLocationId } = useBranchContext();
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
   const [open, setOpen] = useState(false);
   const [pkg, setPkg] = useState<Package | null>(null);
 
@@ -73,6 +80,7 @@ export default function SubPackage({
 
   const toggleOpen = (value: boolean) => {
     setOpen(value);
+    if (value) resetModalBranch();
     if (!value) resetForm();
   };
 
@@ -140,7 +148,6 @@ export default function SubPackage({
           <form action={formAction}>
             {/* Hidden fields */}
             <input type="hidden" name="uid" value={uid} />
-            <input type="hidden" name="locationId" value={effectiveLocationId ?? ""} />
             <input type="hidden" name="pkgId" value={pkg?._id ?? ""} />
             <input type="hidden" name="startDate" value={selectedStartDate} />
             <input type="hidden" name="endDate" value={selectedEndDate} />
@@ -149,8 +156,17 @@ export default function SubPackage({
             <input type="hidden" name="paymentMethod" value={selectedPaymentMethod} />
             <input type="hidden" name="priceChanged" value={String(priceChanged)} />
 
+            <div className="space-y-2 mt-4">
+              <ManagementBranchField
+                locationId={locationId}
+                onLocationChange={setModalLocationId}
+                needsBranchSelection={needsBranchSelection}
+                disabled={pending}
+              />
+            </div>
+
             {/* Package */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-4">
               <Label className="text-sm font-medium">Package</Label>
               <Select
                 onValueChange={(value) => setPkg(packages.find((p) => p._id === value) || null)}
@@ -255,7 +271,7 @@ export default function SubPackage({
               <Button type="button" variant="outline" onClick={() => toggleOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={pending}>
+              <Button type="submit" disabled={pending || !hasLocationId}>
                 Save changes
               </Button>
             </div>

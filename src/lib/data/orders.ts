@@ -21,7 +21,7 @@ export const getOrders = async (locationId?: string) => {
   }
 };
 
-export const submitOrder = async (cart: Cart) => {
+export const submitOrder = async (cart: Cart, locationId?: string) => {
   try {
     const cartInfo: CartInfo[] = [];
     cart.items.forEach((item) => {
@@ -30,7 +30,10 @@ export const submitOrder = async (cart: Cart) => {
         quantity: item.quantity,
       });
     });
-    await tms.post("/admin/orders", cartInfo);
+    await tms.post("/admin/orders", {
+      items: cartInfo,
+      ...(locationId ? { locationId } : {}),
+    });
     revalidatePath("/dashboard/checkout");
   } catch (e) {
     console.log(e);

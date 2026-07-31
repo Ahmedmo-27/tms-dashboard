@@ -19,6 +19,8 @@ import { ApiError } from "@/core/api-error";
 import { cashOutSchema, CashOutFormValues } from "@/lib/validations/refunds";
 import { RecordedAtField } from "./recorded-at-field";
 import { cn } from "@/lib/utils";
+import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 
 function getApiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -32,6 +34,13 @@ function getApiErrorMessage(err: unknown): string {
 }
 
 export function CashOutForm() {
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+  } = useManagementBranchSelection();
+
   const {
     register,
     handleSubmit,
@@ -55,6 +64,7 @@ export function CashOutForm() {
       await tms.post("/api/admin/refunds/cashout", {
         reason: values.reason,
         amount: values.amount,
+        ...(locationId ? { locationId } : {}),
       });
       toast.success("Cash out recorded successfully");
       reset();
@@ -71,6 +81,14 @@ export function CashOutForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="flex flex-col gap-5">
+            {needsBranchSelection && (
+              <OpenGymBranchSelect
+                value={locationId}
+                onChange={setModalLocationId}
+                disabled={isSubmitting}
+              />
+            )}
+
             <div className="grid gap-2">
               <Label htmlFor="cashOutReason">Reason</Label>
               <Textarea
@@ -121,7 +139,7 @@ export function CashOutForm() {
 
             <RecordedAtField />
 
-            <Button type="submit" disabled={isSubmitting} className="w-full">
+            <Button type="submit" disabled={isSubmitting || !hasLocationId} className="w-full">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

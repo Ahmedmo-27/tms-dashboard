@@ -18,13 +18,15 @@ export const bookClass = async (uid: string, clsId: string) => {
 export const bookDropIn = async (
   uid: string,
   clsId: string,
-  paymentMethod: string
+  paymentMethod: string,
+  locationId?: string,
 ) => {
   try {
     const response = await tms.post("/admin/bookDropIn", {
       uid,
       scid: clsId,
       paymentMethod,
+      ...(locationId ? { locationId } : {}),
     });
     return response.data;
   } catch (error) {
@@ -70,7 +72,8 @@ export const bookWalkIn = async (
   scid: string,
   paymentMethod?: string,
   amount?: number,
-  paymentDate?: string
+  paymentDate?: string,
+  locationId?: string,
 ) => {
   try {
     const response = await tms.post("/admin/nonUserBooking/walk-in", {
@@ -80,6 +83,7 @@ export const bookWalkIn = async (
       paymentMethod,
       amount,
       paymentDate,
+      ...(locationId ? { locationId } : {}),
     });
     revalidatePath("/dashboard/scans-monitor");
     return response.data;
@@ -107,7 +111,8 @@ export const saveNonUserBookingPayment = async (
   bookingId: string,
   paymentMethod: string,
   amount?: number,
-  paymentDate?: string
+  paymentDate?: string,
+  locationId?: string,
 ) => {
   try {
     const response = await tms.post(
@@ -116,7 +121,8 @@ export const saveNonUserBookingPayment = async (
       bookingId,
       paymentMethod,
       amount,
-      paymentDate
+      paymentDate,
+      ...(locationId ? { locationId } : {}),
     });
     revalidatePath("/dashboard/schedule");
     return response.data;

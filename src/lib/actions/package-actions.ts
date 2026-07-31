@@ -72,7 +72,9 @@ export async function addPackageAction(_prevState: any, formData: FormData) {
   try {
     const validatedData = packageSchema.parse(pkg);
 
-    await addPackage(validatedData);
+    const locationId = (formData.get("locationId") as string) || undefined;
+
+    await addPackage(validatedData, locationId);
     revalidatePath("/dashboard/catalog");
     return { success: true, errors: null, data: null };
   } catch (error) {

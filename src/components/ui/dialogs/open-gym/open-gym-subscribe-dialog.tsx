@@ -31,7 +31,8 @@ import { tms } from "@/lib/tms-api";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import { ManagementBranchField } from "@/components/ui/management-branch-field";
+import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -54,17 +55,22 @@ export function OpenGymSubscribeDialog({
   triggerLabel?: string;
 }) {
   const router = useRouter();
-  const { effectiveLocationId = "" } = useBranchContext();
-  const isViewingAllBranches = !effectiveLocationId;
+  const {
+    locationId,
+    setModalLocationId,
+    needsBranchSelection,
+    hasLocationId,
+    resetModalBranch,
+  } = useManagementBranchSelection();
   const openGymPackages = packages
     .filter((p) => p.category === "OPEN_GYM")
     .filter((p) => {
-      if (!effectiveLocationId || !p.locationId) return true;
+      if (!locationId || !p.locationId) return true;
       const pkgLocationId =
         typeof p.locationId === "string"
           ? p.locationId
           : (p.locationId as { _id?: string })._id;
-      return !pkgLocationId || pkgLocationId === effectiveLocationId;
+      return !pkgLocationId || pkgLocationId === locationId;
     });
 
   const [open, setOpen] = useState(false);
@@ -101,6 +107,7 @@ export function OpenGymSubscribeDialog({
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
+    if (value) resetModalBranch();
     if (!value) resetForm();
   };
 
@@ -196,21 +203,21 @@ export function OpenGymSubscribeDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {isViewingAllBranches && (
-            <p className="text-sm text-destructive">
-              Select a branch above before adding an open gym package.
-            </p>
-          )}
-
           {openGymPackages.length === 0 ? (
             <p className="text-sm text-destructive">
-              No OPEN_GYM packages in catalog. Create one under Catalog →
-              Packages first.
+              {needsBranchSelection && !hasLocationId
+                ? "Select a branch to see open gym packages for that location."
+                : "No OPEN_GYM packages in catalog. Create one under Catalog → Packages first."}
             </p>
           ) : (
             <form action={formAction} className="space-y-4">
               <input type="hidden" name="uid" value={selectedUid} />
-              <input type="hidden" name="locationId" value={effectiveLocationId ?? ""} />
+              <ManagementBranchField
+                locationId={locationId}
+                onLocationChange={setModalLocationId}
+                needsBranchSelection={needsBranchSelection}
+                disabled={pending}
+              />
               <input type="hidden" name="pkgId" value={pkg?._id ?? ""} />
               <input type="hidden" name="startDate" value={selectedStartDate} />
               <input type="hidden" name="endDate" value={selectedEndDate} />
@@ -392,7 +399,7 @@ export function OpenGymSubscribeDialog({
                     !selectedUid ||
                     !pkg ||
                     !selectedStartDate ||
-                    !effectiveLocationId
+                    !hasLocationId
                   }
                 >
                   {pending ? "Saving…" : "Add package"}
