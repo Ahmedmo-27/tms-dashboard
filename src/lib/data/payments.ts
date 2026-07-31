@@ -56,6 +56,34 @@ function tagCashOutRecords(records: RawPaymentRecord[]): RawPaymentRecord[] {
   }));
 }
 
+export const getPaymentsForDateRange = async (
+  startDate: string,
+  endDate: string,
+  locationId?: string,
+  onProgress?: (completed: number, total: number) => void
+) => {
+  const { eachDayOfInterval, format, parseISO } = await import("date-fns");
+
+  const days = eachDayOfInterval({
+    start: parseISO(startDate),
+    end: parseISO(endDate),
+  });
+
+  const allPayments: Awaited<ReturnType<typeof getPayments>> = [];
+  const batchSize = 5;
+
+  for (let i = 0; i < days.length; i += batchSize) {
+    const batch = days.slice(i, i + batchSize);
+    const results = await Promise.all(
+      batch.map((day) => getPayments(format(day, "yyyy-MM-dd"), locationId))
+    );
+    allPayments.push(...results.flat());
+    onProgress?.(Math.min(i + batch.length, days.length), days.length);
+  }
+
+  return allPayments;
+};
+
 export const getPayments = async (date?: string, locationId?: string) => {
   try {
     const params: Record<string, string> = {};

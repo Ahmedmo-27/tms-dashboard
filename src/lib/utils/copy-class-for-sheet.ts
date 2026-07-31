@@ -100,28 +100,50 @@ export function mapOpenGymMethodToSheetLabel(
   return { kind: "label", label: method?.trim() || "" };
 }
 
+function buildMemberSheetRow(
+  scan: SheetScanInput,
+  mapMethod: (method: string) => MethodSheetMapping,
+  classPrice?: string
+): string | null {
+  if (scan.status !== "SUCCESS" && scan.status !== "FAILED") {
+    return null;
+  }
+
+  const name = scan.member || "";
+  const mapped = mapMethod(scan.method);
+  const price = classPrice?.trim() || "450";
+
+  if (mapped.kind === "dropin") {
+    return `${name}\t\t${price}\tApp\tDrop in`;
+  }
+  return `${name}\t${mapped.label}`;
+}
+
 function buildRows(
   scans: SheetScanInput[],
   mapMethod: (method: string) => MethodSheetMapping,
   classPrice?: string
 ): string {
-  const price = classPrice?.trim() || "450";
   const eligible = scans.filter(
     (scan) => scan.status === "SUCCESS" || scan.status === "FAILED"
   );
 
   return eligible
     .map((scan, index) => {
-      const n = String(index + 1);
-      const name = scan.member || "";
-      const mapped = mapMethod(scan.method);
-
-      if (mapped.kind === "dropin") {
-        return `${n}\t${name}\t\t${price}\tApp\tDrop in`;
-      }
-      return `${n}\t${name}\t${mapped.label}`;
+      const row = buildMemberSheetRow(scan, mapMethod, classPrice);
+      if (!row) return "";
+      return `${index + 1}\t${row}`;
     })
+    .filter(Boolean)
     .join("\n");
+}
+
+export function buildMemberSheetClipboardText(
+  scan: SheetScanInput,
+  mapMethod: (method: string) => MethodSheetMapping,
+  classPrice?: string
+): string | null {
+  return buildMemberSheetRow(scan, mapMethod, classPrice);
 }
 
 export function buildClassSheetClipboardText(input: {

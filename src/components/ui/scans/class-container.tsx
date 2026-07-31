@@ -8,17 +8,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "../button";
 import { ScrollArea, ScrollBar } from "../scroll-area";
 import { cn } from "@/lib/utils";
-import { buildClassSheetClipboardText } from "@/lib/utils/copy-class-for-sheet";
+import { mapMethodToSheetLabel } from "@/lib/utils/copy-class-for-sheet";
 import { Clock, Users, UserCheck } from "lucide-react";
 import { ScheduledClass } from "../schedule/columns";
 import { format } from "date-fns";
 import { CheckInsSelector } from "../dialogs/scans/check-in-selector";
 import { PaymentSelectorDialog } from "../dialogs/scans/payment-selector-dialog";
 import { BranchPill } from "../branch-pill";
-import { toast } from "react-hot-toast";
+import { CopyMemberForSheetButton } from "./copy-member-for-sheet-button";
 
 export interface ClassScan {
   member: string;
@@ -54,29 +53,6 @@ export const ClassContainer = ({
     }
   };
 
-  const sheetEligibleCount = classScans.filter(
-    (scan) => scan.status === "SUCCESS" || scan.status === "FAILED"
-  ).length;
-
-  const handleCopyClassForSheet = async () => {
-    if (sheetEligibleCount === 0) {
-      toast.error("No successful or failed check-ins to copy");
-      return;
-    }
-
-    const text = buildClassSheetClipboardText({
-      classPrice: classData.classPrice,
-      scans: classScans,
-    });
-
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Class attendance copied for sheet");
-    } catch {
-      toast.error("Failed to copy class attendance");
-    }
-  };
-
   return (
     <Card className="w-full">
       <CardHeader className="space-y-4 p-4">
@@ -92,14 +68,6 @@ export const ClassContainer = ({
               </Badge>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyClassForSheet}
-                disabled={sheetEligibleCount === 0}
-              >
-                Copy Class for Sheet
-              </Button>
               <CheckInsSelector members={classData.bookedMembers} classData={classData} />
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -134,13 +102,14 @@ export const ClassContainer = ({
                   <TableHead>Package</TableHead>
                   <TableHead>Check-in Time</TableHead>
                   <TableHead className="text-right">Status</TableHead>
+                  <TableHead className="text-right">Sheet</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {classScans.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={6}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No members checked in yet
@@ -177,6 +146,13 @@ export const ClassContainer = ({
                             ) : null}
                           </div>
                         )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <CopyMemberForSheetButton
+                          scan={scan}
+                          mapMethod={mapMethodToSheetLabel}
+                          classPrice={classData.classPrice}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
