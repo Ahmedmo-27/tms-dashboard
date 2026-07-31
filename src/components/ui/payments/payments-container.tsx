@@ -36,11 +36,9 @@ import { ExportPaymentsDialog } from "./export-payments-dialog";
 export default function PaymentsContainer({
   payments,
   initialDate,
-  locationId,
 }: {
   payments: Payment[];
   initialDate?: string;
-  locationId?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -362,7 +360,6 @@ export default function PaymentsContainer({
         <ExportPaymentsDialog
           open={exportOpen}
           onOpenChange={setExportOpen}
-          locationId={locationId}
         />
 
         <CardContent className="p-0 sm:p-6">

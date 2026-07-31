@@ -39,11 +39,7 @@ export default async function Page({
 
         {/* Main Content */}
         <div className="flex-1">
-          <PaymentsContainer
-            payments={payments}
-            initialDate={dateParam}
-            locationId={locationId}
-          />
+          <PaymentsContainer payments={payments} initialDate={dateParam} />
         </div>
       </div>
     );

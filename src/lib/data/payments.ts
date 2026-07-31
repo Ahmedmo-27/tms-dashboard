@@ -59,9 +59,13 @@ function tagCashOutRecords(records: RawPaymentRecord[]): RawPaymentRecord[] {
 export const getPaymentsForDateRange = async (
   startDate: string,
   endDate: string,
-  locationId?: string,
+  locationIds: string[],
   onProgress?: (completed: number, total: number) => void
 ) => {
+  if (locationIds.length === 0) {
+    return [];
+  }
+
   const { eachDayOfInterval, format, parseISO } = await import("date-fns");
 
   const days = eachDayOfInterval({
@@ -69,16 +73,22 @@ export const getPaymentsForDateRange = async (
     end: parseISO(endDate),
   });
 
+  const tasks = days.flatMap((day) =>
+    locationIds.map((locationId) => ({ day, locationId }))
+  );
+
   const allPayments: Awaited<ReturnType<typeof getPayments>> = [];
   const batchSize = 5;
 
-  for (let i = 0; i < days.length; i += batchSize) {
-    const batch = days.slice(i, i + batchSize);
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const batch = tasks.slice(i, i + batchSize);
     const results = await Promise.all(
-      batch.map((day) => getPayments(format(day, "yyyy-MM-dd"), locationId))
+      batch.map(({ day, locationId }) =>
+        getPayments(format(day, "yyyy-MM-dd"), locationId)
+      )
     );
     allPayments.push(...results.flat());
-    onProgress?.(Math.min(i + batch.length, days.length), days.length);
+    onProgress?.(Math.min(i + batch.length, tasks.length), tasks.length);
   }
 
   return allPayments;
