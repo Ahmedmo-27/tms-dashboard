@@ -10,6 +10,7 @@ interface ExportBranchSelectorProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   disabled?: boolean;
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -18,10 +19,40 @@ export function ExportBranchSelector({
   selectedIds,
   onChange,
   disabled,
+  isLoading = false,
   className,
 }: ExportBranchSelectorProps) {
-  if (locations.length <= 1) {
-    return null;
+  if (isLoading) {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <p className="text-sm font-medium">Branches</p>
+        <div className="rounded-md border px-3 py-4 text-sm text-muted-foreground">
+          Loading branches…
+        </div>
+      </div>
+    );
+  }
+
+  if (locations.length === 0) {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <p className="text-sm font-medium">Branches</p>
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-4 text-sm text-destructive">
+          Could not load branches. Close and try again.
+        </div>
+      </div>
+    );
+  }
+
+  if (locations.length === 1) {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <p className="text-sm font-medium">Branch</p>
+        <div className="rounded-md border bg-muted/40 px-3 py-3 text-sm">
+          {locations[0].branchName}
+        </div>
+      </div>
+    );
   }
 
   const toggleBranch = (id: string, checked: boolean) => {
@@ -63,7 +94,7 @@ export function ExportBranchSelector({
         </div>
       </div>
 
-      <div className="rounded-md border divide-y max-h-44 overflow-y-auto">
+      <div className="rounded-md border divide-y max-h-40 overflow-y-auto overscroll-contain">
         {locations.map((location) => {
           const checked = selectedIds.includes(location._id);
 
@@ -92,8 +123,7 @@ export function ExportBranchSelector({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {selectedIds.length} of {locations.length} branch
-        {locations.length === 1 ? "" : "es"} selected
+        {selectedIds.length} of {locations.length} branches selected
       </p>
     </div>
   );
