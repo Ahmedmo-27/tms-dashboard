@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, formatDate, isAfter, startOfDay } from "date-fns";
 import { Download, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -14,30 +14,55 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogDatePicker } from "./dialog-date-picker";
+import { ExportBranchSelector } from "./export-branch-selector";
+import { getLocations, type Location } from "@/lib/data/locations";
 import { getPaymentsForDateRange } from "@/lib/data/payments";
 import { downloadPaymentsExcel } from "@/lib/utils/export-payments";
 
 interface ExportPaymentsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  locationId?: string;
 }
 
 export function ExportPaymentsDialog({
   open,
   onOpenChange,
-  locationId,
 }: ExportPaymentsDialogProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(
     null
   );
 
+  useEffect(() => {
+    if (!open) return;
+
+    let active = true;
+    getLocations()
+      .then((fetchedLocations) => {
+        if (!active) return;
+        setLocations(fetchedLocations);
+        setSelectedBranchIds((current) => {
+          if (current.length > 0) return current;
+          return fetchedLocations.map((loc) => loc._id);
+        });
+      })
+      .catch(() => {
+        if (active) setLocations([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
   const resetForm = () => {
     setFromDate(undefined);
     setToDate(undefined);
+    setSelectedBranchIds([]);
     setProgress(null);
   };
 
@@ -48,9 +73,22 @@ export function ExportPaymentsDialog({
     onOpenChange(nextOpen);
   };
 
+  const selectedBranchNames = useMemo(
+    () =>
+      locations
+        .filter((location) => selectedBranchIds.includes(location._id))
+        .map((location) => location.branchName),
+    [locations, selectedBranchIds]
+  );
+
   const validateDates = (): { from: string; to: string } | null => {
     if (!fromDate || !toDate) {
       toast.error("Please select both a start date and an end date.");
+      return null;
+    }
+
+    if (selectedBranchIds.length === 0) {
+      toast.error("Please select at least one branch.");
       return null;
     }
 
@@ -79,12 +117,12 @@ export function ExportPaymentsDialog({
       const payments = await getPaymentsForDateRange(
         dates.from,
         dates.to,
-        locationId,
+        selectedBranchIds,
         (completed, total) => setProgress({ completed, total })
       );
 
       if (payments.length === 0) {
-        toast.error("No payments found for the selected date range.");
+        toast.error("No payments found for the selected date range and branches.");
         return;
       }
 
@@ -106,6 +144,13 @@ export function ExportPaymentsDialog({
       ? `${format(fromDate, "MMM dd, yyyy")} – ${format(toDate, "MMM dd, yyyy")}`
       : null;
 
+  const branchSummary =
+    selectedBranchNames.length === 0
+      ? null
+      : selectedBranchNames.length === locations.length
+        ? "all branches"
+        : selectedBranchNames.join(", ");
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
@@ -113,12 +158,19 @@ export function ExportPaymentsDialog({
           <DialogHeader>
             <DialogTitle>Export Payments to Excel</DialogTitle>
             <DialogDescription>
-              Choose the date range for your export. You can pick any start and end
-              dates, including across different months and years.
+              Choose a date range and the branches you want included in one combined
+              Excel sheet.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            <ExportBranchSelector
+              locations={locations}
+              selectedIds={selectedBranchIds}
+              onChange={setSelectedBranchIds}
+              disabled={isExporting}
+            />
+
             <DialogDatePicker
               label="From"
               selectedDate={fromDate}
@@ -133,17 +185,17 @@ export function ExportPaymentsDialog({
               placeholder="Select end date"
             />
 
-            {rangeSummary && (
+            {rangeSummary && branchSummary && (
               <p className="text-sm text-muted-foreground rounded-md border bg-muted/40 p-3">
                 Exporting payments from{" "}
-                <span className="font-medium text-foreground">{rangeSummary}</span>
-                {locationId ? " for the selected branch." : " across all branches."}
+                <span className="font-medium text-foreground">{rangeSummary}</span> for{" "}
+                <span className="font-medium text-foreground">{branchSummary}</span>.
               </p>
             )}
 
             {isExporting && progress && (
               <p className="text-sm text-muted-foreground">
-                Fetching day {progress.completed} of {progress.total}…
+                Fetching {progress.completed} of {progress.total} requests…
               </p>
             )}
           </div>
@@ -160,7 +212,12 @@ export function ExportPaymentsDialog({
           </Button>
           <Button
             onClick={handleExport}
-            disabled={isExporting || !fromDate || !toDate}
+            disabled={
+              isExporting ||
+              !fromDate ||
+              !toDate ||
+              selectedBranchIds.length === 0
+            }
             className="min-h-[44px] sm:min-h-9"
           >
             {isExporting ? (
