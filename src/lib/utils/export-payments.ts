@@ -106,6 +106,11 @@ export function downloadPaymentsExcel(
   const link = document.createElement("a");
   link.href = url;
   link.download = `payments-${startDate}-to-${endDate}.xls`;
+  link.style.display = "none";
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(link);
+
+  // Revoke after a tick so mobile browsers can start the download first.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

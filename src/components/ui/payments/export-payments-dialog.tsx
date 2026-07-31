@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PaymentDatePicker } from "./date-picker";
+import { DialogDatePicker } from "./dialog-date-picker";
 import { getPaymentsForDateRange } from "@/lib/data/payments";
 import { downloadPaymentsExcel } from "@/lib/utils/export-payments";
 
@@ -108,60 +108,61 @@ export function ExportPaymentsDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Export Payments to Excel</DialogTitle>
-          <DialogDescription>
-            Choose the date range for your export. You can pick any start and end
-            dates, including across different months and years.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
+        <div className="overflow-y-auto p-6 pb-0">
+          <DialogHeader>
+            <DialogTitle>Export Payments to Excel</DialogTitle>
+            <DialogDescription>
+              Choose the date range for your export. You can pick any start and end
+              dates, including across different months and years.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <p className="text-sm font-medium">From</p>
-            <PaymentDatePicker
-              className="w-full"
+          <div className="space-y-4 py-4">
+            <DialogDatePicker
+              label="From"
               selectedDate={fromDate}
               onDateChange={setFromDate}
               placeholder="Select start date"
             />
-          </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium">To</p>
-            <PaymentDatePicker
-              className="w-full"
+            <DialogDatePicker
+              label="To"
               selectedDate={toDate}
               onDateChange={setToDate}
               placeholder="Select end date"
             />
+
+            {rangeSummary && (
+              <p className="text-sm text-muted-foreground rounded-md border bg-muted/40 p-3">
+                Exporting payments from{" "}
+                <span className="font-medium text-foreground">{rangeSummary}</span>
+                {locationId ? " for the selected branch." : " across all branches."}
+              </p>
+            )}
+
+            {isExporting && progress && (
+              <p className="text-sm text-muted-foreground">
+                Fetching day {progress.completed} of {progress.total}…
+              </p>
+            )}
           </div>
-
-          {rangeSummary && (
-            <p className="text-sm text-muted-foreground rounded-md border bg-muted/40 p-3">
-              Exporting payments from{" "}
-              <span className="font-medium text-foreground">{rangeSummary}</span>
-              {locationId ? " for the selected branch." : " across all branches."}
-            </p>
-          )}
-
-          {isExporting && progress && (
-            <p className="text-sm text-muted-foreground">
-              Fetching day {progress.completed} of {progress.total}…
-            </p>
-          )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t bg-background p-4 sm:p-6">
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
             disabled={isExporting}
+            className="min-h-[44px] sm:min-h-9"
           >
             Cancel
           </Button>
-          <Button onClick={handleExport} disabled={isExporting || !fromDate || !toDate}>
+          <Button
+            onClick={handleExport}
+            disabled={isExporting || !fromDate || !toDate}
+            className="min-h-[44px] sm:min-h-9"
+          >
             {isExporting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
