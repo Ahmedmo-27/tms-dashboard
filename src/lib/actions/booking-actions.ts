@@ -1,3 +1,5 @@
+"use server";
+
 import { attendanceSchema, nonUserBookingSchema, walkInSchema } from "../schemas/newUserSchema";
 import { attendNonUserBooking, bookClassForNonUser, bookWalkIn, saveNonUserBookingPayment } from "../data/bookings";
 import { ApiError, ConflictError } from "@/core/api-error";
