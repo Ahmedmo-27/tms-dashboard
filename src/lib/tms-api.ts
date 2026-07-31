@@ -5,11 +5,13 @@ import { deleteToken } from "./cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_TMS_API_URL as string;
 
-console.log("TMS API Configuration:", {
-  API_URL,
-  NODE_ENV: process.env.NODE_ENV,
-  isServer: typeof window === "undefined",
-});
+if (process.env.NODE_ENV === "development") {
+  console.log("TMS API Configuration:", {
+    API_URL,
+    NODE_ENV: process.env.NODE_ENV,
+    isServer: typeof window === "undefined",
+  });
+}
 
 if (!API_URL) {
   throw new Error("NEXT_PUBLIC_TMS_API_URL environment variable is not set");
@@ -42,18 +44,7 @@ tms.interceptors.response.use(
 tms.interceptors.request.use(
   async (config) => {
     try {
-      console.log("Request interceptor called:", {
-        url: config.url,
-        method: config.method,
-        isServer: typeof window === "undefined",
-      });
-
-      // Always try to get token (handles server-side auth)
       const token = await getToken();
-      console.log("Token retrieved:", {
-        hasToken: !!token,
-        tokenLength: token?.length,
-      });
 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -62,7 +53,7 @@ tms.interceptors.request.use(
       return config;
     } catch (error) {
       console.error("Failed to get token:", error);
-      return config; // still return config to allow request to go through
+      return config;
     }
   },
   (error) => {

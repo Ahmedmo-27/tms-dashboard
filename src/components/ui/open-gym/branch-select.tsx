@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -9,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getLocations, Location } from "@/lib/data/locations";
+import { useLocations } from "@/lib/hooks/use-locations";
 
 interface OpenGymBranchSelectProps {
   value: string;
@@ -29,21 +28,7 @@ export function OpenGymBranchSelect({
   disabled,
   label = "Branch",
 }: OpenGymBranchSelectProps) {
-  const [locations, setLocations] = useState<Location[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    getLocations()
-      .then((locs) => {
-        if (active) setLocations(locs);
-      })
-      .catch(() => {
-        if (active) setLocations([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { locations } = useLocations();
 
   return (
     <div className="space-y-2">
