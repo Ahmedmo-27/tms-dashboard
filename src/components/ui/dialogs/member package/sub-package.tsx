@@ -65,6 +65,7 @@ export default function SubPackage({
 
   const [showEdits, setShowEdits] = useState(false);
   const [priceChanged, setPriceChanged] = useState(false);
+  const [pendingDeduction, setPendingDeduction] = useState(false);
 
   // Reset state when modal opens
   const resetForm = () => {
@@ -76,6 +77,7 @@ export default function SubPackage({
     setSelectedPaymentMethod("CASH");
     setShowEdits(false);
     setPriceChanged(false);
+    setPendingDeduction(false);
   };
 
   const toggleOpen = (value: boolean) => {
@@ -155,6 +157,7 @@ export default function SubPackage({
             <input type="hidden" name="amount" value={selectedAmount} />
             <input type="hidden" name="paymentMethod" value={selectedPaymentMethod} />
             <input type="hidden" name="priceChanged" value={String(priceChanged)} />
+            <input type="hidden" name="pendingDeduction" value={pendingDeduction.toString()} />
 
             <div className="space-y-2 mt-4">
               <ManagementBranchField
@@ -225,6 +228,20 @@ export default function SubPackage({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex gap-2 items-center mt-4">
+              <Checkbox
+                checked={pendingDeduction}
+                onCheckedChange={() => setPendingDeduction((prev) => !prev)}
+                disabled={pending}
+              />
+              <p
+                onClick={() => !pending && setPendingDeduction((prev) => !prev)}
+                className="cursor-pointer"
+              >
+                Attended a class using this package
+              </p>
             </div>
 
             {/* Edit payment details */}
