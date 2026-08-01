@@ -137,6 +137,7 @@ export const subscribeMemberToPackage = async (
   paymentDate?: string,
   amount?: string,
   locationId?: string,
+  pendingDeduction = false,
 ) => {
   try {
     type RequestBody = {
@@ -146,6 +147,7 @@ export const subscribeMemberToPackage = async (
       paymentMethod: string;
       paymentDate: string | undefined;
       amount: string | undefined;
+      pendingDeduction?: boolean;
       locationId?: string;
     };
     const requestBody: RequestBody = {
@@ -155,6 +157,7 @@ export const subscribeMemberToPackage = async (
       paymentMethod,
       paymentDate,
       amount,
+      ...(pendingDeduction ? { pendingDeduction: true } : {}),
       ...(locationId ? { locationId } : {}),
     };
     const response = await tms.post("admin/member-packages", requestBody);
