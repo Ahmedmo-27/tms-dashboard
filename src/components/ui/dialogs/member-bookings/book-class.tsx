@@ -7,8 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useActionState } from "react";
+import { isSameDay } from "date-fns";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import {
   Select,
@@ -64,10 +65,10 @@ export default function BookClass({
 
   const classesForDate = useMemo(() => {
     if (!selectedDate) return [];
-    return scheduledClasses.filter((scheduledClass) => {
-      const clsDate = new Date(scheduledClass.startTime);
-      return clsDate.toDateString() === new Date(selectedDate).toDateString();
-    });
+    const pickedDate = new Date(selectedDate);
+    return scheduledClasses.filter((scheduledClass) =>
+      isSameDay(new Date(scheduledClass.startTime), pickedDate)
+    );
   }, [scheduledClasses, selectedDate]);
 
   const eligibility = useMemo(() => {
@@ -98,11 +99,11 @@ export default function BookClass({
     );
   }, [cls, member, catalogPackages, scheduledClasses]);
 
-  const handleDateChange = (date: string) => {
+  const handleDateChange = useCallback((date: string) => {
     setSelectedDate(date);
     setCls(null);
     setOverrideTimeRestrictions(false);
-  };
+  }, []);
 
   useEffect(() => {
     setOverrideTimeRestrictions(false);
@@ -191,8 +192,7 @@ export default function BookClass({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Class</Label>
                 <Select
-                  name="clsId"
-                  value={cls?._id ?? ""}
+                  value={cls?._id}
                   onValueChange={(value) =>
                     setCls(
                       classesForDate.find(
@@ -200,44 +200,40 @@ export default function BookClass({
                       ) ?? null
                     )
                   }
-                  disabled={selectedDate === "" || pending}
+                  disabled={
+                    selectedDate === "" || pending || classesForDate.length === 0
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a class" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {classesForDate.map((scheduledClass) => {
-                      const classEligibility = getBookingEligibility(
-                        member,
-                        scheduledClass,
-                        catalogPackages,
-                        scheduledClasses
-                      );
-                      const selectableDespiteTime =
-                        canOverrideTime &&
-                        isBookingTimeRestriction(classEligibility);
-
-                      return (
-                        <SelectItem
-                          key={scheduledClass._id}
-                          value={scheduledClass._id || ""}
-                          disabled={
-                            classEligibility.eligible === false &&
-                            !selectableDespiteTime
-                          }
-                          className="hover:bg-accent flex flex-row justify-between"
-                        >
-                          <div>{scheduledClass.className}</div>
-                          <div>
+                  <SelectContent className="z-[100]">
+                    {classesForDate.map((scheduledClass) => (
+                      <SelectItem
+                        key={scheduledClass._id}
+                        value={scheduledClass._id!}
+                        className="hover:bg-accent"
+                      >
+                        <span className="flex w-full items-center justify-between gap-3">
+                          <span>{scheduledClass.className}</span>
+                          <span className="text-xs text-muted-foreground">
                             {new Date(
                               scheduledClass.startTime
-                            ).toLocaleTimeString()}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {selectedDate && classesForDate.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No classes scheduled for this date.
+                  </p>
+                )}
               </div>
 
               {cls && eligibility && (

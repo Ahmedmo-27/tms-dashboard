@@ -286,7 +286,12 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
       };
     }
 
-    const response = await bookClass(uid, clsId);
+    const shouldOverrideTime =
+      overrideTimeRestrictions && canOverride;
+
+    const response = await bookClass(uid, clsId, {
+      overrideTimeRestrictions: shouldOverrideTime,
+    });
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");

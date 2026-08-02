@@ -366,52 +366,33 @@ export function BookMemberClassDialog({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Class</Label>
               <Select
-                value={selectedClassId}
+                value={selectedClassId || undefined}
                 onValueChange={setSelectedClassId}
                 disabled={!selectedMember || pending || scheduledClasses.length === 0}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a class" />
                 </SelectTrigger>
-                <SelectContent>
-                  {scheduledClasses.map((cls) => {
-                    const classEligibility = selectedMember
-                      ? getBookingEligibility(
-                          selectedMember,
-                          cls,
-                          catalogPackages,
-                          allScheduledClasses
-                        )
-                      : null;
-                    const selectableDespiteTime =
-                      canOverrideTime &&
-                      classEligibility &&
-                      isBookingTimeRestriction(classEligibility);
-
-                    return (
-                      <SelectItem
-                        key={cls._id}
-                        value={cls._id ?? ""}
-                        disabled={
-                          classEligibility?.eligible === false &&
-                          !selectableDespiteTime
-                        }
-                        className="hover:bg-accent"
-                      >
-                        <div className="flex w-full items-center justify-between gap-3">
-                          <span>{cls.className}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(cls.startTime).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                            {" · "}
-                            {cls.availableSlots} slots
-                          </span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
+                <SelectContent className="z-[100]">
+                  {scheduledClasses.map((cls) => (
+                    <SelectItem
+                      key={cls._id}
+                      value={cls._id!}
+                      className="hover:bg-accent"
+                    >
+                      <div className="flex w-full items-center justify-between gap-3">
+                        <span>{cls.className}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(cls.startTime).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {" · "}
+                          {cls.availableSlots} slots
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {scheduledClasses.length === 0 && (
