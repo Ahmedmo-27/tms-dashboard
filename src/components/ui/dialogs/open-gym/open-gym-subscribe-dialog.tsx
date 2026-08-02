@@ -22,9 +22,9 @@ import {
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package } from "@/components/ui/packages/columns";
+import { PackageSearchSelect } from "@/components/ui/package-search-select";
 import { subscribePackageAction } from "@/lib/actions/member-actions";
 import {
-  formatCatalogPackageLabel,
   getPackageEndDateFromStart,
 } from "@/lib/utils/open-gym";
 import { tms } from "@/lib/tms-api";
@@ -277,23 +277,13 @@ export function OpenGymSubscribeDialog({
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Open gym package</Label>
-                <Select
-                  onValueChange={(value) =>
-                    setPkg(openGymPackages.find((p) => p._id === value) || null)
-                  }
+                <PackageSearchSelect
+                  packages={openGymPackages}
+                  value={pkg}
+                  onChange={setPkg}
                   disabled={pending}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select package" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {openGymPackages.map((p) => (
-                      <SelectItem key={p._id} value={p._id}>
-                        {formatCatalogPackageLabel(p)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select package"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

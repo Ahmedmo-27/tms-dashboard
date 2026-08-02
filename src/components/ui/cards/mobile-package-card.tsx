@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "../dropdown-menu";
 import { Calendar, Package, MoreHorizontal, Clock } from "lucide-react";
+import { useState } from "react";
 import { MemberPackage } from "../members/columns";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -21,6 +22,8 @@ interface MobilePackageCardProps {
 }
 
 export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
+  const [isNameExpanded, setIsNameExpanded] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ACTIVE":
@@ -50,9 +53,17 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Package className="h-4 w-4 text-primary flex-shrink-0" />
-              <h3 className="font-semibold text-sm truncate">
+              <button
+                type="button"
+                className={cn(
+                  "font-semibold text-sm text-left cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                  isNameExpanded ? "whitespace-normal break-words" : "truncate"
+                )}
+                onClick={() => setIsNameExpanded((prev) => !prev)}
+                aria-expanded={isNameExpanded}
+              >
                 {pkg.name}
-              </h3>
+              </button>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

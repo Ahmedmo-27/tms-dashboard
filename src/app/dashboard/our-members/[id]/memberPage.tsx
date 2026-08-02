@@ -41,6 +41,8 @@ export default function MemberPage({
             scheduledClasses={scheduledClasses}
             uid={member.id}
             memberName={member.name}
+            member={member}
+            catalogPackages={packages}
           />
         </div>
       </section>

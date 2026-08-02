@@ -8,6 +8,21 @@ export type BookingEligibilityResult = {
   coveringPackageName?: string;
 };
 
+export const BOOKING_TIME_RESTRICTION_REASON =
+  "This class has already started";
+
+export type BookingEligibilityOptions = {
+  overrideTimeRestrictions?: boolean;
+};
+
+export function isBookingTimeRestriction(
+  result: BookingEligibilityResult
+): boolean {
+  return (
+    !result.eligible && result.reason === BOOKING_TIME_RESTRICTION_REASON
+  );
+}
+
 function isPackageActive(pkg: MemberPackage): boolean {
   if (pkg.status !== "ACTIVE") return false;
   if (Number(pkg.remainingClasses) <= 0) return false;
@@ -58,15 +73,16 @@ export function getBookingEligibility(
   member: Member,
   scheduledClass: ScheduledClass,
   catalogPackages: Package[],
-  allScheduledClasses: ScheduledClass[]
+  allScheduledClasses: ScheduledClass[],
+  options?: BookingEligibilityOptions
 ): BookingEligibilityResult {
   if (scheduledClass.availableSlots <= 0) {
     return { eligible: false, reason: "No available slots in this class" };
   }
 
   const classStart = new Date(scheduledClass.startTime);
-  if (classStart < new Date()) {
-    return { eligible: false, reason: "This class has already started" };
+  if (!options?.overrideTimeRestrictions && classStart < new Date()) {
+    return { eligible: false, reason: BOOKING_TIME_RESTRICTION_REASON };
   }
 
   const alreadyBookedByScid = member.bookings.some(

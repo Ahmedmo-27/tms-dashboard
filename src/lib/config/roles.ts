@@ -174,3 +174,13 @@ export function canPerformManagementOnlyAction(
     permissionRole
   );
 }
+
+/** branch_admin and management can override booking time restrictions. */
+export function canOverrideBookingTimeRestrictions(
+  role: string | undefined
+): boolean {
+  const permissionRole = toPermissionRole(role);
+  return (
+    permissionRole === "branch_admin" || permissionRole === "management"
+  );
+}
