@@ -86,7 +86,7 @@ export function getBookingEligibility(
   }
 
   const alreadyBookedByScid = member.bookings.some(
-    (booking) => booking.scid === scheduledClass._id
+    (booking) => String(booking.scid) === String(scheduledClass._id)
   );
   const alreadyOnClassList = scheduledClass.bookedMembers?.some(
     (bookedMember) => bookedMember.uid === member.id
@@ -118,7 +118,7 @@ export function getBookingEligibility(
   let opensClassButRestricted = false;
 
   for (const memberPkg of activePackages) {
-    const catalogPkg = catalogById.get(memberPkg._id);
+    const catalogPkg = catalogById.get(String(memberPkg._id));
     if (!catalogPkg || !packageOpensClass(catalogPkg, classCid)) {
       continue;
     }

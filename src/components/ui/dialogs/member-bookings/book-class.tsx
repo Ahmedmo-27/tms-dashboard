@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useActionState } from "react";
 import { isSameDay } from "date-fns";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
@@ -99,15 +99,28 @@ export default function BookClass({
     );
   }, [cls, member, catalogPackages, scheduledClasses]);
 
+  const pickerSelectedDate = useMemo(
+    () => (selectedDate ? new Date(selectedDate) : undefined),
+    [selectedDate]
+  );
+
   const handleDateChange = useCallback((date: string) => {
     setSelectedDate(date);
     setCls(null);
     setOverrideTimeRestrictions(false);
   }, []);
 
-  useEffect(() => {
-    setOverrideTimeRestrictions(false);
-  }, [cls?._id]);
+  const handleClassChange = useCallback(
+    (value: string) => {
+      setCls(
+        classesForDate.find(
+          (scheduledClass) => scheduledClass._id === value
+        ) ?? null
+      );
+      setOverrideTimeRestrictions(false);
+    },
+    [classesForDate]
+  );
 
   const initialState = {
     success: false,
@@ -136,11 +149,7 @@ export default function BookClass({
     initialState
   );
 
-  const canSubmit =
-    !!cls &&
-    eligibility?.eligible === true &&
-    !pending &&
-    !state.success;
+  const canSubmit = !!cls && eligibility?.eligible === true && !pending;
 
   return (
     <div>
@@ -181,9 +190,7 @@ export default function BookClass({
                 >
                   <PopoverDatePicker
                     className="w-full"
-                    selectedDate={
-                      selectedDate === "" ? undefined : new Date(selectedDate)
-                    }
+                    selectedDate={pickerSelectedDate}
                     handleDateChange={handleDateChange}
                   />
                 </div>
@@ -193,13 +200,7 @@ export default function BookClass({
                 <Label className="text-sm font-medium">Class</Label>
                 <Select
                   value={cls?._id}
-                  onValueChange={(value) =>
-                    setCls(
-                      classesForDate.find(
-                        (scheduledClass) => scheduledClass._id === value
-                      ) ?? null
-                    )
-                  }
+                  onValueChange={handleClassChange}
                   disabled={
                     selectedDate === "" || pending || classesForDate.length === 0
                   }

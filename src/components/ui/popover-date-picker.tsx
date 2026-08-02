@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format, startOfDay } from "date-fns";
+import { format, isSameDay, startOfDay } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -25,17 +25,27 @@ export function PopoverDatePicker({
   disabled?: boolean;
 }) {
   const [date, setDate] = React.useState<Date | undefined>(selectedDate);
-  React.useEffect(() => {
-    if (date) {
-      handleDateChange?.(date.toString());
-    }
-  }, [date, handleDateChange]);
 
   React.useEffect(() => {
-    if (selectedDate) {
-      setDate(selectedDate);
+    if (selectedDate === undefined) {
+      setDate(undefined);
+      return;
     }
-  }, [selectedDate]);
+
+    setDate((current) => {
+      if (current && isSameDay(current, selectedDate)) {
+        return current;
+      }
+      return selectedDate;
+    });
+  }, [selectedDate?.getTime()]);
+
+  const handleSelect = (newDate: Date | undefined) => {
+    setDate(newDate);
+    if (newDate) {
+      handleDateChange?.(newDate.toISOString());
+    }
+  };
 
   return (
     <Popover modal={true}>
@@ -54,11 +64,11 @@ export function PopoverDatePicker({
           {date ? format(date, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-        {date && date < startOfDay(new Date()) && (
-          <span className="text-xs text-yellow-500">
-            Warning: Selected a past date
-          </span>
-        )}
+      {date && date < startOfDay(new Date()) && (
+        <span className="text-xs text-yellow-500">
+          Warning: Selected a past date
+        </span>
+      )}
       <PopoverContent
         className="w-auto p-0"
         onOpenAutoFocus={(e) => e.preventDefault()}
@@ -66,7 +76,7 @@ export function PopoverDatePicker({
         <Calendar
           mode="single"
           selected={date}
-          onSelect={setDate}
+          onSelect={handleSelect}
           initialFocus
         />
       </PopoverContent>

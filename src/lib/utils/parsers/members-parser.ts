@@ -32,7 +32,7 @@ export const parseMembers = (members: any) => {
         }));
 
       const parsedPackage = {
-        _id: pkg.pkgId._id,
+        _id: pkgIdStr,
         name: pkg.pkgId.name,
         pkgStartDate: pkg.pkgStartDate,
         pkgEndDate: pkg.pkgEndDate,
@@ -55,7 +55,7 @@ export const parseMembers = (members: any) => {
         return;
       }
       const parsedBooking = {
-        scid: booking.scid._id,
+        scid: booking.scid._id?.toString() ?? String(booking.scid._id),
         className: booking.scid.cid.title,
         bookingTime: booking.bookingTime,
         classTime: booking.scid.startTime,
