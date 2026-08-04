@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PackageSearchSelect } from "@/components/ui/package-search-select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "../../checkbox";
@@ -27,7 +28,6 @@ import { subscribeGuestPackageAction } from "@/lib/actions/member-actions";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 import {
-  formatCatalogPackageLabel,
   getPackageEndDateFromStart,
   isOpenGymPackage,
   sortPackagesWithOpenGymFirst,
@@ -238,27 +238,12 @@ export default function addGuestPackage({
             {/* Package */}
             <div className="space-y-2 mt-2">
               <Label className="text-sm font-medium">Package</Label>
-              <Select
-                onValueChange={(value) =>
-                  setPkg(packages.find((p) => p._id === value) || null)
-                }
+              <PackageSearchSelect
+                packages={catalogPackages}
+                value={pkg}
+                onChange={setPkg}
                 disabled={pending}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a package" />
-                </SelectTrigger>
-                <SelectContent>
-                  {catalogPackages.map((pkg) => (
-                    <SelectItem
-                      key={pkg._id}
-                      value={pkg._id}
-                      className="hover:bg-accent"
-                    >
-                      {formatCatalogPackageLabel(pkg)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             {/* Dates */}

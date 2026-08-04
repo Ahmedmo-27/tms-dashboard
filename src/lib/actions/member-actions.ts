@@ -17,6 +17,8 @@ import { getPackages } from "../data/package";
 import { getNextScheduledClasses, getScheduledClasses } from "../data/schedule";
 import { getBookingEligibility } from "../utils/booking-eligibility";
 import { ApiError } from "@/core/api-error";
+import { getAuthenticatedUser } from "../data/auth";
+import { canOverrideBookingTimeRestrictions } from "../config/roles";
 
 export const acceptMemberAction = async (uid: string) => {
   try {
@@ -222,8 +224,13 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
   try {
     const uid = formData.get("uid") as string;
     const clsId = formData.get("clsId") as string;
+    const overrideTimeRestrictions =
+      formData.get("overrideTimeRestrictions") === "true";
 
-    bookClassSchema.parse({ uid, clsId });
+    bookClassSchema.parse({ uid, clsId, overrideTimeRestrictions: String(overrideTimeRestrictions) });
+
+    const authUser = await getAuthenticatedUser();
+    const canOverride = canOverrideBookingTimeRestrictions(authUser?.role);
 
     const [memberData, catalogPackages, fullSchedule, upcomingSchedule] =
       await Promise.all([
@@ -262,7 +269,11 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
       member,
       scheduledClass,
       catalogPackages,
-      scheduledClasses
+      scheduledClasses,
+      {
+        overrideTimeRestrictions:
+          overrideTimeRestrictions && canOverride,
+      }
     );
 
     if (!eligibility.eligible) {
@@ -275,7 +286,12 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
       };
     }
 
-    const response = await bookClass(uid, clsId);
+    const shouldOverrideTime =
+      overrideTimeRestrictions && canOverride;
+
+    const response = await bookClass(uid, clsId, {
+      overrideTimeRestrictions: shouldOverrideTime,
+    });
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");

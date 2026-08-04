@@ -55,3 +55,14 @@ export const logout = async () => {
     throw error;
   }
 };
+
+export async function getAuthenticatedUser(): Promise<{
+  role?: string;
+} | null> {
+  try {
+    const response = await tms.get("/auth/verifyToken");
+    return response.data?.data?.user ?? response.data?.user ?? null;
+  } catch {
+    return null;
+  }
+}

@@ -24,17 +24,23 @@ import { ScheduledClass } from "../schedule/columns";
 import BookClass from "../dialogs/member-bookings/book-class";
 import BookDropIn from "../dialogs/member-bookings/book-drop-in";
 import { MobileBookingCard } from "./mobile-booking-card";
+import { Member } from "../members/columns";
+import { Package } from "../packages/columns";
 
 export default function Bookings({
   bookings,
   scheduledClasses,
   uid,
   memberName,
+  member,
+  catalogPackages,
 }: {
   bookings: Booking[];
   scheduledClasses: ScheduledClass[];
   uid: string;
   memberName?: string;
+  member: Member;
+  catalogPackages: Package[];
 }) {
   const formatDateTime = (date: string) => {
     if(date === "") return {
@@ -63,7 +69,12 @@ export default function Bookings({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg sm:text-xl font-semibold">Bookings</h3>
           <div className="flex gap-2">
-            <BookClass uid={uid} scheduledClasses={scheduledClasses} />
+            <BookClass
+              uid={uid}
+              scheduledClasses={scheduledClasses}
+              member={member}
+              catalogPackages={catalogPackages}
+            />
             <BookDropIn uid={uid} memberName={memberName} />
           </div>
         </div>

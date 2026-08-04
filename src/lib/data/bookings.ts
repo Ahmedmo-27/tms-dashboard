@@ -2,11 +2,18 @@
 import { revalidatePath } from "next/cache";
 import { tms } from "../tms-api";
 
-export const bookClass = async (uid: string, clsId: string) => {
+export const bookClass = async (
+  uid: string,
+  clsId: string,
+  options?: { overrideTimeRestrictions?: boolean }
+) => {
   try {
     const response = await tms.post("/admin/book", {
       uid,
       scid: clsId,
+      ...(options?.overrideTimeRestrictions
+        ? { overrideTimeRestrictions: true }
+        : {}),
     });
     return response.data;
   } catch (error) {

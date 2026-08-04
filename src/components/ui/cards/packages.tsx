@@ -29,6 +29,11 @@ import { MobilePackageCard } from "./mobile-package-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const SOURCE_LABELS: Record<AdjustmentRecord["source"], string> = {
   BOOKING: "Booking",
@@ -161,9 +166,18 @@ export default function Packages({
   packages: Package[];
 }) {
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null);
+  const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
 
   const toggleExpand = (key: string) =>
     setExpandedPkg((prev) => (prev === key ? null : key));
+
+  const toggleNameExpand = (key: string) =>
+    setExpandedNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   return (
     <Card className="flex-1">
@@ -241,7 +255,31 @@ export default function Packages({
                     <>
                       <TableRow key={index} className="hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium text-sm py-3 px-2 sm:px-4">
-                          <div className="truncate max-w-[150px]">{pkg.name}</div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className={cn(
+                                  "text-left cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                                  expandedNames.has(key)
+                                    ? "whitespace-normal break-words max-w-[280px]"
+                                    : "truncate max-w-[150px] block"
+                                )}
+                                onClick={() => toggleNameExpand(key)}
+                                aria-expanded={expandedNames.has(key)}
+                              >
+                                {pkg.name}
+                              </button>
+                            </TooltipTrigger>
+                            {!expandedNames.has(key) && (
+                              <TooltipContent side="top" className="max-w-xs">
+                                <p>{pkg.name}</p>
+                                <p className="text-primary-foreground/70 mt-1">
+                                  Click to expand
+                                </p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
                         </TableCell>
                         <TableCell className="py-3 px-2 sm:px-4">
                           <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">

@@ -31,8 +31,12 @@ import { parseMembers } from "@/lib/utils/parsers/members-parser";
 import {
   getActivePackagesSummary,
   getBookingEligibility,
+  isBookingTimeRestriction,
 } from "@/lib/utils/booking-eligibility";
 import { ApiError } from "@/core/api-error";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAppSelector } from "@/lib/hooks";
+import { canOverrideBookingTimeRestrictions } from "@/lib/config/roles";
 
 type MemberSearchHit = {
   id: string;
@@ -54,6 +58,10 @@ export function BookMemberClassDialog({
   date,
 }: BookMemberClassDialogProps) {
   const router = useRouter();
+  const user = useAppSelector((state) => state.auth.user);
+  const canOverrideTime = canOverrideBookingTimeRestrictions(
+    user?.role as string | undefined
+  );
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<MemberSearchHit[]>([]);
@@ -62,6 +70,7 @@ export function BookMemberClassDialog({
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isLoadingMember, setIsLoadingMember] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState("");
+  const [overrideTimeRestrictions, setOverrideTimeRestrictions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const selectedClass = useMemo(
@@ -75,9 +84,32 @@ export function BookMemberClassDialog({
       selectedMember,
       selectedClass,
       catalogPackages,
-      allScheduledClasses
+      allScheduledClasses,
+      {
+        overrideTimeRestrictions:
+          canOverrideTime && overrideTimeRestrictions,
+      }
     );
-  }, [selectedMember, selectedClass, catalogPackages, allScheduledClasses]);
+  }, [
+    selectedMember,
+    selectedClass,
+    catalogPackages,
+    allScheduledClasses,
+    canOverrideTime,
+    overrideTimeRestrictions,
+  ]);
+
+  const requiresTimeOverride =
+    !!selectedMember &&
+    !!selectedClass &&
+    isBookingTimeRestriction(
+      getBookingEligibility(
+        selectedMember,
+        selectedClass,
+        catalogPackages,
+        allScheduledClasses
+      )
+    );
 
   const activePackagesSummary = useMemo(() => {
     if (!selectedMember) return [];
@@ -89,6 +121,7 @@ export function BookMemberClassDialog({
     setSearchResults([]);
     setSelectedMember(null);
     setSelectedClassId("");
+    setOverrideTimeRestrictions(false);
     setShowSuggestions(false);
   };
 
@@ -201,6 +234,10 @@ export function BookMemberClassDialog({
     eligibility?.eligible === true &&
     !pending;
 
+  useEffect(() => {
+    setOverrideTimeRestrictions(false);
+  }, [selectedClassId]);
+
   const errorMessage =
     state?.errors && typeof state.errors === "object"
       ? "message" in state.errors
@@ -233,6 +270,11 @@ export function BookMemberClassDialog({
               value={selectedMember?.id ?? ""}
             />
             <input type="hidden" name="clsId" value={selectedClassId} />
+            <input
+              type="hidden"
+              name="overrideTimeRestrictions"
+              value={overrideTimeRestrictions ? "true" : "false"}
+            />
 
             <div className="space-y-2" ref={searchRef}>
               <Label className="text-sm font-medium">Search member</Label>
@@ -324,45 +366,33 @@ export function BookMemberClassDialog({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Class</Label>
               <Select
-                value={selectedClassId}
+                value={selectedClassId || undefined}
                 onValueChange={setSelectedClassId}
                 disabled={!selectedMember || pending || scheduledClasses.length === 0}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a class" />
                 </SelectTrigger>
-                <SelectContent>
-                  {scheduledClasses.map((cls) => {
-                    const classEligibility = selectedMember
-                      ? getBookingEligibility(
-                          selectedMember,
-                          cls,
-                          catalogPackages,
-                          allScheduledClasses
-                        )
-                      : null;
-
-                    return (
-                      <SelectItem
-                        key={cls._id}
-                        value={cls._id ?? ""}
-                        disabled={classEligibility?.eligible === false}
-                        className="hover:bg-accent"
-                      >
-                        <div className="flex w-full items-center justify-between gap-3">
-                          <span>{cls.className}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(cls.startTime).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                            {" · "}
-                            {cls.availableSlots} slots
-                          </span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
+                <SelectContent className="z-[100]">
+                  {scheduledClasses.map((cls) => (
+                    <SelectItem
+                      key={cls._id}
+                      value={cls._id!}
+                      className="hover:bg-accent"
+                    >
+                      <div className="flex w-full items-center justify-between gap-3">
+                        <span>{cls.className}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(cls.startTime).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {" · "}
+                          {cls.availableSlots} slots
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {scheduledClasses.length === 0 && (
@@ -387,10 +417,35 @@ export function BookMemberClassDialog({
                       {eligibility.coveringPackageName}
                     </span>
                     .
+                    {overrideTimeRestrictions && requiresTimeOverride && (
+                      <span className="block mt-1 text-xs">
+                        Booking with time restriction override.
+                      </span>
+                    )}
                   </>
                 ) : (
                   eligibility.reason
                 )}
+              </div>
+            )}
+
+            {canOverrideTime && requiresTimeOverride && selectedMember && (
+              <div className="flex gap-2 items-start">
+                <Checkbox
+                  id="override-time-restrictions"
+                  checked={overrideTimeRestrictions}
+                  onCheckedChange={(checked) =>
+                    setOverrideTimeRestrictions(checked === true)
+                  }
+                  disabled={pending}
+                />
+                <label
+                  htmlFor="override-time-restrictions"
+                  className="cursor-pointer text-sm leading-snug"
+                >
+                  Override time restriction — allow booking even though this
+                  class has already started
+                </label>
               </div>
             )}
 
