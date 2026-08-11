@@ -34,6 +34,7 @@ export default function Bookings({
   memberName,
   member,
   catalogPackages,
+  hideHeader = false,
 }: {
   bookings: Booking[];
   scheduledClasses: ScheduledClass[];
@@ -41,6 +42,7 @@ export default function Bookings({
   memberName?: string;
   member: Member;
   catalogPackages: Package[];
+  hideHeader?: boolean;
 }) {
   const formatDateTime = (date: string) => {
     if(date === "") return {
@@ -64,7 +66,8 @@ export default function Bookings({
   };
 
   return (
-    <Card className="flex-1">
+    <Card className="flex-1 border-0 shadow-none">
+      {!hideHeader && (
       <CardHeader className="pb-4 sm:pb-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg sm:text-xl font-semibold">Bookings</h3>
@@ -79,6 +82,7 @@ export default function Bookings({
           </div>
         </div>
       </CardHeader>
+      )}
       <CardContent className="p-4 sm:p-6">
         {/* Mobile view */}
         <div className="block lg:hidden">

@@ -94,9 +94,9 @@ export default function QRTemplateGenerator({ scls }: { scls: any }) {
       />
       <button
         onClick={downloadImage}
-        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition"
+        className="mt-4 min-h-11 w-full max-w-[300px] rounded bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-green-700"
       >
-        Download Code
+        Download / Print
       </button>
     </div>
   );

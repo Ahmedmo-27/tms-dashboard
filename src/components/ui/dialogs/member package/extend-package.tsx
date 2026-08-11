@@ -16,10 +16,12 @@ import { changePkgEndDate } from "@/lib/actions/member-actions";
 
 export default function ExtendPackage({
   pkg,
-  uid
+  uid,
+  variant = "menu",
 }: {
   pkg: { [x: string]: string | number | readonly string[] | undefined, name: string; pkgEndDate: string; id: string };
   uid: string;
+  variant?: "menu" | "button";
 }) {
   const [date, setDate] = useState(pkg.pkgEndDate);
   const [open, setOpen] = useState(false);
@@ -45,12 +47,18 @@ export default function ExtendPackage({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
+        {variant === "button" ? (
+          <Button variant="outline" size="sm" className="h-8">
+            Extend
+          </Button>
+        ) : (
         <DropdownMenuItem
           onSelect={(e) => e.preventDefault()}
           className="cursor-pointer"
         >
           Change package end date
         </DropdownMenuItem>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

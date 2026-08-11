@@ -10,6 +10,7 @@ import {
 } from "../dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
+import { format } from "date-fns";
 
 export type AdjustmentRecord = {
   date: string;
@@ -56,6 +57,15 @@ export type Member = {
   ptAttendance: any[];
 };
 
+function soonestActiveExpiry(packages: MemberPackage[]): Date | null {
+  const times = (packages ?? [])
+    .filter((pkg) => pkg.status?.toUpperCase() === "ACTIVE" && pkg.pkgEndDate)
+    .map((pkg) => new Date(pkg.pkgEndDate).getTime())
+    .filter((time) => !Number.isNaN(time));
+  if (times.length === 0) return null;
+  return new Date(Math.min(...times));
+}
+
 export const columns: ColumnDef<Member>[] = [
   {
     accessorKey: "name",
@@ -95,13 +105,17 @@ export const columns: ColumnDef<Member>[] = [
   },
   {
     accessorKey: "activePkgs",
-    header: "Packages",
+    header: "Status",
     cell: ({ row }) => {
       const activePkgs = row.getValue("activePkgs") as number;
+      const expiry = soonestActiveExpiry(row.original.packages);
       return (
-        <div className="text-center">
-          <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium bg-primary/10 text-primary rounded-full">
-            {activePkgs}
+        <div className="flex flex-col gap-0.5">
+          <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            {activePkgs} active
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {expiry ? `Expires ${format(expiry, "dd MMM yyyy")}` : "No active expiry"}
           </span>
         </div>
       );
@@ -114,6 +128,7 @@ export const columns: ColumnDef<Member>[] = [
       const member = row.original;
 
       return (
+        <div onClick={(event) => event.stopPropagation()}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0 touch-manipulation">
@@ -136,6 +151,7 @@ export const columns: ColumnDef<Member>[] = [
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       );
     },
   },

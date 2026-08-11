@@ -13,17 +13,15 @@ import { Input } from "../input";
 import { Button } from "../button";
 import { Card, CardContent, CardHeader, CardTitle } from "../card";
 import { Search, RefreshCw, Users } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "../dropdown-menu";
 import { Badge } from "../badge";
 import { cn } from "@/lib/utils";
 import NetworkErrorPage from "../error-pages/network-error";
 import { NetworkError, NotFoundError, UnauthorizedError } from "@/core/api-error";
 import NotFoundErrorPage from "../error-pages/not-found-error";
 import UnauthorizedPage from "../error-pages/UnauthorizedPage";
+import { RegisterMember } from "@/components/ui/dialogs/members/register-member";
+
+export const MEMBERS_PAGE_SIZE = 25;
 
 export default function MembersContainer() {
   const router = useRouter();
@@ -34,15 +32,20 @@ export default function MembersContainer() {
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("searchString") ?? ""
+  );
   const page = Number(searchParams.get("page")) || 1;
   const debouncedTerm = useDebounce(searchTerm, 500);
-
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getMembers(debouncedTerm || null, page, 10);
+      const response = await getMembers(
+        debouncedTerm || null,
+        page,
+        MEMBERS_PAGE_SIZE
+      );
       const renderedMembers: Member[] = [];
       const members = response.data;
       for (const member in members) {
@@ -54,6 +57,7 @@ export default function MembersContainer() {
           activePkgs: members[member].packages.length,
           packages: members[member].packages,
           bookings: members[member].bookings,
+          ptAttendance: members[member].ptAttendance ?? [],
         });
       }
       setData(renderedMembers);
@@ -78,10 +82,7 @@ export default function MembersContainer() {
       } else {
         params.delete("searchString");
       }
-      if (!params.has("page")) {
-        params.set("page", "1");
-      }
-
+      params.set("page", "1");
       router.push(`${pathname}?${params.toString()}`);
     }
   }, [debouncedTerm, router, pathname, searchParams]);
@@ -98,7 +99,7 @@ export default function MembersContainer() {
   );
 
   const handleRefresh = async () => {
-    setError(null)
+    setError(null);
     setIsRefreshing(true);
     await fetchData();
     setIsRefreshing(false);
@@ -117,7 +118,7 @@ export default function MembersContainer() {
             <div className="min-w-0 flex-1">
               <CardTitle className="text-lg sm:text-xl">Members</CardTitle>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Manage and view all members
+                Search, open a row, get to work
               </p>
             </div>
           </div>
@@ -128,26 +129,19 @@ export default function MembersContainer() {
       </CardHeader>
       <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2 flex-1 lg:max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search members..."
-                type="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 min-h-[40px]"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem>Active Members</DropdownMenuItem>
-                <DropdownMenuItem>Expired Members</DropdownMenuItem>
-                <DropdownMenuItem>Recent Activity</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="relative flex-1 lg:max-w-md">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              autoFocus
+              placeholder="Name or phone"
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-4 min-h-[40px]"
+            />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <RegisterMember />
             <Button
               variant="outline"
               size="sm"
@@ -178,7 +172,7 @@ export default function MembersContainer() {
                     No members found
                   </h3>
                   <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
-                    Try adjusting your search or filters
+                    Try a name or phone number
                   </p>
                 </div>
               )}
@@ -193,7 +187,7 @@ export default function MembersContainer() {
           <div className="order-1 sm:order-2">
             <MembersPagination
               currentPage={page}
-              maxPages={Math.ceil(totalMembers / 10)}
+              maxPages={Math.ceil(totalMembers / MEMBERS_PAGE_SIZE)}
               onPageChange={handlePageChange}
             />
           </div>

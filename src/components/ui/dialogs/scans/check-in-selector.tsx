@@ -98,8 +98,8 @@ export function CheckInsSelector({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="cursor-pointer">
-          Manage Bookings
+        <Button variant="default" size="sm" className="cursor-pointer">
+          Check in
         </Button>
       </DialogTrigger>
       <DialogContent className="pt-10 pb-5 px-5">

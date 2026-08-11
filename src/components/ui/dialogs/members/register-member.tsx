@@ -21,7 +21,7 @@ import { Copy, Plus } from "lucide-react";
 import { ApiError } from "@/core/api-error";
 import { toast } from "react-hot-toast";
 import { registerUser } from "@/lib/actions/auth-actions";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface ActionState {
   success: boolean;
@@ -47,6 +47,7 @@ export function RegisterMember() {
   };
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -86,6 +87,15 @@ export function RegisterMember() {
     navigator.clipboard.writeText(copiedMessage);
     toast.success("Copied!", { duration: 1500, position: "top-center" });
   };
+
+  useEffect(() => {
+    if (searchParams.get("register") !== "1") return;
+    setIsOpen(true);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("register");
+    const query = params.toString();
+    router.replace(query ? `/dashboard/our-members?${query}` : "/dashboard/our-members");
+  }, [router, searchParams]);
 
   useEffect(() => {
     const randomDigits = Array.from({ length: 4 }, () =>

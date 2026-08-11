@@ -18,6 +18,7 @@ import { adjustClassesAction } from "@/lib/actions/member-actions";
 export default function AddClasses({
   pkg,
   uid,
+  variant = "menu",
 }: {
   pkg: {
     [x: string]: any;
@@ -28,6 +29,7 @@ export default function AddClasses({
     status: string;
   };
   uid: string;
+  variant?: "menu" | "button";
 }) {
   const [amount, setAmount] = useState(1);
   const [type, setType] = useState<"ADD" | "DEDUCT">("ADD");
@@ -59,12 +61,18 @@ export default function AddClasses({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
+        {variant === "button" ? (
+          <Button variant="outline" size="sm">
+            Add classes
+          </Button>
+        ) : (
         <DropdownMenuItem
           onSelect={(e) => e.preventDefault()}
           className="cursor-pointer"
         >
           Adjust classes
         </DropdownMenuItem>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

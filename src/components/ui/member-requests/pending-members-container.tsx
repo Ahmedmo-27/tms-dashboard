@@ -34,7 +34,7 @@ export default function PendingMembersContainer() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await getUsers(debouncedTerm || null, page, 10);
+      const response = await getUsers(debouncedTerm || null, page, 25);
       const users = response.data;
       const renderedUsers: User[] = users.map((user: any) => ({
         id: user._id,
@@ -145,8 +145,9 @@ export default function PendingMembersContainer() {
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search members..."
+                placeholder="Name or phone"
                 type="search"
+                autoFocus
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 pr-4"
@@ -209,7 +210,7 @@ export default function PendingMembersContainer() {
             </p>
             <MembersPagination
               currentPage={page}
-              maxPages={Math.ceil(totalUsers / 10)}
+              maxPages={Math.ceil(totalUsers / 25)}
               onPageChange={handlePageChange}
             />
           </div>
@@ -240,8 +241,9 @@ export default function PendingMembersContainer() {
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search members..."
+                  placeholder="Name or phone"
                   type="search"
+                  autoFocus
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-4"
@@ -301,7 +303,7 @@ export default function PendingMembersContainer() {
             </p>
             <MembersPagination
               currentPage={page}
-              maxPages={Math.ceil(totalUsers / 10)}
+              maxPages={Math.ceil(totalUsers / 25)}
               onPageChange={handlePageChange}
             />
           </div>

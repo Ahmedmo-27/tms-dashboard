@@ -29,7 +29,10 @@ interface PTAttendanceProps {
   attendance: PTAttendanceRecord[];
 }
 
-export default function PTAttendance({ attendance }: PTAttendanceProps) {
+export default function PTAttendance({
+  attendance,
+  hideHeader = false,
+}: PTAttendanceProps & { hideHeader?: boolean }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -64,10 +67,12 @@ export default function PTAttendance({ attendance }: PTAttendanceProps) {
   };
 
   return (
-    <Card className="flex-1 border border-border/40 shadow-sm">
+    <Card className={hideHeader ? "flex-1 border-0 shadow-none" : "flex-1 border border-border/40 shadow-sm"}>
+      {!hideHeader && (
       <CardHeader className="">
         <h3 className="text-base font-semibold">PT Attendance</h3>
       </CardHeader>
+      )}
 
       <CardContent className="p-3 sm:p-4">
         {/* Date filter */}

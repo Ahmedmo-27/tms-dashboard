@@ -44,9 +44,15 @@ const paymentMethods = [
 export default function addGuestPackage({
   packages,
   openGymOnly = false,
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
 }: {
   packages: Package[];
   openGymOnly?: boolean;
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const {
     locationId,
@@ -55,7 +61,9 @@ export default function addGuestPackage({
     hasLocationId,
     resetModalBranch,
   } = useManagementBranchSelection();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : uncontrolledOpen;
   const [pkg, setPkg] = useState<Package | null>(null);
 
   const [name, setName] = useState<string>("");
@@ -88,7 +96,8 @@ export default function addGuestPackage({
   };
 
   const toggleOpen = (value: boolean) => {
-    setOpen(value);
+    if (!isControlled) setUncontrolledOpen(value);
+    onOpenChange?.(value);
     if (value) resetModalBranch();
     if (!value) resetForm();
   };
@@ -140,6 +149,7 @@ export default function addGuestPackage({
 
   return (
     <div>
+      {!hideTrigger && (
       <Button
         className="min-h-[40px]"
         variant="outline"
@@ -148,6 +158,7 @@ export default function addGuestPackage({
       >
         {openGymOnly ? "Guest open gym package" : "Add Package"}
       </Button>
+      )}
 
       <Dialog open={open} onOpenChange={toggleOpen}>
         <DialogContent>

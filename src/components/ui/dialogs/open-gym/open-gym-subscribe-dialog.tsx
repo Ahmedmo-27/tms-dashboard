@@ -26,6 +26,7 @@ import { PackageSearchSelect } from "@/components/ui/package-search-select";
 import { subscribePackageAction } from "@/lib/actions/member-actions";
 import {
   getPackageEndDateFromStart,
+  sortPackagesWithOpenGymFirst,
 } from "@/lib/utils/open-gym";
 import { tms } from "@/lib/tms-api";
 import { Search } from "lucide-react";
@@ -50,9 +51,17 @@ type MemberSearchHit = {
 export function OpenGymSubscribeDialog({
   packages,
   triggerLabel = "Add open gym package",
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
+  mode = "open-gym",
 }: {
   packages: Package[];
   triggerLabel?: string;
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  mode?: "open-gym" | "all";
 }) {
   const router = useRouter();
   const {
@@ -62,18 +71,23 @@ export function OpenGymSubscribeDialog({
     hasLocationId,
     resetModalBranch,
   } = useManagementBranchSelection();
-  const openGymPackages = packages
-    .filter((p) => p.category === "OPEN_GYM")
-    .filter((p) => {
-      if (!locationId || !p.locationId) return true;
-      const pkgLocationId =
-        typeof p.locationId === "string"
-          ? p.locationId
-          : (p.locationId as { _id?: string })._id;
-      return !pkgLocationId || pkgLocationId === locationId;
-    });
+  const branchPackages = packages.filter((p) => {
+    if (!locationId || !p.locationId) return true;
+    const pkgLocationId =
+      typeof p.locationId === "string"
+        ? p.locationId
+        : (p.locationId as { _id?: string })._id;
+    return !pkgLocationId || pkgLocationId === locationId;
+  });
+  const selectablePackages =
+    mode === "all"
+      ? sortPackagesWithOpenGymFirst(branchPackages)
+      : branchPackages.filter((p) => p.category === "OPEN_GYM");
+  const isAllPackages = mode === "all";
 
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : uncontrolledOpen;
   const [pkg, setPkg] = useState<Package | null>(null);
   const [selectedUid, setSelectedUid] = useState("");
   const [selectedMemberName, setSelectedMemberName] = useState("");
@@ -106,7 +120,8 @@ export function OpenGymSubscribeDialog({
   };
 
   const handleOpenChange = (value: boolean) => {
-    setOpen(value);
+    if (!isControlled) setUncontrolledOpen(value);
+    onOpenChange?.(value);
     if (value) resetModalBranch();
     if (!value) resetForm();
   };
@@ -177,7 +192,7 @@ export function OpenGymSubscribeDialog({
     async (currentState: any, formData: FormData) => {
       const result = await subscribePackageAction(currentState, formData);
       if (result.success) {
-        toast.success("Open gym package added");
+        toast.success(isAllPackages ? "Package added to member" : "Open gym package added");
         handleOpenChange(false);
         router.refresh();
         return initialState;
@@ -189,25 +204,34 @@ export function OpenGymSubscribeDialog({
 
   return (
     <div>
+      {!hideTrigger && (
       <Button variant="outline" size="sm" onClick={() => handleOpenChange(true)}>
         {triggerLabel}
       </Button>
+      )}
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add open gym package to member</DialogTitle>
+            <DialogTitle>
+              {isAllPackages
+                ? "Add package to member"
+                : "Add open gym package to member"}
+            </DialogTitle>
             <DialogDescription>
-              Search for a member and subscribe them to any open gym package
-              you have configured for this branch.
+              {isAllPackages
+                ? "Search for a member and subscribe them to a package."
+                : "Search for a member and subscribe them to any open gym package you have configured for this branch."}
             </DialogDescription>
           </DialogHeader>
 
-          {openGymPackages.length === 0 ? (
+          {selectablePackages.length === 0 ? (
             <p className="text-sm text-destructive">
               {needsBranchSelection && !hasLocationId
-                ? "Select a branch to see open gym packages for that location."
-                : "No OPEN_GYM packages in catalog. Create one under Catalog → Packages first."}
+                ? "Select a branch to see packages for that location."
+                : isAllPackages
+                  ? "No packages in catalog. Create one under Catalog → Packages first."
+                  : "No OPEN_GYM packages in catalog. Create one under Catalog → Packages first."}
             </p>
           ) : (
             <form action={formAction} className="space-y-4">
@@ -276,9 +300,11 @@ export function OpenGymSubscribeDialog({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Open gym package</Label>
+                <Label className="text-sm font-medium">
+                  {isAllPackages ? "Package" : "Open gym package"}
+                </Label>
                 <PackageSearchSelect
-                  packages={openGymPackages}
+                  packages={selectablePackages}
                   value={pkg}
                   onChange={setPkg}
                   disabled={pending}
