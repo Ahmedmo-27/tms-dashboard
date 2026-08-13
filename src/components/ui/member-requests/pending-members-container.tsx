@@ -26,7 +26,9 @@ export default function PendingMembersContainer() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(
+    () => searchParams.get("searchString") ?? ""
+  );
   const page = Number(searchParams.get("page")) || 1;
   const debouncedTerm = useDebounce(searchTerm, 500);
   const searchParamsRef = useRef(searchParams);
