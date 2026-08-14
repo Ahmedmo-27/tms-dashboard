@@ -11,6 +11,7 @@ import { Class } from "../classes/columns";
 import { formatCategory, formatSessionCount, getCategoryColor } from "@/lib/utils/catalog";
 import { createBranchColumn } from "../branch-column";
 import { cn } from "@/lib/utils";
+import { getPackageBranchLabel } from "@/lib/utils/location-label";
 import {
   Tooltip,
   TooltipContent,
@@ -39,7 +40,9 @@ export function createColumns(
   showBranch = false
 ): ColumnDef<Package>[] {
   return [
-    ...createBranchColumn<Package>(showBranch, (pkg) => pkg.branchLabel),
+    ...createBranchColumn<Package>(showBranch, (pkg) =>
+      getPackageBranchLabel(pkg.locationId, pkg.branchLabel)
+    ),
     {
       accessorKey: "name",
       header: "Name",

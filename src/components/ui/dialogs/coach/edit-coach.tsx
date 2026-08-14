@@ -20,7 +20,13 @@ interface ActionState {
   data: any | null;
 }
 
-export default function EditCoachDialog({ coach }: { coach: Coach }) {
+export default function EditCoachDialog({
+  coach,
+  compact = false,
+}: {
+  coach: Coach;
+  compact?: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   const initialState: ActionState = { success: false, errors: null, data: null };
@@ -41,11 +47,13 @@ export default function EditCoachDialog({ coach }: { coach: Coach }) {
     <div>
       <Button
         variant="outline"
-        className="cursor-pointer w-full"
+        size={compact ? "icon" : "default"}
+        className={compact ? "h-8 w-8 cursor-pointer" : "cursor-pointer w-full"}
         onClick={() => setIsOpen(true)}
       >
-        <Edit className="mr-2 h-4 w-4" />
-        <span>Edit</span>
+        <Edit className={compact ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+        {!compact && <span>Edit</span>}
+        {compact && <span className="sr-only">Edit</span>}
       </Button>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px]">

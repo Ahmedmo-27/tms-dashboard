@@ -43,7 +43,8 @@ export const formatLocations = (
 export function createColumns(
   packages: Package[],
   classCategories: string[],
-  locations: Location[] = []
+  locations: Location[] = [],
+  showLocation = false
 ): ColumnDef<Class>[] {
   const locationMap = new Map(
     locations.map((location) => [location._id, location.branchName || location.location])
@@ -93,19 +94,24 @@ export function createColumns(
         );
       },
     },
-    {
-      accessorKey: "locations",
-      header: "Location",
-      cell: ({ row }) => {
-        const label =
-          formatLocations(row.original.locations, locationMap) || "No location";
-        return (
-          <span className="text-muted-foreground max-w-[200px] truncate block">
-            {label}
-          </span>
-        );
-      },
-    },
+    ...(showLocation
+      ? [
+          {
+            accessorKey: "locations",
+            header: "Location",
+            cell: ({ row }: { row: { original: Class } }) => {
+              const label =
+                formatLocations(row.original.locations, locationMap) ||
+                "No location";
+              return (
+                <span className="text-muted-foreground max-w-[200px] truncate block">
+                  {label}
+                </span>
+              );
+            },
+          } satisfies ColumnDef<Class>,
+        ]
+      : []),
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,

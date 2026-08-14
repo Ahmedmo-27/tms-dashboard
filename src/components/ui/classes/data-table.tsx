@@ -32,6 +32,7 @@ export interface DataTableProps<TData, TValue> {
   packages?: Package[]
   classCategories?: string[]
   locations?: Location[]
+  showLocation?: boolean
   hideSearch?: boolean
   embedded?: boolean
 }
@@ -43,6 +44,7 @@ export function DataTable<TData, TValue>({
   packages = [],
   classCategories = [],
   locations = [],
+  showLocation = false,
   hideSearch = false,
   embedded = false,
 }: DataTableProps<TData, TValue>) {
@@ -109,6 +111,7 @@ export function DataTable<TData, TValue>({
                 packages={packages}
                 classCategories={classCategories}
                 locations={locations}
+                showLocation={showLocation}
               />
             ))}
           </div>

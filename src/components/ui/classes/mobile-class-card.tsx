@@ -19,6 +19,7 @@ interface MobileClassCardProps {
   packages: Package[];
   classCategories?: string[];
   locations?: Location[];
+  showLocation?: boolean;
 }
 
 export function MobileClassCard({
@@ -26,6 +27,7 @@ export function MobileClassCard({
   packages,
   classCategories = [],
   locations = [],
+  showLocation = false,
 }: MobileClassCardProps) {
   const formatPrice = (price: string) => {
     if (price === "0" || price === "0.00") return "Free";
@@ -66,18 +68,25 @@ export function MobileClassCard({
           </div>
 
           {/* Class details */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-foreground">
-                    {locationLabel}
-                  </p>
-                  <p className="text-xs">Location</p>
+          <div
+            className={cn(
+              "grid gap-3 text-sm",
+              showLocation ? "grid-cols-2" : "grid-cols-1"
+            )}
+          >
+            {showLocation && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {locationLabel}
+                    </p>
+                    <p className="text-xs">Location</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">

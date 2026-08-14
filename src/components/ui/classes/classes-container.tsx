@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { formatCategory } from "@/lib/utils/catalog";
 import { Package } from "../packages/columns";
 import type { Location } from "@/lib/data/locations";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 interface ClassesContainerProps {
   classes: Class[];
@@ -40,6 +41,7 @@ export function ClassesContainer({
   locations,
   columns,
 }: ClassesContainerProps) {
+  const { isViewingAllBranches } = useBranchContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [locationFilter, setLocationFilter] = useState<string | null>(null);
@@ -107,7 +109,12 @@ export function ClassesContainer({
 
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-6 min-w-0">
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 md:gap-4">
+      <div
+        className={cn(
+          "grid grid-cols-2 gap-2 sm:gap-3 md:gap-4",
+          isViewingAllBranches ? "md:grid-cols-4" : "md:grid-cols-3"
+        )}
+      >
         <Card className="py-0">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -140,21 +147,23 @@ export function ClassesContainer({
           </CardContent>
         </Card>
 
-        <Card className="py-0">
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] sm:text-xs lg:text-sm font-medium text-muted-foreground truncate">
-                  Locations
-                </p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold tabular-nums">
-                  {stats.locations}
-                </p>
+        {isViewingAllBranches && (
+          <Card className="py-0">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] sm:text-xs lg:text-sm font-medium text-muted-foreground truncate">
+                    Locations
+                  </p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold tabular-nums">
+                    {stats.locations}
+                  </p>
+                </div>
+                <MapPin className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-green-600 shrink-0" />
               </div>
-              <MapPin className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-green-600 shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="py-0">
           <CardContent className="p-3 sm:p-4 lg:p-6">
@@ -226,7 +235,7 @@ export function ClassesContainer({
               </div>
             )}
 
-            {locations.length > 1 && (
+            {isViewingAllBranches && locations.length > 1 && (
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="w-full text-[11px] font-medium text-muted-foreground sm:w-auto sm:text-xs">
                   Location:
@@ -307,6 +316,7 @@ export function ClassesContainer({
               packages={packages}
               classCategories={classCategories}
               locations={locations}
+              showLocation={isViewingAllBranches}
               embedded
               hideSearch
             />

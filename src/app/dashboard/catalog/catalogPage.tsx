@@ -1,13 +1,12 @@
 "use client";
 import React, { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Dumbbell, Package as PackageIcon, UserCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClassesContainer } from "@/components/ui/classes/classes-container";
 import { PackagesContainer } from "@/components/ui/packages/packages-container";
-import { DataTable as CoachesDataTable } from "@/components/ui/coaches/data-table";
+import { CoachesContainer } from "@/components/ui/coaches/coaches-container";
 import { createColumns as createClassColumns } from "@/components/ui/classes/columns";
 import { createColumns as createPackageColumns } from "@/components/ui/packages/columns";
 import { createColumns as createCoachColumns } from "@/components/ui/coaches/columns";
@@ -43,7 +42,12 @@ function CatalogPageInner({
   const activeTab = searchParams.get("tab") ?? "classes";
   const { isViewingAllBranches } = useBranchContext();
 
-  const classColumns = createClassColumns(packages, classCategories, locations);
+  const classColumns = createClassColumns(
+    packages,
+    classCategories,
+    locations,
+    isViewingAllBranches
+  );
   const packageColumns = createPackageColumns(
     classes,
     packageCategories,
@@ -137,31 +141,28 @@ function CatalogPageInner({
           </div>
         </TabsContent>
         {/* Coaches Tab */}
-        <TabsContent value="coaches">
-          <div className="flex flex-col gap-4 sm:gap-6">
-            <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <UserCheck className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold">Coaches</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Manage available coaches
+        <TabsContent value="coaches" className="min-w-0">
+          <div className="flex flex-col gap-3 sm:gap-4 lg:gap-6 min-w-0">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
+                    Coaches
+                  </h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:line-clamp-none">
+                    Manage coach profiles and contact details
                   </p>
                 </div>
               </div>
-              <div className="w-full sm:w-auto">
+              <div className="w-full md:w-auto md:shrink-0">
                 <AddCoachDialog />
               </div>
             </div>
 
-            <div className="block md:hidden">
-              <CoachesDataTable columns={coachColumns} data={coaches} />
-            </div>
-            <Card className="hidden md:block">
-              <CardContent className="pt-6">
-                <CoachesDataTable columns={coachColumns} data={coaches} />
-              </CardContent>
-            </Card>
+            <Separator />
+
+            <CoachesContainer coaches={coaches} columns={coachColumns} />
           </div>
         </TabsContent>
       </Tabs>

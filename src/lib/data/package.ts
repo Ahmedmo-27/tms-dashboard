@@ -1,5 +1,6 @@
 import { Package } from "@/components/ui/packages/columns";
 import { tms } from "@/lib/tms-api";
+import { getPackageBranchLabel } from "@/lib/utils/location-label";
 
 export interface UpdatePackagePayload {
   _id: string;
@@ -20,10 +21,7 @@ export const getPackages = async (locationId?: string): Promise<Package[]> => {
     const packages = response.data.data as Package[];
     return packages.map((pkg) => ({
       ...pkg,
-      branchLabel:
-        typeof pkg.locationId === "object" && pkg.locationId
-          ? pkg.locationId.branchName ?? pkg.locationId.location ?? undefined
-          : undefined,
+      branchLabel: getPackageBranchLabel(pkg.locationId),
     }));
   } catch (error) {
     console.error(error);
