@@ -5,9 +5,10 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import {
   Table,
@@ -24,6 +25,7 @@ import { MobilePackageCard } from "./mobile-package-card"
 import { Package } from "./columns"
 
 import { Class } from "../classes/columns"
+import { CATALOG_PAGE_SIZE, TablePagination } from "@/components/ui/table-pagination"
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -45,15 +47,25 @@ export function DataTable<TData, TValue>({
   embedded = false,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("")
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: CATALOG_PAGE_SIZE,
+  })
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [data, globalFilter])
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     globalFilterFn: "includesString",
-    state: { globalFilter },
+    state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
   })
 
   if (isLoading) {
@@ -81,7 +93,8 @@ export function DataTable<TData, TValue>({
     )
   }
 
-  const filteredRows = table.getFilteredRowModel().rows
+  const pageRows = table.getRowModel().rows
+  const filteredCount = table.getFilteredRowModel().rows.length
 
   return (
     <>
@@ -98,9 +111,9 @@ export function DataTable<TData, TValue>({
 
       {/* Mobile Card View */}
       <div className="block lg:hidden">
-        {filteredRows.length > 0 ? (
+        {pageRows.length > 0 ? (
           <div className="space-y-2 sm:space-y-3">
-            {filteredRows.map((row) => (
+            {pageRows.map((row) => (
               <MobilePackageCard
                 key={(row.original as Package)._id}
                 pkg={row.original as Package}
@@ -156,8 +169,8 @@ export function DataTable<TData, TValue>({
               ))}
             </TableHeader>
             <TableBody>
-              {filteredRows.length ? (
-                filteredRows.map((row) => (
+              {pageRows.length ? (
+                pageRows.map((row) => (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
@@ -198,6 +211,16 @@ export function DataTable<TData, TValue>({
           </Table>
         </div>
       </div>
+
+      <TablePagination
+        pageIndex={pagination.pageIndex}
+        pageCount={table.getPageCount()}
+        total={filteredCount}
+        pageSize={pagination.pageSize}
+        onPageChange={(pageIndex) =>
+          setPagination((prev) => ({ ...prev, pageIndex }))
+        }
+      />
     </>
   )
 }
