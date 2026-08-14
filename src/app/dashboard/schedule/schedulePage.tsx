@@ -84,8 +84,8 @@ export function SchedulePage({
     isViewingAllBranches,
   ]);
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col-reverse gap-4 overflow-y-auto p-3 md:flex-row">
-      <div className="flex-[2] h-full">
+    <div className="flex h-[calc(100dvh-3.5rem)] min-w-0 flex-col-reverse gap-4 overflow-y-auto overflow-x-hidden p-3 md:flex-row">
+      <div className="h-full min-w-0 flex-[2]">
         <ScheduledClassesContainer
           scheduledClasses={selectedScheduledClasses}
           allScheduledClasses={scheduledClasses}
@@ -99,12 +99,14 @@ export function SchedulePage({
       </div>
 
       {/* Right side - Calendar and Members */}
-      <div className="flex flex-1 min-w-[280px] max-w-[350px] flex-col gap-3">
+      <div className="flex min-w-0 max-w-[350px] flex-1 shrink-0 flex-col gap-3 md:min-w-[240px] lg:min-w-[280px]">
         <div className="h-auto">
           <Calendar
             mode="single"
             selected={date}
-            onSelect={(d: Date) => d && setDate(d)}
+            onSelect={(d) => {
+              if (d) setDate(d);
+            }}
             className="rounded-md border bg-card"
             classNames={{
               months:
