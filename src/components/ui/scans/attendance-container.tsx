@@ -15,7 +15,7 @@ import { Users, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ClassScan } from "./class-container";
 import { BranchPill } from "../branch-pill";
-import { CopyMemberForSheetButton } from "./copy-member-for-sheet-button";
+import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import { ScanMemberLink } from "./scan-member-link";
 import type { MethodSheetMapping } from "@/lib/utils/copy-class-for-sheet";
 
@@ -57,6 +57,13 @@ export const AttendanceContainer = ({
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {headerActions}
+            {sheetCopy ? (
+              <CopyAttendanceForSheetButton
+                scans={classScans}
+                mapMethod={sheetCopy.mapMethod}
+                classPrice={sheetCopy.classPrice}
+              />
+            ) : null}
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
@@ -84,14 +91,13 @@ export const AttendanceContainer = ({
                   {showBranch ? <TableHead>Branch</TableHead> : null}
                   <TableHead>Check-in Time</TableHead>
                   <TableHead className="text-right">Status</TableHead>
-                  {sheetCopy ? <TableHead className="text-right">Sheet</TableHead> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {classScans.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={(showBranch ? 6 : 5) + (sheetCopy ? 1 : 0)}
+                      colSpan={showBranch ? 6 : 5}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No check-ins yet. Use Quick actions or a member QR to record one.
@@ -134,15 +140,6 @@ export const AttendanceContainer = ({
                           ) : null}
                         </div>
                       </TableCell>
-                      {sheetCopy ? (
-                        <TableCell className="text-right">
-                          <CopyMemberForSheetButton
-                            scan={scan}
-                            mapMethod={sheetCopy.mapMethod}
-                            classPrice={sheetCopy.classPrice}
-                          />
-                        </TableCell>
-                      ) : null}
                     </TableRow>
                   ))
                 )}

@@ -138,27 +138,35 @@ function buildRows(
     .join("\n");
 }
 
-export function buildMemberSheetClipboardText(
-  scan: SheetScanInput,
+export function isSheetCopyEligible(scan: SheetScanInput): boolean {
+  return scan.status === "SUCCESS" || scan.status === "FAILED";
+}
+
+export function buildSheetClipboardText(
+  scans: SheetScanInput[],
   mapMethod: (method: string) => MethodSheetMapping,
   classPrice?: string
-): string | null {
-  return buildMemberSheetRow(scan, mapMethod, classPrice);
+): string {
+  return buildRows(scans, mapMethod, classPrice);
 }
 
 export function buildClassSheetClipboardText(input: {
   classPrice?: string;
   scans: SheetScanInput[];
 }): string {
-  return buildRows(input.scans, mapMethodToSheetLabel, input.classPrice);
+  return buildSheetClipboardText(
+    input.scans,
+    mapMethodToSheetLabel,
+    input.classPrice
+  );
 }
 
 export function buildPtSheetClipboardText(scans: SheetScanInput[]): string {
-  return buildRows(scans, mapPtMethodToSheetLabel);
+  return buildSheetClipboardText(scans, mapPtMethodToSheetLabel);
 }
 
 export function buildOpenGymSheetClipboardText(
   scans: SheetScanInput[]
 ): string {
-  return buildRows(scans, mapOpenGymMethodToSheetLabel);
+  return buildSheetClipboardText(scans, mapOpenGymMethodToSheetLabel);
 }
