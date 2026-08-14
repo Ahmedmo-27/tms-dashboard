@@ -7,15 +7,15 @@ import {
   getCoachTickets,
   getCoachTicketCategories,
   submitCoachTicket,
-  updateCoachTicketStatus,
 } from "@/lib/data/coach-tickets";
 import { TicketColumnsWrapper } from "@/components/ui/tickets/columns";
 import { DataTable } from "@/components/ui/tickets/data-table";
 import { CreateTicketModal } from "@/components/ui/tickets/create-ticket-modal";
+import { TicketDetailModal } from "@/components/ui/tickets/ticket-detail-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, RefreshCw, Ticket as TicketIcon, Plus } from "lucide-react";
+import { Search, RefreshCw, Plus } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,13 @@ const STATUS_TABS = [
   { value: "resolved", label: "Resolved" },
   { value: "rejected", label: "Rejected" },
 ];
+
+const STATUS_CLASS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-800",
+  in_progress: "bg-blue-100 text-blue-800",
+  resolved: "bg-green-100 text-green-800",
+  rejected: "bg-red-100 text-red-800",
+};
 
 const PAGE_SIZE = 10;
 
@@ -40,6 +47,7 @@ export function CoachTicketsView() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
+  const [detailTicket, setDetailTicket] = useState<Ticket | null>(null);
   const debouncedSearch = useDebounce(search, 400);
 
   const fetchData = useCallback(async () => {
@@ -75,13 +83,6 @@ export function CoachTicketsView() {
     setIsRefreshing(false);
   };
 
-  const updateStatus = useCallback(
-    async (id: string, ticketStatus: Ticket["status"], adminNotes?: string) => {
-      return updateCoachTicketStatus(coachApi, id, ticketStatus, adminNotes);
-    },
-    [coachApi]
-  );
-
   const fetchCategories = useCallback(
     () => getCoachTicketCategories(coachApi),
     [coachApi]
@@ -100,27 +101,24 @@ export function CoachTicketsView() {
 
   const { columns, modal } = TicketColumnsWrapper({
     onChanged: fetchData,
-    showBranch: true,
-    updateTicketStatusFn: updateStatus,
+    showBranch: false,
+    canUpdateTicket: () => false,
   });
 
   const maxPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
-      <div className="w-full rounded-lg border bg-card text-card-foreground shadow-sm">
+      <div className="w-full rounded-lg border bg-card text-card-foreground">
         <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <TicketIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-semibold truncate">Support Tickets</h2>
-              <p className="text-xs text-muted-foreground truncate">
-                View and manage all support tickets across branches
-              </p>
-            </div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold">Your requests</h2>
+            <p className="text-xs text-muted-foreground">
+              File a request and track its status
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-normal text-xs">
+            <Badge variant="secondary" className="text-xs font-normal">
               Total: {total}
             </Badge>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -146,13 +144,13 @@ export function CoachTicketsView() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 lg:max-w-md">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search name, phone, email, creator..."
+                placeholder="Search your tickets…"
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-4 min-h-[40px]"
+                className="min-h-[40px] pr-4 pl-9"
               />
             </div>
             <Button
@@ -166,9 +164,43 @@ export function CoachTicketsView() {
             </Button>
           </div>
 
-          <div className="rounded-md border">
+          <div className="md:hidden space-y-2">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <div className="py-12 text-center text-muted-foreground">
+                Loading tickets...
+              </div>
+            ) : data.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                No tickets yet. Create one if you need help from the front desk.
+              </p>
+            ) : (
+              data.map((ticket) => (
+                <button
+                  key={ticket._id}
+                  type="button"
+                  onClick={() => setDetailTicket(ticket)}
+                  className="w-full rounded-lg border p-3 text-left hover:bg-muted/40"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium">{ticket.category}</p>
+                    <Badge className={cn("font-normal", STATUS_CLASS[ticket.status])}>
+                      {ticket.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                    {ticket.description}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {new Date(ticket.createdAt).toLocaleDateString()}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+
+          <div className="hidden rounded-md border md:block">
+            {isLoading ? (
+              <div className="py-12 text-center text-muted-foreground">
                 Loading tickets...
               </div>
             ) : (
@@ -177,10 +209,10 @@ export function CoachTicketsView() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground text-center sm:text-left">
+            <p className="text-center text-sm text-muted-foreground sm:text-left">
               Page {page} of {maxPages} · {total} total
             </p>
-            <div className="flex justify-center sm:justify-end gap-2">
+            <div className="flex justify-center gap-2 sm:justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -202,6 +234,14 @@ export function CoachTicketsView() {
         </div>
       </div>
       {modal}
+      <TicketDetailModal
+        ticket={detailTicket}
+        open={!!detailTicket}
+        onOpenChange={(open) => {
+          if (!open) setDetailTicket(null);
+        }}
+        canUpdate={false}
+      />
       <CreateTicketModal
         open={createOpen}
         onOpenChange={setCreateOpen}

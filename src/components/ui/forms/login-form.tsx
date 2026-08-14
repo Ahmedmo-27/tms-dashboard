@@ -93,9 +93,10 @@ export function LoginForm({
               name: loginData.name,
               hasPtSessions: loginData.hasPtSessions as boolean | undefined,
               hasScheduledClasses: loginData.hasScheduledClasses as boolean | undefined,
+              capabilitiesLoaded: false,
             })
           );
-          router.push("/coach/dashboard");
+          router.push("/coach/today");
           return initialState;
         }
 
@@ -123,7 +124,7 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {/* Flow: POST /api/auth/login → response.role === "coach" → dispatch setCoachCredentials → push("/coach/dashboard") → RequireCoachAuth validates coachSlice.token → CoachDashboardShell renders */}
+      {/* Flow: POST /api/auth/login → response.role === "coach" → dispatch setCoachCredentials → push("/coach/today") */}
       <div className="text-3xl font-bold">Welcome Spacer 👋</div>
       <Card>
         <CardHeader>

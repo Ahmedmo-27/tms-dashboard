@@ -3,6 +3,7 @@ import { ClientDto, ScheduleResponseDto } from "@/types/coach.types";
 
 export interface CoachNotification {
   id: string;
+  memberId?: string;
   memberName: string;
   packageName: string;
   classesTotal: number;
@@ -15,6 +16,9 @@ export type CoachClient = ClientDto;
 interface CoachState {
   coachId: string | null;
   name: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+  branchName: string | null;
   token: string | null;
   clients: CoachClient[];
   clientsLoading: boolean;
@@ -24,11 +28,15 @@ interface CoachState {
   scheduleLoading: boolean;
   hasPtSessions: boolean;
   hasScheduledClasses: boolean;
+  capabilitiesLoaded: boolean;
 }
 
 const initialState: CoachState = {
   coachId: null,
   name: null,
+  email: null,
+  phoneNumber: null,
+  branchName: null,
   token: null,
   clients: [],
   clientsLoading: false,
@@ -36,8 +44,9 @@ const initialState: CoachState = {
   notifications: [],
   schedule: null,
   scheduleLoading: false,
-  hasPtSessions: true, // Default to true so it doesn't immediately hide without knowing
-  hasScheduledClasses: true,
+  hasPtSessions: false,
+  hasScheduledClasses: false,
+  capabilitiesLoaded: false,
 };
 
 const coachSlice = createSlice({
@@ -46,18 +55,36 @@ const coachSlice = createSlice({
   reducers: {
     setCoachCredentials: (
       state,
-      action: PayloadAction<{ token: string; coachId: string; name?: string; hasPtSessions?: boolean; hasScheduledClasses?: boolean }>
+      action: PayloadAction<{
+        token?: string | null;
+        coachId: string;
+        name?: string;
+        email?: string;
+        phoneNumber?: string;
+        branchName?: string | null;
+        hasPtSessions?: boolean;
+        hasScheduledClasses?: boolean;
+        capabilitiesLoaded?: boolean;
+      }>
     ) => {
-      state.token = action.payload.token;
+      state.token = action.payload.token ?? state.token ?? null;
       state.coachId = action.payload.coachId;
-      if (action.payload.name) {
-        state.name = action.payload.name;
+      if (action.payload.name) state.name = action.payload.name;
+      if (action.payload.email !== undefined) state.email = action.payload.email;
+      if (action.payload.phoneNumber !== undefined) {
+        state.phoneNumber = action.payload.phoneNumber;
+      }
+      if (action.payload.branchName !== undefined) {
+        state.branchName = action.payload.branchName;
       }
       if (action.payload.hasPtSessions !== undefined) {
         state.hasPtSessions = action.payload.hasPtSessions;
       }
       if (action.payload.hasScheduledClasses !== undefined) {
         state.hasScheduledClasses = action.payload.hasScheduledClasses;
+      }
+      if (action.payload.capabilitiesLoaded !== undefined) {
+        state.capabilitiesLoaded = action.payload.capabilitiesLoaded;
       }
     },
     setCoachName: (state, action: PayloadAction<string>) => {
@@ -70,26 +97,17 @@ const coachSlice = createSlice({
     setClientsLoading: (state, action: PayloadAction<boolean>) => {
       state.clientsLoading = action.payload;
     },
-    logoutCoach: (state) => {
-      state.coachId = null;
-      state.name = null;
-      state.token = null;
-      state.clients = [];
-      state.clientsLoading = false;
-      state.clientsTotalPages = 1;
-      state.notifications = [];
-      state.schedule = null;
-      state.scheduleLoading = false;
-      state.hasPtSessions = true;
-      state.hasScheduledClasses = true;
+    logoutCoach: () => ({ ...initialState }),
+    setNotifications: (state, action: PayloadAction<CoachNotification[]>) => {
+      state.notifications = action.payload;
     },
     addNotification: (
       state,
-      action: PayloadAction<Omit<CoachNotification, "id" | "read">>
+      action: PayloadAction<Omit<CoachNotification, "id" | "read"> & { id?: string }>
     ) => {
       state.notifications.unshift({
         ...action.payload,
-        id: `${Date.now()}-${Math.random()}`,
+        id: action.payload.id ?? `${Date.now()}-${Math.random()}`,
         read: false,
       });
     },
@@ -117,6 +135,7 @@ export const {
   setCoachClients,
   setClientsLoading,
   logoutCoach,
+  setNotifications,
   addNotification,
   markAllNotificationsRead,
   setSchedule,

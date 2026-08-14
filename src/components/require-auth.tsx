@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
 import { tms } from "@/lib/tms-api";
-import { setCredentials } from "@/lib/store/features/authSlice";
+import { setCredentials, logout } from "@/lib/store/features/authSlice";
 import { isCoachRole, isStaffRole } from "@/lib/config/roles";
 
 const RequireAuth = ({ children }: { children: ReactNode }) => {
@@ -15,30 +15,26 @@ const RequireAuth = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const resolveAuth = async () => {
-      if (isCoachRole(user?.role as string | undefined)) {
-        router.replace("/coach/dashboard");
-        setCheckingSession(false);
-        return;
-      }
-
-      if (user && isStaffRole(user.role as string | undefined)) {
-        setCheckingSession(false);
-        return;
-      }
-
+      // Always re-verify with the server — never trust persisted Redux alone.
       try {
         const res = await tms.get("/auth/verifyToken");
         const userData = res.data?.data?.user ?? res.data?.user;
         const role = userData?.role as string | undefined;
 
         if (isCoachRole(role)) {
-          router.replace("/coach/dashboard");
-        } else if (isStaffRole(role)) {
-          dispatch(setCredentials(userData));
-        } else {
-          router.replace("/login");
+          router.replace("/coach/today");
+          return;
         }
+
+        if (isStaffRole(role)) {
+          dispatch(setCredentials(userData));
+          return;
+        }
+
+        dispatch(logout());
+        router.replace("/login");
       } catch {
+        dispatch(logout());
         router.replace("/login");
       } finally {
         setCheckingSession(false);
@@ -46,7 +42,7 @@ const RequireAuth = ({ children }: { children: ReactNode }) => {
     };
 
     resolveAuth();
-  }, [user, router, dispatch]);
+  }, [router, dispatch]);
 
   if (checkingSession) return null;
 

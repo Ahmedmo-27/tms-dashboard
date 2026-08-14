@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function CoachDashboardRedirectPage() {
+export default function CoachIndexPage() {
   redirect("/coach/today");
 }

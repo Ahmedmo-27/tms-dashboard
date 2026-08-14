@@ -30,8 +30,16 @@ import {
   Loader2,
   RefreshCw,
   CalendarX,
-  Dumbbell,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { telHref } from "@/lib/utils/phone";
+import Link from "next/link";
 import toast from "react-hot-toast";
 import {
   createTmsSocket,
@@ -42,6 +50,7 @@ import {
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface CoachScan {
+  memberId?: string;
   member: string;
   phone: string;
   time: string;
@@ -71,6 +80,17 @@ function formatTime12h(time: string): string {
   return `${hour12}:${minute} ${period}`;
 }
 
+function statusLabel(status: CoachScan["status"]) {
+  switch (status) {
+    case "SUCCESS":
+      return "Checked in";
+    case "FAILED":
+      return "Failed";
+    default:
+      return "Will pay";
+  }
+}
+
 function statusColor(status: CoachScan["status"]) {
   switch (status) {
     case "SUCCESS":
@@ -84,26 +104,26 @@ function statusColor(status: CoachScan["status"]) {
 
 // ─── PT Attendance Card ───────────────────────────────────────────────────────
 
-function PtAttendanceCard({ scans }: { scans: CoachScan[] }) {
+function PtAttendanceCard({
+  scans,
+  onSelect,
+}: {
+  scans: CoachScan[];
+  onSelect: (scan: CoachScan) => void;
+}) {
   const successCount = scans.filter((s) => s.status === "SUCCESS").length;
 
   return (
     <Card className="w-full col-span-full">
       <CardHeader className="p-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="h-5 w-5 text-purple-500" />
-            <h3 className="text-base font-semibold">Personal Training</h3>
+        <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Users className="h-4 w-4" />
+            <span>{scans.length} scanned</span>
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>{scans.length} scanned</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <UserCheck className="h-4 w-4" />
-              <span>{successCount} checked in</span>
-            </div>
+          <div className="flex items-center gap-1">
+            <UserCheck className="h-4 w-4" />
+            <span>{successCount} checked in</span>
           </div>
         </div>
       </CardHeader>
@@ -132,7 +152,11 @@ function PtAttendanceCard({ scans }: { scans: CoachScan[] }) {
                   </TableRow>
                 ) : (
                   scans.map((scan, i) => (
-                    <TableRow key={i}>
+                    <TableRow
+                      key={i}
+                      className="cursor-pointer"
+                      onClick={() => onSelect(scan)}
+                    >
                       <TableCell className="font-medium">{scan.member}</TableCell>
                       <TableCell>{scan.phone}</TableCell>
                       <TableCell>
@@ -140,7 +164,7 @@ function PtAttendanceCard({ scans }: { scans: CoachScan[] }) {
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge className={cn("font-normal", statusColor(scan.status))}>
-                          {scan.status}
+                          {statusLabel(scan.status)}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -159,7 +183,13 @@ function PtAttendanceCard({ scans }: { scans: CoachScan[] }) {
 
 // ─── Class Scan Card ──────────────────────────────────────────────────────────
 
-function ClassScanCard({ data }: { data: CoachClassScanData }) {
+function ClassScanCard({
+  data,
+  onSelect,
+}: {
+  data: CoachClassScanData;
+  onSelect: (scan: CoachScan) => void;
+}) {
   const successCount = data.scans.filter((s) => s.status === "SUCCESS").length;
 
   return (
@@ -215,7 +245,11 @@ function ClassScanCard({ data }: { data: CoachClassScanData }) {
                   </TableRow>
                 ) : (
                   data.scans.map((scan, i) => (
-                    <TableRow key={i}>
+                    <TableRow
+                      key={i}
+                      className="cursor-pointer"
+                      onClick={() => onSelect(scan)}
+                    >
                       <TableCell className="font-medium truncate max-w-0">{scan.member}</TableCell>
                       <TableCell className="text-muted-foreground">{scan.phone}</TableCell>
                       <TableCell className="whitespace-nowrap">
@@ -223,7 +257,7 @@ function ClassScanCard({ data }: { data: CoachClassScanData }) {
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge className={cn("font-normal", statusColor(scan.status))}>
-                          {scan.status}
+                          {statusLabel(scan.status)}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -245,12 +279,15 @@ function ClassScanCard({ data }: { data: CoachClassScanData }) {
 export function CoachScansMonitor() {
   const coachApi = useCoachApi();
   const hasPtSessions = useAppSelector((state: RootState) => state.coach.hasPtSessions);
+  const token = useAppSelector((state: RootState) => state.coach.token);
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [classes, setClasses] = useState<CoachClassScanData[]>([]);
   const [ptScans, setPtScans] = useState<CoachScan[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [peek, setPeek] = useState<CoachScan | null>(null);
 
   const fetchAll = useCallback(async (date: Date) => {
     setLoading(true);
@@ -272,8 +309,9 @@ export function CoachScansMonitor() {
       toast.error(msg);
     } finally {
       setLoading(false);
+      setHasLoaded(true);
     }
-  }, [coachApi]);
+  }, [coachApi, hasPtSessions]);
 
   // Fetch on mount and date change
   useEffect(() => {
@@ -282,7 +320,7 @@ export function CoachScansMonitor() {
 
   // Real-time: refresh on any scan event
   useEffect(() => {
-    const socket = createTmsSocket();
+    const socket = createTmsSocket(token);
     const handleRefresh = () => fetchAll(selectedDate);
     const handleFailedScan = (payload: FailedScanPayload) => {
       toast.error(formatFailedScanToast(payload));
@@ -297,7 +335,7 @@ export function CoachScansMonitor() {
       socket.off("FAILED-SCAN", handleFailedScan);
       socket.disconnect();
     };
-  }, [selectedDate, fetchAll]);
+  }, [selectedDate, fetchAll, token]);
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) setSelectedDate(date);
@@ -307,37 +345,42 @@ export function CoachScansMonitor() {
 
   // ── Render ──────────────────────────────────────────────────────────────
 
+  const peekTel = peek ? telHref(peek.phone) : undefined;
+  const showInitialSpinner = loading && !hasLoaded;
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b pb-3">
-        <h2 className="text-xl font-bold">Scans Monitor</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fetchAll(selectedDate)}
-            disabled={loading}
-            title="Refresh"
-          >
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-          </Button>
-          <PaymentDatePicker
-            selectedDate={selectedDate}
-            onDateChange={handleDateChange}
-          />
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2 border-b pb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSelectedDate(new Date())}
+        >
+          Today
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => fetchAll(selectedDate)}
+          disabled={loading}
+          title="Refresh"
+        >
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+        </Button>
+        <PaymentDatePicker
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+        />
       </div>
 
-      {/* Content */}
-      {loading ? (
+      {showInitialSpinner ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin mb-3" />
+          <Loader2 className="mb-3 h-8 w-8 animate-spin" />
           <p className="text-sm">Loading scans...</p>
         </div>
-      ) : error ? (
+      ) : error && isEmpty ? (
         <div className="flex flex-col items-center justify-center py-16 text-destructive">
-          <CalendarX className="h-10 w-10 mb-3 opacity-60" />
+          <CalendarX className="mb-3 h-10 w-10 opacity-60" />
           <p className="text-sm">{error}</p>
           <Button
             variant="outline"
@@ -350,38 +393,73 @@ export function CoachScansMonitor() {
         </div>
       ) : isEmpty ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <CalendarX className="h-10 w-10 mb-3 opacity-50" />
+          <CalendarX className="mb-3 h-10 w-10 opacity-50" />
           <p className="text-sm">No scans or classes for this date.</p>
         </div>
       ) : (
         <div className="space-y-6">
-          {/* ── Personal Training section (only for coaches with PT clients) ── */}
           {hasPtSessions && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 Personal Training
               </h3>
               <div className="grid grid-cols-1 gap-4">
-                <PtAttendanceCard scans={ptScans} />
+                <PtAttendanceCard scans={ptScans} onSelect={setPeek} />
               </div>
             </div>
           )}
 
-          {/* ── Scheduled Classes section ── */}
           {classes.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 Scheduled Classes
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {classes.map((cls) => (
-                  <ClassScanCard key={cls.scheduledClassId} data={cls} />
+                  <ClassScanCard
+                    key={cls.scheduledClassId}
+                    data={cls}
+                    onSelect={setPeek}
+                  />
                 ))}
               </div>
             </div>
           )}
         </div>
       )}
+
+      <Dialog open={!!peek} onOpenChange={(open) => !open && setPeek(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{peek?.member}</DialogTitle>
+            <DialogDescription>
+              {peek ? statusLabel(peek.status) : ""}
+              {peek ? ` · ${format(new Date(peek.time), "hh:mm a")}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {peek && (
+            <div className="space-y-3 text-sm">
+              {peekTel ? (
+                <a href={peekTel} className="text-muted-foreground hover:underline">
+                  {peek.phone}
+                </a>
+              ) : (
+                <p className="text-muted-foreground">{peek.phone}</p>
+              )}
+              {peek.memberId && hasPtSessions && (
+                <Button asChild size="sm">
+                  <Link
+                    href={`/coach/clients/${peek.memberId}?name=${encodeURIComponent(peek.member)}`}
+                    onClick={() => setPeek(null)}
+                  >
+                    View client
+                  </Link>
+                </Button>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
