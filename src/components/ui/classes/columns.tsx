@@ -3,7 +3,9 @@ import EditClassDialog from "../dialogs/class/edit-class";
 import DeleteClassDialog from "../dialogs/class/delete-class";
 import ManagePackagesDialog from "../dialogs/class/manage-packages";
 import { Package } from "../packages/columns";
-import { formatCategory } from "@/lib/utils/catalog";
+import { Badge } from "../badge";
+import { formatCategory, getCategoryColor } from "@/lib/utils/catalog";
+import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/data/locations";
 
 export type ClassLocation = string | Location;
@@ -47,31 +49,70 @@ export function createColumns(
     locations.map((location) => [location._id, location.branchName || location.location])
   );
 
+  const formatPrice = (price: string) => {
+    if (price === "0" || price === "0.00") return "Free";
+    return price;
+  };
+
   return [
     {
       accessorKey: "title",
       header: "Title",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.title}</span>
+      ),
     },
     {
       accessorKey: "category",
       header: "Category",
-      cell: ({ row }) => formatCategory(row.original.category),
+      cell: ({ row }) => (
+        <Badge
+          className={cn(
+            "text-xs font-medium",
+            getCategoryColor(row.original.category)
+          )}
+        >
+          {formatCategory(row.original.category)}
+        </Badge>
+      ),
     },
     {
       accessorKey: "price",
       header: "Price",
+      cell: ({ row }) => {
+        const price = formatPrice(row.original.price);
+        return (
+          <span
+            className={cn(
+              "tabular-nums",
+              price === "Free" && "text-green-600 dark:text-green-400 font-medium"
+            )}
+          >
+            {price}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "locations",
       header: "Location",
-      cell: ({ row }) => formatLocations(row.original.locations, locationMap) || "No location",
+      cell: ({ row }) => {
+        const label =
+          formatLocations(row.original.locations, locationMap) || "No location";
+        return (
+          <span className="text-muted-foreground max-w-[200px] truncate block">
+            {label}
+          </span>
+        );
+      },
     },
     {
       id: "actions",
+      header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => {
         const cls = row.original;
         return (
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 justify-end">
             <ManagePackagesDialog cls={cls} packages={packages} />
             <EditClassDialog
               cls={cls}

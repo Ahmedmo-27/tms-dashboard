@@ -31,6 +31,8 @@ export interface DataTableProps<TData, TValue> {
   isLoading?: boolean
   classes?: Class[]
   packageCategories?: string[]
+  hideSearch?: boolean
+  embedded?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -39,6 +41,8 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   classes = [],
   packageCategories = [],
+  hideSearch = false,
+  embedded = false,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("")
 
@@ -55,14 +59,14 @@ export function DataTable<TData, TValue>({
   if (isLoading) {
     return (
       <>
-        <div className="block md:hidden">
-          <div className="space-y-3">
+        <div className="block lg:hidden">
+          <div className="space-y-2 sm:space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-40 bg-muted/30 rounded-lg animate-pulse" />
+              <div key={i} className="h-32 sm:h-40 bg-muted/30 rounded-lg animate-pulse" />
             ))}
           </div>
         </div>
-        <div className="hidden md:block w-full overflow-hidden rounded-lg border bg-card shadow-sm">
+        <div className="hidden lg:block w-full overflow-hidden rounded-lg border bg-card shadow-sm">
           <div className="p-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center space-x-4 py-3 border-b last:border-0">
@@ -81,19 +85,21 @@ export function DataTable<TData, TValue>({
 
   return (
     <>
-      <div className="mb-4">
-        <Input
-          placeholder="Search packages..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
+      {!hideSearch && (
+        <div className="mb-4">
+          <Input
+            placeholder="Search packages..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+      )}
 
       {/* Mobile Card View */}
-      <div className="block md:hidden">
+      <div className="block lg:hidden">
         {filteredRows.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {filteredRows.map((row) => (
               <MobilePackageCard
                 key={(row.original as Package)._id}
@@ -104,11 +110,11 @@ export function DataTable<TData, TValue>({
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[300px] text-center p-4">
-            <p className="text-sm font-medium text-muted-foreground mb-2">
+          <div className="flex flex-col items-center justify-center min-h-[200px] sm:h-[280px] text-center p-3 sm:p-4">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">
               No packages found
             </p>
-            <p className="text-xs text-muted-foreground/80">
+            <p className="text-[11px] sm:text-xs text-muted-foreground/80">
               {globalFilter ? "Try a different search term" : "Create a package to get started"}
             </p>
           </div>
@@ -116,9 +122,16 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block w-full overflow-hidden rounded-lg border bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <Table>
+      <div
+        className={cn(
+          "hidden lg:block w-full min-w-0 overflow-hidden",
+          embedded
+            ? "rounded-md border"
+            : "rounded-lg border bg-card shadow-sm"
+        )}
+      >
+        <div className="overflow-x-auto -mx-px">
+          <Table className="min-w-[880px] w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
@@ -129,8 +142,8 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "bg-muted/30 h-12 px-4 text-sm font-medium text-muted-foreground",
-                        "transition-colors hover:bg-muted/50",
+                        "bg-muted/30 h-10 px-2 text-xs font-medium text-muted-foreground lg:h-11 lg:px-3 lg:text-sm xl:px-4",
+                        "transition-colors hover:bg-muted/50 whitespace-nowrap",
                         "first:rounded-tl-lg last:rounded-tr-lg"
                       )}
                     >
@@ -158,7 +171,7 @@ export function DataTable<TData, TValue>({
                       <TableCell
                         key={cell.id}
                         className={cn(
-                          "px-4 py-3 text-sm",
+                          "px-2 py-2.5 text-xs lg:px-3 lg:py-3 lg:text-sm xl:px-4 align-middle",
                           "group-last:last:rounded-br-lg group-last:first:rounded-bl-lg"
                         )}
                       >

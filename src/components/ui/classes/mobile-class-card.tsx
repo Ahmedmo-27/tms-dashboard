@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import EditClassDialog from "../dialogs/class/edit-class";
 import DeleteClassDialog from "../dialogs/class/delete-class";
 import ManagePackagesDialog from "../dialogs/class/manage-packages";
-import { formatCategory } from "@/lib/utils/catalog";
+import { formatCategory, getCategoryColor } from "@/lib/utils/catalog";
 import type { Location } from "@/lib/data/locations";
 
 interface MobileClassCardProps {
@@ -27,19 +27,6 @@ export function MobileClassCard({
   classCategories = [],
   locations = [],
 }: MobileClassCardProps) {
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "FUNCTIONAL_TRAINING":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
-      case "STUDIO":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
-      case "WORKSPACE":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
-    }
-  };
-
   const formatPrice = (price: string) => {
     if (price === "0" || price === "0.00") return "Free";
     return price;
@@ -52,11 +39,11 @@ export function MobileClassCard({
 
   return (
     <Card
-      className="w-full hover:shadow-md transition-shadow touch-manipulation"
+      className="w-full border shadow-sm hover:shadow-md transition-shadow touch-manipulation"
       role="article"
       aria-label={`Class ${cls.title}`}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-3 sm:p-4">
         <div className="space-y-3">
           {/* Header with class title and category */}
           <div className="flex items-start justify-between">
@@ -96,7 +83,10 @@ export function MobileClassCard({
               <div className="flex items-center gap-2 text-muted-foreground">
                 <DollarSign className="h-4 w-4 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-foreground text-lg">
+                  <p className={cn(
+                    "font-medium text-foreground",
+                    formatPrice(cls.price) === "Free" && "text-green-600 dark:text-green-400"
+                  )}>
                     {formatPrice(cls.price)}
                   </p>
                   <p className="text-xs">Price</p>

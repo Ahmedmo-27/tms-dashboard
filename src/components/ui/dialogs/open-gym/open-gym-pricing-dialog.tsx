@@ -335,11 +335,12 @@ export function OpenGymPricingDialog({
       <Button
         variant="outline"
         size="sm"
+        className="w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10 px-2.5 sm:px-4"
         onClick={() => {
           setOpen(true);
         }}
       >
-        {triggerLabel}
+        <span className="truncate">{triggerLabel}</span>
       </Button>
       )}
 
