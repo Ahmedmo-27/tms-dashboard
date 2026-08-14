@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { CheckInsSelector } from "../dialogs/scans/check-in-selector";
 import { PaymentSelectorDialog } from "../dialogs/scans/payment-selector-dialog";
 import { BranchPill } from "../branch-pill";
-import { CopyMemberForSheetButton } from "./copy-member-for-sheet-button";
+import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import { ScanMemberLink } from "./scan-member-link";
 import { AddWalkIn } from "../dialogs/scans/add-walk-in";
 
@@ -70,9 +70,14 @@ export const ClassContainer = ({
                 {classData.coachName}
               </Badge>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <CheckInsSelector members={classData.bookedMembers} classData={classData} />
               <AddWalkIn scid={String(classData._id)} compact />
+              <CopyAttendanceForSheetButton
+                scans={classScans}
+                mapMethod={mapMethodToSheetLabel}
+                classPrice={classData.classPrice}
+              />
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -106,14 +111,13 @@ export const ClassContainer = ({
                   <TableHead>Package</TableHead>
                   <TableHead>Check-in Time</TableHead>
                   <TableHead className="text-right">Status</TableHead>
-                  <TableHead className="text-right">Sheet</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {classScans.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={5}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No check-ins yet. Use Check in or Walk-in above.
@@ -150,13 +154,6 @@ export const ClassContainer = ({
                             ) : null}
                           </div>
                         )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <CopyMemberForSheetButton
-                          scan={scan}
-                          mapMethod={mapMethodToSheetLabel}
-                          classPrice={classData.classPrice}
-                        />
                       </TableCell>
                     </TableRow>
                   ))
