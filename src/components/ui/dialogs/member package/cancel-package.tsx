@@ -18,10 +18,9 @@ export default function CancelPackageDialog({
 }: {
   uid: string;
   pkg: {
-    [x: string]: string | number | readonly string[] | undefined;
     name: string;
     remainingClasses: number;
-    id: string;
+    _id: string;
     pkgStartDate: string;
   };
 }) {

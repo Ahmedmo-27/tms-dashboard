@@ -26,7 +26,10 @@ export const newUserSchema = z.object({
     .string()
     .trim()
     .regex(/^[0-9]{11}$/, "Invalid Phone Number"),
-  password: z.string().trim(),
+  password: z
+    .string()
+    .trim()
+    .min(6, "Password must be at least 6 characters"),
 });
 
 export const nonUserBookingSchema = z.object({

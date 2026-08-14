@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { sanitizeHtml } from "@/lib/utils/sanitize-html";
 
 type ReceivedEmail = {
   _id: string;
@@ -168,9 +169,11 @@ export default function ReceivedPage() {
 
               <ScrollArea className="flex-1 p-6 bg-white dark:bg-zinc-950">
                 {selectedEmail.html ? (
-                  <div 
+                  <div
                     className="prose prose-sm max-w-none dark:prose-invert"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.html }}
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeHtml(selectedEmail.html),
+                    }}
                   />
                 ) : (
                   <div className="whitespace-pre-wrap font-sans text-sm">

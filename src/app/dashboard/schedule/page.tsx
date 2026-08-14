@@ -15,7 +15,7 @@ import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: { locationId?: string };
+  searchParams: Promise<{ locationId?: string }>;
 }) {
   try {
     const params = await searchParams;

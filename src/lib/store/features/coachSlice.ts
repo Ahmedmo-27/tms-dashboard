@@ -23,6 +23,7 @@ interface CoachState {
   clients: CoachClient[];
   clientsLoading: boolean;
   clientsTotalPages: number;
+  clientsTotal: number;
   notifications: CoachNotification[];
   schedule: ScheduleResponseDto | null;
   scheduleLoading: boolean;
@@ -41,6 +42,7 @@ const initialState: CoachState = {
   clients: [],
   clientsLoading: false,
   clientsTotalPages: 1,
+  clientsTotal: 0,
   notifications: [],
   schedule: null,
   scheduleLoading: false,
@@ -90,9 +92,13 @@ const coachSlice = createSlice({
     setCoachName: (state, action: PayloadAction<string>) => {
       state.name = action.payload;
     },
-    setCoachClients: (state, action: PayloadAction<{ clients: CoachClient[]; totalPages: number }>) => {
+    setCoachClients: (
+      state,
+      action: PayloadAction<{ clients: CoachClient[]; totalPages: number; total: number }>
+    ) => {
       state.clients = action.payload.clients;
       state.clientsTotalPages = action.payload.totalPages;
+      state.clientsTotal = action.payload.total;
     },
     setClientsLoading: (state, action: PayloadAction<boolean>) => {
       state.clientsLoading = action.payload;

@@ -17,7 +17,7 @@ import { deriveUniqueCategories } from "@/lib/utils/catalog";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: { locationId?: string };
+  searchParams: Promise<{ locationId?: string }>;
 }) {
   const params = await searchParams;
   const locationId = params.locationId;

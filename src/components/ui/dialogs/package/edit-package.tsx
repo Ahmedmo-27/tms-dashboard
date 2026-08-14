@@ -209,8 +209,8 @@ export default function EditPackageDialog({
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Category</Label>
+                <input type="hidden" name="category" value={selectedCategory} />
                 <Select
-                  name="category"
                   defaultValue={selectedCategory}
                   disabled={pending}
                   onValueChange={setSelectedCategory}

@@ -8,7 +8,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SessionDto, CalendarClientDto } from "@/types/coach.types";
 import { Users } from "lucide-react";
@@ -17,7 +16,6 @@ import { telHref } from "@/lib/utils/phone";
 interface SessionClientsModalProps {
   session: SessionDto | null;
   onClose: () => void;
-  onDeduct?: (client: CalendarClientDto) => void;
 }
 
 function formatTime12h(time: string): string {
@@ -32,7 +30,6 @@ function formatTime12h(time: string): string {
 export function SessionClientsModal({
   session,
   onClose,
-  onDeduct,
 }: SessionClientsModalProps) {
   if (!session) return null;
 
@@ -50,6 +47,7 @@ export function SessionClientsModal({
           </DialogTitle>
           <DialogDescription>
             {formatTime12h(session.startTime)} – {formatTime12h(session.endTime)}
+            {session.location ? ` · ${session.location}` : ""}
             &nbsp;•&nbsp;
             {session.bookedCount} / {session.capacity} booked
           </DialogDescription>
@@ -74,7 +72,6 @@ export function SessionClientsModal({
             ) : (
               clients.map((client: CalendarClientDto) => {
                 const tel = telHref(client.phoneNumber);
-                const canDeduct = Boolean(client.activePackage && onDeduct);
                 return (
                   <div
                     key={client.memberId}
@@ -101,17 +98,6 @@ export function SessionClientsModal({
                           : ""}
                       </p>
                     </div>
-                    {canDeduct && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0 text-xs"
-                        disabled={client.activePackage!.remainingClasses === 0}
-                        onClick={() => onDeduct?.(client)}
-                      >
-                        Deduct
-                      </Button>
-                    )}
                   </div>
                 );
               })

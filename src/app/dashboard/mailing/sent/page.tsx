@@ -181,10 +181,9 @@ export default function SentPage() {
               </div>
 
               <ScrollArea className="flex-1 p-6">
-                <div 
-                  className="prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: selectedMail.body }}
-                />
+                <div className="whitespace-pre-wrap font-sans text-sm">
+                  {selectedMail.body}
+                </div>
               </ScrollArea>
             </>
           )}

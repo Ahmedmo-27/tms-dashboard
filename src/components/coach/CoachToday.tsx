@@ -215,7 +215,7 @@ export function CoachToday() {
                 {data.ptAlerts.map((alert) => (
                   <Link
                     key={`${alert.memberId}-${alert.packageName}`}
-                    href={`/coach/clients/${alert.memberId}?name=${encodeURIComponent(alert.name)}`}
+                    href={`/coach/clients/${alert.memberId}`}
                     className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-muted/50"
                   >
                     <div>

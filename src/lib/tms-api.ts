@@ -1,17 +1,8 @@
 import axios from "axios";
-import { getToken } from "./cookie";
+import { getToken, deleteToken } from "./cookie";
 import { ApiError, UnauthorizedError } from "@/core/api-error";
-import { deleteToken } from "./cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_TMS_API_URL as string;
-
-if (process.env.NODE_ENV === "development") {
-  console.log("TMS API Configuration:", {
-    API_URL,
-    NODE_ENV: process.env.NODE_ENV,
-    isServer: typeof window === "undefined",
-  });
-}
 
 if (!API_URL) {
   throw new Error("NEXT_PUBLIC_TMS_API_URL environment variable is not set");
@@ -27,37 +18,47 @@ export const tms = axios.create({
   timeout: 30000,
 });
 
-// ✅ RESPONSE INTERCEPTOR
-// RESPONSE INTERCEPTOR
+let handlingUnauthorized = false;
+
 tms.interceptors.response.use(
   (response) => response,
   async (error) => {
     const apiError = ApiError.handle(error);
-    if (apiError instanceof UnauthorizedError) {
-      console.log("Server Logout");
+    if (apiError instanceof UnauthorizedError && !handlingUnauthorized) {
+      handlingUnauthorized = true;
+      try {
+        if (typeof window === "undefined") {
+          await deleteToken();
+        } else {
+          // Clear client session markers; HttpOnly cookie cleared via logout route when possible
+          try {
+            localStorage.removeItem("persist:root");
+          } catch {
+            /* ignore */
+          }
+          if (!window.location.pathname.startsWith("/login")) {
+            window.location.assign("/login");
+          }
+        }
+      } finally {
+        handlingUnauthorized = false;
+      }
     }
     return Promise.reject(apiError);
   }
 );
 
-// ✅ REQUEST INTERCEPTOR
 tms.interceptors.request.use(
   async (config) => {
     try {
       const token = await getToken();
-
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-
       return config;
-    } catch (error) {
-      console.error("Failed to get token:", error);
+    } catch {
       return config;
     }
   },
-  (error) => {
-    console.error("Request interceptor error:", error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );

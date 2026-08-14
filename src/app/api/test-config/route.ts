@@ -1,27 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
+/** Dev-only config probe. Not available in production. */
 export async function GET() {
-  try {
-    const config = {
-      API_URL: process.env.NEXT_PUBLIC_TMS_API_URL,
-      NODE_ENV: process.env.NODE_ENV,
-      hasAxios: typeof require !== 'undefined',
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log('API Test Config:', config);
-    
-    return NextResponse.json({
-      success: true,
-      config,
-      message: 'Configuration test successful'
-    });
-  } catch (error) {
-    console.error('API Test Error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error.message,
-      message: 'Configuration test failed'
-    }, { status: 500 });
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
+
+  return NextResponse.json({
+    success: true,
+    config: {
+      hasApiUrl: Boolean(process.env.NEXT_PUBLIC_TMS_API_URL),
+      NODE_ENV: process.env.NODE_ENV,
+      timestamp: new Date().toISOString(),
+    },
+    message: "Configuration test successful",
+  });
 }

@@ -35,7 +35,7 @@ export function NotificationPanel({ onSelect }: { onSelect?: () => void }) {
           addSuffix: true,
         });
         const href = n.memberId
-          ? `/coach/clients/${n.memberId}?name=${encodeURIComponent(n.memberName)}`
+          ? `/coach/clients/${n.memberId}`
           : undefined;
 
         const body = (

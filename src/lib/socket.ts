@@ -18,16 +18,21 @@ export function getSocketServerUrl(): string {
   return apiUrl.replace(/\/api\/?$/, "");
 }
 
-export function createTmsSocket(): Socket {
+/**
+ * Create a Socket.IO client. Pass an auth token when available (coach memory JWT).
+ * Full cookie-based handshake requires API support — see SECURITY_AUDIT_TRACKER.md.
+ */
+export function createTmsSocket(authToken?: string | null): Socket {
   return io(getSocketServerUrl(), {
     transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionAttempts: 10,
+    auth: authToken ? { token: authToken } : undefined,
   });
 }
 
 export function formatFailedScanToast(payload: FailedScanPayload): string {
   const member = payload.member?.trim() || "Member";
   const message = payload.message?.trim() || payload.code || "Scan failed";
-  return `❌ ${member}: ${message}`;
+  return `${member}: ${message}`;
 }

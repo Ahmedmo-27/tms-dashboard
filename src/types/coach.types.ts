@@ -5,6 +5,9 @@ export interface ClientDto {
   phoneNumber: string;
   source: string[];
   activePackagesCount: number;
+  remainingClasses: number | null;
+  daysUntilExpiry: number | null;
+  nearestExpiryDate: string | null;
 }
 
 export interface ActivePackageDto {
@@ -29,6 +32,7 @@ export interface SessionDto {
   endTime: string;
   capacity: number;
   bookedCount: number;
+  location: string | null;
   clients: CalendarClientDto[];
 }
 

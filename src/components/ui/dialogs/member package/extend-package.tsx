@@ -19,7 +19,7 @@ export default function ExtendPackage({
   uid,
   variant = "menu",
 }: {
-  pkg: { [x: string]: string | number | readonly string[] | undefined, name: string; pkgEndDate: string; id: string };
+  pkg: { name: string; pkgEndDate: string; pkgStartDate?: string; _id: string };
   uid: string;
   variant?: "menu" | "button";
 }) {

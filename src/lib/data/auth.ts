@@ -2,9 +2,10 @@
 
 import { tms } from "@/lib/tms-api";
 import { deleteToken, setToken } from "../cookie";
+import { isCoachRole } from "@/lib/config/roles";
 
 interface LoginResponsePayload {
-  token: string;
+  token?: string;
   userId: string;
   role: string;
   name: string;
@@ -19,12 +20,10 @@ export const login = async ({
   password: string;
 }): Promise<LoginResponsePayload> => {
   try {
-    console.log('Attempting login with:', { phoneNumber, hasPassword: !!password });
     const response = await tms.post("/auth/login", {
       phoneNumber,
       password,
     });
-    console.log('Login response received:', response.status);
     const loginData = response.data?.data as LoginResponsePayload;
 
     if (!loginData?.token) {
@@ -32,16 +31,19 @@ export const login = async ({
     }
 
     await setToken(loginData.token);
-    return loginData;
+
+    // Staff: never send JWT to the browser (HttpOnly cookie is enough).
+    // Coach: return token for in-memory Bearer until API HttpOnly redesign.
+    if (isCoachRole(loginData.role)) {
+      return loginData;
+    }
+
+    const { token: _token, ...safeUser } = loginData;
+    return safeUser;
   } catch (error: unknown) {
     const loginError = error instanceof Error ? error : new Error("Login failed");
-
-    console.error('Login error details:', {
-      message: loginError.message,
-      type: loginError.constructor.name,
-      stack: loginError.stack,
-    });
-    throw loginError
+    console.error("Login error:", loginError.message);
+    throw loginError;
   }
 };
 
@@ -51,7 +53,7 @@ export const logout = async () => {
     await deleteToken();
     return response.data.data;
   } catch (error) {
-    console.log(error)
+    await deleteToken();
     throw error;
   }
 };

@@ -12,7 +12,6 @@ import { useActionState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/core/api-error";
-import { useRouter } from "next/navigation";
 import { addWalkIn } from "@/lib/actions/booking-actions";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
@@ -21,14 +20,17 @@ import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 
 interface ActionState {
   success: boolean;
-  errors: Record<string, string> | null | ApiError;
-  data: any | null;
+  errors: Record<string, string | boolean> | null | ApiError;
+  data: unknown | null;
+  usrId?: string;
   defaultValues?: {
     name: string;
     phoneNumber: string;
     scid: string;
   };
 }
+
+const OBJECT_ID_RE = /^[a-fA-F0-9]{24}$/;
 
 export function AddWalkIn({
   scid,
@@ -58,8 +60,6 @@ export function AddWalkIn({
 
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Partial<Error> | null>(null);
-  const [usrId, setUsrId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
@@ -69,17 +69,16 @@ export function AddWalkIn({
     setPaymentDate(date);
   };
 
-  const navigateToUser = () => {
-    console.log("CLICKED");
-    if (usrId) {
-      window.open(`/dashboard/our-members/${usrId}`, "_blank");
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setIsLoading(false);
     }
   };
 
   const [state, formAction, pending] = useActionState(
-    async (currentState: any, formData: FormData) => {
+    async (currentState: ActionState, formData: FormData) => {
       setIsLoading(true);
-      setError(null);
 
       const defaultValues = {
         name: formData.get("name") as string,
@@ -87,31 +86,54 @@ export function AddWalkIn({
         scid: formData.get("scid") as string,
       };
 
-      const result = await addWalkIn(currentState, formData);
+      try {
+        const result = await addWalkIn(currentState, formData);
 
-      if (result.success) {
-        setIsOpen(false);
-        return initialState;
+        if (result.success) {
+          setIsOpen(false);
+          return initialState;
+        }
+
+        const errMsg =
+          result?.errors &&
+          typeof result.errors === "object" &&
+          "message" in result.errors
+            ? String((result.errors as { message?: string }).message ?? "")
+            : "";
+
+        // Prefer structured userId when API provides it; fall back to 24-char ObjectId in message.
+        const existingUserId =
+          (result as { usrId?: string; userId?: string }).usrId ||
+          (result as { userId?: string }).userId ||
+          (OBJECT_ID_RE.test(errMsg) ? errMsg : null);
+
+        if (existingUserId) {
+          return {
+            ...currentState,
+            errors: { userExists: true },
+            usrId: existingUserId,
+            defaultValues,
+          };
+        }
+
+        return { ...result, defaultValues } as ActionState;
+      } finally {
+        setIsLoading(false);
       }
-      if (result?.errors?.message?.length == 24) {
-        return {
-          ...currentState,
-          errors: { userExists: true },
-          usrId: result.errors.message,
-          defaultValues,
-        };
-      }
-
-      setIsLoading(false);
-
-      return { ...result, defaultValues };
     },
     initialState
   );
 
+  const fieldErrors =
+    state.errors &&
+    typeof state.errors === "object" &&
+    !(state.errors instanceof ApiError)
+      ? (state.errors as Record<string, string | boolean>)
+      : null;
+
   return (
     <div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <Button
           variant={compact ? "outline" : "ghost"}
           size={compact ? "sm" : "default"}
@@ -146,57 +168,47 @@ export function AddWalkIn({
             />
 
             <div className="grid grid-cols-1 gap-5">
-              {/* Name field */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">
+                <Label htmlFor="walk-in-name" className="text-sm font-medium">
                   Full Name
                 </Label>
                 <Input
-                  id="name"
+                  id="walk-in-name"
                   name="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Abdelrahman Tolan"
                 />
-                {error &&
-                  typeof error === "object" &&
-                  !(error instanceof ApiError) &&
-                  "name" in error && (
-                    <p className="text-destructive text-xs">
-                      {(error as any).name}
-                    </p>
-                  )}
+                {fieldErrors && typeof fieldErrors.name === "string" && (
+                  <p className="text-destructive text-xs">{fieldErrors.name}</p>
+                )}
               </div>
 
-              {/* Phone field */}
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber" className="text-sm font-medium">
+                <Label htmlFor="walk-in-phone" className="text-sm font-medium">
                   Phone Number
                 </Label>
                 <Input
-                  id="phoneNumber"
+                  id="walk-in-phone"
                   name="phoneNumber"
+                  type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+20 123 456 7890"
                 />
-                {error &&
-                  typeof error === "object" &&
-                  !(error as any).context &&
-                  "phoneNumber" in error && (
-                    <p className="text-destructive text-xs">
-                      {(error as any).phoneNumber}
-                    </p>
-                  )}
+                {fieldErrors && typeof fieldErrors.phoneNumber === "string" && (
+                  <p className="text-destructive text-xs">
+                    {fieldErrors.phoneNumber}
+                  </p>
+                )}
               </div>
 
-              {/* Amount field */}
               <div className="space-y-2">
-                <Label htmlFor="amount" className="text-sm font-medium">
+                <Label htmlFor="walk-in-amount" className="text-sm font-medium">
                   Amount
                 </Label>
                 <Input
-                  id="amount"
+                  id="walk-in-amount"
                   name="amount"
                   type="number"
                   value={amount}
@@ -205,7 +217,6 @@ export function AddWalkIn({
                 />
               </div>
 
-              {/* Payment Date field */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Date</Label>
                 <div onClick={(e) => e.stopPropagation()}>
@@ -221,7 +232,7 @@ export function AddWalkIn({
               </div>
             </div>
 
-            {state.errors?.userExists && (
+            {fieldErrors?.userExists && (
               <div className="flex items-center justify-between rounded-md border border-destructive p-3">
                 <p className="text-destructive text-sm font-medium">
                   User Already Exists - Navigate to user profile
@@ -230,6 +241,7 @@ export function AddWalkIn({
                   type="button"
                   size="sm"
                   variant="outline"
+                  aria-label="Open existing member profile"
                   onClick={() =>
                     window.open(
                       `/dashboard/our-members/${state.usrId}`,
@@ -242,13 +254,18 @@ export function AddWalkIn({
               </div>
             )}
 
-            {/* Actions */}
+            {fieldErrors &&
+              typeof fieldErrors.message === "string" &&
+              !fieldErrors.userExists && (
+                <p className="text-destructive text-sm">{fieldErrors.message}</p>
+              )}
+
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"
                 className="px-4"
                 variant="outline"
-                onClick={() => setIsOpen(false)}
+                onClick={() => handleOpenChange(false)}
               >
                 Cancel
               </Button>

@@ -114,7 +114,7 @@ export function MobileScheduledClassCard({
               
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                <ShowBookedMembers members={scheduledClass.bookedMembers} scid={scheduledClass._id} />
+                <ShowBookedMembers members={scheduledClass.bookedMembers} scid={scheduledClass._id ?? ""} />
               </div>
             </div>
           </div>

@@ -66,7 +66,11 @@ export function getPackageEndDateFromStart(
 export function resolveOpenGymPaymentPurpose(record: {
   purpose?: string;
   note?: string;
-  pkgId?: Pick<Package, "category" | "name" | "expiryPeriod">;
+  pkgId?: {
+    name?: string;
+    category?: string;
+    expiryPeriod?: string;
+  };
 }): string | null {
   if (
     record.purpose === "DROPIN" &&
@@ -79,7 +83,10 @@ export function resolveOpenGymPaymentPurpose(record: {
     if (record.pkgId.name?.trim()) {
       return record.pkgId.name;
     }
-    const duration = formatRenewalLabel(record.pkgId);
+    const duration = formatRenewalLabel({
+      expiryPeriod: record.pkgId.expiryPeriod ?? "",
+      name: record.pkgId.name,
+    });
     return `Open Gym ${duration} package`;
   }
 

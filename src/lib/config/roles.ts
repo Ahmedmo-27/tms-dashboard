@@ -91,12 +91,15 @@ export function canActAsBranchAdmin(
 }
 
 export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
+  "/dashboard": ["management", "branch_admin"],
   "/dashboard/scans-monitor": ["management", "branch_admin"],
   "/dashboard/qr-codes": ["management", "branch_admin"],
   "/dashboard/our-members": ["management", "branch_admin"],
   "/dashboard/member-requests": ["management", "branch_admin"],
   "/dashboard/schedule": ["management", "branch_admin"],
   "/dashboard/catalog": ["management", "branch_admin"],
+  "/dashboard/packages": ["management", "branch_admin"],
+  "/dashboard/classes": ["management", "branch_admin"],
   "/dashboard/tickets": ["management", "branch_admin"],
   "/dashboard/payments": ["management", "branch_admin"],
   "/dashboard/refunds": ["management", "branch_admin"],
@@ -126,7 +129,8 @@ export function canAccessPage(
     return PAGE_ROLES[parentPath].includes(permissionRole);
   }
 
-  return true;
+  // Default-deny: unknown dashboard paths are not accessible.
+  return false;
 }
 
 /** Management-only capabilities (not part of branch_admin). */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCoachApi } from "@/hooks/useCoachApi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -114,9 +114,8 @@ function PackageCard({
 export function PackageDetail({ memberId }: PackageDetailProps) {
   const coachApi = useCoachApi();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [memberName, setMemberName] = useState(searchParams.get("name") ?? "Client");
-  const [phone, setPhone] = useState(searchParams.get("phone") ?? "");
+  const [memberName, setMemberName] = useState("");
+  const [phone, setPhone] = useState("");
   const [packages, setPackages] = useState<MemberPackageData[]>([]);
   const [history, setHistory] = useState<DeductionHistoryItemDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,14 +169,23 @@ export function PackageDetail({ memberId }: PackageDetailProps) {
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h2 className="font-semibold">{memberName}</h2>
-          {tel ? (
-            <a href={tel} className="text-xs text-muted-foreground hover:underline">
-              {phone}
-            </a>
+        <div className="min-w-0">
+          {loading && !memberName ? (
+            <div className="space-y-2">
+              <div className="h-5 w-36 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+            </div>
           ) : (
-            <p className="text-xs text-muted-foreground">{phone}</p>
+            <>
+              <h2 className="font-semibold">{memberName || "Client"}</h2>
+              {tel ? (
+                <a href={tel} className="text-xs text-muted-foreground hover:underline">
+                  {phone}
+                </a>
+              ) : phone ? (
+                <p className="text-xs text-muted-foreground">{phone}</p>
+              ) : null}
+            </>
           )}
         </div>
       </div>

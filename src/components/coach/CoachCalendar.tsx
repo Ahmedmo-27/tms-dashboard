@@ -17,12 +17,11 @@ import {
   Clock,
   Users,
   CalendarDays,
+  MapPin,
 } from "lucide-react";
-import { DeductionModal } from "@/components/coach/DeductionModal";
 import { SessionClientsModal } from "@/components/coach/SessionClientsModal";
 import type { RootState } from "@/lib/store/store";
-import type { MemberPackageData } from "@/components/coach/PackageDetail";
-import type { DayDto, SessionDto, CalendarClientDto } from "@/types/coach.types";
+import type { DayDto, SessionDto } from "@/types/coach.types";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -68,15 +67,6 @@ export function CoachCalendar() {
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     format(new Date(), "yyyy-MM-dd")
   );
-
-  const [deductTarget, setDeductTarget] = useState<{
-    memberId: string;
-    memberName?: string;
-    remainingClasses?: number;
-    memberPackageStartDate: string;
-    pkgId: string;
-    pkgName?: string;
-  } | null>(null);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -235,53 +225,6 @@ export function CoachCalendar() {
     setClientsModalSession(null);
     setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
     setSelectedDate(format(new Date(), "yyyy-MM-dd"));
-  };
-
-  const handleDeductClient = (client: CalendarClientDto) => {
-    if (!client.activePackage) return;
-    setDeductTarget({
-      memberId: client.memberId,
-      memberName: client.name,
-      remainingClasses: client.activePackage.remainingClasses,
-      memberPackageStartDate: client.activePackage.pkgStartDate,
-      pkgId: client.activePackage.pkgId,
-    });
-  };
-
-  const handlePackageUpdated = (updated: MemberPackageData) => {
-    if (!schedule || !deductTarget) return;
-
-    const nextSchedule = JSON.parse(JSON.stringify(schedule)) as typeof schedule;
-
-    let updatedFlag = false;
-    for (const day of nextSchedule.days) {
-      for (const session of day.sessions) {
-        for (const client of session.clients) {
-          if (
-            client.memberId === deductTarget.memberId &&
-            client.activePackage?.pkgId === deductTarget.pkgId &&
-            client.activePackage?.pkgStartDate === deductTarget.memberPackageStartDate
-          ) {
-            client.activePackage = {
-              pkgId: updated.pkgId,
-              pkgStartDate: updated.pkgStartDate,
-              remainingClasses: updated.remainingClasses,
-            };
-            updatedFlag = true;
-          }
-        }
-      }
-    }
-
-    if (updatedFlag) {
-      dispatch(setSchedule(nextSchedule));
-      if (clientsModalSession) {
-        const refreshed = nextSchedule.days
-          .flatMap((d: DayDto) => d.sessions)
-          .find((s: SessionDto) => s.scheduledClassId === clientsModalSession.scheduledClassId);
-        if (refreshed) setClientsModalSession(refreshed);
-      }
-    }
   };
 
   const todayIso = format(new Date(), "yyyy-MM-dd");
@@ -485,6 +428,12 @@ export function CoachCalendar() {
                         <Clock className="h-3.5 w-3.5" />
                         {formatTime12h(session.startTime)} – {formatTime12h(session.endTime)}
                       </span>
+                      {session.location && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {session.location}
+                        </span>
+                      )}
                       <span
                         className={cn(
                           "inline-flex items-center gap-1.5",
@@ -514,22 +463,7 @@ export function CoachCalendar() {
       <SessionClientsModal
         session={clientsModalSession}
         onClose={() => setClientsModalSession(null)}
-        onDeduct={handleDeductClient}
       />
-
-      {deductTarget && (
-        <DeductionModal
-          open
-          memberId={deductTarget.memberId}
-          memberName={deductTarget.memberName}
-          remainingClasses={deductTarget.remainingClasses}
-          memberPackageStartDate={deductTarget.memberPackageStartDate}
-          pkgId={deductTarget.pkgId}
-          pkgName={deductTarget.pkgName}
-          onClose={() => setDeductTarget(null)}
-          onSuccess={handlePackageUpdated}
-        />
-      )}
     </div>
   );
 }
