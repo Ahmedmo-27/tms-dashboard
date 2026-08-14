@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { ClassScan } from "./class-container";
 import { BranchPill } from "../branch-pill";
 import { CopyMemberForSheetButton } from "./copy-member-for-sheet-button";
+import { ScanMemberLink } from "./scan-member-link";
 import type { MethodSheetMapping } from "@/lib/utils/copy-class-for-sheet";
 
 export interface AttendanceContainerProps {
@@ -72,8 +73,8 @@ export const AttendanceContainer = ({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <ScrollArea className="h-[250px] rounded-md border">
-          <div className="p-4">
+        <ScrollArea className="h-[220px] rounded-md border">
+          <div className="p-2">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -93,14 +94,14 @@ export const AttendanceContainer = ({
                       colSpan={(showBranch ? 6 : 5) + (sheetCopy ? 1 : 0)}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No members checked in yet
+                      No check-ins yet. Use Quick actions or a member QR to record one.
                     </TableCell>
                   </TableRow>
                 ) : (
                   classScans.map((scan, index) => (
                     <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        {scan.member}
+                      <TableCell>
+                        <ScanMemberLink name={scan.member} memberId={scan.memberId} />
                       </TableCell>
                       <TableCell>{scan.phone}</TableCell>
                       <TableCell>{scan.method}</TableCell>

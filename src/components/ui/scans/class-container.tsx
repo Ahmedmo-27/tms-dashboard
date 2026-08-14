@@ -18,9 +18,12 @@ import { CheckInsSelector } from "../dialogs/scans/check-in-selector";
 import { PaymentSelectorDialog } from "../dialogs/scans/payment-selector-dialog";
 import { BranchPill } from "../branch-pill";
 import { CopyMemberForSheetButton } from "./copy-member-for-sheet-button";
+import { ScanMemberLink } from "./scan-member-link";
+import { AddWalkIn } from "../dialogs/scans/add-walk-in";
 
 export interface ClassScan {
   member: string;
+  memberId?: string;
   phone: string;
   time: string;
   method: string;
@@ -69,6 +72,7 @@ export const ClassContainer = ({
             </div>
             <div className="flex items-center gap-2">
               <CheckInsSelector members={classData.bookedMembers} classData={classData} />
+              <AddWalkIn scid={String(classData._id)} compact />
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -92,8 +96,8 @@ export const ClassContainer = ({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <ScrollArea className="h-[250px] rounded-md border">
-          <div className="p-4">
+        <ScrollArea className="h-[220px] rounded-md border">
+          <div className="p-2">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -112,14 +116,14 @@ export const ClassContainer = ({
                       colSpan={6}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No members checked in yet
+                      No check-ins yet. Use Check in or Walk-in above.
                     </TableCell>
                   </TableRow>
                 ) : (
                   classScans.map((scan, index) => (
                     <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        {scan.member}
+                      <TableCell>
+                        <ScanMemberLink name={scan.member} memberId={scan.memberId} />
                       </TableCell>
                       <TableCell>{scan.phone}</TableCell>
                       <TableCell>{scan.method}</TableCell>

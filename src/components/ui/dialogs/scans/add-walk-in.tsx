@@ -30,7 +30,13 @@ interface ActionState {
   };
 }
 
-export function AddWalkIn({ scid }: { scid: string }) {
+export function AddWalkIn({
+  scid,
+  compact = false,
+}: {
+  scid: string;
+  compact?: boolean;
+}) {
   const {
     locationId,
     setModalLocationId,
@@ -107,16 +113,17 @@ export function AddWalkIn({ scid }: { scid: string }) {
     <div>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <Button
-          variant="ghost"
+          variant={compact ? "outline" : "ghost"}
+          size={compact ? "sm" : "default"}
           onSelect={(e) => e.preventDefault()}
           onClick={() => {
             resetModalBranch();
             setIsOpen(true);
           }}
-          className="cursor-pointer border-2 w-full"
+          className={compact ? "cursor-pointer" : "cursor-pointer border-2 w-full"}
         >
           <Plus />
-          Add Walk In
+          {compact ? "Walk-in" : "Add Walk In"}
         </Button>
 
         <DialogContent className="z-50 max-w-md">

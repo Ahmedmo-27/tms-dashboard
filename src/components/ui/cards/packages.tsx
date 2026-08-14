@@ -160,10 +160,12 @@ export default function Packages({
   memberPackages,
   uid,
   packages,
+  hideHeader = false,
 }: {
   memberPackages: MemberPackage[];
   uid: string;
   packages: Package[];
+  hideHeader?: boolean;
 }) {
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null);
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
@@ -180,7 +182,8 @@ export default function Packages({
     });
 
   return (
-    <Card className="flex-1">
+    <Card className="flex-1 border-0 shadow-none">
+      {!hideHeader && (
       <CardHeader className="pb-4 sm:pb-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg sm:text-xl font-semibold">Packages</h3>
@@ -189,6 +192,7 @@ export default function Packages({
           </div>
         </div>
       </CardHeader>
+      )}
       <CardContent className="p-4 sm:p-6">
         {/* Mobile view */}
         <div className="block lg:hidden">
@@ -334,6 +338,7 @@ export default function Packages({
                         </TableCell>
                         <TableCell className="py-3 px-2 sm:px-4">
                           <div className="flex items-center gap-1">
+                            <ExtendPackage uid={uid} pkg={pkg} variant="button" />
                             <Button
                               variant="ghost"
                               size="icon"

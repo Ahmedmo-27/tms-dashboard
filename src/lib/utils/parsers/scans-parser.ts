@@ -15,6 +15,12 @@ function parseScanStatus(
   return "FAILED";
 }
 
+function getMemberId(uid: { _id?: string } | string | undefined): string | undefined {
+  if (!uid) return undefined;
+  if (typeof uid === "string") return uid;
+  return uid._id;
+}
+
 function getFailedStatusDetail(
   status: ClassScan["status"],
   method?: string
@@ -33,6 +39,7 @@ export const parseScans = (scheduledClasses: ScheduledClass[], date: Date) => {
       const status = parseScanStatus(scan.status);
       const parsedScan: ClassScan = {
         member: scan.uid?.name || "Unknown Member",
+        memberId: getMemberId(scan.uid),
         phone: scan.uid?.phoneNumber || "No Phone",
         time: new Date(scan.scanTime).toString(),
         method: scan.method,
@@ -74,6 +81,7 @@ export const parseDailyAttendance = (scans: any) => {
     const status = parseScanStatus(scan.status);
     const parsedScan: ClassScan = {
       member: scan.uid?.name || "Unknown Member",
+      memberId: getMemberId(scan.uid),
       phone: scan.uid?.phoneNumber || "No Phone",
       time: new Date(scan.time).toString(),
       method: scan.method,
@@ -88,6 +96,7 @@ export const parseDailyAttendance = (scans: any) => {
     const status = parseScanStatus(scan.status);
     const parsedScan: ClassScan = {
       member: scan.uid?.name || scan.guestName || "Unknown Member",
+      memberId: getMemberId(scan.uid),
       phone: scan.uid?.phoneNumber || scan.guestPhone || "No Phone",
       time: new Date(scan.time).toString(),
       method: scan.method,

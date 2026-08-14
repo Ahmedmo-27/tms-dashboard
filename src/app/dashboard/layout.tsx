@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import RequireAuth from "@/components/require-auth";
 import { RequirePageAccess } from "@/components/require-page-access";
 import { DashboardBranchBar } from "@/components/dashboard-branch-bar";
+import { CommandPalette } from "@/components/command-palette";
 import { Suspense } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -20,16 +21,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-              <div className="flex items-center gap-2 px-3">
-                <SidebarTrigger />
-                <Separator orientation="vertical" className="mr-2 h-4" />
+            <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <Suspense fallback={null}>
                 <Nav />
+              </Suspense>
+              <div className="ml-auto flex min-w-0 items-center gap-2">
+                <Suspense fallback={null}>
+                  <DashboardBranchBar />
+                </Suspense>
+                <CommandPalette />
               </div>
             </header>
-            <Suspense fallback={null}>
-              <DashboardBranchBar />
-            </Suspense>
             <ScrollArea>{children}</ScrollArea>
           </SidebarInset>
         </SidebarProvider>

@@ -84,7 +84,7 @@ export function SchedulePage({
     isViewingAllBranches,
   ]);
   return (
-    <div className="flex flex-col-reverse overflow-y-auto md:flex-row h-[calc(100vh-4rem)] gap-4 p-3">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col-reverse gap-4 overflow-y-auto p-3 md:flex-row">
       <div className="flex-[2] h-full">
         <ScheduledClassesContainer
           scheduledClasses={selectedScheduledClasses}

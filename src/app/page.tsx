@@ -21,7 +21,7 @@ export default function Home() {
       }
 
       if (authUser && isStaffRole(authUser.role as string | undefined)) {
-        router.replace("/dashboard/our-members");
+        router.replace("/dashboard/scans-monitor");
         setCheckingSession(false);
         return;
       }
@@ -37,7 +37,7 @@ export default function Home() {
         }
 
         if (isStaffRole(role)) {
-          router.replace("/dashboard/our-members");
+          router.replace("/dashboard/scans-monitor");
           return;
         }
       } catch {

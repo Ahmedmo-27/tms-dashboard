@@ -13,26 +13,25 @@ import {
   Ticket,
   Mail,
 } from "lucide-react";
+import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
 
 export type NavItem = {
   title: string;
   url: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
   roles: readonly PermissionRole[];
 };
 
 export type NavGroup = {
   title: string;
-  url: string;
   items: NavItem[];
 };
 
 export const pagesMetadata: { navMain: NavGroup[] } = {
   navMain: [
     {
-      title: "FrontDesk Action Panel",
-      url: "/dashboard/scans-monitor",
+      title: "Front Desk",
       items: [
         {
           title: "Scans Monitor",
@@ -49,8 +48,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
       ],
     },
     {
-      title: "Members Management",
-      url: "/dashboard/our-members",
+      title: "Members",
       items: [
         {
           title: "Our Members",
@@ -67,8 +65,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
       ],
     },
     {
-      title: "Spaceship Control Room",
-      url: "/dashboard/schedule",
+      title: "Operations",
       items: [
         {
           title: "Schedule",
@@ -97,8 +94,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
       ],
     },
     {
-      title: "Products",
-      url: "/dashboard/products",
+      title: "Retail",
       items: [
         {
           title: "Checkout",
@@ -122,7 +118,6 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
     },
     {
       title: "Support",
-      url: "/dashboard/tickets",
       items: [
         {
           title: "Tickets",
@@ -133,8 +128,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
       ],
     },
     {
-      title: "Communications",
-      url: "/dashboard/mailing",
+      title: "Mail",
       items: [
         {
           title: "Compose",
@@ -159,10 +153,39 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
   ],
 };
 
+export const STAFF_HOME = "/dashboard/scans-monitor";
+
+function navItemPath(url: string): string {
+  return url.split("?")[0];
+}
+
 export const getPageTitle = (path: string): string => {
-  const pathData = pagesMetadata.navMain.find((p) =>
-    p.items.find((i) => i.url === path)
-  );
-  const subPathData = pathData?.items.find((i) => i.url === path);
-  return subPathData?.title || pathData?.title || "Dashboard";
+  const pathname = navItemPath(path);
+
+  if (pathname.startsWith("/dashboard/our-members/")) {
+    return "Member";
+  }
+
+  const catalogTabTitles: Record<string, string> = {
+    classes: "Classes",
+    packages: "Packages",
+    coaches: "Coaches",
+  };
+  if (pathname === "/dashboard/catalog") {
+    const tab = new URLSearchParams(path.split("?")[1] ?? "").get("tab");
+    if (tab && catalogTabTitles[tab]) return catalogTabTitles[tab];
+  }
+
+  const matches: { title: string; itemPath: string }[] = [];
+  for (const group of pagesMetadata.navMain) {
+    for (const item of group.items) {
+      const itemPath = navItemPath(item.url);
+      if (pathname === itemPath || pathname.startsWith(`${itemPath}/`)) {
+        matches.push({ title: item.title, itemPath });
+      }
+    }
+  }
+
+  matches.sort((a, b) => b.itemPath.length - a.itemPath.length);
+  return matches[0]?.title ?? "Dashboard";
 };

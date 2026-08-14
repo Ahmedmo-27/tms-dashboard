@@ -31,7 +31,12 @@ export class ApiError extends Error {
           );
       }
     } else if (error.request) {
-      return new NetworkError("Network Error", { error });
+      const baseURL = error.config?.baseURL || process.env.NEXT_PUBLIC_TMS_API_URL;
+      const code = error.code ? ` (${error.code})` : "";
+      return new NetworkError(
+        `Cannot reach the API at ${baseURL || "unknown URL"}${code}. Start the backend on that port and try again.`,
+        { error }
+      );
     } else {
       return new InternalError("Request Configuration Error", { error });
     }

@@ -102,10 +102,16 @@ export function OpenGymPricingDialog({
   packages = [],
   classes = [],
   triggerLabel = "Open gym pricing",
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
 }: {
   packages?: Package[];
   classes?: Class[];
   triggerLabel?: string;
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
   const {
@@ -115,7 +121,14 @@ export function OpenGymPricingDialog({
     hasLocationId,
     resetModalBranch,
   } = useManagementBranchSelection();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : uncontrolledOpen;
+  const setOpen = (value: boolean) => {
+    if (!isControlled) setUncontrolledOpen(value);
+    onOpenChange?.(value);
+    if (value) resetModalBranch();
+  };
   const [prices, setPrices] = useState<OpenGymBranchPrice[]>([]);
   const [dropInPrice, setDropInPrice] = useState("");
   const [rows, setRows] = useState<PackageRow[]>([]);
@@ -318,16 +331,17 @@ export function OpenGymPricingDialog({
 
   return (
     <div>
+      {!hideTrigger && (
       <Button
         variant="outline"
         size="sm"
         onClick={() => {
-          resetModalBranch();
           setOpen(true);
         }}
       >
         {triggerLabel}
       </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">

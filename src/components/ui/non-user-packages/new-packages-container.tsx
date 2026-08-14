@@ -22,7 +22,9 @@ export default function NewPackagesContainer() {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(
+    () => searchParams.get("searchString") ?? ""
+  );
   const page = Number(searchParams.get("page")) || 1;
   const debouncedTerm = useDebounce(searchTerm, 500);
 
@@ -62,7 +64,7 @@ export default function NewPackagesContainer() {
   useEffect(() => {
     if (debouncedTerm !== searchParams.get("searchString")) {
       const params = new URLSearchParams(searchParams.toString());
-      if (!debouncedTerm) {
+      if (debouncedTerm) {
         params.set("searchString", debouncedTerm);
       } else {
         params.delete("searchString");

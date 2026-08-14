@@ -44,7 +44,17 @@ type PendingMemberHit = {
   phone: string;
 };
 
-export function AddNonMemberPackage({ packages }: { packages: Package[] }) {
+export function AddNonMemberPackage({
+  packages,
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
+}: {
+  packages: Package[];
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const {
     locationId,
     setModalLocationId,
@@ -53,7 +63,8 @@ export function AddNonMemberPackage({ packages }: { packages: Package[] }) {
     resetModalBranch,
   } = useManagementBranchSelection();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = openProp ?? uncontrolledOpen;
   const [pkg, setPkg] = useState<Package | null>(null);
 
   const [name, setName] = useState("");
@@ -92,7 +103,8 @@ export function AddNonMemberPackage({ packages }: { packages: Package[] }) {
   };
 
   const handleOpenChange = (value: boolean) => {
-    setOpen(value);
+    if (openProp === undefined) setUncontrolledOpen(value);
+    onOpenChange?.(value);
     if (value) resetModalBranch();
     if (!value) resetForm();
   };
@@ -177,14 +189,16 @@ export function AddNonMemberPackage({ packages }: { packages: Package[] }) {
 
   return (
     <div>
-      <Button
-        className="min-h-[40px]"
-        variant="outline"
-        size="sm"
-        onClick={() => handleOpenChange(true)}
-      >
-        Add package to non member
-      </Button>
+      {!hideTrigger && (
+        <Button
+          className="min-h-[40px]"
+          variant="outline"
+          size="sm"
+          onClick={() => handleOpenChange(true)}
+        >
+          Add package to non member
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">

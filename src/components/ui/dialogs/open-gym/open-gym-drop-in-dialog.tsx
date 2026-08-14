@@ -52,6 +52,9 @@ interface OpenGymDropInDialogProps {
   triggerLabel?: string;
   triggerVariant?: "default" | "outline" | "ghost";
   triggerClassName?: string;
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function OpenGymDropInDialog({
@@ -60,6 +63,9 @@ export function OpenGymDropInDialog({
   triggerLabel = "Open gym drop-in",
   triggerVariant = "outline",
   triggerClassName,
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
 }: OpenGymDropInDialogProps) {
   const router = useRouter();
   const {
@@ -69,7 +75,9 @@ export function OpenGymDropInDialog({
     hasLocationId,
     resetModalBranch,
   } = useManagementBranchSelection();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : uncontrolledOpen;
   const [tab, setTab] = useState<"member" | "guest">("member");
   const [defaultPrice, setDefaultPrice] = useState<string>("");
 
@@ -110,7 +118,8 @@ export function OpenGymDropInDialog({
   };
 
   const handleOpenChange = (value: boolean) => {
-    setOpen(value);
+    if (!isControlled) setUncontrolledOpen(value);
+    onOpenChange?.(value);
     if (value) {
       resetModalBranch();
       if (presetUid) {
@@ -198,7 +207,7 @@ export function OpenGymDropInDialog({
       const result = await openGymMemberDropInAction(currentState, formData);
       if (result.success) {
         toast.success("Open gym drop-in recorded");
-        setOpen(false);
+        handleOpenChange(false);
         router.refresh();
         return memberInitialState;
       }
@@ -213,7 +222,7 @@ export function OpenGymDropInDialog({
       const result = await openGymGuestDropInAction(currentState, formData);
       if (result.success) {
         toast.success("Guest open gym drop-in recorded");
-        setOpen(false);
+        handleOpenChange(false);
         router.refresh();
         return guestInitialState;
       }
@@ -227,6 +236,7 @@ export function OpenGymDropInDialog({
 
   return (
     <div>
+      {!hideTrigger && (
       <Button
         variant={triggerVariant}
         size="sm"
@@ -235,6 +245,7 @@ export function OpenGymDropInDialog({
       >
         {triggerLabel}
       </Button>
+      )}
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -408,7 +419,7 @@ export function OpenGymDropInDialog({
                   )}
 
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                     Cancel
                   </Button>
                   <Button
@@ -547,7 +558,7 @@ export function OpenGymDropInDialog({
                   )}
 
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                     Cancel
                   </Button>
                   <Button type="submit" disabled={guestPending || !hasLocationId}>
