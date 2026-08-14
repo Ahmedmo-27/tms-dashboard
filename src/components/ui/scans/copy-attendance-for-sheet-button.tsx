@@ -38,7 +38,7 @@ export function CopyAttendanceForSheetButton({
     [scans]
   );
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(
-    () => new Set(eligibleScans.map((_, index) => index))
+    () => new Set()
   );
 
   const selectedCount = selectedIndexes.size;
@@ -46,7 +46,7 @@ export function CopyAttendanceForSheetButton({
     eligibleScans.length > 0 && selectedCount === eligibleScans.length;
 
   const resetSelection = () => {
-    setSelectedIndexes(new Set(eligibleScans.map((_, index) => index)));
+    setSelectedIndexes(new Set());
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
