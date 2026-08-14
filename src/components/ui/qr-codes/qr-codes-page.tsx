@@ -48,15 +48,10 @@ export function QRCodesPage({
   }
 
   return (
-    <div className="grid gap-8 p-6 lg:grid-cols-2">
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Static QR codes</h2>
-          <p className="text-sm text-muted-foreground">
-            Open gym and personal training check-in codes
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="p-6 space-y-8">
+      <div>
+        <h2 className="text-lg font-bold mb-4">Static QR Codes</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {visibleLocations.map((loc) => (
             <Fragment key={loc._id}>
               <SpaceQRCode
@@ -72,32 +67,27 @@ export function QRCodesPage({
             </Fragment>
           ))}
         </div>
-      </section>
+      </div>
 
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">
-            Today&apos;s classes
-            {visibleLocations.length === 1
-              ? ` — ${visibleLocations[0].branchName}`
-              : ""}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Print today&apos;s class check-in codes
-          </p>
-        </div>
+      <div>
+        <h2 className="text-lg font-bold mb-4">
+          Today&apos;s Classes
+          {visibleLocations.length === 1
+            ? ` — ${visibleLocations[0].branchName}`
+            : ""}
+        </h2>
         {filteredClasses.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground">
             No classes scheduled for this location today.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredClasses.map((cls) => (
               <QRTemplateGenerator key={cls._id} scls={cls} />
             ))}
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 }
