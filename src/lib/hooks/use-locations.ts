@@ -11,7 +11,7 @@ type UseLocationsResult = {
 
 let sharedLocations: Location[] | null = null;
 let sharedPromise: Promise<Location[]> | null = null;
-let sharedListeners = new Set<() => void>();
+const sharedListeners = new Set<() => void>();
 
 function notifyListeners() {
   sharedListeners.forEach((listener) => listener());

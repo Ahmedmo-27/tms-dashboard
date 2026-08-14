@@ -88,7 +88,7 @@ export function CoachCalendar() {
 
   useEffect(() => {
     if (!schedule?.days?.length) return;
-    const dates = schedule.days.map((d) => d.date);
+    const dates = schedule.days.map((d: DayDto) => d.date);
     if (!dates.includes(selectedDate)) {
       const today = format(new Date(), "yyyy-MM-dd");
       setSelectedDate(dates.includes(today) ? today : dates[0]);
@@ -247,7 +247,7 @@ export function CoachCalendar() {
     return nextId;
   }, [schedule]);
 
-  const selectedDay = schedule?.days.find((d) => d.date === selectedDate);
+  const selectedDay = schedule?.days.find((d: DayDto) => d.date === selectedDate);
   const weekTitle = schedule ? formatWeekRange(schedule.days) : "Loading…";
   const isCurrentWeek = format(currentWeekStart, "yyyy-MM-dd") ===
     format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");

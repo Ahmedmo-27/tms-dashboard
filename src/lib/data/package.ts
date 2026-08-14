@@ -21,7 +21,7 @@ export const getPackages = async (locationId?: string): Promise<Package[]> => {
     const packages = response.data.data as Package[];
     return packages.map((pkg) => ({
       ...pkg,
-      branchLabel: getPackageBranchLabel(pkg.locationId),
+      branchLabel: getPackageBranchLabel(pkg.locationId) ?? undefined,
     }));
   } catch (error) {
     console.error(error);

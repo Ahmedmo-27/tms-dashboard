@@ -11,6 +11,25 @@ export type User = {
   email: string;
 };
 
+function PhoneCell({ phone }: { phone: string }) {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(phone);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="text-blue-600 underline hover:text-blue-800 transition"
+    >
+      {copied ? "Copied!" : phone}
+    </button>
+  );
+}
+
 export const columns: ColumnDef<User>[] = [
   {
     accessorKey: "name",
@@ -19,25 +38,7 @@ export const columns: ColumnDef<User>[] = [
   {
     accessorKey: "phone",
     header: "Phone",
-    cell: ({ row }) => {
-      const phone = row.original.phone;
-      const [copied, setCopied] = React.useState(false);
-
-      const handleCopy = () => {
-        navigator.clipboard.writeText(phone);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1200);
-      };
-
-      return (
-        <button
-          onClick={handleCopy}
-          className="text-blue-600 underline hover:text-blue-800 transition"
-        >
-          {copied ? "Copied!" : phone}
-        </button>
-      );
-    },
+    cell: ({ row }) => <PhoneCell phone={row.original.phone} />,
   },
 
   {

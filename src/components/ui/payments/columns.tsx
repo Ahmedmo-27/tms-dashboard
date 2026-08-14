@@ -128,7 +128,7 @@ export const columns: ColumnDef<Payment>[] = [
       const amount = row.getValue("amount");
       const isOutflow = row.original.isRefunded || row.original.isCashOut;
 
-      let numericAmount = typeof amount === 'string'
+      const numericAmount = typeof amount === 'string'
         ? parseFloat(amount.replace(/[^0-9.-]+/g, ""))
         : parseFloat(String(amount));
 

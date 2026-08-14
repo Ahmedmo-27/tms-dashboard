@@ -1,4 +1,3 @@
-/* eslint-disable react/react-in-jsx-scope */
 import { getMembers } from "@/lib/data/member";
 import MemberPage from "./memberPage";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,8 +9,12 @@ import { NetworkError, UnauthorizedError } from "@/core/api-error";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   const packages: Package[] = await getPackages();
   const [fullSchedule, upcomingSchedule] = await Promise.all([
     getScheduledClasses(),

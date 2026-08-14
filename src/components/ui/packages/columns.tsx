@@ -34,6 +34,48 @@ export type Package = {
   branchLabel?: string;
 };
 
+function PackageVisibilityCell({ pkg }: { pkg: Package }) {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isHidden, setIsHidden] = useState(pkg.hidden);
+
+  const handleVisibilityChange = async () => {
+    setIsLoading(true);
+    const newHidden = !isHidden;
+    setIsHidden(newHidden);
+    await changePackageVisibility(pkg._id, newHidden);
+    router.refresh();
+    setIsLoading(false);
+  };
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleVisibilityChange}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <LoaderIcon className="animate-spin" />
+            ) : isHidden ? (
+              <EyeClosed />
+            ) : (
+              <Eye />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {isHidden ? "Hidden from members" : "Visible to members"}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function createColumns(
   classes: Class[],
   packageCategories: string[],
@@ -135,46 +177,7 @@ export function createColumns(
       id: "visibility",
       header: () => <span className="sr-only">Visibility</span>,
       size: 48,
-      cell: ({ row }) => {
-        const router = useRouter();
-        const pkg = row.original;
-        const [isLoading, setIsLoading] = useState(false);
-        const [isHidden, setIsHidden] = useState(pkg.hidden);
-        const handleVisibilityChange = async () => {
-          setIsLoading(true);
-          const newHidden = !isHidden;
-          setIsHidden(newHidden);
-          await changePackageVisibility(pkg._id, newHidden);
-          router.refresh();
-          setIsLoading(false);
-        };
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={handleVisibilityChange}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <LoaderIcon className="animate-spin" />
-                  ) : isHidden ? (
-                    <EyeClosed />
-                  ) : (
-                    <Eye />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isHidden ? "Hidden from members" : "Visible to members"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      },
+      cell: ({ row }) => <PackageVisibilityCell pkg={row.original} />,
     },
     {
       id: "actions",

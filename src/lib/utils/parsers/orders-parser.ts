@@ -16,7 +16,7 @@ export const parseOrders = async (orders: any) => {
         order.cart.forEach((item: any) => {
             const product = products.find((product: any) => product.barcode === item.barcode);
             if(!product) return
-            let parsedOrderItem: OrderItem = {
+            const parsedOrderItem: OrderItem = {
                 barcode: item.barcode,
                 item: product.item,
                 brand: product.brand,
