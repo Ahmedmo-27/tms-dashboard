@@ -12,6 +12,7 @@ import { useState } from "react";
 import { cancelClassAction } from "@/lib/actions/schedule-actions";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { toast } from "react-hot-toast";
 
 export default function CancelClassDialog({
   scls,
@@ -20,20 +21,40 @@ export default function CancelClassDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setError(null);
+    }
+  };
 
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      await cancelClassAction(scls._id as string);
-      setOpen(false);
-    } catch (error) {
-      console.error("Failed to delete class:", error);
+      setError(null);
+      const result = await cancelClassAction(scls._id as string);
+      if (result.success) {
+        toast.success("Class cancelled successfully");
+        setOpen(false);
+        return;
+      }
+      const message = result.errors?.message || "Failed to cancel class";
+      setError(message);
+      toast.error(message);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to cancel class";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
   };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem
           onSelect={(e) => e.preventDefault()}
@@ -48,6 +69,11 @@ export default function CancelClassDialog({
           <DialogDescription>
             Make sure you contacted all booked members.
           </DialogDescription>
+          {error && (
+            <DialogDescription className="text-red-500 whitespace-pre-wrap">
+              {error}
+            </DialogDescription>
+          )}
         </DialogHeader>
         <div className="flex justify-end gap-2 mt-4">
           <Button
@@ -57,6 +83,7 @@ export default function CancelClassDialog({
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
+              setError(null);
             }}
           >
             Cancel

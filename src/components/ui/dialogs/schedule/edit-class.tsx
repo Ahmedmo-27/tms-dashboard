@@ -212,6 +212,14 @@ export function EditClassComponent({
               </div>
             </div>
           </div>
+          {state?.errors &&
+            typeof state.errors === "object" &&
+            "message" in state.errors &&
+            (state.errors as { message?: string }).message && (
+              <p className="text-destructive text-sm mt-4">
+                {(state.errors as { message?: string }).message}
+              </p>
+            )}
           <div className="flex justify-end gap-3 mt-8">
             <Button
               type="button"

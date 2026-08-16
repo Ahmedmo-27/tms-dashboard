@@ -12,15 +12,15 @@ import { useActionState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/core/api-error";
-import { redirect, useRouter } from "next/navigation";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { bookNonUserAction } from "@/lib/actions/booking-actions";
 import { ArrowBigRight } from "lucide-react";
 
 interface ActionState {
   success: boolean;
-  errors: Record<string, string> | null | ApiError;
+  errors: Record<string, string | boolean> | null | ApiError;
   data: any | null;
+  usrId?: string;
   defaultValues?: {
     name: string;
     phoneNumber: string;
@@ -38,21 +38,12 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Partial<Error> | null>(null);
-  const [usrId, setUsrId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 
-  const navigateToUser = () => {
-    console.log("CLICKED");
-    if (usrId) {
-      window.open(`/dashboard/our-members/${usrId}`, "_blank");
-    }
-  };
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
       setIsLoading(true);
-      setError(null);
 
       const defaultValues = {
         name: formData.get("name") as string,
@@ -63,23 +54,43 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
       const result = await bookNonUserAction(currentState, formData);
 
       if (result.success) {
+        setIsLoading(false);
         setIsOpen(false);
         return initialState;
       }
-      if (result?.errors?.message?.length == 24) {
+      if (
+        result?.errors &&
+        typeof result.errors === "object" &&
+        "message" in result.errors &&
+        String((result.errors as { message?: string }).message ?? "").length ===
+          24
+      ) {
+        setIsLoading(false);
         return {
           ...currentState,
           errors: { userExists: true },
-          usrId: result.errors.message,
+          usrId: (result.errors as { message?: string }).message,
           defaultValues,
         };
       }
       setIsLoading(false);
-      console.log(error);
       return { ...result, defaultValues };
     },
     initialState
   );
+
+  const fieldErrors =
+    state.errors &&
+    typeof state.errors === "object" &&
+    !(state.errors instanceof ApiError)
+      ? (state.errors as Record<string, string | boolean>)
+      : null;
+
+  const navigateToUser = () => {
+    if (state.usrId) {
+      window.open(`/dashboard/our-members/${state.usrId}`, "_blank");
+    }
+  };
 
   return (
     <div>
@@ -106,7 +117,6 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
             <input type="hidden" name="scid" value={scid} />
 
             <div className="grid grid-cols-1 gap-5">
-              {/* Name field */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
                   Full Name
@@ -118,17 +128,13 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Abdelrahman Tolan"
                 />
-                {error &&
-                  typeof error === "object" &&
-                  !(error instanceof ApiError) &&
-                  "name" in error && (
-                    <p className="text-destructive text-xs">
-                      {(error as any).name}
-                    </p>
-                  )}
+                {fieldErrors?.name && (
+                  <p className="text-destructive text-xs">
+                    {String(fieldErrors.name)}
+                  </p>
+                )}
               </div>
 
-              {/* Phone field */}
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber" className="text-sm font-medium">
                   Phone Number
@@ -140,18 +146,34 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+20 123 456 7890"
                 />
-                {error &&
-                  typeof error === "object" &&
-                  !(error as any).context &&
-                  "phoneNumber" in error && (
-                    <p className="text-destructive text-xs">
-                      {(error as any).phoneNumber}
-                    </p>
-                  )}
+                {fieldErrors?.phoneNumber && (
+                  <p className="text-destructive text-xs">
+                    {String(fieldErrors.phoneNumber)}
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Actions */}
+            {fieldErrors?.userExists && (
+              <div className="flex items-center justify-between rounded-md border border-destructive p-3">
+                <p className="text-destructive text-sm font-medium">
+                  User already exists — open their profile
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={navigateToUser}
+                >
+                  <ArrowBigRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {typeof fieldErrors?.message === "string" && fieldErrors.message && (
+              <p className="text-destructive text-sm">{fieldErrors.message}</p>
+            )}
+
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"

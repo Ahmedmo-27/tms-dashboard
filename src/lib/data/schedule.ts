@@ -80,6 +80,7 @@ export const cancelClass = async (scid: string) => {
     const response = await tms.delete(`/admin/schedule/${scid}`);
     return response.data.data;
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    throw error;
   }
 };

@@ -37,6 +37,7 @@ import {
   DurationUnit,
   formatDurationLabel,
 } from "@/lib/utils/open-gym-duration";
+import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -322,8 +323,8 @@ export function OpenGymPricingDialog({
       await loadPrices();
       router.refresh();
       setOpen(false);
-    } catch {
-      toast.error("Failed to save open gym pricing");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err) || "Failed to save open gym pricing");
     } finally {
       setSaving(false);
     }

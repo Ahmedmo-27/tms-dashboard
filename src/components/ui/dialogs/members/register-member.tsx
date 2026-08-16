@@ -232,10 +232,11 @@ The Mind Space Team 💫`;
                     </TooltipProvider>
                   </div>
                   {state?.errors &&
-                    typeof state.errors == "object" &&
-                    state.errors instanceof Error && (
+                    typeof state.errors === "object" &&
+                    "message" in state.errors &&
+                    (state.errors as { message?: string }).message && (
                       <p className="text-destructive text-xs sm:text-sm">
-                        {(state.errors as any).message}
+                        {(state.errors as { message?: string }).message}
                       </p>
                     )}
                 </div>

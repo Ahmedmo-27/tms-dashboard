@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { deletePackageAction } from "@/lib/actions/package-actions";
 import { Trash } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function DeletePackageDialog({
   pkg,
@@ -19,20 +20,41 @@ export default function DeletePackageDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setError(null);
+    }
+  };
 
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      await deletePackageAction(pkg._id);
-      setOpen(false);
-    } catch (error) {
-      console.error('Failed to delete package:', error);
+      setError(null);
+      const result = await deletePackageAction(pkg._id);
+      if (result.success) {
+        toast.success("Package deleted successfully");
+        setOpen(false);
+        return;
+      }
+      const message =
+        result.errors?.message || "Failed to delete package";
+      setError(message);
+      toast.error(message);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to delete package";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
   };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
         <div className="w-full">
           <Button
@@ -53,6 +75,11 @@ export default function DeletePackageDialog({
             This action cannot be undone. This will permanently delete your
             package.
           </DialogDescription>
+          {error && (
+            <DialogDescription className="text-red-500 whitespace-pre-wrap">
+              {error}
+            </DialogDescription>
+          )}
         </DialogHeader>
         <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
           <Button
@@ -62,6 +89,7 @@ export default function DeletePackageDialog({
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
+              setError(null);
             }}
           >
             Cancel

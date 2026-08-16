@@ -1,4 +1,5 @@
 import z from "zod"
+import { getApiErrorMessage } from "./api-error-message"
 
 export const parseStateError = (error: Error) => {
   console.log(`Error of type: ${error.message}`)
@@ -17,8 +18,7 @@ export const parseStateError = (error: Error) => {
         return {
           success: false,
           errors: {
-            message:
-              error.message ? error.message : "Unknown error occurred",
+            message: getApiErrorMessage(error),
           },
           data: null,
         };

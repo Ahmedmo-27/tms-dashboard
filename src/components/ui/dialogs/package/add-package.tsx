@@ -284,6 +284,15 @@ export function AddPackageDialog({
               )}
             </div>
 
+            {state?.errors &&
+              typeof state.errors === "object" &&
+              "message" in state.errors &&
+              state.errors.message && (
+                <p className="text-destructive text-sm mt-4">
+                  {state.errors.message}
+                </p>
+              )}
+
             <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
               <Button
                 type="button"

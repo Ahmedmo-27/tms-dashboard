@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { tms } from "../tms-api";
+import { getApiErrorMessage } from "../utils/api-error-message";
 
 export const getOpenGymDropInPrice = async (
   locationId?: string
@@ -86,10 +87,14 @@ export const updateOpenGymPackage = async (
 };
 
 export const deleteOpenGymPackage = async (pkgId: string) => {
-  const response = await tms.delete(`/admin/packages/${pkgId}`);
-  revalidatePath("/dashboard/catalog");
-  revalidatePath("/dashboard/scans-monitor");
-  return response.data.data;
+  try {
+    const response = await tms.delete(`/admin/packages/${pkgId}`);
+    revalidatePath("/dashboard/catalog");
+    revalidatePath("/dashboard/scans-monitor");
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error));
+  }
 };
 
 export const recordOpenGymMemberDropIn = async (
