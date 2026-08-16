@@ -56,7 +56,7 @@ export function PackagesContainer({
         searchTerm === "" ||
         pkg.name.toLowerCase().includes(searchLower) ||
         formatCategory(pkg.category).toLowerCase().includes(searchLower) ||
-        pkg.price.includes(searchTerm);
+        String(pkg.price ?? "").includes(searchTerm);
 
       const matchesCategory =
         !categoryFilter || pkg.category === categoryFilter;

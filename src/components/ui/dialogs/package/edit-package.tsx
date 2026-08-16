@@ -68,7 +68,7 @@ export default function EditPackageDialog({
       name: pkg.name,
       numberOfSessions: pkg.numberOfSessions,
       expiryPeriod: pkg.expiryPeriod,
-      price: pkg.price,
+      price: String(pkg.price ?? ""),
       category: pkg.category,
     },
   };

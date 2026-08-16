@@ -14,7 +14,7 @@ export type Class = {
   _id: string;
   title: string;
   category: string;
-  price: string;
+  price: string | number;
   locations: ClassLocation[];
 };
 
@@ -50,9 +50,12 @@ export function createColumns(
     locations.map((location) => [location._id, location.branchName || location.location])
   );
 
-  const formatPrice = (price: string) => {
-    if (price === "0" || price === "0.00") return "Free";
-    return price;
+  const formatPrice = (price: string | number) => {
+    const normalized = String(price ?? "").trim();
+    if (normalized === "0" || normalized === "0.00" || Number(normalized) === 0) {
+      return "Free";
+    }
+    return normalized;
   };
 
   return [

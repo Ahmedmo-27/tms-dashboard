@@ -30,8 +30,9 @@ interface ClassesContainerProps {
   columns: ColumnDef<Class>[];
 }
 
-function isFreePrice(price: string): boolean {
-  return price === "0" || price === "0.00";
+function isFreePrice(price: string | number): boolean {
+  const normalized = String(price ?? "").trim();
+  return normalized === "0" || normalized === "0.00" || Number(normalized) === 0;
 }
 
 export function ClassesContainer({
@@ -81,7 +82,7 @@ export function ClassesContainer({
         searchTerm === "" ||
         cls.title.toLowerCase().includes(searchLower) ||
         formatCategory(cls.category).toLowerCase().includes(searchLower) ||
-        cls.price.includes(searchTerm) ||
+        String(cls.price ?? "").includes(searchTerm) ||
         locationLabels.toLowerCase().includes(searchLower);
 
       const matchesCategory =

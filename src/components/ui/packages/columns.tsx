@@ -26,7 +26,7 @@ export type Package = {
   expiryPeriod: string;
   renewalPeriod?: string;
   category: string;
-  price: string;
+  price: string | number;
   hidden?: boolean;
   locationId?: string | { _id?: string; branchName?: string; location?: string };
   opensClasses: { _id: string; title: string }[];

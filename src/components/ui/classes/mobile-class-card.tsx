@@ -29,9 +29,12 @@ export function MobileClassCard({
   locations = [],
   showLocation = false,
 }: MobileClassCardProps) {
-  const formatPrice = (price: string) => {
-    if (price === "0" || price === "0.00") return "Free";
-    return price;
+  const formatPrice = (price: string | number) => {
+    const normalized = String(price ?? "").trim();
+    if (normalized === "0" || normalized === "0.00" || Number(normalized) === 0) {
+      return "Free";
+    }
+    return normalized;
   };
 
   const locationMap = new Map(
