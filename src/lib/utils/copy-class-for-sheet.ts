@@ -134,11 +134,7 @@ function buildRows(
   );
 
   return eligible
-    .map((scan, index) => {
-      const row = buildMemberSheetRow(scan, mapMethod, classPrice);
-      if (!row) return "";
-      return `${index + 1}\t${row}`;
-    })
+    .map((scan) => buildMemberSheetRow(scan, mapMethod, classPrice))
     .filter(Boolean)
     .join("\n");
 }
