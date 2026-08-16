@@ -9,7 +9,7 @@ export async function deletePackageAction(packageId: string) {
   try {
     await deletePackage(packageId);
     revalidatePath("/dashboard/catalog");
-    return { success: true };
+    return { success: true, errors: null };
   } catch (error) {
     return parseStateError(error as Error);
   }

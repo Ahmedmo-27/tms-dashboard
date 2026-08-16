@@ -12,6 +12,7 @@ import { useState } from "react";
 import { deletePackageAction } from "@/lib/actions/package-actions";
 import { Trash } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function DeletePackageDialog({
   pkg,
@@ -39,8 +40,7 @@ export default function DeletePackageDialog({
         setOpen(false);
         return;
       }
-      const message =
-        result.errors?.message || "Failed to delete package";
+      const message = getActionErrorMessage(result, "Failed to delete package");
       setError(message);
       toast.error(message);
     } catch (err) {

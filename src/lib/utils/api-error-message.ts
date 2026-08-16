@@ -120,3 +120,16 @@ export function getApiErrorMessage(error: unknown): string {
 
   return "An error occurred";
 }
+
+/** Read `errors.message` from a server-action result without fighting union types. */
+export function getActionErrorMessage(
+  result: unknown,
+  fallback = "An error occurred",
+): string {
+  if (!result || typeof result !== "object") return fallback;
+  const errors = (result as { errors?: unknown }).errors;
+  if (!errors || typeof errors !== "object") return fallback;
+  const message = (errors as { message?: unknown }).message;
+  if (typeof message === "string" && message.trim()) return message;
+  return fallback;
+}

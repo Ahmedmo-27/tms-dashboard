@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { unsubscribePackageAction } from "@/lib/actions/member-actions";
 import { toast } from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function CancelPackageDialog({
   uid,
@@ -49,7 +50,7 @@ export default function CancelPackageDialog({
         setOpen(false);
         return;
       }
-      const message = result.errors?.message || "Failed to cancel package";
+      const message = getActionErrorMessage(result, "Failed to cancel package");
       setError(message);
       toast.error(message);
     } catch (err) {

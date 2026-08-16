@@ -12,6 +12,7 @@ import { useState } from "react";
 import { deleteClassAction } from "@/lib/actions/class-actions";
 import { Trash } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function DeleteClassDialog({
   cls,
@@ -39,7 +40,7 @@ export default function DeleteClassDialog({
         setOpen(false);
         return;
       }
-      const message = result.errors?.message || "Failed to delete class";
+      const message = getActionErrorMessage(result, "Failed to delete class");
       setError(message);
       toast.error(message);
     } catch (err) {

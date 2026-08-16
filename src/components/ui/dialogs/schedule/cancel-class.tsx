@@ -13,6 +13,7 @@ import { cancelClassAction } from "@/lib/actions/schedule-actions";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function CancelClassDialog({
   scls,
@@ -40,7 +41,7 @@ export default function CancelClassDialog({
         setOpen(false);
         return;
       }
-      const message = result.errors?.message || "Failed to cancel class";
+      const message = getActionErrorMessage(result, "Failed to cancel class");
       setError(message);
       toast.error(message);
     } catch (err) {

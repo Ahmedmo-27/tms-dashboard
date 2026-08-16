@@ -44,7 +44,7 @@ export async function deleteClassAction(classId: string) {
   try {
     await deleteClass(classId);
     revalidatePath("/dashboard/catalog");
-    return { success: true };
+    return { success: true, errors: null };
   } catch (error) {
     return parseStateError(error as Error);
   }

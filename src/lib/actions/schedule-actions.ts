@@ -103,7 +103,7 @@ export const cancelClassAction = async (
     try {      
       await cancelClass(classId);
       revalidatePath("/dashboard/schedule");
-      return { success: true };
+      return { success: true, errors: null };
     } catch (error) {
       return parseStateError(error as Error);
     }
