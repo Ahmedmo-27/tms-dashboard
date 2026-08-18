@@ -9,10 +9,13 @@ export const coachLoginSchema = z.object({
 });
 
 export const deductionSchema = z.object({
-  reason: z.string().trim().min(5, "Reason must be at least 5 characters"),
   sessionDate: z
     .date({ required_error: "Session date is required" })
-    .refine((date) => date <= new Date(), {
+    .refine((date) => {
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      return date <= today;
+    }, {
       message: "Session date cannot be in the future",
     }),
 });

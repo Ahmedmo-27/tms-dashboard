@@ -22,16 +22,34 @@ const storage =
     ? createWebStorage("local")
     : createNoopStorage();
 
-const persistConfig = {
-  key: "root",
-  storage,
-  whitelist: ["auth", "coach"],
-};
-
 const rootReducer = combineReducers({
   auth: authReducer,
   coach: coachReducer,
 });
+
+type RootReducerState = ReturnType<typeof rootReducer>;
+
+/** Never persist JWTs — coach.token stays memory-only; auth.user must not carry token. */
+const persistConfig = {
+  key: "root",
+  storage,
+  whitelist: ["auth", "coach"],
+  partialize: (state: RootReducerState) => {
+    const user = state.auth.user as Record<string, unknown> | null;
+    let safeUser = user;
+    if (user && "token" in user) {
+      const { token: _token, ...rest } = user;
+      safeUser = rest;
+    }
+    return {
+      auth: { user: safeUser },
+      coach: {
+        ...state.coach,
+        token: null,
+      },
+    };
+  },
+};
 
 export const makeStore = () => {
   return configureStore({

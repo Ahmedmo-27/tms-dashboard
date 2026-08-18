@@ -38,24 +38,16 @@ export const registerUser = async (_prevState: unknown, formData: FormData) => {
 };
 
 export const loginAction = async (_prevState: unknown, formData: FormData) => {
-  console.log("LoginAction called with formData:", {
-    phoneNumber: formData.get("phoneNumber"),
-    hasPassword: !!formData.get("password"),
-  });
-
-  const defaultValues = z.record(z.string(), z.string()).parse({
-    phoneNumber: formData.get("phoneNumber"),
-    password: formData.get("password"),
-  });
+  const phoneNumber = String(formData.get("phoneNumber") ?? "");
+  // Never echo password back to the client
+  const defaultValues = { phoneNumber };
 
   try {
     const credentials = credentialsSchema.parse({
       phoneNumber: formData.get("phoneNumber"),
       password: formData.get("password"),
     });
-    console.log("Credentials validated, calling login...");
     const response = await login(credentials);
-    console.log("Login successful, returning response");
     return {
       defaultValues,
       success: true,
@@ -63,7 +55,6 @@ export const loginAction = async (_prevState: unknown, formData: FormData) => {
       data: response,
     };
   } catch (error) {
-    console.error("LoginAction error:", error);
     if (error instanceof NotFoundError) {
       return {
         defaultValues,
@@ -73,7 +64,8 @@ export const loginAction = async (_prevState: unknown, formData: FormData) => {
         },
       };
     }
-    return parseStateError(error as Error);
+    const parsed = parseStateError(error as Error);
+    return { ...parsed, defaultValues };
   }
 };
 

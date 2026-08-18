@@ -11,20 +11,17 @@ import { useState } from "react";
 import { useActionState } from "react";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/core/api-error";
-import { useRouter } from "next/navigation";
 import { recordNonUserBookingPaymentAction } from "@/lib/actions/booking-actions";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
-import { Badge } from "../../badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Currency } from "lucide-react";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import { Input } from "@/components/ui/input";
 
 interface ActionState {
   success: boolean;
   errors: Record<string, string> | null | ApiError;
-  data: any | null;
+  data: unknown | null;
   defaultValues?: {
     bookingId: string;
     paymentMethod: "CASH" | "VISA" | "VALUE" | "INSTAPAY" | "";
@@ -32,26 +29,11 @@ interface ActionState {
 }
 
 const paymentMethods = [
-  {
-    value: "VISA",
-    header: "Visa",
-  },
-  {
-    value: "VALU",
-    header: "Valu",
-  },
-  {
-    value: "INSTAPAY",
-    header: "Instapay",
-  },
-  {
-    value: "CASH",
-    header: "Cash",
-  },
-  {
-        value: "DEDUCTED",
-    header: "Deducted from a new package",
-  }
+  { value: "VISA", header: "Visa" },
+  { value: "VALU", header: "Valu" },
+  { value: "INSTAPAY", header: "Instapay" },
+  { value: "CASH", header: "Cash" },
+  { value: "DEDUCTED", header: "Deducted from a new package" },
 ];
 
 export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
@@ -70,7 +52,6 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
     defaultValues: { bookingId: "", paymentMethod: "CASH" },
   };
 
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -82,47 +63,67 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
     setPaymentDate(date);
   };
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setIsLoading(false);
+      setError(null);
+    }
+  };
+
   const [state, formAction, pending] = useActionState(
-    async (currentState: any, formData: FormData) => {
+    async (currentState: ActionState, formData: FormData) => {
       setIsLoading(true);
       setError(null);
 
       const defaultValues = {
         bookingId: formData.get("bookingId") as string,
-        paymentMethod: formData.get("paymentMethod") as string,
+        paymentMethod: formData.get("paymentMethod") as ActionState["defaultValues"] extends infer D
+          ? D extends { paymentMethod: infer P }
+            ? P
+            : ""
+          : "",
       };
 
-      const result = await recordNonUserBookingPaymentAction(
-        currentState,
-        formData
-      );
+      try {
+        const result = await recordNonUserBookingPaymentAction(
+          currentState,
+          formData
+        );
 
-      if (result.success) {
-        setIsOpen(false);
-        return initialState;
+        if (result.success) {
+          setIsOpen(false);
+          return initialState;
+        }
+        setError(result.errors as Error);
+        return { ...result, defaultValues } as ActionState;
+      } finally {
+        setIsLoading(false);
       }
-      setError(result.errors as Error);
-      setIsLoading(false);
-
-      return { ...result, defaultValues };
     },
     initialState
   );
 
   return (
     <div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <Badge className="font-normal cursor-pointer hover:border-yellow-500 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" onClick={() => {
-          resetModalBranch();
-          setIsOpen(true);
-        }}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="font-normal h-auto py-0.5 px-2 border-yellow-500 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
+          onClick={() => {
+            resetModalBranch();
+            setIsOpen(true);
+          }}
+        >
           Will Pay
-        </Badge>
+        </Button>
 
         <DialogContent className="z-50 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
-              Confirm Guest Attendnace
+              Confirm Guest Attendance
             </DialogTitle>
             <DialogDescription>
               Choose payment method to confirm attendance
@@ -131,6 +132,7 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
 
           <form action={formAction} className="mt-4 space-y-6">
             <input type="hidden" name="bookingId" value={bookingId} />
+            <input type="hidden" name="paymentMethod" value={selectedPaymentMethod} />
             <ManagementBranchField
               locationId={locationId}
               onLocationChange={setModalLocationId}
@@ -142,7 +144,6 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Method</Label>
                 <Select
-                  name="paymentMethod"
                   value={selectedPaymentMethod}
                   onValueChange={(value) => setSelectedPaymentMethod(value)}
                 >
@@ -167,11 +168,10 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
                 !(error instanceof ApiError) &&
                 "paymentMethod" in error && (
                   <p className="text-destructive text-xs">
-                    {(error as any).paymentMethod}
+                    {String((error as Record<string, unknown>).paymentMethod)}
                   </p>
                 )}
 
-              {/* Amount field */}
               <div className="space-y-2">
                 <Label htmlFor="amount" className="text-sm font-medium">
                   Amount
@@ -186,7 +186,6 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
                 />
               </div>
 
-              {/* Payment Date field */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Date</Label>
                 <div onClick={(e) => e.stopPropagation()}>
@@ -210,13 +209,12 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"
                 className="px-4"
                 variant="outline"
-                onClick={() => setIsOpen(false)}
+                onClick={() => handleOpenChange(false)}
               >
                 Cancel
               </Button>

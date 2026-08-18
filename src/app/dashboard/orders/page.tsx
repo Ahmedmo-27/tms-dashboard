@@ -12,7 +12,7 @@ import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: { date?: string; locationId?: string };
+  searchParams: Promise<{ date?: string; locationId?: string }>;
 }) {
   const params = await searchParams;
   const dateParam = params.date

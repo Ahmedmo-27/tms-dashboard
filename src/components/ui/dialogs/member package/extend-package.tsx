@@ -19,7 +19,7 @@ export default function ExtendPackage({
   uid,
   variant = "menu",
 }: {
-  pkg: { [x: string]: string | number | readonly string[] | undefined, name: string; pkgEndDate: string; id: string };
+  pkg: { name: string; pkgEndDate: string; pkgStartDate?: string; _id: string };
   uid: string;
   variant?: "menu" | "button";
 }) {
@@ -80,6 +80,14 @@ export default function ExtendPackage({
               }}
             />
           </div>
+          {state?.errors &&
+            typeof state.errors === "object" &&
+            "message" in state.errors &&
+            (state.errors as { message?: string }).message && (
+              <p className="text-destructive text-sm mt-3">
+                {(state.errors as { message?: string }).message}
+              </p>
+            )}
           <div className="flex justify-end gap-2 mt-4">
             <Button 
               type="button" 

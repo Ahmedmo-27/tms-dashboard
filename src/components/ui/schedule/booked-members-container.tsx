@@ -10,6 +10,7 @@ import { useState } from "react";
 import { MemberListEntry } from "./show-booked-members";
 import { cancelNonUserBooking, recordManualAttendance, removeManualAttendance } from "@/lib/data/bookings";
 import { toast } from "react-hot-toast";
+import { whatsAppHref } from "@/lib/utils/phone";
 
 export function BookedMembersContainer({
   members,
@@ -154,6 +155,7 @@ export function BookedMembersContainer({
                           size="icon"
                           variant="ghost"
                           className="h-6 w-6"
+                          aria-label={`Copy phone for ${member.name ?? "member"}`}
                           onClick={() => handleCopy(member.phone!, index)}
                         >
                           {copiedIndex === index ? (
@@ -162,14 +164,17 @@ export function BookedMembersContainer({
                             <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                           )}
                         </Button>
-                        <a
-                          href={`https://wa.me/${member.phone}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-muted"
-                        >
-                          <MessageCircle className="h-3.5 w-3.5 text-green-500" />
-                        </a>
+                        {whatsAppHref(member.phone) && (
+                          <a
+                            href={whatsAppHref(member.phone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`WhatsApp ${member.name ?? "member"}`}
+                            className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-muted"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5 text-green-500" />
+                          </a>
+                        )}
                       </>
                     )}
                     <p className="text-[10px] text-muted-foreground">

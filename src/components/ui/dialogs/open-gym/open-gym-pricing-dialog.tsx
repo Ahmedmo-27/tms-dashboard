@@ -37,6 +37,7 @@ import {
   DurationUnit,
   formatDurationLabel,
 } from "@/lib/utils/open-gym-duration";
+import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -322,8 +323,8 @@ export function OpenGymPricingDialog({
       await loadPrices();
       router.refresh();
       setOpen(false);
-    } catch {
-      toast.error("Failed to save open gym pricing");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err) || "Failed to save open gym pricing");
     } finally {
       setSaving(false);
     }
@@ -335,11 +336,12 @@ export function OpenGymPricingDialog({
       <Button
         variant="outline"
         size="sm"
+        className="w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10 px-2.5 sm:px-4"
         onClick={() => {
           setOpen(true);
         }}
       >
-        {triggerLabel}
+        <span className="truncate">{triggerLabel}</span>
       </Button>
       )}
 

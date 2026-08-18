@@ -15,7 +15,13 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setCredentials: (state, action: PayloadAction<any>) => {
-            state.user = action.payload;
+            // Never keep JWTs in Redux (they would be persisted / XSS-readable).
+            if (action.payload && typeof action.payload === "object" && "token" in action.payload) {
+                const { token: _token, ...safeUser } = action.payload;
+                state.user = safeUser;
+            } else {
+                state.user = action.payload;
+            }
         },
         logout: (state) => {
             state.user = null;

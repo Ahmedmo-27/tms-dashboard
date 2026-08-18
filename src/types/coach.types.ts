@@ -3,8 +3,11 @@ export interface ClientDto {
   name: string;
   email: string;
   phoneNumber: string;
-  source: string[];           // ["PT"], ["GROUP"], or ["PT", "GROUP"]
+  source: string[];
   activePackagesCount: number;
+  remainingClasses: number | null;
+  daysUntilExpiry: number | null;
+  nearestExpiryDate: string | null;
 }
 
 export interface ActivePackageDto {
@@ -17,29 +20,81 @@ export interface CalendarClientDto {
   memberId: string;
   name: string;
   phoneNumber: string;
-  bookingMethod: string;      // from bookedMembers[].method e.g. "5 Studio", "3 Month Ultimate Mindspacer"
+  bookingMethod: string;
   activePackage: ActivePackageDto | null;
 }
 
 export interface SessionDto {
   scheduledClassId: string;
-  classTitle: string;         // from Classes table via cid lookup
-  category: string;           // e.g. "STUDIO"
-  startTime: string;          // "HH:mm" e.g. "06:00"
-  endTime: string;            // "HH:mm" e.g. "07:00"
-  capacity: number;           // availableSlots + bookedMembers.length
-  bookedCount: number;        // bookedMembers.length
+  classTitle: string;
+  category: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  bookedCount: number;
+  location: string | null;
   clients: CalendarClientDto[];
 }
 
 export interface DayDto {
-  date: string;               // "YYYY-MM-DD"
-  dayName: string;            // "Monday"
+  date: string;
+  dayName: string;
   sessions: SessionDto[];
 }
 
 export interface ScheduleResponseDto {
   weekStart: string;
   weekEnd: string;
-  days: DayDto[];             // always 7 days Mon-Sun, empty days have sessions: []
+  days: DayDto[];
+}
+
+export interface CoachMeDto {
+  name: string;
+  email: string;
+  phoneNumber: string;
+  branchName: string | null;
+  branchLocation: string | null;
+  hasPtSessions: boolean;
+  hasScheduledClasses: boolean;
+}
+
+export interface TodaySessionSummaryDto {
+  scheduledClassId: string;
+  classTitle: string;
+  category: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  bookedCount: number;
+}
+
+export interface TodayPtAlertDto {
+  memberId: string;
+  name: string;
+  remainingClasses: number;
+  daysUntilExpiry: number;
+  packageName: string;
+}
+
+export interface TodaySummaryDto {
+  nextSession: TodaySessionSummaryDto | null;
+  todaySessions: TodaySessionSummaryDto[];
+  scans: {
+    successCount: number;
+    failedCount: number;
+    willPayCount: number;
+  };
+  tickets: { openCount: number };
+  ptAlerts: TodayPtAlertDto[];
+  unreadNotifications: number;
+}
+
+export interface DeductionHistoryItemDto {
+  id: string;
+  reason: string;
+  sessionDate: string;
+  classesRemainingAfter: number;
+  createdAt: string;
+  pkgId?: string;
 }

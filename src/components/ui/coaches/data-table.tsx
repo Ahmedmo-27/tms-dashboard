@@ -5,9 +5,10 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -18,71 +19,111 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MobileCoachCard } from "./mobile-coach-card";
 import { Coach } from "./columns";
-import EditCoachDialog from "../dialogs/coach/edit-coach";
+import { CATALOG_PAGE_SIZE, TablePagination } from "@/components/ui/table-pagination";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  isLoading?: boolean;
+  hideSearch?: boolean;
+  embedded?: boolean;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  isLoading = false,
+  hideSearch = false,
+  embedded = false,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("");
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: CATALOG_PAGE_SIZE,
+  });
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [data, globalFilter]);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     globalFilterFn: "includesString",
-    state: { globalFilter },
+    state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
   });
 
-  const filteredRows = table.getFilteredRowModel().rows;
+  if (isLoading) {
+    return (
+      <>
+        <div className="block lg:hidden">
+          <div className="space-y-2 sm:space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-28 sm:h-32 bg-muted/30 rounded-lg animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+        <div className="hidden lg:block w-full overflow-hidden rounded-lg border bg-card shadow-sm">
+          <div className="p-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 py-3 border-b last:border-0"
+              >
+                {Array.from({ length: columns.length }).map((_, j) => (
+                  <Skeleton key={j} className="h-6 w-[120px] bg-muted/60" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const pageRows = table.getRowModel().rows;
+  const filteredCount = table.getFilteredRowModel().rows.length;
 
   return (
     <>
-      <div className="mb-4">
-        <Input
-          placeholder="Search coaches..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
+      {!hideSearch && (
+        <div className="mb-4">
+          <Input
+            placeholder="Search coaches..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+      )}
 
-      {/* Mobile list view */}
-      <div className="block md:hidden">
-        {filteredRows.length > 0 ? (
-          <div className="space-y-3">
-            {filteredRows.map((row) => {
-              const coach = row.original as Coach;
-              return (
-                <div
-                  key={coach._id}
-                  className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4"
-                >
-                  <div>
-                    <p className="font-medium text-sm">{coach.coachName}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {coach.phoneNumber}
-                    </p>
-                  </div>
-                  <EditCoachDialog coach={coach} />
-                </div>
-              );
-            })}
+      <div className="block lg:hidden">
+        {pageRows.length > 0 ? (
+          <div className="space-y-2 sm:space-y-3">
+            {pageRows.map((row) => (
+              <MobileCoachCard
+                key={(row.original as Coach)._id}
+                coach={row.original as Coach}
+              />
+            ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[300px] text-center p-4">
-            <p className="text-sm font-medium text-muted-foreground mb-2">
+          <div className="flex flex-col items-center justify-center min-h-[200px] sm:h-[280px] text-center p-3 sm:p-4">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">
               No coaches found
             </p>
-            <p className="text-xs text-muted-foreground/80">
+            <p className="text-[11px] sm:text-xs text-muted-foreground/80">
               {globalFilter
                 ? "Try a different search term"
                 : "Add a coach to get started"}
@@ -91,10 +132,14 @@ export function DataTable<TData, TValue>({
         )}
       </div>
 
-      {/* Desktop table view */}
-      <div className="hidden md:block w-full overflow-hidden rounded-lg border bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <Table>
+      <div
+        className={cn(
+          "hidden lg:block w-full min-w-0 overflow-hidden",
+          embedded ? "rounded-md border" : "rounded-lg border bg-card shadow-sm"
+        )}
+      >
+        <div className="overflow-x-auto -mx-px">
+          <Table className="min-w-[520px] w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
@@ -105,8 +150,8 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "bg-muted/30 h-12 px-4 text-sm font-medium text-muted-foreground",
-                        "transition-colors hover:bg-muted/50",
+                        "bg-muted/30 h-10 px-2 text-xs font-medium text-muted-foreground lg:h-11 lg:px-3 lg:text-sm xl:px-4",
+                        "transition-colors hover:bg-muted/50 whitespace-nowrap",
                         "first:rounded-tl-lg last:rounded-tr-lg"
                       )}
                     >
@@ -122,8 +167,8 @@ export function DataTable<TData, TValue>({
               ))}
             </TableHeader>
             <TableBody>
-              {filteredRows.length ? (
-                filteredRows.map((row) => (
+              {pageRows.length ? (
+                pageRows.map((row) => (
                   <TableRow
                     key={row.id}
                     className={cn(
@@ -136,7 +181,7 @@ export function DataTable<TData, TValue>({
                       <TableCell
                         key={cell.id}
                         className={cn(
-                          "px-4 py-3 text-sm",
+                          "px-2 py-2.5 text-xs lg:px-3 lg:py-3 lg:text-sm xl:px-4 align-middle",
                           "group-last:last:rounded-br-lg group-last:first:rounded-bl-lg"
                         )}
                       >
@@ -152,7 +197,7 @@ export function DataTable<TData, TValue>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-[300px] text-center"
+                    className="h-[280px] text-center"
                   >
                     <div className="flex flex-col items-center justify-center gap-2">
                       <p className="text-sm font-medium text-muted-foreground">
@@ -171,6 +216,16 @@ export function DataTable<TData, TValue>({
           </Table>
         </div>
       </div>
+
+      <TablePagination
+        pageIndex={pagination.pageIndex}
+        pageCount={table.getPageCount()}
+        total={filteredCount}
+        pageSize={pagination.pageSize}
+        onPageChange={(pageIndex) =>
+          setPagination((prev) => ({ ...prev, pageIndex }))
+        }
+      />
     </>
   );
 }

@@ -17,7 +17,7 @@ import { Class } from "@/components/ui/classes/columns";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: { date?: string; checkInsDate?: string; locationId?: string };
+  searchParams: Promise<{ date?: string; checkInsDate?: string; locationId?: string }>;
 }) {
   let scans: any = [];
   let checkIns: any = [];

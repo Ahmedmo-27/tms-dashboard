@@ -95,6 +95,14 @@ export default function EditSlotsDialog({
                 </Button>
               </div>
             </div>
+            {state?.errors &&
+              typeof state.errors === "object" &&
+              "message" in state.errors &&
+              (state.errors as { message?: string }).message && (
+                <p className="text-destructive text-sm mt-3">
+                  {(state.errors as { message?: string }).message}
+                </p>
+              )}
             <div className="flex justify-end gap-2 mt-4">
               <Button
                 type="button"

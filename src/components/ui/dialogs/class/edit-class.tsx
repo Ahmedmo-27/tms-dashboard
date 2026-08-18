@@ -77,7 +77,7 @@ export default function EditClassDialog({
     data: null,
     defaultValues: {
       title: cls.title,
-      price: cls.price,
+      price: String(cls.price ?? ""),
       category: cls.category,
       locations: normalizedLocationIds,
     },

@@ -1,5 +1,5 @@
 import type { AxiosInstance } from "axios";
-import type { Ticket, TicketCategory, TicketStatus } from "@/lib/data/tickets";
+import type { Ticket, TicketCategory } from "@/lib/data/tickets";
 import { getBranchLabel } from "@/lib/utils/location-label";
 
 const mapTicket = (ticket: Ticket): Ticket => ({
@@ -49,15 +49,3 @@ export const submitCoachTicket = async (
   return response.data.data;
 };
 
-export const updateCoachTicketStatus = async (
-  api: AxiosInstance,
-  id: string,
-  status: TicketStatus,
-  adminNotes?: string
-) => {
-  const response = await api.patch(`/api/coach/tickets/${id}`, {
-    status,
-    ...(adminNotes !== undefined ? { adminNotes } : {}),
-  });
-  return response.data.data as Ticket;
-};

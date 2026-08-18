@@ -68,7 +68,7 @@ export default function EditPackageDialog({
       name: pkg.name,
       numberOfSessions: pkg.numberOfSessions,
       expiryPeriod: pkg.expiryPeriod,
-      price: pkg.price,
+      price: String(pkg.price ?? ""),
       category: pkg.category,
     },
   };
@@ -209,8 +209,8 @@ export default function EditPackageDialog({
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Category</Label>
+                <input type="hidden" name="category" value={selectedCategory} />
                 <Select
-                  name="category"
                   defaultValue={selectedCategory}
                   disabled={pending}
                   onValueChange={setSelectedCategory}

@@ -156,35 +156,46 @@ The Mind Space Team 💫`;
             <div className="flex flex-col space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <input hidden name="name" value={name} readOnly />
-                  <Label className="text-sm font-medium">Name</Label>
+                  <Label htmlFor="register-member-name" className="text-sm font-medium">
+                    Name
+                  </Label>
                   <Input
-                    type="string"
+                    id="register-member-name"
+                    name="name"
+                    type="text"
                     className="w-full min-h-[40px]"
+                    value={name}
                     onChange={(e) => setName(e.target.value)}
+                    required
                   />
                   {state?.errors &&
                     typeof state.errors == "object" &&
                     "name" in state.errors && (
                       <p className="text-destructive text-xs sm:text-sm">
-                        {(state.errors as any).name}
+                        {(state.errors as Record<string, string>).name}
                       </p>
                     )}
                 </div>
 
                 <div className="space-y-2">
-                  <input hidden name="phoneNumber" value={phoneNumber} readOnly />
-                  <Label className="text-sm font-medium">Phone Number</Label>
+                  <Label htmlFor="register-member-phone" className="text-sm font-medium">
+                    Phone Number
+                  </Label>
                   <Input
-                    type="string"
+                    id="register-member-phone"
+                    name="phoneNumber"
+                    type="tel"
+                    inputMode="numeric"
                     className="w-full min-h-[40px]"
+                    value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
                   />
                   {state?.errors &&
                     typeof state.errors == "object" &&
                     "phoneNumber" in state.errors && (
                       <p className="text-destructive text-xs sm:text-sm">
-                        {(state.errors as any).phoneNumber}
+                        {(state.errors as Record<string, string>).phoneNumber}
                       </p>
                     )}
                 </div>
@@ -209,6 +220,7 @@ The Mind Space Team 💫`;
                             type="button"
                             onClick={handleCopy}
                             className="min-h-[40px] px-3"
+                            aria-label="Copy generated password"
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -220,10 +232,11 @@ The Mind Space Team 💫`;
                     </TooltipProvider>
                   </div>
                   {state?.errors &&
-                    typeof state.errors == "object" &&
-                    state.errors instanceof Error && (
+                    typeof state.errors === "object" &&
+                    "message" in state.errors &&
+                    (state.errors as { message?: string }).message && (
                       <p className="text-destructive text-xs sm:text-sm">
-                        {(state.errors as any).message}
+                        {(state.errors as { message?: string }).message}
                       </p>
                     )}
                 </div>

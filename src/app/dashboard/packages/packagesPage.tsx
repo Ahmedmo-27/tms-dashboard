@@ -26,7 +26,7 @@ export default function PackagesPage({ packages, classes }: { packages: Package[
           </div>
         </div>
         <div className="w-full sm:w-auto">
-          <AddPackageDialog classes={classes}/>
+          <AddPackageDialog classes={classes} categories={[]} />
         </div>
       </div>
 

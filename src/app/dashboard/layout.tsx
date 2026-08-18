@@ -20,21 +20,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <RequirePageAccess>
         <SidebarProvider>
           <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
+          <SidebarInset className="min-h-0">
+            <header className="flex h-14 shrink-0 items-center gap-2 overflow-hidden border-b px-3 min-w-0">
               <SidebarTrigger />
               <Separator orientation="vertical" className="mr-2 h-4" />
               <Suspense fallback={null}>
                 <Nav />
               </Suspense>
-              <div className="ml-auto flex min-w-0 items-center gap-2">
+              <div className="ml-auto flex min-w-0 shrink items-center gap-2">
                 <Suspense fallback={null}>
                   <DashboardBranchBar />
                 </Suspense>
                 <CommandPalette />
               </div>
             </header>
-            <ScrollArea>{children}</ScrollArea>
+            <ScrollArea className="flex-1 min-h-0 min-w-0">
+              <div className="min-w-0 max-w-full overflow-x-hidden">{children}</div>
+            </ScrollArea>
           </SidebarInset>
         </SidebarProvider>
         </RequirePageAccess>

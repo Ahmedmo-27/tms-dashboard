@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { unsubscribePackageAction } from "@/lib/actions/member-actions";
 import { toast } from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function CancelPackageDialog({
   uid,
@@ -18,31 +19,53 @@ export default function CancelPackageDialog({
 }: {
   uid: string;
   pkg: {
-    [x: string]: string | number | readonly string[] | undefined;
     name: string;
     remainingClasses: number;
-    id: string;
+    _id: string;
     pkgStartDate: string;
   };
 }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setError(null);
+    }
+  };
 
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      await unsubscribePackageAction(uid, pkg._id as string, pkg.pkgStartDate);
-      toast.success("Package cancelled successfully");
-      setOpen(false);
-    } catch (error) {
-      console.error("Failed to delete package:", error);
-      toast.error((error as Error).message || "Failed to cancel package");
+      setError(null);
+      const result = await unsubscribePackageAction(
+        uid,
+        pkg._id as string,
+        pkg.pkgStartDate,
+      );
+      if (result.success) {
+        toast.success("Package cancelled successfully");
+        setOpen(false);
+        return;
+      }
+      const message = getActionErrorMessage(result, "Failed to cancel package");
+      setError(message);
+      toast.error(message);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to cancel package";
+      console.error("Failed to delete package:", err);
+      setError(message);
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
   };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
         <div className="w-full">
           <div
@@ -60,6 +83,11 @@ export default function CancelPackageDialog({
             This action cannot be undone. This will permanently delete your
             package.
           </DialogDescription>
+          {error && (
+            <DialogDescription className="text-red-500 whitespace-pre-wrap">
+              {error}
+            </DialogDescription>
+          )}
         </DialogHeader>
         <div className="flex justify-end gap-2 mt-4">
           <Button
@@ -69,6 +97,7 @@ export default function CancelPackageDialog({
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
+              setError(null);
             }}
           >
             Cancel

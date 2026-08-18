@@ -125,7 +125,7 @@ export const getColumns = (
     maxSize: 100,
     cell: ({ row }) => {
       const scls = row.original;
-      return <ShowBookedMembers members={scls.bookedMembers as Member[]} scid={scls._id} />;
+      return <ShowBookedMembers members={scls.bookedMembers as Member[]} scid={scls._id ?? ""} />;
     },
   },
   {

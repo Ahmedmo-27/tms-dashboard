@@ -12,6 +12,11 @@ import {
 } from "lucide-react";
 import { Package } from "./columns";
 import { cn } from "@/lib/utils";
+import {
+  formatCategory,
+  formatSessionCount,
+  getCategoryColor,
+} from "@/lib/utils/catalog";
 import DeletePackageDialog from "../dialogs/package/delete-package";
 import EditPackageDialog from "../dialogs/package/edit-package";
 import { changePackageVisibility } from "@/lib/data/package";
@@ -45,56 +50,32 @@ export function MobilePackageCard({ pkg, classes, packageCategories }: MobilePac
     setIsLoading(false);
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "FUNCTIONAL_TRAINING":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
-      case "STUDIO":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
-      case "SWIMMING":
-        return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400";
-      case "PERSONAL_TRAINING":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
-    }
-  };
-
-  const formatCategoryName = (category: string) => {
-    return category
-      .replace(/_/g, " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (l) => l.toUpperCase());
-  };
-
-  const formatClasses = (classes: string) => {
-    return classes == "1000" ? "Unlimited" : classes;
-  };
+  const opensClasses = (pkg.opensClasses ?? []).filter((c) => c?._id);
 
   return (
     <Card
       className={cn(
-        "w-full hover:shadow-md transition-shadow touch-manipulation",
+        "w-full min-w-0 hover:shadow-md transition-shadow touch-manipulation py-0",
         isHidden && "opacity-60"
       )}
       role="article"
       aria-label={`Package ${pkg.name}`}
     >
-      <CardContent className="p-4">
-        <div className="space-y-3">
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-2.5 sm:space-y-3">
           {/* Header with package name and visibility */}
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <PackageIcon className="h-5 w-5 text-primary flex-shrink-0" />
+              <PackageIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-base truncate">{pkg.name}</h3>
+                <h3 className="font-semibold text-sm sm:text-base truncate">{pkg.name}</h3>
                 <Badge
                   className={cn(
-                    "text-xs font-medium mt-1",
+                    "text-[10px] sm:text-xs font-medium mt-1 max-w-full truncate",
                     getCategoryColor(pkg.category)
                   )}
                 >
-                  {formatCategoryName(pkg.category)}
+                  {formatCategory(pkg.category)}
                 </Badge>
               </div>
             </div>
@@ -125,49 +106,59 @@ export function MobilePackageCard({ pkg, classes, packageCategories }: MobilePac
           </div>
 
           {/* Package details */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5 sm:gap-3 text-sm">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Users className="h-4 w-4 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-foreground">
-                    {formatClasses(pkg.numberOfSessions)} Sessions
+              <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-sm truncate">
+                    {formatSessionCount(pkg.numberOfSessions)} Sessions
                   </p>
-                  <p className="text-xs">Total classes</p>
+                  <p className="text-[11px] sm:text-xs">Total classes</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-foreground">
-                    {pkg.expiryPeriod}
+              <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-sm tabular-nums">
+                    {pkg.expiryPeriod} days
                   </p>
-                  <p className="text-xs">Validity period</p>
+                  <p className="text-[11px] sm:text-xs">Validity period</p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <DollarSign className="h-4 w-4 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-foreground text-lg">
-                    EGP{pkg.price}
+              <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-base sm:text-lg tabular-nums truncate">
+                    EGP {Number(pkg.price).toLocaleString()}
                   </p>
-                  <p className="text-xs">Package price</p>
+                  <p className="text-[11px] sm:text-xs">Package price</p>
                 </div>
               </div>
             </div>
           </div>
 
+          {opensClasses.length > 0 && (
+            <div className="flex flex-wrap gap-1 sm:gap-1.5">
+              {opensClasses.map((cls) => (
+                <Badge key={cls._id} variant="secondary" className="text-[10px] sm:text-xs max-w-[calc(50%-0.25rem)] truncate">
+                  {cls.title}
+                </Badge>
+              ))}
+            </div>
+          )}
+
           {/* Actions */}
-          <div className="pt-3 border-t">
-            <div className="flex gap-2 w-full">
-              <div className="flex-1">
+          <div className="pt-2.5 sm:pt-3 border-t">
+            <div className="flex flex-col min-[420px]:flex-row gap-2 w-full">
+              <div className="flex-1 min-w-0 [&_button]:w-full">
                 <EditPackageDialog pkg={pkg} classes={classes} categories={packageCategories} />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0 [&_button]:w-full">
                 <DeletePackageDialog pkg={pkg} />
               </div>
             </div>

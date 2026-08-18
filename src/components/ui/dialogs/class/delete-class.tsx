@@ -11,6 +11,8 @@ import {
 import { useState } from "react";
 import { deleteClassAction } from "@/lib/actions/class-actions";
 import { Trash } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function DeleteClassDialog({
   cls,
@@ -19,20 +21,40 @@ export default function DeleteClassDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setError(null);
+    }
+  };
 
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      await deleteClassAction(cls._id);
-      setOpen(false);
-    } catch (error) {
-      console.error('Failed to delete class:', error);
+      setError(null);
+      const result = await deleteClassAction(cls._id);
+      if (result.success) {
+        toast.success("Class deleted successfully");
+        setOpen(false);
+        return;
+      }
+      const message = getActionErrorMessage(result, "Failed to delete class");
+      setError(message);
+      toast.error(message);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to delete class";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
   };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
         <div>
           <Button
@@ -53,6 +75,11 @@ export default function DeleteClassDialog({
             This action cannot be undone. This will permanently delete your
             class.
           </DialogDescription>
+          {error && (
+            <DialogDescription className="text-red-500 whitespace-pre-wrap">
+              {error}
+            </DialogDescription>
+          )}
         </DialogHeader>
         <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
           <Button
@@ -62,6 +89,7 @@ export default function DeleteClassDialog({
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
+              setError(null);
             }}
           >
             Cancel

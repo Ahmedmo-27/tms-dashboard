@@ -9,7 +9,7 @@ export async function deletePackageAction(packageId: string) {
   try {
     await deletePackage(packageId);
     revalidatePath("/dashboard/catalog");
-    return { success: true };
+    return { success: true, errors: null };
   } catch (error) {
     return parseStateError(error as Error);
   }
@@ -74,7 +74,7 @@ export async function addPackageAction(_prevState: any, formData: FormData) {
 
     const locationId = (formData.get("locationId") as string) || undefined;
 
-    await addPackage(validatedData, locationId);
+    await addPackage(validatedData as unknown as Parameters<typeof addPackage>[0], locationId);
     revalidatePath("/dashboard/catalog");
     return { success: true, errors: null, data: null };
   } catch (error) {

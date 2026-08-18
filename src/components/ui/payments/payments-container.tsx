@@ -208,24 +208,23 @@ export default function PaymentsContainer({
       {/* Payments Table */}
       <Card>
         <CardHeader className="p-4 sm:p-6">
-          <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 sm:gap-4 min-w-0">
             <div className="min-w-0">
               <CardTitle className="text-lg sm:text-xl">Payment Transactions</CardTitle>
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {filteredPayments.length} of {payments.length} payments
                 {selectedDate && (
-                  <span className="ml-1 sm:ml-2 text-primary block sm:inline">
+                  <span className="ml-1 sm:ml-2 text-primary">
                     for {format(selectedDate, "MMM dd, yyyy")}
                   </span>
                 )}
               </p>
             </div>
 
-            <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-center">
-              {/* Date Picker */}
-              <div className="flex items-center gap-2 w-full lg:w-auto">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
                 <PaymentDatePicker
-                  className="flex-1 lg:w-[200px]"
+                  className="w-full sm:w-[200px]"
                   selectedDate={selectedDate}
                   onDateChange={handleDateChange}
                   placeholder="Filter by date"
@@ -235,7 +234,7 @@ export default function PaymentsContainer({
                     variant="outline"
                     size="sm"
                     onClick={clearDateFilter}
-                    className="px-2 flex-shrink-0"
+                    className="h-9 w-9 p-0 shrink-0"
                   >
                     <X className="h-4 w-4" />
                     <span className="sr-only">Clear date filter</span>
@@ -243,24 +242,30 @@ export default function PaymentsContainer({
                 )}
               </div>
 
-              {/* Search */}
-              <div className="relative w-full lg:w-auto">
-                <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <div className="relative w-full sm:min-w-[180px] sm:flex-1 sm:max-w-[240px]">
+                <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search payments..."
                   type="search"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 pr-4 w-full lg:w-[250px]"
+                  className="pl-8"
                 />
               </div>
 
-              {/* Transaction Type Filter */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full lg:w-auto justify-between lg:justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 w-[calc(50%-0.25rem)] sm:w-auto shrink-0 justify-center"
+                  >
                     <span className="truncate">
-                      {selectedType === "all" ? "All Types" : selectedType === "payments" ? "Payments Only" : "Refunds & Cash Outs"}
+                      {selectedType === "all"
+                        ? "All Types"
+                        : selectedType === "payments"
+                          ? "Payments Only"
+                          : "Refunds & Cash Outs"}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -288,13 +293,16 @@ export default function PaymentsContainer({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Payment Method Filter */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full lg:w-auto justify-between lg:justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 w-[calc(50%-0.25rem)] sm:w-auto shrink-0 justify-center"
+                  >
                     <span className="truncate">{selectedMethod || "All Methods"}</span>
                     {selectedMethod && (
-                      <Badge variant="secondary" className="ml-2 flex-shrink-0">
+                      <Badge variant="secondary" className="ml-2 shrink-0">
                         {stats.paymentMethods[selectedMethod]}
                       </Badge>
                     )}
@@ -325,32 +333,31 @@ export default function PaymentsContainer({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Actions */}
-              <div className="flex items-center gap-2 w-full lg:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleRefresh}
                   disabled={isRefreshing}
-                  className="flex-1 lg:flex-initial"
+                  className="h-9 flex-1 sm:flex-none"
                 >
                   <RefreshCw
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "h-4 w-4 sm:mr-2",
                       isRefreshing && "animate-spin"
                     )}
                   />
-                  <span className="hidden sm:inline">Refresh</span>
+                  <span>Refresh</span>
                 </Button>
 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 lg:flex-initial"
+                  className="h-9 flex-1 sm:flex-none"
                   onClick={() => setExportOpen(true)}
                 >
-                  <Download className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Export</span>
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span>Export</span>
                 </Button>
               </div>
             </div>

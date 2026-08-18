@@ -274,6 +274,15 @@ export default function SubPackage({
               </div>
             )}
 
+            {state?.errors &&
+              typeof state.errors === "object" &&
+              "message" in state.errors &&
+              (state.errors as { message?: string }).message && (
+                <p className="text-destructive text-sm mt-4">
+                  {(state.errors as { message?: string }).message}
+                </p>
+              )}
+
             {/* Actions */}
             <div className="flex justify-end gap-2 mt-6">
               <Button type="button" variant="outline" onClick={() => toggleOpen(false)}>

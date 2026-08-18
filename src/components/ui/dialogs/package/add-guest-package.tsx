@@ -41,7 +41,7 @@ const paymentMethods = [
   { value: "CASH", header: "Cash" },
 ];
 
-export default function addGuestPackage({
+export default function AddGuestPackage({
   packages,
   openGymOnly = false,
   hideTrigger = false,

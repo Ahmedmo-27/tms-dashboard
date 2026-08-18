@@ -11,8 +11,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginAction } from "@/lib/actions/auth-actions";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { useAppDispatch } from "@/lib/hooks";
 import { setCredentials } from "@/lib/store/features/authSlice";
 import {
@@ -25,7 +26,7 @@ import { isCoachRole, isStaffRole } from "@/lib/config/roles";
 type LoginRole = "coach" | "management" | "branch_admin" | "admin" | string;
 
 interface LoginResponseData {
-  token: string;
+  token?: string;
   userId: string;
   role: LoginRole;
   name?: string;
@@ -38,7 +39,6 @@ interface ActionState {
   data: LoginResponseData | null;
   defaultValues?: {
     phoneNumber: string;
-    password: string;
   };
 }
 
@@ -52,16 +52,15 @@ export function LoginForm({
     data: null,
     defaultValues: {
       phoneNumber: "",
-      password: "",
     },
   };
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const [state, formAction, pending] = useActionState(
     async (currentState: ActionState, formData: FormData) => {
       const defaultValues = {
         phoneNumber: formData.get("phoneNumber") as string,
-        password: formData.get("password") as string,
       };
 
       const result = (await loginAction(currentState, formData)) as ActionState;
@@ -79,6 +78,14 @@ export function LoginForm({
         }
 
         if (isCoachRole(loginData.role)) {
+          if (!loginData.token) {
+            return {
+              success: false,
+              errors: { message: "Invalid coach login response" },
+              data: null,
+              defaultValues,
+            };
+          }
           dispatch(
             setCoachCredentials({
               token: loginData.token,
@@ -86,9 +93,10 @@ export function LoginForm({
               name: loginData.name,
               hasPtSessions: loginData.hasPtSessions as boolean | undefined,
               hasScheduledClasses: loginData.hasScheduledClasses as boolean | undefined,
+              capabilitiesLoaded: false,
             })
           );
-          router.push("/coach/dashboard");
+          router.push("/coach/today");
           return initialState;
         }
 
@@ -116,7 +124,7 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {/* Flow: POST /api/auth/login → response.role === "coach" → dispatch setCoachCredentials → push("/coach/dashboard") → RequireCoachAuth validates coachSlice.token → CoachDashboardShell renders */}
+      {/* Flow: POST /api/auth/login → response.role === "coach" → dispatch setCoachCredentials → push("/coach/today") */}
       <div className="text-3xl font-bold">Welcome Spacer 👋</div>
       <Card>
         <CardHeader>
@@ -133,9 +141,10 @@ export function LoginForm({
                 <Input
                   id="phoneNumber"
                   name="phoneNumber"
-                  type="phoneNumber"
+                  type="tel"
+                  inputMode="numeric"
                   placeholder="08123456789"
-                  autoComplete="phoneNumber"
+                  autoComplete="tel"
                   defaultValue={state?.defaultValues?.phoneNumber}
                   disabled={pending}
                   required
@@ -150,15 +159,34 @@ export function LoginForm({
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
                 </div>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  disabled={pending}
-                  defaultValue={state?.defaultValues?.password}
-                  placeholder="********"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    disabled={pending}
+                    autoComplete="current-password"
+                    placeholder="********"
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-0 right-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    disabled={pending}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
               {state?.errors && "password" in state.errors && (
                 <p className="text-destructive text-sm">

@@ -12,6 +12,7 @@ import { Badge } from "../badge";
 import { Search, RefreshCw, Ticket as TicketIcon, Plus } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
@@ -32,10 +33,12 @@ export default function TicketsContainer() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const debouncedSearch = useDebounce(search, 400);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
+    setFetchError(null);
     try {
       const res = await getTickets(status, debouncedSearch || null, page, PAGE_SIZE);
       setData(res.data);
@@ -43,6 +46,8 @@ export default function TicketsContainer() {
     } catch {
       setData([]);
       setTotal(0);
+      setFetchError("Failed to load tickets. Please try again.");
+      toast.error("Failed to load tickets");
     }
     setIsLoading(false);
   }, [status, debouncedSearch, page]);
@@ -127,6 +132,12 @@ export default function TicketsContainer() {
               Refresh
             </Button>
           </div>
+
+          {fetchError && (
+            <div className="rounded-md border border-destructive/50 bg-destructive/5 p-3 text-sm text-destructive">
+              {fetchError}
+            </div>
+          )}
 
           <div className="rounded-md border">
             {isLoading ? (

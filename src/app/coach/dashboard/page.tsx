@@ -1,12 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import RequireCoachAuth from "@/components/coach/RequireCoachAuth";
-import { CoachDashboardShell } from "@/components/coach/CoachDashboardShell";
-
-export default function CoachDashboardPage() {
-  return (
-    <RequireCoachAuth>
-      <CoachDashboardShell />
-    </RequireCoachAuth>
-  );
+export default function CoachDashboardRedirectPage() {
+  redirect("/coach/today");
 }

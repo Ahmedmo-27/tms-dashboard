@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/lib/hooks";
 import { tms } from "@/lib/tms-api";
 import { isCoachRole, isStaffRole } from "@/lib/config/roles";
+import { Loader2 } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function Home() {
   useEffect(() => {
     const resolveHome = async () => {
       if (coachToken || isCoachRole(authUser?.role as string | undefined)) {
-        router.replace("/coach/dashboard");
+        router.replace("/coach/today");
         setCheckingSession(false);
         return;
       }
@@ -32,7 +33,7 @@ export default function Home() {
         const role = userData?.role as string | undefined;
 
         if (isCoachRole(role)) {
-          router.replace("/coach/dashboard");
+          router.replace("/coach/today");
           return;
         }
 
@@ -43,7 +44,7 @@ export default function Home() {
       } catch {
         try {
           await tms.get("/api/coach/auth/verifyToken");
-          router.replace("/coach/dashboard");
+          router.replace("/coach/today");
           return;
         } catch {
           router.replace("/login");
@@ -56,7 +57,14 @@ export default function Home() {
     resolveHome();
   }, [authUser, coachToken, router]);
 
-  if (checkingSession) return null;
+  if (checkingSession) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="text-sm">Checking session…</p>
+      </div>
+    );
+  }
 
   return null;
 }
