@@ -186,7 +186,7 @@ export function AddWalkIn({
 
               <div className="space-y-2">
                 <Label htmlFor="walk-in-phone" className="text-sm font-medium">
-                  Phone Number
+                  Phone Number <span className="text-muted-foreground font-normal">(optional)</span>
                 </Label>
                 <Input
                   id="walk-in-phone"

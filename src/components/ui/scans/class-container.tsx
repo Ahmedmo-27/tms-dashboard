@@ -1,4 +1,7 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
@@ -11,7 +14,7 @@ import {
 import { ScrollArea, ScrollBar } from "../scroll-area";
 import { cn } from "@/lib/utils";
 import { mapMethodToSheetLabel } from "@/lib/utils/copy-class-for-sheet";
-import { Clock, Users, UserCheck } from "lucide-react";
+import { Clock, Users, UserCheck, X, AlertTriangle } from "lucide-react";
 import { ScheduledClass } from "../schedule/columns";
 import { format } from "date-fns";
 import { CheckInsSelector } from "../dialogs/scans/check-in-selector";
@@ -20,6 +23,9 @@ import { BranchPill } from "../branch-pill";
 import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import { ScanMemberLink } from "./scan-member-link";
 import { AddWalkIn } from "../dialogs/scans/add-walk-in";
+import { removeFailedScan } from "@/lib/data/bookings";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 export interface ClassScan {
   member: string;
@@ -42,7 +48,24 @@ export const ClassContainer = ({
   classData,
   classScans,
   showBranch = false,
-}: ClassContainerProps & { showBranch?: boolean }) => {
+  onRefresh,
+}: ClassContainerProps & { showBranch?: boolean; onRefresh?: () => void }) => {
+  const [removingUid, setRemovingUid] = useState<string | null>(null);
+
+  const handleRemoveFailedScan = async (uid: string) => {
+    const scid = String(classData._id);
+    try {
+      setRemovingUid(uid);
+      await removeFailedScan(uid, scid);
+      toast.success("Failed scan removed");
+      onRefresh?.();
+    } catch (err) {
+      toast.error((err as Error).message || "Failed to remove scan");
+    } finally {
+      setRemovingUid(null);
+    }
+  };
+
   const getStatusColor = (status: ClassScan["status"]) => {
     switch (status) {
       case "SUCCESS":
@@ -129,7 +152,16 @@ export const ClassContainer = ({
                       <TableCell>
                         <ScanMemberLink name={scan.member} memberId={scan.memberId} />
                       </TableCell>
-                      <TableCell>{scan.phone}</TableCell>
+                      <TableCell>
+                        {scan.phone ? (
+                          scan.phone
+                        ) : (
+                          <Badge variant="outline" className="gap-1 border-amber-500 text-amber-600 dark:text-amber-400">
+                            <AlertTriangle className="h-3 w-3" />
+                            Missing Phone
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell>{scan.method}</TableCell>
                       <TableCell>
                         {format(new Date(scan.time), "hh:mm a")}
@@ -139,14 +171,29 @@ export const ClassContainer = ({
                           <PaymentSelectorDialog bookingId={scan.bookingId} />
                         ) : (
                           <div className="flex flex-col items-end gap-1">
-                            <Badge
-                              className={cn(
-                                "font-normal",
-                                getStatusColor(scan.status)
+                            <div className="flex items-center gap-1">
+                              <Badge
+                                className={cn(
+                                  "font-normal",
+                                  getStatusColor(scan.status)
+                                )}
+                              >
+                                {scan.status}
+                              </Badge>
+                              {scan.status === "FAILED" && scan.memberId && (
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-5 w-5 text-red-500 hover:bg-red-50 hover:text-red-700"
+                                  disabled={removingUid === scan.memberId}
+                                  onClick={() => handleRemoveFailedScan(scan.memberId!)}
+                                  aria-label="Remove failed scan"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
                               )}
-                            >
-                              {scan.status}
-                            </Badge>
+                            </div>
                             {scan.statusDetail ? (
                               <span className="text-xs text-muted-foreground max-w-[160px] text-right">
                                 {scan.statusDetail}

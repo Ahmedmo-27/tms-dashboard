@@ -287,6 +287,7 @@ export function ScanContainer({
               classData={scan.classData}
               classScans={scan.classScans}
               showBranch={isViewingAllBranches}
+              onRefresh={() => fetchAll(selectedDate, true)}
             />
           ))}
         </div>

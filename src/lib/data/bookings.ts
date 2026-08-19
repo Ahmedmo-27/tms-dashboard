@@ -166,6 +166,19 @@ export const recordManualAttendance = async (uid: string, scid: string) => {
   }
 };
 
+export const removeFailedScan = async (uid: string, scid: string) => {
+  try {
+    const response = await tms.delete("/admin/attendance/failed-scan", {
+      data: { uid, scid },
+    });
+    revalidatePath("/dashboard/scans-monitor");
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 export const removeManualAttendance = async (uid: string, scid: string) => {
   try {
     const response = await tms.delete("/admin/attendance/manual", {
