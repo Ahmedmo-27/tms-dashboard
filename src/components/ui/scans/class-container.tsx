@@ -23,7 +23,9 @@ import { BranchPill } from "../branch-pill";
 import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import { ScanMemberLink } from "./scan-member-link";
 import { AddWalkIn } from "../dialogs/scans/add-walk-in";
-import { removeFailedScan } from "@/lib/data/bookings";
+import { removeFailedScan, updateNonUserBookingPhone } from "@/lib/data/bookings";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -42,6 +44,77 @@ export interface ClassScan {
 export interface ClassContainerProps {
   classData: ScheduledClass;
   classScans: ClassScan[];
+}
+
+function MissingPhonePopover({
+  bookingId,
+  onSuccess,
+}: {
+  bookingId?: string;
+  onSuccess?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!bookingId) return;
+    if (!/^\d{11}$/.test(phone.trim())) {
+      toast.error("Please enter a valid 11-digit phone number");
+      return;
+    }
+    try {
+      setSaving(true);
+      await updateNonUserBookingPhone(bookingId, phone.trim());
+      toast.success("Phone number saved");
+      setOpen(false);
+      setPhone("");
+      onSuccess?.();
+    } catch {
+      toast.error("Failed to save phone number");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button type="button" className="cursor-pointer">
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-500 text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950"
+          >
+            <AlertTriangle className="h-3 w-3" />
+            Missing Phone
+          </Badge>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 space-y-3" align="start">
+        <p className="text-sm font-medium">Add Phone Number</p>
+        <Input
+          placeholder="01xxxxxxxxx"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          type="tel"
+          maxLength={11}
+        />
+        <div className="flex justify-end gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export const ClassContainer = ({
@@ -153,13 +226,13 @@ export const ClassContainer = ({
                         <ScanMemberLink name={scan.member} memberId={scan.memberId} />
                       </TableCell>
                       <TableCell>
-                        {scan.phone ? (
+                        {scan.phone && scan.phone !== "No Phone" ? (
                           scan.phone
                         ) : (
-                          <Badge variant="outline" className="gap-1 border-amber-500 text-amber-600 dark:text-amber-400">
-                            <AlertTriangle className="h-3 w-3" />
-                            Missing Phone
-                          </Badge>
+                          <MissingPhonePopover
+                            bookingId={scan.bookingId}
+                            onSuccess={onRefresh}
+                          />
                         )}
                       </TableCell>
                       <TableCell>{scan.method}</TableCell>

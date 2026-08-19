@@ -99,6 +99,18 @@ export const bookWalkIn = async (
   }
 };
 
+export const updateNonUserBookingPhone = async (
+  bookingId: string,
+  phoneNumber: string
+) => {
+  const response = await tms.patch(
+    `/admin/nonUserBooking/${bookingId}/phone`,
+    { phoneNumber }
+  );
+  revalidatePath("/dashboard/scans-monitor");
+  return response.data;
+};
+
 export const attendNonUserBooking = async (bookingId: string) => {
   try {
     const response = await tms.post(
