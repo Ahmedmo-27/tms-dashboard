@@ -98,8 +98,9 @@ export function CopyPaymentsForSheetButton({
         <DialogHeader>
           <DialogTitle>Copy payments for sheet</DialogTitle>
           <DialogDescription>
-            Choose which payments to copy. The data will be formatted as
-            tab-separated rows ready to paste into your spreadsheet.
+            Choose which payments to copy, then paste starting at the Name
+            column (column E). Data is tab-separated and begins with the member
+            name.
           </DialogDescription>
         </DialogHeader>
 
