@@ -68,8 +68,9 @@ export function CopyAttendanceForSheetButton({
     });
   };
 
-  const selectAll = () => resetSelection();
-  const clearAll = () => setSelectedIndexes(new Set());
+  const selectAll = () =>
+    setSelectedIndexes(new Set(eligibleScans.map((_, index) => index)));
+  const clearAll = () => resetSelection();
 
   const handleCopy = async () => {
     const selectedScans = eligibleScans.filter((_, index) =>
