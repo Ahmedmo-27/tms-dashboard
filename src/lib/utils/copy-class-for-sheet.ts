@@ -47,6 +47,7 @@ export function mapMethodToSheetLabel(method: string): MethodSheetMapping {
  * PT attendance package → sheet label.
  * e.g. "10 Personal Training with Salma" → "PT with Salma"
  * e.g. "8 pre/post pt with Ahmed" → "Pre/Post PT with Ahmed"
+ * e.g. "1 month online PT with Salma" → "Online PT with Salma"
  */
 export function mapPtMethodToSheetLabel(method: string): MethodSheetMapping {
   const normalized = (method || "").trim().toLowerCase();
@@ -55,6 +56,7 @@ export function mapPtMethodToSheetLabel(method: string): MethodSheetMapping {
     return { kind: "dropin" };
   }
 
+  const isOnline = normalized.includes("online");
   const isPrePost =
     normalized.includes("pre/post") ||
     normalized.includes("pre-post") ||
@@ -66,6 +68,9 @@ export function mapPtMethodToSheetLabel(method: string): MethodSheetMapping {
 
   if (isPt && normalized.includes("with")) {
     const coach = extractAfterWith(method);
+    if (isOnline) {
+      return { kind: "label", label: `Online PT with ${coach}` };
+    }
     if (isPrePost) {
       return { kind: "label", label: `Pre/Post PT with ${coach}` };
     }
@@ -129,11 +134,7 @@ function buildRows(
   );
 
   return eligible
-    .map((scan, index) => {
-      const row = buildMemberSheetRow(scan, mapMethod, classPrice);
-      if (!row) return "";
-      return `${index + 1}\t${row}`;
-    })
+    .map((scan) => buildMemberSheetRow(scan, mapMethod, classPrice))
     .filter(Boolean)
     .join("\n");
 }
