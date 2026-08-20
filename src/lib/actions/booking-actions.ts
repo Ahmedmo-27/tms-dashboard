@@ -98,7 +98,7 @@ export const addWalkIn = async (
     const validatedBookingData = walkInSchema.parse(bookingData);
     const booking = await bookWalkIn(
       validatedBookingData.name,
-      validatedBookingData.phoneNumber,
+      validatedBookingData.phoneNumber || "",
       validatedBookingData.scid,
       validatedBookingData.paymentMethod,
       validatedBookingData.amount,

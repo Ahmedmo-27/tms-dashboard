@@ -99,6 +99,18 @@ export const bookWalkIn = async (
   }
 };
 
+export const updateNonUserBookingPhone = async (
+  bookingId: string,
+  phoneNumber: string
+) => {
+  const response = await tms.patch(
+    `/admin/nonUserBooking/${bookingId}/phone`,
+    { phoneNumber }
+  );
+  revalidatePath("/dashboard/scans-monitor");
+  return response.data;
+};
+
 export const attendNonUserBooking = async (bookingId: string) => {
   try {
     const response = await tms.post(
@@ -159,6 +171,19 @@ export const recordManualAttendance = async (uid: string, scid: string) => {
       scid,
     });
     revalidatePath("/dashboard/schedule");
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const removeFailedScan = async (uid: string, scid: string) => {
+  try {
+    const response = await tms.delete("/admin/attendance/failed-scan", {
+      data: { uid, scid },
+    });
+    revalidatePath("/dashboard/scans-monitor");
     return response.data;
   } catch (error) {
     console.log(error);

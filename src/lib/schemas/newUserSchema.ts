@@ -58,7 +58,9 @@ export const walkInSchema = z.object({
   phoneNumber: z
     .string()
     .trim()
-    .regex(/^[0-9]{11}$/, "Invalid Phone Number"),
+    .regex(/^[0-9]{11}$/, "Invalid Phone Number")
+    .optional()
+    .or(z.literal("")),
   scid: z.string().trim(),
   paymentMethod: z.string().trim().optional(),
   amount: z.coerce.number().optional(),

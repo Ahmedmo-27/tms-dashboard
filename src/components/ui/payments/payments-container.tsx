@@ -32,6 +32,7 @@ import { format, formatDate } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { isOutflowTransaction } from "@/lib/utils/parsers/payments-parser";
 import { ExportPaymentsDialog } from "./export-payments-dialog";
+import { CopyPaymentsForSheetButton } from "./copy-payments-for-sheet-button";
 
 export default function PaymentsContainer({
   payments,
@@ -333,7 +334,7 @@ export default function PaymentsContainer({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+              <div className="flex items-center gap-2 w-full">
                 <Button
                   variant="outline"
                   size="sm"
@@ -349,6 +350,8 @@ export default function PaymentsContainer({
                   />
                   <span>Refresh</span>
                 </Button>
+
+                <CopyPaymentsForSheetButton payments={filteredPayments} />
 
                 <Button
                   variant="outline"
