@@ -76,6 +76,47 @@ function PackageVisibilityCell({ pkg }: { pkg: Package }) {
   );
 }
 
+function PackageClassesCell({ pkg }: { pkg: Package }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const opens = (pkg.opensClasses ?? []).filter((c) => c != null);
+  if (opens.length === 0) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  const visible = isExpanded ? opens : opens.slice(0, 2);
+  const remaining = opens.length - visible.length;
+
+  return (
+    <div className="flex flex-wrap gap-1 max-w-[160px] xl:max-w-[220px]">
+      {visible.map((c) => (
+        <Badge
+          key={c._id}
+          variant="secondary"
+          className="text-[10px] lg:text-xs truncate max-w-full"
+        >
+          {c.title}
+        </Badge>
+      ))}
+      {(remaining > 0 || isExpanded) && (
+        <Badge
+          asChild
+          variant="outline"
+          className="text-[10px] lg:text-xs cursor-pointer hover:bg-accent"
+        >
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            onClick={() => setIsExpanded((prev) => !prev)}
+          >
+            {isExpanded ? "Show less" : `+${remaining}`}
+          </button>
+        </Badge>
+      )}
+    </div>
+  );
+}
+
 export function createColumns(
   classes: Class[],
   packageCategories: string[],
@@ -150,28 +191,7 @@ export function createColumns(
       id: "opensClasses",
       header: "Classes",
       size: 160,
-      cell: ({ row }) => {
-        const opens = row.original.opensClasses;
-        if (!opens || opens.length === 0) {
-          return <span className="text-muted-foreground">—</span>;
-        }
-        const visible = opens.filter((c) => c != null).slice(0, 2);
-        const remaining = opens.length - visible.length;
-        return (
-          <div className="flex flex-wrap gap-1 max-w-[160px] xl:max-w-[220px]">
-            {visible.map((c) => (
-              <Badge key={c._id} variant="secondary" className="text-[10px] lg:text-xs truncate max-w-full">
-                {c.title}
-              </Badge>
-            ))}
-            {remaining > 0 && (
-              <Badge variant="outline" className="text-[10px] lg:text-xs">
-                +{remaining}
-              </Badge>
-            )}
-          </div>
-        );
-      },
+      cell: ({ row }) => <PackageClassesCell pkg={row.original} />,
     },
     {
       id: "visibility",
