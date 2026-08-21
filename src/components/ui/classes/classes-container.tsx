@@ -8,14 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../card";
 import { Input } from "../input";
 import { Badge } from "../badge";
 import { Button } from "../button";
-import {
-  Search,
-  Dumbbell,
-  Layers,
-  MapPin,
-  Gift,
-  X,
-} from "lucide-react";
+import { Search, Dumbbell, Layers, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCategory } from "@/lib/utils/catalog";
 import { Package } from "../packages/columns";
@@ -28,11 +21,6 @@ interface ClassesContainerProps {
   classCategories: string[];
   locations: Location[];
   columns: ColumnDef<Class>[];
-}
-
-function isFreePrice(price: string | number): boolean {
-  const normalized = String(price ?? "").trim();
-  return normalized === "0" || normalized === "0.00" || Number(normalized) === 0;
 }
 
 export function ClassesContainer({
@@ -60,7 +48,6 @@ export function ClassesContainer({
       total: classes.length,
       categories: new Set(classes.map((c) => c.category)).size,
       locations: uniqueLocations.size,
-      free: classes.filter((c) => isFreePrice(c.price)).length,
     };
   }, [classes]);
 
@@ -113,7 +100,7 @@ export function ClassesContainer({
       <div
         className={cn(
           "grid grid-cols-2 gap-2 sm:gap-3 md:gap-4",
-          isViewingAllBranches ? "md:grid-cols-4" : "md:grid-cols-3"
+          isViewingAllBranches ? "md:grid-cols-3" : "md:grid-cols-2"
         )}
       >
         <Card className="py-0">
@@ -165,22 +152,6 @@ export function ClassesContainer({
             </CardContent>
           </Card>
         )}
-
-        <Card className="py-0">
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] sm:text-xs lg:text-sm font-medium text-muted-foreground truncate">
-                  Free Classes
-                </p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold tabular-nums">
-                  {stats.free}
-                </p>
-              </div>
-              <Gift className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-amber-600 shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Card className="min-w-0 overflow-hidden py-0">
