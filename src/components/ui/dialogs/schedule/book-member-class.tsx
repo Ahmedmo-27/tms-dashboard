@@ -435,7 +435,7 @@ export function BookMemberClassDialog({
                 }
               >
                 {eligibility.eligible ? (
-                  <p>
+                  <div>
                     Eligible to book. Covered by{" "}
                     <span className="font-semibold">
                       {eligibility.coveringPackageName}
