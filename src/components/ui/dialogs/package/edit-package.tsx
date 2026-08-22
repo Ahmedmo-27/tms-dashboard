@@ -127,6 +127,11 @@ export default function EditPackageDialog({
                 value={classId}
               />
             ))}
+            {state?.errors && "message" in state.errors && state.errors.message && (
+              <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                {state.errors.message}
+              </div>
+            )}
             <div className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">

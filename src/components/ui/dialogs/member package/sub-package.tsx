@@ -168,6 +168,21 @@ export default function SubPackage({
               />
             </div>
 
+            {state?.errors && "message" in state.errors && state.errors.message && (
+              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                {state.errors.message}
+              </div>
+            )}
+
+            <div className="space-y-2 mt-4">
+              <ManagementBranchField
+                locationId={locationId}
+                onLocationChange={setModalLocationId}
+                needsBranchSelection={needsBranchSelection}
+                disabled={pending}
+              />
+            </div>
+
             {/* Package */}
             <div className="space-y-2 mt-4">
               <Label className="text-sm font-medium">Package</Label>

@@ -131,6 +131,11 @@ export function AddPackageDialog({
             <DialogDescription>Edit package data</DialogDescription>
           </DialogHeader>
           <form action={formAction} className="mt-4">
+            {state?.errors && "message" in state.errors && state.errors.message && (
+              <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                {state.errors.message}
+              </div>
+            )}
             {selectedClassIds.map((classId) => (
               <input
                 key={classId}
