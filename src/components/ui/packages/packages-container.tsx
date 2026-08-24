@@ -38,12 +38,16 @@ export function PackagesContainer({
   const [visibilityFilter, setVisibilityFilter] = useState<
     "all" | "visible" | "hidden"
   >("all");
+  const [deprecationFilter, setDeprecationFilter] = useState<
+    "all" | "active" | "deprecated"
+  >("all");
 
   const stats = useMemo(
     () => ({
       total: packages.length,
-      visible: packages.filter((p) => !p.hidden).length,
-      hidden: packages.filter((p) => p.hidden).length,
+      visible: packages.filter((p) => !p.hidden && !p.isDeprecated).length,
+      hidden: packages.filter((p) => p.hidden && !p.isDeprecated).length,
+      deprecated: packages.filter((p) => p.isDeprecated).length,
       categories: new Set(packages.map((p) => p.category)).size,
     }),
     [packages]
@@ -66,19 +70,26 @@ export function PackagesContainer({
         (visibilityFilter === "visible" && !pkg.hidden) ||
         (visibilityFilter === "hidden" && !!pkg.hidden);
 
-      return matchesSearch && matchesCategory && matchesVisibility;
+      const matchesDeprecation =
+        deprecationFilter === "all" ||
+        (deprecationFilter === "active" && !pkg.isDeprecated) ||
+        (deprecationFilter === "deprecated" && !!pkg.isDeprecated);
+
+      return matchesSearch && matchesCategory && matchesVisibility && matchesDeprecation;
     });
-  }, [packages, searchTerm, categoryFilter, visibilityFilter]);
+  }, [packages, searchTerm, categoryFilter, visibilityFilter, deprecationFilter]);
 
   const hasActiveFilters =
     searchTerm !== "" ||
     categoryFilter !== null ||
-    visibilityFilter !== "all";
+    visibilityFilter !== "all" ||
+    deprecationFilter !== "all";
 
   const clearFilters = () => {
     setSearchTerm("");
     setCategoryFilter(null);
     setVisibilityFilter("all");
+    setDeprecationFilter("all");
   };
 
   return (
@@ -137,13 +148,13 @@ export function PackagesContainer({
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] sm:text-xs lg:text-sm font-medium text-muted-foreground truncate">
-                  Categories
+                  Deleted (w/ members)
                 </p>
                 <p className="text-lg sm:text-xl lg:text-2xl font-bold tabular-nums">
-                  {stats.categories}
+                  {stats.deprecated}
                 </p>
               </div>
-              <Layers className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-blue-600 shrink-0" />
+              <Layers className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-destructive shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -175,29 +186,56 @@ export function PackagesContainer({
                   />
                 </div>
 
-                <div className="flex w-full rounded-lg border p-0.5 bg-muted/40 sm:w-auto">
-                  {(
-                    [
-                      { value: "all", label: "All" },
-                      { value: "visible", label: "Visible" },
-                      { value: "hidden", label: "Hidden" },
-                    ] as const
-                  ).map(({ value, label }) => (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                        "h-8 flex-1 px-2 text-[11px] font-medium rounded-md sm:flex-none sm:px-2.5 sm:text-xs",
-                        visibilityFilter === value &&
-                          "bg-background shadow-sm text-foreground"
-                      )}
-                      onClick={() => setVisibilityFilter(value)}
-                    >
-                      {label}
-                    </Button>
-                  ))}
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <div className="flex rounded-lg border p-0.5 bg-muted/40">
+                    {(
+                      [
+                        { value: "all", label: "All Statuses" },
+                        { value: "active", label: "Active" },
+                        { value: "deprecated", label: "Deleted" },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "h-8 flex-1 px-2 text-[11px] font-medium rounded-md sm:flex-none sm:px-2.5 sm:text-xs",
+                          deprecationFilter === value &&
+                            "bg-background shadow-sm text-foreground"
+                        )}
+                        onClick={() => setDeprecationFilter(value)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <div className="flex rounded-lg border p-0.5 bg-muted/40">
+                    {(
+                      [
+                        { value: "all", label: "All Visibilities" },
+                        { value: "visible", label: "Visible" },
+                        { value: "hidden", label: "Hidden" },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "h-8 flex-1 px-2 text-[11px] font-medium rounded-md sm:flex-none sm:px-2.5 sm:text-xs",
+                          visibilityFilter === value &&
+                            "bg-background shadow-sm text-foreground"
+                        )}
+                        onClick={() => setVisibilityFilter(value)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
