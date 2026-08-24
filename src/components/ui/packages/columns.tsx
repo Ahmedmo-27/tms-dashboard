@@ -28,6 +28,7 @@ export type Package = {
   category: string;
   price: string | number;
   hidden?: boolean;
+  isDeprecated?: boolean;
   locationId?: string | { _id?: string; branchName?: string; location?: string };
   opensClasses: { _id: string; title: string }[];
   classRestrictions?: { cid: string; limit: number }[];
@@ -92,11 +93,18 @@ export function createColumns(
       cell: ({ row }) => (
         <div className="min-w-[100px] max-w-[180px] lg:max-w-[220px]">
           <p className="font-medium truncate">{row.original.name}</p>
-          {row.original.hidden && (
-            <Badge variant="secondary" className="mt-1 text-[10px]">
-              Hidden
-            </Badge>
-          )}
+          <div className="flex flex-wrap gap-1 mt-1">
+            {row.original.hidden && (
+              <Badge variant="secondary" className="text-[10px]">
+                Hidden
+              </Badge>
+            )}
+            {row.original.isDeprecated && (
+              <Badge variant="destructive" className="text-[10px] bg-red-100 text-red-800 hover:bg-red-200 border-red-200">
+                Deleted (w/ active members)
+              </Badge>
+            )}
+          </div>
         </div>
       ),
     },
