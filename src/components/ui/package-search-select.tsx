@@ -43,6 +43,10 @@ export function PackageSearchSelect({
 }: PackageSearchSelectProps) {
   const [open, setOpen] = React.useState(false);
 
+  const activePackages = React.useMemo(() => {
+    return packages.filter((pkg) => !pkg.isDeprecated);
+  }, [packages]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -73,7 +77,7 @@ export function PackageSearchSelect({
           <CommandList style={{ maxHeight: "240px", overflowY: "auto" }}>
             <CommandEmpty>No packages found.</CommandEmpty>
             <CommandGroup>
-              {packages.map((pkg) => {
+              {activePackages.map((pkg) => {
                 const label = getLabel(pkg);
                 return (
                   <CommandItem
