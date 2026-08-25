@@ -19,6 +19,7 @@ export const packageSchema = z.object({
     .regex(/^[0-9]+$/, "Expiry Period must be a number")
     .min(1, "Expiry Period is required"),
   category: z.string().trim().min(1, "Category is required"),
+  coachId: z.string().trim().optional().nullable(),
   opensClasses: z.array(z.string()),
   classRestrictions: z
     .array(
@@ -29,4 +30,15 @@ export const packageSchema = z.object({
     )
     .optional()
     .default([]),
-});
+}).refine(
+  (data) => {
+    if (data.category === "PERSONAL_TRAINING") {
+      return !!data.coachId && data.coachId.trim().length > 0;
+    }
+    return true;
+  },
+  {
+    message: "A coach must be assigned to personal training packages",
+    path: ["coachId"],
+  }
+);

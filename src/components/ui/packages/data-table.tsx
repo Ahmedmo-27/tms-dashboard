@@ -25,6 +25,7 @@ import { MobilePackageCard } from "./mobile-package-card"
 import { Package } from "./columns"
 
 import { Class } from "../classes/columns"
+import { Coach } from "../coaches/columns"
 import { CATALOG_PAGE_SIZE, TablePagination } from "@/components/ui/table-pagination"
 
 export interface DataTableProps<TData, TValue> {
@@ -33,6 +34,7 @@ export interface DataTableProps<TData, TValue> {
   isLoading?: boolean
   classes?: Class[]
   packageCategories?: string[]
+  coaches?: Coach[]
   hideSearch?: boolean
   embedded?: boolean
 }
@@ -43,6 +45,7 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   classes = [],
   packageCategories = [],
+  coaches = [],
   hideSearch = false,
   embedded = false,
 }: DataTableProps<TData, TValue>) {
@@ -119,6 +122,7 @@ export function DataTable<TData, TValue>({
                 pkg={row.original as Package}
                 classes={classes}
                 packageCategories={packageCategories}
+                coaches={coaches}
               />
             ))}
           </div>

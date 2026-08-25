@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { Class } from "../classes/columns";
+import { Coach } from "../coaches/columns";
 import { formatCategory, formatSessionCount, getCategoryColor } from "@/lib/utils/catalog";
 import { createBranchColumn } from "../branch-column";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+export type PackageCoach = {
+  _id: string;
+  coachName?: string;
+  name?: string;
+  phoneNumber?: string;
+};
 
 export type Package = {
   _id: string;
@@ -31,6 +39,7 @@ export type Package = {
   hidden?: boolean;
   isDeprecated?: boolean;
   locationId?: string | { _id?: string; branchName?: string; location?: string };
+  coachId?: string | PackageCoach | null;
   opensClasses: { _id: string; title: string }[];
   classRestrictions?: { cid: string; limit: number }[];
   branchLabel?: string;
@@ -81,7 +90,8 @@ function PackageVisibilityCell({ pkg }: { pkg: Package }) {
 export function createColumns(
   classes: Class[],
   packageCategories: string[],
-  showBranch = false
+  showBranch = false,
+  coaches: Coach[] = []
 ): ColumnDef<Package>[] {
   return [
     ...createBranchColumn<Package>(showBranch, (pkg) =>
@@ -91,23 +101,37 @@ export function createColumns(
       accessorKey: "name",
       header: "Name",
       size: 180,
-      cell: ({ row }) => (
-        <div className="min-w-[100px] max-w-[180px] lg:max-w-[220px]">
-          <p className="font-medium truncate">{row.original.name}</p>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {row.original.hidden && (
-              <Badge variant="secondary" className="text-[10px]">
-                Hidden
-              </Badge>
-            )}
-            {row.original.isDeprecated && (
-              <Badge variant="destructive" className="text-[10px] bg-red-100 text-red-800 hover:bg-red-200 border-red-200">
-                Deleted (w/ active members)
-              </Badge>
-            )}
+      cell: ({ row }) => {
+        const coachName =
+          typeof row.original.coachId === "object" && row.original.coachId !== null
+            ? row.original.coachId.coachName || row.original.coachId.name
+            : typeof row.original.coachId === "string"
+            ? coaches.find((c) => c._id === row.original.coachId)?.coachName
+            : undefined;
+
+        return (
+          <div className="min-w-[100px] max-w-[180px] lg:max-w-[220px]">
+            <p className="font-medium truncate">{row.original.name}</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {coachName && (
+                <Badge variant="outline" className="text-[10px]">
+                  Coach: {coachName}
+                </Badge>
+              )}
+              {row.original.hidden && (
+                <Badge variant="secondary" className="text-[10px]">
+                  Hidden
+                </Badge>
+              )}
+              {row.original.isDeprecated && (
+                <Badge variant="destructive" className="text-[10px] bg-red-100 text-red-800 hover:bg-red-200 border-red-200">
+                  Deleted (w/ active members)
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       accessorKey: "numberOfSessions",
@@ -217,6 +241,7 @@ export function createColumns(
               pkg={pkg}
               classes={classes}
               categories={packageCategories}
+              coaches={coaches}
             />
             <DeletePackageDialog pkg={pkg} />
           </div>

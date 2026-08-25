@@ -6,7 +6,7 @@ import {
   dailySheetCsvFilename,
   buildUncompressedZip,
   sheetCsvHeaderDateToIso,
-} from "./daily-sheet-csv.ts";
+} from "./daily-sheet-csv";
 
 const SAMPLE = `Daily Check In 30/7,Name,Member,Payment,Payment Method,Purpose,Number,iD,On Sheet,On App,,,,SPACE/PT,Name,Member,Payment,Payment Method,Purpose,Number,ID,On Sheet,On App
 Strength 7:30 Am,Hana Khaled,,,,,,,,,,,,1,Nermeen Iskandar,Space membership,,,,,,,

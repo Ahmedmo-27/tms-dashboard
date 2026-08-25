@@ -51,7 +51,8 @@ function CatalogPageInner({
   const packageColumns = createPackageColumns(
     classes,
     packageCategories,
-    isViewingAllBranches
+    isViewingAllBranches,
+    coaches
   );
   const coachColumns = createCoachColumns();
 
@@ -126,6 +127,7 @@ function CatalogPageInner({
                 <AddPackageDialog
                   classes={classes}
                   categories={packageCategories}
+                  coaches={coaches}
                 />
               </div>
             </div>
@@ -137,6 +139,7 @@ function CatalogPageInner({
               classes={classes}
               packageCategories={packageCategories}
               columns={packageColumns}
+              coaches={coaches}
             />
           </div>
         </TabsContent>
