@@ -52,6 +52,7 @@ export const SHARED_GLOBAL_PAGES = [
 export const BRANCH_SCOPED_PAGES = [
   "/dashboard/scans-monitor",
   "/dashboard/qr-codes",
+  "/dashboard/sheet",
   "/dashboard/schedule",
   "/dashboard/catalog",
   "/dashboard/payments",
@@ -94,6 +95,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard": ["management", "branch_admin"],
   "/dashboard/scans-monitor": ["management", "branch_admin"],
   "/dashboard/qr-codes": ["management", "branch_admin"],
+  "/dashboard/sheet": ["management", "branch_admin"],
   "/dashboard/our-members": ["management", "branch_admin"],
   "/dashboard/member-requests": ["management", "branch_admin"],
   "/dashboard/schedule": ["management", "branch_admin"],

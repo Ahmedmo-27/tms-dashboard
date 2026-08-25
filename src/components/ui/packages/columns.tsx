@@ -1,11 +1,12 @@
 import { ColumnDef } from "@tanstack/react-table";
 import DeletePackageDialog from "../dialogs/package/delete-package";
 import EditPackageDialog from "../dialogs/package/edit-package";
-import { Eye, EyeClosed, LoaderIcon } from "lucide-react";
+import { Eye, EyeClosed, LoaderIcon, Users } from "lucide-react";
 import { Button } from "../button";
 import { Badge } from "../badge";
 import { changePackageVisibility } from "@/lib/data/package";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { Class } from "../classes/columns";
 import { formatCategory, formatSessionCount, getCategoryColor } from "@/lib/utils/catalog";
@@ -195,6 +196,23 @@ export function createColumns(
         const pkg = row.original;
         return (
           <div className="flex gap-1.5 lg:gap-2 shrink-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    asChild
+                  >
+                    <Link href={`/dashboard/packages/${pkg._id}?page=1`}>
+                      <Users className="h-4 w-4 text-primary" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View active members</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <EditPackageDialog
               pkg={pkg}
               classes={classes}

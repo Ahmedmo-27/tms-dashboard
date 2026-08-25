@@ -7,6 +7,16 @@ import { Separator } from "@/components/ui/separator";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
 import { NetworkError, UnauthorizedError } from "@/core/api-error";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
+import { formatInTimeZone } from "date-fns-tz";
+
+// The API buckets payments by Africa/Cairo calendar day, so send it a plain
+// Cairo yyyy-MM-dd rather than a locale-formatted timestamp.
+function cairoDateParam(raw?: string): string {
+  if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) return raw.trim();
+  const parsed = raw ? new Date(raw) : new Date();
+  const base = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  return formatInTimeZone(base, "Africa/Cairo", "yyyy-MM-dd");
+}
 
 export default async function Page({
   searchParams,
@@ -14,9 +24,7 @@ export default async function Page({
   searchParams: Promise<{ date?: string; locationId?: string }>;
 }) {
   const params = await searchParams;
-  const dateParam = params.date
-    ? new Date(params.date).toLocaleString().split("T")[0]
-    : new Date().toLocaleString().split("T")[0];
+  const dateParam = cairoDateParam(params.date);
   const locationId = params.locationId;
   try {
     const payments = await getPayments(dateParam, locationId);

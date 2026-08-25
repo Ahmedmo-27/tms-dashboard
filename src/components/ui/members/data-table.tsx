@@ -22,11 +22,13 @@ import { MobileMemberCard } from "./mobile-member-card"
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  pkgId?: string
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  pkgId,
 }: DataTableProps<TData, TValue>) {
   const router = useRouter()
 
@@ -45,6 +47,7 @@ export function DataTable<TData, TValue>({
             <MobileMemberCard
               key={index}
               member={member as Member}
+              pkgId={pkgId}
             />
           ))}
         </div>

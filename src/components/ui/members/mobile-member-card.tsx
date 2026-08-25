@@ -17,9 +17,10 @@ import { useRouter } from "next/navigation";
 
 interface MobileMemberCardProps {
   member: Member;
+  pkgId?: string;
 }
 
-export function MobileMemberCard({ member }: MobileMemberCardProps) {
+export function MobileMemberCard({ member, pkgId }: MobileMemberCardProps) {
   const router = useRouter();
   
   const initials = member.name
@@ -108,13 +109,34 @@ export function MobileMemberCard({ member }: MobileMemberCardProps) {
 
           {/* Package status */}
           {member.activePkgs > 0 && (
-            <div className="pt-2 border-t">
+            <div className="pt-2 border-t flex flex-col gap-1.5">
               <Badge 
-                variant={member.activePkgs > 0 ? "default" : "secondary"} 
-                className="text-xs"
+                variant={pkgId ? "outline" : "default"}
+                className={pkgId ? "text-xs w-fit bg-green-100 text-green-800 border-green-200 hover:bg-green-100" : "text-xs w-fit"}
               >
-                {member.activePkgs > 0 ? "Active Member" : "No Active Packages"}
+                {pkgId ? "Active" : "Active Member"}
               </Badge>
+              {pkgId && (() => {
+                const matchingPkg = member.packages.find(
+                  (p) => p._id === pkgId && p.status?.toUpperCase() === "ACTIVE"
+                );
+                if (matchingPkg) {
+                  const sessionsLeft = matchingPkg.remainingClasses === 1000 ? "Unlimited" : matchingPkg.remainingClasses;
+                  return (
+                    <div className="text-xs text-muted-foreground space-y-0.5 mt-0.5">
+                      <p className="font-medium text-foreground">{sessionsLeft} sessions left</p>
+                      <p className="text-[10px]">
+                        Expires {new Date(matchingPkg.pkgEndDate).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           )}
         </div>

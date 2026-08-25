@@ -5,7 +5,7 @@ import { DataTable } from "./data-table";
 import { getMembers } from "@/lib/data/member";
 import MembersPagination from "./members-pagination";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import Loading from "../loading/members-table";
@@ -23,9 +23,10 @@ import { RegisterMember } from "@/components/ui/dialogs/members/register-member"
 
 export const MEMBERS_PAGE_SIZE = 25;
 
-export default function MembersContainer() {
+export default function MembersContainer({ pkgId, packageName }: { pkgId?: string; packageName?: string } = {}) {
   const router = useRouter();
   const pathname = usePathname();
+  const tableColumns = useMemo(() => columns(pkgId), [pkgId]);
   const searchParams = useSearchParams();
   const [data, setData] = useState<Member[]>([]);
   const [totalMembers, setTotalMembers] = useState(0);
@@ -44,7 +45,9 @@ export default function MembersContainer() {
       const response = await getMembers(
         debouncedTerm || null,
         page,
-        MEMBERS_PAGE_SIZE
+        MEMBERS_PAGE_SIZE,
+        undefined,
+        pkgId
       );
       const renderedMembers: Member[] = [];
       const members = response.data;
@@ -68,14 +71,15 @@ export default function MembersContainer() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, debouncedTerm]);
+  }, [page, debouncedTerm, pkgId]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData, page]);
 
   useEffect(() => {
-    if (debouncedTerm !== searchParams.get("searchString")) {
+    const currentSearch = searchParams.get("searchString") ?? "";
+    if (debouncedTerm !== currentSearch) {
       const params = new URLSearchParams(searchParams.toString());
       if (debouncedTerm) {
         params.set("searchString", debouncedTerm);
@@ -116,9 +120,11 @@ export default function MembersContainer() {
           <div className="flex items-center gap-3 min-w-0">
             <Users className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg sm:text-xl">Members</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                {packageName ? `Active Members: ${packageName}` : "Members"}
+              </CardTitle>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Search, open a row, get to work
+                {packageName ? `All active members subscribed to this package` : "Search, open a row, get to work"}
               </p>
             </div>
           </div>
@@ -141,7 +147,7 @@ export default function MembersContainer() {
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <RegisterMember />
+            {!pkgId && <RegisterMember />}
             <Button
               variant="outline"
               size="sm"
@@ -164,7 +170,7 @@ export default function MembersContainer() {
             <NotFoundErrorPage fetchedItem="Member" />
           ) : (
             <div className="relative">
-              <DataTable columns={columns} data={data} />
+              <DataTable columns={tableColumns} data={data} pkgId={pkgId} />
               {data.length === 0 && !isLoading && (
                 <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center px-4">
                   <Users className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/50" />

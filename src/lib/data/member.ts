@@ -24,7 +24,8 @@ export const getMembers = async (
   searchString: string | undefined | null,
   page: number,
   limit: number,
-  uid?: string
+  uid?: string,
+  pkgId?: string
 ) => {
   try {
     const params: Record<string, string | number> = {
@@ -39,6 +40,7 @@ export const getMembers = async (
       }
     }
     if (uid) params.uid = uid;
+    if (pkgId) params.pkgId = pkgId;
     const response = await tms.get("/admin/member", {
       params,
     });

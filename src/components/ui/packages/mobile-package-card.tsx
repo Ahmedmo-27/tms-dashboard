@@ -156,6 +156,16 @@ export function MobilePackageCard({ pkg, classes, packageCategories }: MobilePac
           <div className="pt-2.5 sm:pt-3 border-t">
             <div className="flex flex-col min-[420px]:flex-row gap-2 w-full">
               <div className="flex-1 min-w-0 [&_button]:w-full">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/dashboard/packages/${pkg._id}?page=1`)}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Users className="h-4 w-4 text-primary" />
+                  View Members
+                </Button>
+              </div>
+              <div className="flex-1 min-w-0 [&_button]:w-full">
                 <EditPackageDialog pkg={pkg} classes={classes} categories={packageCategories} />
               </div>
               <div className="flex-1 min-w-0 [&_button]:w-full">

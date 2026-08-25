@@ -67,9 +67,11 @@ export function DialogDatePicker({
 
       {/*
         Portaled popover for desktop: dialog-safe popover (no portal) gets clipped
-        by DialogContent's transform + overflow-hidden containing block.
+        by DialogContent's transform + overflow-hidden containing block. It is not
+        modal — a modal popover inside a modal dialog leaves pointer-events: none
+        on body and the trigger stops responding.
       */}
-      <Popover modal open={open} onOpenChange={onOpenChange}>
+      <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <Button
             type="button"

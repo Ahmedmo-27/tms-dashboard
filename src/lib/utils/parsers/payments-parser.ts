@@ -244,6 +244,10 @@ export const parsePayments = (payments: unknown): Payment[] => {
       purpose = payment.pkgId.name;
     } else if (!purpose && payment.scid) {
       purpose = payment.scid.cid.title;
+    } else if (!purpose && payment.purpose === "DROPIN") {
+      purpose = "Drop-in";
+    } else if (!purpose && payment.purpose === "WALKIN") {
+      purpose = "Walk-in";
     } else if (!purpose && payment.note) {
       purpose = payment.note;
     }
