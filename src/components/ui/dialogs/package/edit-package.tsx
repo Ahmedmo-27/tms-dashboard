@@ -175,7 +175,6 @@ export default function EditPackageDialog({
                     name="numberOfSessions"
                     type="number"
                     min={1}
-                    max={100}
                     defaultValue={pkg.numberOfSessions}
                     className="w-full"
                   />

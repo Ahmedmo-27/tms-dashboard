@@ -188,7 +188,6 @@ export function AddPackageDialog({
                     name="numberOfSessions"
                     type="number"
                     min={1}
-                    max={100}
                     className="w-full"
                     defaultValue={state?.defaultValues?.numberOfSessions}
                   />
