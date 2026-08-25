@@ -66,7 +66,7 @@ function soonestActiveExpiry(packages: MemberPackage[]): Date | null {
   return new Date(Math.min(...times));
 }
 
-export const columns: ColumnDef<Member>[] = [
+export const columns = (pkgId?: string): ColumnDef<Member>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -109,6 +109,29 @@ export const columns: ColumnDef<Member>[] = [
     cell: ({ row }) => {
       const activePkgs = row.getValue("activePkgs") as number;
       const expiry = soonestActiveExpiry(row.original.packages);
+
+      if (pkgId) {
+        const matchingPkg = row.original.packages.find(
+          (p) => p._id === pkgId && p.status?.toUpperCase() === "ACTIVE"
+        );
+        if (matchingPkg) {
+          const sessionsLeft = matchingPkg.remainingClasses === 1000 ? "Unlimited" : matchingPkg.remainingClasses;
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span className="inline-flex w-fit items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                Active
+              </span>
+              <span className="text-xs text-muted-foreground font-medium">
+                {sessionsLeft} sessions left
+              </span>
+              <span className="text-[10px] text-muted-foreground/80">
+                Expires {format(new Date(matchingPkg.pkgEndDate), "dd MMM yyyy")}
+              </span>
+            </div>
+          );
+        }
+      }
+
       return (
         <div className="flex flex-col gap-0.5">
           <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">

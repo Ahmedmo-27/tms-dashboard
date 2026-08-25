@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { addPackageAction } from "@/lib/actions/package-actions";
 import {
@@ -22,6 +22,9 @@ import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { MultiSelect } from "../../multiselect";
 import { Class } from "../../classes/columns";
+import { Coach } from "../../coaches/columns";
+import { CoachSearchSelect } from "@/components/ui/coach-search-select";
+import { getCoaches } from "@/lib/data/coaches";
 import { formatCategory } from "@/lib/utils/catalog";
 import { ClassRestrictionsEditor } from "../../packages/class-restrictions-editor";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
@@ -38,6 +41,7 @@ interface ActionState {
     expiryPeriod: string;
     price: string;
     category: string;
+    coachId?: string;
     opensClasses: string[];
   };
 }
@@ -45,9 +49,11 @@ interface ActionState {
 export function AddPackageDialog({
   classes,
   categories,
+  coaches = [],
 }: {
   classes: Class[];
   categories: string[];
+  coaches?: Coach[];
 }) {
   const initialState: ActionState = {
     success: false,
@@ -60,6 +66,7 @@ export function AddPackageDialog({
       expiryPeriod: "",
       price: "",
       category: "",
+      coachId: "",
       opensClasses: [],
     },
   };
@@ -67,8 +74,22 @@ export function AddPackageDialog({
   const classMap = new Map(classes.map((cls) => [cls.title, cls._id]));
   const classesOptions = classes.map((cls) => cls.title);
 
+  const [availableCoaches, setAvailableCoaches] = useState<Coach[]>(coaches);
   const [selectedClassTitles, setSelectedClassTitles] = useState<string[]>([]);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [selectedCoachId, setSelectedCoachId] = useState("");
+
+  useEffect(() => {
+    if (coaches && coaches.length > 0) {
+      setAvailableCoaches(coaches);
+    } else {
+      getCoaches()
+        .then((data) => {
+          if (Array.isArray(data)) setAvailableCoaches(data);
+        })
+        .catch(() => {});
+    }
+  }, [coaches]);
 
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
@@ -79,12 +100,14 @@ export function AddPackageDialog({
         expiryPeriod: formData.get("expiryPeriod") as string,
         price: formData.get("price") as string,
         category: formData.get("category") as string,
+        coachId: formData.get("coachId") as string,
         opensClasses: selectedClassIds,
       };
       const result = await addPackageAction(currentState, formData);
 
       if (result.success) {
         setIsOpen(false);
+        setSelectedCoachId("");
         return initialState;
       }
       return {
@@ -114,6 +137,7 @@ export function AddPackageDialog({
       <Button
         onClick={() => {
           resetModalBranch();
+          setSelectedCoachId("");
           setIsOpen(true);
         }}
         className="w-full sm:w-auto"
@@ -279,6 +303,24 @@ export function AddPackageDialog({
                 )}
               </div>
 
+              {selectedCategory === "PERSONAL_TRAINING" && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Assign Coach</Label>
+                  <input type="hidden" name="coachId" value={selectedCoachId} />
+                  <CoachSearchSelect
+                    coaches={availableCoaches}
+                    value={selectedCoachId}
+                    onChange={setSelectedCoachId}
+                    disabled={pending}
+                  />
+                  {state?.errors && "coachId" in state.errors && (
+                    <p className="text-destructive text-sm">
+                      {state.errors.coachId}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {selectedCategory === "OPEN_GYM" && (
                 <ManagementBranchField
                   locationId={locationId}
@@ -312,7 +354,8 @@ export function AddPackageDialog({
                 className="px-4 w-full sm:w-auto"
                 disabled={
                   pending ||
-                  (selectedCategory === "OPEN_GYM" && !hasLocationId)
+                  (selectedCategory === "OPEN_GYM" && !hasLocationId) ||
+                  (selectedCategory === "PERSONAL_TRAINING" && !selectedCoachId)
                 }
                 variant="default"
               >

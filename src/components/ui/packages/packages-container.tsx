@@ -19,12 +19,14 @@ import {
 import { cn } from "@/lib/utils";
 import { formatCategory } from "@/lib/utils/catalog";
 import { Class } from "../classes/columns";
+import { Coach } from "../coaches/columns";
 
 interface PackagesContainerProps {
   packages: Package[];
   classes: Class[];
   packageCategories: string[];
   columns: ColumnDef<Package>[];
+  coaches?: Coach[];
 }
 
 export function PackagesContainer({
@@ -32,6 +34,7 @@ export function PackagesContainer({
   classes,
   packageCategories,
   columns,
+  coaches = [],
 }: PackagesContainerProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -315,6 +318,7 @@ export function PackagesContainer({
               data={filteredPackages}
               classes={classes}
               packageCategories={packageCategories}
+              coaches={coaches}
               embedded
               hideSearch
             />

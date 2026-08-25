@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { editPackageAction } from "@/lib/actions/package-actions";
 import type { Package } from "../../packages/columns";
@@ -23,6 +23,9 @@ import { Label } from "@/components/ui/label";
 import { MultiSelect } from "../../multiselect";
 import { Edit } from "lucide-react";
 import { Class } from "../../classes/columns";
+import { Coach } from "../../coaches/columns";
+import { CoachSearchSelect } from "@/components/ui/coach-search-select";
+import { getCoaches } from "@/lib/data/coaches";
 import { formatCategory } from "@/lib/utils/catalog";
 import { ClassRestrictionsEditor } from "../../packages/class-restrictions-editor";
 
@@ -37,10 +40,12 @@ export default function EditPackageDialog({
   pkg,
   classes,
   categories,
+  coaches = [],
 }: {
   pkg: Package;
   classes: Class[];
   categories: string[];
+  coaches?: Coach[];
 }) {
   const classMap = new Map(classes.map((cls) => [cls.title, cls._id]));
   const classesOptions = classes.map((cls) => cls.title);
@@ -54,11 +59,32 @@ export default function EditPackageDialog({
     validOpensClasses.map((c) => c._id)
   );
 
+  const initialCoachId =
+    typeof pkg.coachId === "object" && pkg.coachId !== null
+      ? pkg.coachId._id ?? ""
+      : typeof pkg.coachId === "string"
+      ? pkg.coachId
+      : "";
+
   const [open, setOpen] = useState(false);
+  const [availableCoaches, setAvailableCoaches] = useState<Coach[]>(coaches);
+  const [selectedCoachId, setSelectedCoachId] = useState<string>(initialCoachId);
   const [selectedCategory, setSelectedCategory] = useState(pkg.category);
   const [classRestrictions, setClassRestrictions] = useState<
     { cid: string; limit: number }[]
   >(pkg.classRestrictions ?? []);
+
+  useEffect(() => {
+    if (coaches && coaches.length > 0) {
+      setAvailableCoaches(coaches);
+    } else {
+      getCoaches()
+        .then((data) => {
+          if (Array.isArray(data)) setAvailableCoaches(data);
+        })
+        .catch(() => {});
+    }
+  }, [coaches]);
 
   const initialState: ActionState = {
     success: false,
@@ -70,6 +96,7 @@ export default function EditPackageDialog({
       expiryPeriod: pkg.expiryPeriod,
       price: String(pkg.price ?? ""),
       category: pkg.category,
+      coachId: initialCoachId,
     },
   };
 
@@ -82,6 +109,7 @@ export default function EditPackageDialog({
         expiryPeriod: formData.get("expiryPeriod") as string,
         price: formData.get("price") as string,
         category: formData.get("category") as string,
+        coachId: formData.get("coachId") as string,
       };
       const result = await editPackageAction(currentState, formData);
       if (result.success) {
@@ -241,7 +269,30 @@ export default function EditPackageDialog({
                     )}
                   </SelectContent>
                 </Select>
+                {state.errors && "category" in state.errors && (
+                  <div className="text-destructive text-sm">
+                    {state.errors.category}
+                  </div>
+                )}
               </div>
+
+              {selectedCategory === "PERSONAL_TRAINING" && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Assign Coach</Label>
+                  <input type="hidden" name="coachId" value={selectedCoachId} />
+                  <CoachSearchSelect
+                    coaches={availableCoaches}
+                    value={selectedCoachId}
+                    onChange={setSelectedCoachId}
+                    disabled={pending}
+                  />
+                  {state.errors && "coachId" in state.errors && (
+                    <div className="text-destructive text-sm">
+                      {state.errors.coachId}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {state.errors && state.errors.message && (
                 <div className="text-destructive text-sm">
@@ -262,7 +313,10 @@ export default function EditPackageDialog({
               <Button
                 type="submit"
                 className="px-4 w-full sm:w-auto"
-                disabled={pending}
+                disabled={
+                  pending ||
+                  (selectedCategory === "PERSONAL_TRAINING" && !selectedCoachId)
+                }
                 variant="default"
               >
                 {pending ? "Saving..." : "Save Changes"}

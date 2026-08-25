@@ -17,6 +17,8 @@ import {
   formatSessionCount,
   getCategoryColor,
 } from "@/lib/utils/catalog";
+import { Class } from "../classes/columns";
+import { Coach } from "../coaches/columns";
 import DeletePackageDialog from "../dialogs/package/delete-package";
 import EditPackageDialog from "../dialogs/package/edit-package";
 import { changePackageVisibility } from "@/lib/data/package";
@@ -31,11 +33,17 @@ import {
 
 interface MobilePackageCardProps {
   pkg: Package;
-  classes: import("../classes/columns").Class[];
+  classes: Class[];
   packageCategories: string[];
+  coaches?: Coach[];
 }
 
-export function MobilePackageCard({ pkg, classes, packageCategories }: MobilePackageCardProps) {
+export function MobilePackageCard({
+  pkg,
+  classes,
+  packageCategories,
+  coaches = [],
+}: MobilePackageCardProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isHidden, setIsHidden] = useState(pkg.hidden);
@@ -69,14 +77,29 @@ export function MobilePackageCard({ pkg, classes, packageCategories }: MobilePac
               <PackageIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-sm sm:text-base truncate">{pkg.name}</h3>
-                <Badge
-                  className={cn(
-                    "text-[10px] sm:text-xs font-medium mt-1 max-w-full truncate",
-                    getCategoryColor(pkg.category)
-                  )}
-                >
-                  {formatCategory(pkg.category)}
-                </Badge>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  <Badge
+                    className={cn(
+                      "text-[10px] sm:text-xs font-medium max-w-full truncate",
+                      getCategoryColor(pkg.category)
+                    )}
+                  >
+                    {formatCategory(pkg.category)}
+                  </Badge>
+                  {(() => {
+                    const coachName =
+                      typeof pkg.coachId === "object" && pkg.coachId !== null
+                        ? pkg.coachId.coachName || pkg.coachId.name
+                        : typeof pkg.coachId === "string"
+                        ? coaches.find((c) => c._id === pkg.coachId)?.coachName
+                        : undefined;
+                    return coachName ? (
+                      <Badge variant="outline" className="text-[10px] sm:text-xs">
+                        Coach: {coachName}
+                      </Badge>
+                    ) : null;
+                  })()}
+                </div>
               </div>
             </div>
             <TooltipProvider>
@@ -156,7 +179,22 @@ export function MobilePackageCard({ pkg, classes, packageCategories }: MobilePac
           <div className="pt-2.5 sm:pt-3 border-t">
             <div className="flex flex-col min-[420px]:flex-row gap-2 w-full">
               <div className="flex-1 min-w-0 [&_button]:w-full">
-                <EditPackageDialog pkg={pkg} classes={classes} categories={packageCategories} />
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/dashboard/packages/${pkg._id}?page=1`)}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Users className="h-4 w-4 text-primary" />
+                  View Members
+                </Button>
+              </div>
+              <div className="flex-1 min-w-0 [&_button]:w-full">
+                <EditPackageDialog
+                  pkg={pkg}
+                  classes={classes}
+                  categories={packageCategories}
+                  coaches={coaches}
+                />
               </div>
               <div className="flex-1 min-w-0 [&_button]:w-full">
                 <DeletePackageDialog pkg={pkg} />

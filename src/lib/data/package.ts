@@ -9,6 +9,7 @@ export interface UpdatePackagePayload {
   expiryPeriod?: string;
   price?: string;
   category?: string;
+  coachId?: string | null;
   hidden?: boolean;
   opensClasses?: string[];
   classRestrictions?: { cid: string; limit: number }[];
@@ -31,12 +32,18 @@ export const getPackages = async (locationId?: string): Promise<Package[]> => {
 
 export const addPackage = async (pkg: Package, locationId?: string) => {
   try {
+    const coachId =
+      typeof pkg.coachId === "object" && pkg.coachId !== null
+        ? pkg.coachId._id
+        : pkg.coachId;
+
     const requestBody = {
       name: pkg.name,
       numberOfSessions: pkg.numberOfSessions,
       category: pkg.category,
       price: pkg.price,
       expiryPeriod: pkg.expiryPeriod,
+      ...(coachId ? { coachId } : {}),
       opensClasses: pkg.opensClasses,
       classRestrictions: pkg.classRestrictions,
       ...(locationId ? { locationId } : {}),
