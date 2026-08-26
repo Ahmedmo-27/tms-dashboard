@@ -20,6 +20,7 @@ import { useCoachApi } from "@/hooks/useCoachApi";
 import { telHref } from "@/lib/utils/phone";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
 
 const PAGE_SIZE = 20;
@@ -218,9 +219,19 @@ export function ClientList() {
       </div>
 
       {isInitialLoad ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Loader2 className="mb-4 h-8 w-8 animate-spin" />
-          <p>Loading clients...</p>
+        <div className="divide-y overflow-hidden rounded-lg border">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-4 gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <Skeleton className="h-4 w-36 rounded" />
+                  <Skeleton className="h-3 w-24 rounded" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+            </div>
+          ))}
         </div>
       ) : loadError && safeClients.length === 0 ? (
         <div className="py-12 text-center">

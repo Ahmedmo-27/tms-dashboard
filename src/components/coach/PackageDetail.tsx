@@ -191,8 +191,23 @@ export function PackageDetail({ memberId }: PackageDetailProps) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <div className="h-3.5 w-24 animate-pulse rounded bg-muted" />
+                  <div className="h-3.5 w-16 animate-pulse rounded bg-muted" />
+                </div>
+                <div className="h-2 w-full animate-pulse rounded-full bg-muted" />
+              </div>
+              <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+            </div>
+          ))}
         </div>
       ) : packages.length === 0 ? (
         <p className="py-12 text-center text-muted-foreground">

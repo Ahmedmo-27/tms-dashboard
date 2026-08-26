@@ -135,7 +135,7 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
       </CardHeader>
       <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative flex-1 lg:max-w-md">
+          <div className="relative flex-1 lg:max-w-md" data-walkthrough="member-search-bar">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               autoFocus
@@ -163,7 +163,7 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
           </div>
         </div>
 
-        <div className="mt-4 sm:mt-6 rounded-md border overflow-hidden">
+        <div className="mt-4 sm:mt-6 rounded-md border overflow-hidden" data-walkthrough="members-table">
           {isLoading ? (
             <Loading />
           ) : error instanceof NotFoundError ? (

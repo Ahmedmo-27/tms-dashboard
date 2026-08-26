@@ -170,6 +170,7 @@ export function ScanContainer({
             </p>
           </div>
           <span
+            data-walkthrough="scans-live-badge"
             className={`text-xs font-normal px-2 py-1 rounded-full ${
               socketConnected
                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
@@ -185,13 +186,15 @@ export function ScanContainer({
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <PaymentDatePicker
-            selectedDate={selectedDate}
-            onDateChange={handleDateChange}
-          />
+          <div data-walkthrough="scans-date-picker">
+            <PaymentDatePicker
+              selectedDate={selectedDate}
+              onDateChange={handleDateChange}
+            />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" data-walkthrough="scans-quick-actions">
                 Quick actions
                 <ChevronDown className="ml-1 h-4 w-4" />
               </Button>
@@ -240,27 +243,31 @@ export function ScanContainer({
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 justify-center gap-4">
-        <AttendanceContainer
-          title="Personal Training"
-          classScans={dailyAttendance.pt}
-          showBranch={isViewingAllBranches}
-          sheetCopy={{ mapMethod: mapPtMethodToSheetLabel }}
-        />
-        <AttendanceContainer
-          title="Open Gym"
-          classScans={dailyAttendance.openGym}
-          showBranch={isViewingAllBranches}
-          sheetCopy={{ mapMethod: mapOpenGymMethodToSheetLabel }}
-          headerActions={
-            <OpenGymDropInDialog
-              triggerLabel="Add drop-in"
-              triggerClassName="min-h-[36px]"
-            />
-          }
-        />
+        <div data-walkthrough="scan-attendance-pt">
+          <AttendanceContainer
+            title="Personal Training"
+            classScans={dailyAttendance.pt}
+            showBranch={isViewingAllBranches}
+            sheetCopy={{ mapMethod: mapPtMethodToSheetLabel }}
+          />
+        </div>
+        <div data-walkthrough="scan-attendance-opengym">
+          <AttendanceContainer
+            title="Open Gym"
+            classScans={dailyAttendance.openGym}
+            showBranch={isViewingAllBranches}
+            sheetCopy={{ mapMethod: mapOpenGymMethodToSheetLabel }}
+            headerActions={
+              <OpenGymDropInDialog
+                triggerLabel="Add drop-in"
+                triggerClassName="min-h-[36px]"
+              />
+            }
+          />
+        </div>
       </div>
 
-      <div className="flex flex-row items-end justify-between border-b pb-3">
+      <div className="flex flex-row items-end justify-between border-b pb-3" data-walkthrough="scans-upcoming-classes">
         <div>
           <h2 className="text-xl font-semibold">Upcoming classes</h2>
           <p className="text-xs text-muted-foreground">

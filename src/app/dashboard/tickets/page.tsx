@@ -21,7 +21,7 @@ export default function Page() {
 
       <Separator className="hidden sm:block" />
 
-      <div className="flex-1">
+      <div className="flex-1" data-walkthrough="tickets-container">
         <TicketsContainer />
       </div>
     </div>

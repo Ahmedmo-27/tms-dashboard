@@ -39,7 +39,7 @@ export default async function Page({
         <Separator />
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1" data-walkthrough="orders-table">
           <OrdersContainer orders={orders} initialDate={dateParam} />
         </div>
       </div>
