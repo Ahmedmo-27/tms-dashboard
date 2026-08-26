@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { editPackageAction } from "@/lib/actions/package-actions";
 import type { Package } from "../../packages/columns";
 import {
@@ -66,6 +67,7 @@ export default function EditPackageDialog({
       ? pkg.coachId
       : "";
 
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [availableCoaches, setAvailableCoaches] = useState<Coach[]>(coaches);
   const [selectedCoachId, setSelectedCoachId] = useState<string>(initialCoachId);
@@ -85,6 +87,16 @@ export default function EditPackageDialog({
         .catch(() => {});
     }
   }, [coaches]);
+
+  // Reset local form state when reopening so coach/classes match latest pkg props
+  useEffect(() => {
+    if (!open) return;
+    setSelectedCoachId(initialCoachId);
+    setSelectedCategory(pkg.category);
+    setSelectedClassTitles(initialSelectedTitles);
+    setSelectedClassIds(validOpensClasses.map((c) => c._id));
+    setClassRestrictions(pkg.classRestrictions ?? []);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const initialState: ActionState = {
     success: false,
@@ -114,6 +126,7 @@ export default function EditPackageDialog({
       const result = await editPackageAction(currentState, formData);
       if (result.success) {
         setOpen(false);
+        router.refresh();
         return initialState;
       } else {
         return {
@@ -124,6 +137,11 @@ export default function EditPackageDialog({
     },
     initialState
   );
+
+  const fieldError = (key: string) =>
+    state.errors && key in state.errors
+      ? (state.errors as Record<string, string>)[key]
+      : null;
 
   return (
     <div>
@@ -171,6 +189,9 @@ export default function EditPackageDialog({
                   type="text"
                   defaultValue={pkg.name}
                 />
+                {fieldError("name") && (
+                  <div className="text-destructive text-sm">{fieldError("name")}</div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -183,6 +204,11 @@ export default function EditPackageDialog({
                     defaultValue={pkg.numberOfSessions}
                     className="w-full"
                   />
+                  {fieldError("numberOfSessions") && (
+                    <div className="text-destructive text-sm">
+                      {fieldError("numberOfSessions")}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -195,6 +221,11 @@ export default function EditPackageDialog({
                     defaultValue={pkg.expiryPeriod}
                     className="w-full"
                   />
+                  {fieldError("expiryPeriod") && (
+                    <div className="text-destructive text-sm">
+                      {fieldError("expiryPeriod")}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -208,6 +239,9 @@ export default function EditPackageDialog({
                   type="text"
                   defaultValue={pkg.price}
                 />
+                {fieldError("price") && (
+                  <div className="text-destructive text-sm">{fieldError("price")}</div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -219,10 +253,17 @@ export default function EditPackageDialog({
                   onChange={(selected) => {
                     setSelectedClassTitles(selected);
                     setSelectedClassIds(
-                      selected.map((title) => classMap.get(title) || "")
+                      selected
+                        .map((title) => classMap.get(title) || "")
+                        .filter(Boolean)
                     );
                   }}
                 />
+                {fieldError("opensClasses") && (
+                  <div className="text-destructive text-sm">
+                    {fieldError("opensClasses")}
+                  </div>
+                )}
               </div>
 
               <input
@@ -268,9 +309,9 @@ export default function EditPackageDialog({
                     )}
                   </SelectContent>
                 </Select>
-                {state.errors && "category" in state.errors && (
+                {fieldError("category") && (
                   <div className="text-destructive text-sm">
-                    {state.errors.category}
+                    {fieldError("category")}
                   </div>
                 )}
               </div>
@@ -285,17 +326,17 @@ export default function EditPackageDialog({
                     onChange={setSelectedCoachId}
                     disabled={pending}
                   />
-                  {state.errors && "coachId" in state.errors && (
+                  {fieldError("coachId") && (
                     <div className="text-destructive text-sm">
-                      {state.errors.coachId}
+                      {fieldError("coachId")}
                     </div>
                   )}
                 </div>
               )}
 
-              {state.errors && state.errors.message && (
+              {fieldError("message") && (
                 <div className="text-destructive text-sm">
-                  {state.errors.message}
+                  {fieldError("message")}
                 </div>
               )}
             </div>
