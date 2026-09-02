@@ -5,7 +5,7 @@ import { DataTable } from "./data-table";
 import { getMembers } from "@/lib/data/member";
 import MembersPagination from "./members-pagination";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import Loading from "../loading/members-table";
@@ -34,10 +34,12 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("searchString") ?? ""
+    () => searchParams.get("searchString") ?? ""
   );
   const page = Number(searchParams.get("page")) || 1;
   const debouncedTerm = useDebounce(searchTerm, 500);
+  const searchParamsRef = useRef(searchParams);
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -49,25 +51,15 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
         undefined,
         pkgId
       );
-      const renderedMembers: Member[] = [];
-      const members = response.data;
-      for (const member in members) {
-        renderedMembers.push({
-          id: members[member].id,
-          name: members[member].name,
-          phone: members[member].phone,
-          email: members[member].email,
-          activePkgs: members[member].packages.length,
-          packages: members[member].packages,
-          bookings: members[member].bookings,
-          ptAttendance: members[member].ptAttendance ?? [],
-        });
+      setData(response.data || []);
+      setTotalMembers(response.total ?? 0);
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        setData([]);
+        setTotalMembers(0);
+      } else if (err instanceof Error) {
+        setError(err);
       }
-      setData(renderedMembers);
-      setTotalMembers(response.total);
-      setIsLoading(false);
-    } catch (error) {
-      if (error instanceof Error) setError(error);
     } finally {
       setIsLoading(false);
     }
@@ -78,18 +70,19 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
   }, [fetchData, page]);
 
   useEffect(() => {
-    const currentSearch = searchParams.get("searchString") ?? "";
-    if (debouncedTerm !== currentSearch) {
-      const params = new URLSearchParams(searchParams.toString());
-      if (debouncedTerm) {
-        params.set("searchString", debouncedTerm);
-      } else {
-        params.delete("searchString");
-      }
-      params.set("page", "1");
-      router.push(`${pathname}?${params.toString()}`);
+    searchParamsRef.current = searchParams;
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsRef.current.toString());
+    if (debouncedTerm) {
+      params.set("searchString", debouncedTerm);
+    } else {
+      params.delete("searchString");
     }
-  }, [debouncedTerm, router, pathname, searchParams]);
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [debouncedTerm, router, pathname]);
 
   const handlePageChange = useCallback(
     (newPage: number) => {
@@ -97,7 +90,7 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
       const params = new URLSearchParams(searchParams.toString());
       params.set("page", newPage.toString());
       if (debouncedTerm) params.set("searchString", debouncedTerm);
-      router.push(`${pathname}?${params.toString()}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [router, pathname, searchParams, debouncedTerm]
   );

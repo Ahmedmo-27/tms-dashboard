@@ -33,11 +33,10 @@ export const getMembers = async (
       limit,
     };
     if (searchString?.trim()) {
-      if (/^\d+$/.test(searchString)) {
-        params.phone = searchString; // Search by phone if numeric
-      } else {
-        params.name = searchString; // Search by name if not numeric
-      }
+      const term = searchString.trim();
+      params.search = term;
+      params.name = term;
+      params.phone = term;
     }
     if (uid) params.uid = uid;
     if (pkgId) params.pkgId = pkgId;
