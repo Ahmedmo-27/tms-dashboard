@@ -30,7 +30,7 @@ export function ScheduledClassesContainer({
   return (
     <div className="h-full flex flex-col">
       {/* Header - responsive layout */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 px-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 px-1" data-walkthrough="schedule-calendar-header">
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold">Scheduled Classes</h2>
           <p className="text-sm text-muted-foreground">
@@ -44,18 +44,20 @@ export function ScheduledClassesContainer({
             catalogPackages={catalogPackages}
             date={date}
           />
-          <ScheduleClass
-            classIdsMap={classIdsMap}
-            date={date}
-            coaches={coaches}
-            locations={locations}
-            defaultLocationId={defaultLocationId}
-          />
+          <div data-walkthrough="schedule-add-class-btn">
+            <ScheduleClass
+              classIdsMap={classIdsMap}
+              date={date}
+              coaches={coaches}
+              locations={locations}
+              defaultLocationId={defaultLocationId}
+            />
+          </div>
         </div>
       </div>
 
       {/* Mobile Card View */}
-      <div className="block md:hidden flex-1 min-h-0 overflow-auto">
+      <div className="block md:hidden flex-1 min-h-0 overflow-auto" data-walkthrough="schedule-calendar-grid">
         {isLoading ? (
           <div className="space-y-3 p-1">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -88,7 +90,7 @@ export function ScheduledClassesContainer({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block flex-1 min-h-0 overflow-auto">
+      <div className="hidden md:block flex-1 min-h-0 overflow-auto" data-walkthrough="schedule-calendar-grid">
         <DataTable
           columns={getColumns(coaches)}
           data={scheduledClasses}

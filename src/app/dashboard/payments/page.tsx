@@ -46,7 +46,7 @@ export default async function Page({
         <Separator />
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1" data-walkthrough="payments-table">
           <PaymentsContainer payments={payments} initialDate={dateParam} />
         </div>
       </div>

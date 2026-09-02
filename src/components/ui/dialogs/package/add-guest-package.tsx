@@ -206,6 +206,12 @@ export default function AddGuestPackage({
               value={String(priceChanged)}
             />
 
+            {state?.errors && "message" in state.errors && state.errors.message && (
+              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                {state.errors.message}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4 mt-4">
               {/* Column 1 */}
               <div className="space-y-2">

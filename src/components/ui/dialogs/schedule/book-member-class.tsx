@@ -340,18 +340,42 @@ export function BookMemberClassDialog({
 
             {selectedMember && activePackagesSummary.length > 0 && (
               <div className="rounded-md border p-3 space-y-2">
-                <p className="text-sm font-medium">Active packages</p>
+                <p className="text-sm font-medium">Member Packages</p>
                 {activePackagesSummary.map((pkg) => (
-                  <div key={pkg.name} className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {pkg.name}
-                    </span>
-                    {" — "}
-                    {pkg.remainingClasses} session
-                    {pkg.remainingClasses === 1 ? "" : "s"} left
-                    {pkg.opensTitles.length > 0 && (
-                      <span> • Covers: {pkg.opensTitles.join(", ")}</span>
-                    )}
+                  <div key={pkg.name} className="text-xs text-muted-foreground flex flex-col gap-0.5 border-b pb-1.5 last:border-b-0 last:pb-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">
+                        {pkg.name}
+                      </span>
+                      {pkg.isActive ? (
+                        <span className="text-[10px] font-medium bg-green-100 text-green-800 px-1.5 py-0.5 rounded dark:bg-green-950/40 dark:text-green-300">
+                          Active
+                        </span>
+                      ) : pkg.isExpired ? (
+                        <span className="text-[10px] font-medium bg-red-100 text-red-800 px-1.5 py-0.5 rounded dark:bg-red-950/40 dark:text-red-300">
+                          Expired
+                        </span>
+                      ) : pkg.isDepleted ? (
+                        <span className="text-[10px] font-medium bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded dark:bg-amber-950/40 dark:text-amber-300">
+                          0 Sessions
+                        </span>
+                      ) : pkg.isFuture ? (
+                        <span className="text-[10px] font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded dark:bg-blue-950/40 dark:text-blue-300">
+                          Future Start
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          {pkg.status}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      {pkg.remainingClasses} session
+                      {pkg.remainingClasses === 1 ? "" : "s"} left
+                      {pkg.opensTitles.length > 0 && (
+                        <span> • Covers: {pkg.opensTitles.join(", ")}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -359,7 +383,7 @@ export function BookMemberClassDialog({
 
             {selectedMember && activePackagesSummary.length === 0 && (
               <p className="text-sm text-destructive">
-                This member has no active packages with remaining sessions.
+                This member has no packages on account.
               </p>
             )}
 
@@ -411,20 +435,22 @@ export function BookMemberClassDialog({
                 }
               >
                 {eligibility.eligible ? (
-                  <>
-                    Member can book this class using package{" "}
-                    <span className="font-medium">
+                  <div>
+                    Eligible to book. Covered by{" "}
+                    <span className="font-semibold">
                       {eligibility.coveringPackageName}
                     </span>
-                    .
                     {overrideTimeRestrictions && requiresTimeOverride && (
                       <span className="block mt-1 text-xs">
                         Booking with time restriction override.
                       </span>
                     )}
-                  </>
+                  </div>
                 ) : (
-                  eligibility.reason
+                  <div className="space-y-1">
+                    <p className="font-semibold">Cannot book this class</p>
+                    <p>{eligibility.reason}</p>
+                  </div>
                 )}
               </div>
             )}

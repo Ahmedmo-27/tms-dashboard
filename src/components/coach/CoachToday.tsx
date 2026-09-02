@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useAppSelector } from "@/lib/hooks";
+import { CoachTodaySkeleton } from "@/components/ui/loading/coach-skeletons";
 
 function formatTime12h(time: string): string {
   const [hourStr, minuteStr] = time.split(":");
@@ -51,12 +52,7 @@ export function CoachToday() {
   }, [coachApi]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mb-3 h-8 w-8 animate-spin" />
-        <p className="text-sm">Loading today…</p>
-      </div>
-    );
+    return <CoachTodaySkeleton />;
   }
 
   if (error || !data) {

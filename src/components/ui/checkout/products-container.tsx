@@ -233,7 +233,7 @@ export default function ProductsContainer({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-3">
-                <div className="flex-1">
+                <div className="flex-1" data-walkthrough="pos-barcode-input">
                   <Input
                     placeholder="Scan or type barcode..."
                     className="h-11 text-base"
@@ -258,7 +258,7 @@ export default function ProductsContainer({
           </Card>
 
           {/* Cart Table */}
-          <Card>
+          <Card data-walkthrough="pos-cart-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5" />
@@ -406,6 +406,7 @@ export default function ProductsContainer({
               <Button
                 className="w-full h-11"
                 size="lg"
+                data-walkthrough="pos-complete-order-btn"
                 onClick={handleSubmitCart}
                 disabled={!hasLocationId}
               >

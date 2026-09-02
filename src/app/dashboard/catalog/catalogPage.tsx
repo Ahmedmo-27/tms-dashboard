@@ -63,7 +63,7 @@ function CatalogPageInner({
   return (
     <div className="flex min-h-full flex-col gap-4 sm:gap-6 lg:gap-8 p-3 sm:p-6 lg:p-8 min-w-0 max-w-full overflow-x-hidden">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="min-w-0">
-        <TabsList className="mb-2 w-full sm:w-auto h-auto flex-wrap sm:flex-nowrap">
+        <TabsList className="mb-2 w-full sm:w-auto h-auto flex-wrap sm:flex-nowrap" data-walkthrough="catalog-tabs">
           <TabsTrigger value="classes" className="flex-1 sm:flex-none text-xs sm:text-sm px-2.5 sm:px-3">
             Classes
           </TabsTrigger>
@@ -90,7 +90,7 @@ function CatalogPageInner({
                   </p>
                 </div>
               </div>
-              <div className="w-full md:w-auto md:shrink-0">
+              <div className="w-full md:w-auto md:shrink-0" data-walkthrough="catalog-add-btn">
                 <AddClass categories={classCategories} locations={locations} />
               </div>
             </div>

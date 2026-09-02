@@ -52,7 +52,7 @@ export function RefundsPageContent() {
 
       <Separator />
 
-      <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-2" data-walkthrough="refunds-container">
         <MemberRefundForm />
         <CashOutForm />
       </div>
