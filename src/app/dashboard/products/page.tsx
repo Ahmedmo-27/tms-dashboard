@@ -9,7 +9,7 @@ export default async function Page() {
   try {
     const products: Product[] = await getProducts();
     return (
-      <div className="flex min-h-full flex-col gap-8 p-8">
+      <div className="flex min-h-full flex-col gap-8 p-8" data-walkthrough="products-table">
         <InventoryContainer products={products} />
       </div>
     );

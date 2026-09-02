@@ -49,7 +49,7 @@ export function QRCodesPage({
 
   return (
     <div className="p-6 space-y-8">
-      <div>
+      <div data-walkthrough="qr-type-selector">
         <h2 className="text-lg font-bold mb-4">Static QR Codes</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {visibleLocations.map((loc) => (
@@ -69,7 +69,7 @@ export function QRCodesPage({
         </div>
       </div>
 
-      <div>
+      <div data-walkthrough="qr-preview-card">
         <h2 className="text-lg font-bold mb-4">
           Today&apos;s Classes
           {visibleLocations.length === 1

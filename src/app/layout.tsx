@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/lib/store/provider";
 import { Toaster } from "react-hot-toast";
+import { PageProgressBar } from "@/components/ui/loading/page-progress-bar";
 
 export const metadata: Metadata = {
   title: "TMS Dashboard",
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body
         className="antialiased"
       >
+        <PageProgressBar />
         <Toaster position="top-right" reverseOrder={false} />
         <Providers>
           {children}

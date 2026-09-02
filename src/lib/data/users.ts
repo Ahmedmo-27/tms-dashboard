@@ -12,11 +12,10 @@ export const getUsers = async (
       limit,
     };
     if (searchString?.trim()) {
-      if (/^\d+$/.test(searchString)) {
-        params.phone = searchString; // Search by phone if numeric
-      } else {
-        params.name = searchString; // Search by name if not numeric
-      }
+      const term = searchString.trim();
+      params.search = term;
+      params.name = term;
+      params.phone = term;
     }
     const response = await tms.get("/admin/pending-members", {
       params,

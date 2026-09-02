@@ -7,6 +7,7 @@ import * as z from "zod";
 import { tms } from "@/lib/tms-api";
 import { toast } from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
+import { MailingSkeleton } from "@/components/ui/loading/mailing-skeleton";
 
 // Icons
 import { Send } from "lucide-react";
@@ -139,7 +140,7 @@ function ComposeForm() {
           <CardDescription>Compose and send an email to your members or coaches.</CardDescription>
         </CardHeader>
         <CardContent className="px-0">
-          <div className="px-6 mb-6">
+          <div className="px-6 mb-6" data-walkthrough="mail-send-mode">
             <Label className="text-sm font-semibold mb-2 block">Send Mode</Label>
             <Select value={activeTab} onValueChange={handleTabChange}>
               <SelectTrigger className="w-full h-12 bg-muted/20">
@@ -161,7 +162,11 @@ function ComposeForm() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 bg-card border rounded-none sm:rounded-lg sm:mx-6 p-4 sm:p-6 shadow-sm">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            data-walkthrough="mail-compose-form"
+            className="space-y-5 bg-card border rounded-none sm:rounded-lg sm:mx-6 p-4 sm:p-6 shadow-sm"
+          >
               {activeTab === "manual" && (
                 <div className="space-y-2">
                   <Label htmlFor="to" className="text-sm font-semibold">To</Label>
@@ -212,7 +217,13 @@ function ComposeForm() {
               </div>
 
               <div className="pt-4 flex justify-end">
-                <Button type="submit" disabled={isLoading} size="lg" className="px-8 shadow-md">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  size="lg"
+                  data-walkthrough="mail-send-btn"
+                  className="px-8 shadow-md"
+                >
                   {isLoading ? (
                     <>Sending... ⏳</>
                   ) : (
@@ -250,7 +261,7 @@ function ComposeForm() {
 
 export default function MailingPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading composer...</div>}>
+    <Suspense fallback={<MailingSkeleton />}>
       <ComposeForm />
     </Suspense>
   );

@@ -18,6 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search, RefreshCw, Plus } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/ui/loading/skeleton-table";
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
@@ -166,8 +168,17 @@ export function CoachTicketsView() {
 
           <div className="md:hidden space-y-2">
             {isLoading ? (
-              <div className="py-12 text-center text-muted-foreground">
-                Loading tickets...
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-lg border p-3 space-y-2">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-28 rounded" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="h-3 w-3/4 rounded" />
+                    <Skeleton className="h-3 w-20 rounded" />
+                  </div>
+                ))}
               </div>
             ) : data.length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">
@@ -200,8 +211,8 @@ export function CoachTicketsView() {
 
           <div className="hidden rounded-md border md:block">
             {isLoading ? (
-              <div className="py-12 text-center text-muted-foreground">
-                Loading tickets...
+              <div className="p-4">
+                <SkeletonTable columns={4} rows={6} showSearch={false} showPagination={false} />
               </div>
             ) : (
               <DataTable columns={columns} data={data} />

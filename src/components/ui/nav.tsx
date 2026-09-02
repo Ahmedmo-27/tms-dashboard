@@ -17,7 +17,7 @@ export const Nav = () => {
   const title = getPageTitle(query ? `${pathname}?${query}` : pathname);
 
   return (
-    <Breadcrumb>
+    <Breadcrumb data-walkthrough="header-breadcrumbs">
       <BreadcrumbList>
         <BreadcrumbItem className="hidden md:block">
           <BreadcrumbLink href={STAFF_HOME}>The Mind Space</BreadcrumbLink>

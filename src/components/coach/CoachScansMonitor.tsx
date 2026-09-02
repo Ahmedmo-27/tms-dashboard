@@ -47,6 +47,7 @@ import {
   formatFailedScanToast,
   type FailedScanPayload,
 } from "@/lib/socket";
+import { CoachScansSkeleton } from "@/components/ui/loading/coach-skeletons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -382,10 +383,7 @@ export function CoachScansMonitor() {
       </div>
 
       {showInitialSpinner ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Loader2 className="mb-3 h-8 w-8 animate-spin" />
-          <p className="text-sm">Loading scans...</p>
-        </div>
+        <CoachScansSkeleton />
       ) : error && isEmpty ? (
         <div className="flex flex-col items-center justify-center py-16 text-destructive">
           <CalendarX className="mb-3 h-10 w-10 opacity-60" />

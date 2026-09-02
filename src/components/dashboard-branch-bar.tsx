@@ -23,12 +23,14 @@ export function DashboardBranchBar() {
   if (!showBar) return null;
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2" data-walkthrough="branch-bar">
       <BranchActionBanner />
-      <BranchLocationFilter
-        locations={locations}
-        className="h-8 w-[180px]"
-      />
+      <div data-walkthrough="branch-select-dropdown">
+        <BranchLocationFilter
+          locations={locations}
+          className="h-8 w-[180px]"
+        />
+      </div>
     </div>
   );
 }
