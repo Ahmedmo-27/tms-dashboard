@@ -16,14 +16,18 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Calendar, MoreHorizontal, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, MoreHorizontal, ChevronDown, ChevronUp, Snowflake, Play } from "lucide-react";
 import AddClasses from "@/components/ui/dialogs/member package/add-classes";
 import ExtendPackage from "@/components/ui/dialogs/member package/extend-package";
 import SubPackage from "@/components/ui/dialogs/member package/sub-package";
 import CancelPackageDialog from "@/components/ui/dialogs/member package/cancel-package";
+import { FreezePackageDialog } from "@/components/ui/dialogs/freeze/freeze-package-dialog";
+import { adminUnfreezePackageAction } from "@/lib/actions/freeze-actions";
+import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { MobilePackageCard } from "./mobile-package-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -55,12 +59,18 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
   const sortedHistory = [...(pkg.adjustmentHistory ?? [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+  const freezeHistory = [...(pkg.freezeInfo?.freezeHistory ?? [])].sort(
+    (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+  );
 
   return (
     <Tabs defaultValue="deductions" className="w-full">
       <TabsList className="mb-2">
         <TabsTrigger value="attendance">Attendance</TabsTrigger>
         <TabsTrigger value="deductions">Deductions</TabsTrigger>
+        <TabsTrigger value="freezes">
+          Freezes {freezeHistory.length > 0 && `(${freezeHistory.length})`}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="attendance">
@@ -152,6 +162,60 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
           )}
         </ScrollArea>
       </TabsContent>
+
+      <TabsContent value="freezes">
+        <ScrollArea className="max-h-48">
+          {freezeHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No freeze history recorded
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Start Date</TableHead>
+                  <TableHead className="text-xs">End Date</TableHead>
+                  <TableHead className="text-xs">Duration</TableHead>
+                  <TableHead className="text-xs">Type</TableHead>
+                  <TableHead className="text-xs">Reason</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {freezeHistory.map((rec, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-xs text-muted-foreground py-2 whitespace-nowrap">
+                      {rec.startDate ? format(new Date(rec.startDate), "dd MMM yyyy") : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground py-2 whitespace-nowrap">
+                      {rec.endDate ? format(new Date(rec.endDate), "dd MMM yyyy") : "Active"}
+                    </TableCell>
+                    <TableCell className="text-xs font-medium py-2">
+                      {rec.durationDays} Days
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
+                          rec.type === "STANDARD"
+                            ? "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400"
+                            : rec.type === "EXTRA"
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                        )}
+                      >
+                        {rec.type}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground py-2 max-w-[160px] truncate">
+                      {rec.reason ?? "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </ScrollArea>
+      </TabsContent>
     </Tabs>
   );
 }
@@ -180,6 +244,19 @@ export default function Packages({
       else next.add(key);
       return next;
     });
+
+  const handleUnfreeze = async (packageId: string, pkgStartDate: string) => {
+    try {
+      const res = await adminUnfreezePackageAction(uid, packageId, pkgStartDate);
+      if (res.success) {
+        toast.success("Package unfrozen successfully!");
+      } else {
+        toast.error((res.errors as { message?: string })?.message || "Failed to unfreeze package");
+      }
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Failed to unfreeze package");
+    }
+  };
 
   return (
     <Card className="flex-1 border-0 shadow-none">
@@ -241,7 +318,7 @@ export default function Packages({
                 <TableHead className="text-xs sm:text-sm">End Date</TableHead>
                 <TableHead className="text-xs sm:text-sm">Status</TableHead>
                 <TableHead className="text-right text-xs sm:text-sm">Classes Left</TableHead>
-                <TableHead className="w-[120px] text-xs sm:text-sm">Actions</TableHead>
+                <TableHead className="w-[140px] text-xs sm:text-sm">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -255,6 +332,7 @@ export default function Packages({
                 memberPackages.map((pkg, index) => {
                   const key = `${pkg._id}-${pkg.pkgStartDate}`;
                   const isExpanded = expandedPkg === key;
+                  const isFrozen = pkg.status === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
                   return (
                     <>
                       <TableRow key={index} className="hover:bg-muted/50 transition-colors">
@@ -308,18 +386,26 @@ export default function Packages({
                         <TableCell className="py-3 px-2 sm:px-4">
                           <div
                             className={cn(
-                              "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                              pkg.status === "ACTIVE" &&
+                              "inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium",
+                              isFrozen &&
+                                "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300 border border-sky-300",
+                              !isFrozen && pkg.status === "ACTIVE" &&
                                 "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-                              (pkg.status === "EXPIRED" ||
+                              !isFrozen && (pkg.status === "EXPIRED" ||
                                 pkg.status === "DELETED" ||
                                 pkg.status === "COMPLETED") &&
                                 "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-                              pkg.status === "Pending" &&
+                              !isFrozen && pkg.status === "Pending" &&
                                 "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
                             )}
+                            title={
+                              isFrozen && pkg.freezeInfo?.freezeEndDate
+                                ? `Frozen until ${format(new Date(pkg.freezeInfo.freezeEndDate), "dd-MM-yyyy")}`
+                                : undefined
+                            }
                           >
-                            {pkg.status.charAt(0).toUpperCase() + pkg.status.slice(1)}
+                            {isFrozen && <Snowflake className="h-3 w-3" />}
+                            {isFrozen ? "Frozen" : pkg.status.charAt(0).toUpperCase() + pkg.status.slice(1)}
                           </div>
                         </TableCell>
                         <TableCell className="text-right py-3 px-2 sm:px-4">
@@ -338,7 +424,19 @@ export default function Packages({
                         </TableCell>
                         <TableCell className="py-3 px-2 sm:px-4">
                           <div className="flex items-center gap-1">
-                            <ExtendPackage uid={uid} pkg={pkg} variant="button" />
+                            {isFrozen ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 gap-1 text-xs text-green-700 border-green-300 hover:bg-green-50 dark:border-green-800"
+                                onClick={() => handleUnfreeze(pkg._id, pkg.pkgStartDate)}
+                              >
+                                <Play className="h-3 w-3" />
+                                Unfreeze
+                              </Button>
+                            ) : (
+                              <ExtendPackage uid={uid} pkg={pkg} variant="button" />
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -365,6 +463,18 @@ export default function Packages({
                               <DropdownMenuContent align="end" className="w-48">
                                 <AddClasses uid={uid} pkg={pkg} />
                                 <ExtendPackage uid={uid} pkg={pkg} />
+                                {!isFrozen && pkg.status === "ACTIVE" && (
+                                  <FreezePackageDialog uid={uid} pkg={pkg} />
+                                )}
+                                {isFrozen && (
+                                  <DropdownMenuItem
+                                    onSelect={() => handleUnfreeze(pkg._id, pkg.pkgStartDate)}
+                                    className="cursor-pointer text-green-600 focus:text-green-700"
+                                  >
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Unfreeze package
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 <CancelPackageDialog uid={uid} pkg={pkg} />
                               </DropdownMenuContent>

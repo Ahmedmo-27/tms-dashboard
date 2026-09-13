@@ -19,7 +19,7 @@ export const parseMembers = (members: any): Member[] => {
       const pkgName =
         pkg.pkgId?.name ??
         pkg.name ??
-        (pkg.pkgId ? "Package" : "ERROR - Contact Support");
+        (pkg.pkgId ? "Package" : "Archived Package");
 
       const bundledAttendance = (member.ptAttendance ?? [])
         .filter((rec: any) => {
@@ -34,6 +34,7 @@ export const parseMembers = (members: any): Member[] => {
         }));
 
       const rawStatus = (pkg.status ?? "").toUpperCase();
+      const isFrozen = rawStatus === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
       const pkgEndDateStr = pkg.pkgEndDate ?? "";
       const pkgStartDateStr = pkg.pkgStartDate ?? "";
       const remainingClasses =
@@ -43,7 +44,7 @@ export const parseMembers = (members: any): Member[] => {
 
       let effectiveStatus = rawStatus;
       if (rawStatus !== "DELETED") {
-        if (rawStatus === "FROZEN") {
+        if (isFrozen) {
           effectiveStatus = "FROZEN";
         } else if (
           pkgEndDateStr &&
@@ -71,6 +72,7 @@ export const parseMembers = (members: any): Member[] => {
         status: effectiveStatus,
         adjustmentHistory: pkg.adjustmentHistory ?? [],
         attendance: bundledAttendance,
+        freezeInfo: pkg.freezeInfo,
       };
       parsedPackages.push(parsedPackage);
     });

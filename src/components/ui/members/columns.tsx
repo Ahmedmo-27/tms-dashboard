@@ -27,6 +27,26 @@ export type AdjustmentRecord = {
     | "FRONTDESK_CANCELLATION";
 };
 
+export type FreezeHistory = {
+  startDate: string;
+  endDate?: string;
+  durationDays: number;
+  type: "STANDARD" | "EXTRA" | "ADMIN";
+  reason?: string;
+  approvedBy?: string | { _id: string; name: string };
+  createdAt?: string;
+};
+
+export type FreezeInfo = {
+  isFrozen: boolean;
+  freezeStartDate?: string;
+  freezeEndDate?: string;
+  allowedFreezeDays: number;
+  usedFreezeDays: number;
+  extraFreezeDaysApproved: number;
+  freezeHistory?: FreezeHistory[];
+};
+
 export type MemberPackage = {
   _id: string;
   name: string;
@@ -36,6 +56,7 @@ export type MemberPackage = {
   remainingClasses: number;
   adjustmentHistory: AdjustmentRecord[];
   attendance: { className: string; attendanceDate: string }[];
+  freezeInfo?: FreezeInfo;
 };
 
 export type Booking = {

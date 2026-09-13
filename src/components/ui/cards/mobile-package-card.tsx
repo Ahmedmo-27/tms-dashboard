@@ -4,10 +4,11 @@ import { Button } from "../button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../dropdown-menu";
-import { Calendar, Package, MoreHorizontal, Clock } from "lucide-react";
+import { Calendar, Package, MoreHorizontal, Clock, Snowflake, Play } from "lucide-react";
 import { useState } from "react";
 import { MemberPackage } from "../members/columns";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,9 @@ import { format } from "date-fns";
 import AddClasses from "../dialogs/member package/add-classes";
 import ExtendPackage from "../dialogs/member package/extend-package";
 import CancelPackageDialog from "../dialogs/member package/cancel-package";
+import { FreezePackageDialog } from "../dialogs/freeze/freeze-package-dialog";
+import { adminUnfreezePackageAction } from "@/lib/actions/freeze-actions";
+import toast from "react-hot-toast";
 
 interface MobilePackageCardProps {
   pkg: MemberPackage;
@@ -23,8 +27,25 @@ interface MobilePackageCardProps {
 
 export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
   const [isNameExpanded, setIsNameExpanded] = useState(false);
+  const isFrozen = pkg.status === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
+
+  const handleUnfreeze = async () => {
+    try {
+      const res = await adminUnfreezePackageAction(uid, pkg._id, pkg.pkgStartDate);
+      if (res.success) {
+        toast.success("Package unfrozen successfully!");
+      } else {
+        toast.error((res.errors as { message?: string })?.message || "Failed to unfreeze package");
+      }
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Failed to unfreeze package");
+    }
+  };
 
   const getStatusColor = (status: string) => {
+    if (isFrozen) {
+      return "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300 border border-sky-300";
+    }
     switch (status) {
       case "ACTIVE":
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
@@ -79,6 +100,18 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
               <DropdownMenuContent align="end" className="w-48">
                 <AddClasses uid={uid} pkg={pkg} />
                 <ExtendPackage uid={uid} pkg={pkg} />
+                {!isFrozen && pkg.status === "ACTIVE" && (
+                  <FreezePackageDialog uid={uid} pkg={pkg} />
+                )}
+                {isFrozen && (
+                  <DropdownMenuItem
+                    onSelect={handleUnfreeze}
+                    className="cursor-pointer text-green-600 focus:text-green-700"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Unfreeze package
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <CancelPackageDialog uid={uid} pkg={pkg} />
               </DropdownMenuContent>
@@ -89,11 +122,12 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
           <div className="flex items-center justify-between">
             <Badge 
               className={cn(
-                "text-xs font-medium",
+                "text-xs font-medium gap-1",
                 getStatusColor(pkg.status)
               )}
             >
-              {pkg.status.charAt(0).toUpperCase() + pkg.status.slice(1)}
+              {isFrozen && <Snowflake className="h-3 w-3" />}
+              {isFrozen ? "Frozen" : pkg.status.charAt(0).toUpperCase() + pkg.status.slice(1)}
             </Badge>
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3 text-muted-foreground" />

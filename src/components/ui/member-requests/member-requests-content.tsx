@@ -19,10 +19,10 @@ export default function MemberRequestsContent({
           <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">
-              Member Requests And New Packages
+              Member Requests
             </h1>
             <p className="text-sm text-muted-foreground">
-              Review pending member requests and packages for non app users
+              Review member signups and packages for non-app users
             </p>
           </div>
         </div>
@@ -33,6 +33,7 @@ export default function MemberRequestsContent({
 
       <div className="flex-1 space-y-10">
         <PendingMembersContainer />
+        <Separator />
         <NewPackagesContainer />
       </div>
     </div>

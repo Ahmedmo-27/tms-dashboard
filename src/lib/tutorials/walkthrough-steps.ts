@@ -428,4 +428,91 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
       fallbackSelector: "main",
     },
   ],
+
+  "package-freeze-management": [
+    {
+      targetSelector: '[data-walkthrough="freeze-overview-stats"]',
+      route: "/dashboard/package-freezes",
+      title: "Freeze Statistics & Metrics",
+      description:
+        "Monitor the total number of packages currently on hold, pending extra freeze requests, and approval history across the gym.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="admin-freeze-btn"]',
+      route: "/dashboard/package-freezes",
+      title: "Freeze a Member Package",
+      description:
+        "Click 'Freeze a Package' to manually search for a member, choose an active subscription, and set a custom freeze duration (in days or weeks) with an optional note.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="freeze-overview-stats"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="frozen-packages-search"]',
+      route: "/dashboard/package-freezes",
+      title: "Search Frozen Subscriptions",
+      description:
+        "Search currently frozen subscriptions by member name or phone number to quickly locate paused accounts.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="frozen-packages-table"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="frozen-packages-table"]',
+      route: "/dashboard/package-freezes",
+      title: "Active Frozen Packages Roster",
+      description:
+        "Inspect the freeze duration dates, remaining days countdown, updated package expiration date, and freeze reason.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="unfreeze-action-btn"]',
+      route: "/dashboard/package-freezes",
+      title: "Early Unfreeze & Quota Refund",
+      description:
+        "When a member resumes workouts early, click Unfreeze. TMS automatically refunds unused freeze days back to the member's quota and shifts expiry accordingly.",
+      placement: "left",
+      fallbackSelector: '[data-walkthrough="frozen-packages-table"]',
+    },
+  ],
+
+  "freeze-requests-triage": [
+    {
+      targetSelector: '[data-walkthrough="freeze-requests-tab-trigger"]',
+      route: "/dashboard/package-freezes?tab=freeze-requests",
+      title: "Extra Freeze Requests Queue",
+      description:
+        "Switch to Extra Freeze Requests to triage requests submitted by members through the mobile application when they need extra hold days beyond default allowances.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="freeze-tabs-list"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="freeze-status-filter"]',
+      route: "/dashboard/package-freezes?tab=freeze-requests",
+      title: "Filter by Request Status",
+      description:
+        "Filter between Pending submissions awaiting decision, Approved requests, or Rejected historical requests.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="freeze-requests-table"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="freeze-requests-table"]',
+      route: "/dashboard/package-freezes?tab=freeze-requests",
+      title: "Review Member Requests & Justifications",
+      description:
+        "Inspect the member's profile, package details, requested duration, and submitted justification (e.g. medical note, travel, or exams).",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="freeze-request-actions"]',
+      route: "/dashboard/package-freezes?tab=freeze-requests",
+      title: "Approve or Reject with Custom Duration",
+      description:
+        "Click Approve to accept or customize the granted freeze days and add an admin note, or click Reject with an explanation for the member.",
+      placement: "left",
+      fallbackSelector: '[data-walkthrough="freeze-requests-table"]',
+    },
+  ],
 };
