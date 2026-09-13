@@ -115,6 +115,8 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent) transparent;
   }
   html,
   body {
@@ -123,19 +125,58 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Global scrollbars matching theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Sidebar-specific scrollbars matching sidebar theme */
+  [data-sidebar="content"],
+  [data-slot="sidebar-content"] {
+    scrollbar-color: color-mix(in oklch, var(--sidebar-foreground) 25%, transparent) transparent;
+  }
+
+  [data-sidebar="content"]::-webkit-scrollbar-thumb,
+  [data-slot="sidebar-content"]::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--sidebar-foreground) 25%, transparent);
+  }
+
+  [data-sidebar="content"]::-webkit-scrollbar-thumb:hover,
+  [data-slot="sidebar-content"]::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--sidebar-foreground) 45%, transparent);
+  }
 }
 
-/* Dark-friendly scrollbars for overflow containers (e.g. tables) */
+/* Scrollbar utilities */
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent)
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 35%, transparent)
       transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
+    height: 6px;
+    width: 6px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -145,23 +186,30 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: color-mix(
       in oklch,
-      var(--muted-foreground) 45%,
+      var(--muted-foreground) 35%,
       transparent
     );
     border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(
       in oklch,
-      var(--muted-foreground) 65%,
+      var(--muted-foreground) 55%,
       transparent
     );
   }
 
   .scrollbar-thin::-webkit-scrollbar-corner {
     background: transparent;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
