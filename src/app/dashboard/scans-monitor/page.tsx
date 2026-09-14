@@ -32,9 +32,9 @@ export default async function Page({
     : new Date();
   try {
     const [scheduledClasses, packagesData, classesData] = await Promise.all([
-      getScheduledClasses(locationId),
-      getPackages(),
-      getClasses(),
+      getScheduledClasses(locationId, dateParam),
+      getPackages(locationId),
+      getClasses(locationId),
     ]);
     packages = packagesData;
     classes = classesData;
@@ -71,5 +71,12 @@ export default async function Page({
     } else if (error instanceof UnauthorizedError) {
       return <UnauthorizedPage />;
     }
+    return (
+      <NetworkErrorPage
+        title="Server Unavailable"
+        description={error instanceof Error ? error.message : "Unable to load scans."}
+        showBackButton={false}
+      />
+    );
   }
 }

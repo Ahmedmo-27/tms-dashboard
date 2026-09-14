@@ -36,14 +36,15 @@ export const getDailyAttendance = async (date: Date, locationId?: string) => {
 
 export async function fetchScansMonitorData(
   classDate: Date,
-  checkInsDate: Date
+  checkInsDate: Date,
+  locationId?: string
 ): Promise<{
   scans: ClassContainerProps[];
   dailyAttendance: { pt: ClassScan[]; openGym: ClassScan[] };
 }> {
   const [scheduledClasses, dailyAttendanceRaw] = await Promise.all([
-    getScheduledClasses(),
-    getDailyAttendance(checkInsDate),
+    getScheduledClasses(locationId, classDate),
+    getDailyAttendance(checkInsDate, locationId),
   ]);
 
   const scans =

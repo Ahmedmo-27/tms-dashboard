@@ -116,8 +116,6 @@ function ProgressBarInner() {
     };
   }, []);
 
-  if (!visible && progress === 0) return null;
-
   return (
     <div
       aria-hidden="true"
