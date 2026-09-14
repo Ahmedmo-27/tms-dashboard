@@ -67,16 +67,7 @@ export const recordNonUserBookingPaymentAction = async (
       data: booking,
     };
   } catch (e) {
-    if (e instanceof ApiError) {
-      console.log("State Error")
-      console.log(e)
-      return {
-        success: false,
-        errors: e,
-        data: null,
-      };
-    }
-   return parseStateError(e as Error);
+    return parseStateError(e as Error);
   }
 };
 
@@ -116,14 +107,6 @@ export const addWalkIn = async (
       data: null,
     };
   } catch (e) {
-    if (e instanceof ApiError) {
-      console.log(e)
-      return {
-        success: false,
-        errors: e,
-        data: null,
-      };
-    }
-   return parseStateError(e as Error);
+    return parseStateError(e as Error);
   }
 };

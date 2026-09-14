@@ -50,7 +50,6 @@ export function RegisterMember() {
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -59,7 +58,6 @@ export function RegisterMember() {
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
       setIsLoading(true);
-      setError(null);
       const defaultValues = {
         name: formData.get("name") as string,
         password: formData.get("password") as string,
@@ -73,7 +71,6 @@ export function RegisterMember() {
         return initialState;
       }
 
-      setError(result.errors as Error);
       setIsLoading(false); 
       return {
         ...result,

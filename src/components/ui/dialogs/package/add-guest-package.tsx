@@ -79,7 +79,6 @@ export default function AddGuestPackage({
   const [priceChanged, setPriceChanged] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
   // Reset state when modal opens
   const resetForm = () => {
@@ -109,6 +108,10 @@ export default function AddGuestPackage({
     setSelectedEndDate(getPackageEndDateFromStart(date, pkg));
   };
 
+  const handleDateChange = (date: string) => {
+    setSelectedPaymentDate(date);
+  };
+
   useEffect(() => {
     if (!pkg) return;
     setSelectedAmount(pkg.price.toString());
@@ -122,23 +125,18 @@ export default function AddGuestPackage({
 
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
-      try {
-        const result = await subscribeGuestPackageAction(
-          currentState,
-          formData
-        );
+      const result = await subscribeGuestPackageAction(
+        currentState,
+        formData
+      );
 
-        if (result.success) {
-          toggleOpen(false);
-          return initialState;
-        }
-        setError(result.errors as Error);
-        return {
-          ...result,
-        };
-      } catch (error) {
-        setError(error as Error);
+      if (result.success) {
+        toggleOpen(false);
+        return initialState;
       }
+      return {
+        ...result,
+      };
     },
     initialState
   );
@@ -146,6 +144,11 @@ export default function AddGuestPackage({
   const catalogPackages = openGymOnly
     ? packages.filter((p) => isOpenGymPackage(p.category))
     : sortPackagesWithOpenGymFirst(packages);
+
+  const fieldErrors =
+    state?.errors && typeof state.errors === "object"
+      ? (state.errors as Record<string, string | boolean>)
+      : null;
 
   return (
     <div>
@@ -222,14 +225,9 @@ export default function AddGuestPackage({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
-                {error &&
-                  typeof error === "object" &&
-                  !(error instanceof ApiError) &&
-                  "name" in error && (
-                    <p className="text-destructive text-xs">
-                      {(error as any).name}
-                    </p>
-                  )}
+                {fieldErrors && typeof fieldErrors.name === "string" && (
+                  <p className="text-destructive text-xs">{fieldErrors.name}</p>
+                )}
               </div>
 
               {/* Column 2 */}
@@ -241,14 +239,11 @@ export default function AddGuestPackage({
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                 />
-                {error &&
-                  typeof error === "object" &&
-                  !(error instanceof ApiError) &&
-                  "phoneNumber" in error && (
-                    <p className="text-destructive text-xs">
-                      {(error as any).phoneNumber}
-                    </p>
-                  )}
+                {fieldErrors && typeof fieldErrors.phoneNumber === "string" && (
+                  <p className="text-destructive text-xs">
+                    {fieldErrors.phoneNumber}
+                  </p>
+                )}
               </div>
             </div>
 

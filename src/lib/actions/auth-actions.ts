@@ -26,13 +26,6 @@ export const registerUser = async (_prevState: unknown, formData: FormData) => {
       data: user,
     };
   } catch (e) {
-    if (e instanceof ApiError) {
-      return {
-        success: false,
-        errors: e,
-        data: null,
-      };
-    }
     return parseStateError(e as Error);
   }
 };

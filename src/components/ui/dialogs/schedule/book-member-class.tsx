@@ -88,6 +88,7 @@ export function BookMemberClassDialog({
       {
         overrideTimeRestrictions:
           canOverrideTime && overrideTimeRestrictions,
+        allowOverbooking: true,
       }
     );
   }, [
@@ -107,7 +108,8 @@ export function BookMemberClassDialog({
         selectedMember,
         selectedClass,
         catalogPackages,
-        allScheduledClasses
+        allScheduledClasses,
+        { allowOverbooking: true }
       )
     );
 
