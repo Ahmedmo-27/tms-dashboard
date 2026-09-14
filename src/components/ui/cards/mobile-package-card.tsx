@@ -89,7 +89,7 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
                 {pkg.name}
               </button>
             </div>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
