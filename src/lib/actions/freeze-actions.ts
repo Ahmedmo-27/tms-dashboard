@@ -26,9 +26,6 @@ export async function approveFreezeAction(
     revalidatePath("/dashboard/package-freezes");
     return { success: true, errors: null, data: response };
   } catch (error) {
-    if (error instanceof ApiError) {
-      return { success: false, errors: error, data: null };
-    }
     return parseStateError(error as Error);
   }
 }
@@ -44,9 +41,6 @@ export async function rejectFreezeAction(
     revalidatePath("/dashboard/package-freezes");
     return { success: true, errors: null, data: response };
   } catch (error) {
-    if (error instanceof ApiError) {
-      return { success: false, errors: error, data: null };
-    }
     return parseStateError(error as Error);
   }
 }
@@ -106,9 +100,6 @@ export async function adminUnfreezePackageAction(
 
     return { success: true, errors: null, data: response };
   } catch (error) {
-    if (error instanceof ApiError) {
-      return { success: false, errors: error, data: null };
-    }
     return parseStateError(error as Error);
   }
 }

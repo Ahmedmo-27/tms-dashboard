@@ -13,6 +13,7 @@ export const BOOKING_TIME_RESTRICTION_REASON =
 
 export type BookingEligibilityOptions = {
   overrideTimeRestrictions?: boolean;
+  allowOverbooking?: boolean;
 };
 
 export function isBookingTimeRestriction(
@@ -103,7 +104,7 @@ export function getBookingEligibility(
 ): BookingEligibilityResult {
   const className = scheduledClass.className || "this class";
 
-  if (scheduledClass.availableSlots <= 0) {
+  if (!options?.allowOverbooking && scheduledClass.availableSlots <= 0) {
     return { eligible: false, reason: `No available slots in "${className}"` };
   }
 

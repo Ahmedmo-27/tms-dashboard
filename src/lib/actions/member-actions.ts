@@ -40,13 +40,6 @@ export const acceptMemberAction = async (uid: string) => {
       data: response,
     };
   } catch (error) {
-    if (error instanceof ApiError) {
-      return {
-        success: false,
-        errors: error,
-        data: null,
-      };
-    }
     return parseStateError(error as Error);
   }
 };
@@ -146,13 +139,6 @@ export const subscribeGuestPackageAction = async (
       data: response,
     };
   } catch (e) {
-    if (e instanceof ApiError) {
-      return {
-        success: false,
-        errors: e,
-        data: null,
-      };
-    }
     return parseStateError(e as Error);
   }
 };
@@ -304,13 +290,6 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
       data: response,
     };
   } catch (error) {
-    if (error instanceof ApiError) {
-      return {
-        success: false,
-        errors: error,
-        data: null,
-      };
-    }
     return parseStateError(error as Error);
   }
 };
