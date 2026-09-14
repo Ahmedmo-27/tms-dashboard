@@ -83,6 +83,15 @@ export function CoachSearchSelect({
                     onChange(coach._id === value ? "" : coach._id);
                     setOpen(false);
                   }}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    onChange(coach._id === value ? "" : coach._id);
+                    setOpen(false);
+                  }}
+                  onClick={() => {
+                    onChange(coach._id === value ? "" : coach._id);
+                    setOpen(false);
+                  }}
                   className="cursor-pointer"
                 >
                   <Check

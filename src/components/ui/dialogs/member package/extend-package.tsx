@@ -45,22 +45,22 @@ export default function ExtendPackage({
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {variant === "button" ? (
-          <Button variant="outline" size="sm" className="h-8">
-            Extend
-          </Button>
-        ) : (
+    <>
+      {variant === "button" ? (
+        <Button variant="outline" size="sm" className="h-8" onClick={() => setOpen(true)}>
+          Extend
+        </Button>
+      ) : (
         <DropdownMenuItem
-          onSelect={(e) => e.preventDefault()}
+          onSelect={() => setOpen(true)}
           className="cursor-pointer"
         >
           Change package end date
         </DropdownMenuItem>
-        )}
-      </DialogTrigger>
-      <DialogContent>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
         <DialogHeader>
           <DialogTitle>Extend Package</DialogTitle>
           <DialogDescription>Select the new expiry date.</DialogDescription>
@@ -108,5 +108,6 @@ export default function ExtendPackage({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
