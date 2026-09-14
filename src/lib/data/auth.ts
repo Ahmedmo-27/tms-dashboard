@@ -1,7 +1,7 @@
 "use server";
 
 import { tms } from "@/lib/tms-api";
-import { deleteToken, setToken } from "../cookie";
+import { deleteToken, getToken, setToken } from "../cookie";
 import { isCoachRole } from "@/lib/config/roles";
 
 interface LoginResponsePayload {
@@ -49,19 +49,33 @@ export const login = async ({
 
 export const logout = async () => {
   try {
-    const response = await tms.get("/auth/logout");
+    const token = await getToken();
+    if (token) {
+      const response = await tms.get("/auth/logout");
+      await deleteToken();
+      return response.data?.data ?? null;
+    }
     await deleteToken();
-    return response.data.data;
+    return null;
   } catch (error) {
     await deleteToken();
-    throw error;
+    console.error("Logout error:", error);
+    return null;
   }
 };
 
 export async function getAuthenticatedUser(): Promise<{
   role?: string;
+  userId?: string;
+  _id?: string;
+  name?: string;
+  [key: string]: unknown;
 } | null> {
   try {
+    const token = await getToken();
+    if (!token) {
+      return null;
+    }
     const response = await tms.get("/auth/verifyToken");
     return response.data?.data?.user ?? response.data?.user ?? null;
   } catch {

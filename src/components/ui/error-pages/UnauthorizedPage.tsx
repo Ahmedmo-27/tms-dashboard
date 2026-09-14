@@ -8,14 +8,12 @@ import { LogOut } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { logout } from "@/lib/store/features/authSlice";
 import { useRouter } from "next/navigation";
-import { POST } from "@/lib/api-logout"
 
 const UnauthorizedPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
   const handleLogout = () => {
-    POST()
     dispatch(logout());
     router.replace("/login");
   };
