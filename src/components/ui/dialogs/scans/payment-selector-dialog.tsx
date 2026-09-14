@@ -54,7 +54,6 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("CASH");
   const [amount, setAmount] = useState<string>("");
   const [paymentDate, setPaymentDate] = useState<string>("");
@@ -67,14 +66,12 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
     setIsOpen(open);
     if (!open) {
       setIsLoading(false);
-      setError(null);
     }
   };
 
   const [state, formAction, pending] = useActionState(
     async (currentState: ActionState, formData: FormData) => {
       setIsLoading(true);
-      setError(null);
 
       const defaultValues = {
         bookingId: formData.get("bookingId") as string,
@@ -95,7 +92,6 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
           setIsOpen(false);
           return initialState;
         }
-        setError(result.errors as Error);
         return { ...result, defaultValues } as ActionState;
       } finally {
         setIsLoading(false);
@@ -103,6 +99,11 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
     },
     initialState
   );
+
+  const fieldErrors =
+    state?.errors && typeof state.errors === "object"
+      ? (state.errors as Record<string, string | boolean>)
+      : null;
 
   return (
     <div>
@@ -163,14 +164,11 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
                   </SelectContent>
                 </Select>
               </div>
-              {error &&
-                typeof error === "object" &&
-                !(error instanceof ApiError) &&
-                "paymentMethod" in error && (
-                  <p className="text-destructive text-xs">
-                    {String((error as Record<string, unknown>).paymentMethod)}
-                  </p>
-                )}
+              {fieldErrors && typeof fieldErrors.paymentMethod === "string" && (
+                <p className="text-destructive text-xs">
+                  {fieldErrors.paymentMethod}
+                </p>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="amount" className="text-sm font-medium">
@@ -201,10 +199,10 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
               </div>
             </div>
 
-            {error && error.message && (
+            {fieldErrors && typeof fieldErrors.message === "string" && (
               <div className="flex items-center justify-between rounded-md border border-destructive p-3">
                 <p className="text-destructive text-sm font-medium">
-                  {error.message}
+                  {fieldErrors.message}
                 </p>
               </div>
             )}
