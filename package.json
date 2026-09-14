@@ -37,9 +37,9 @@
     "next": "15.5.16",
     "pica": "^9.0.1",
     "qrcode": "^1.5.4",
-    "react": "^18.2.0",
+    "react": "^19.3.0",
     "react-day-picker": "^8.10.1",
-    "react-dom": "^18.2.0",
+    "react-dom": "^19.3.0",
     "react-hook-form": "^7.55.0",
     "react-hot-toast": "^2.5.2",
     "react-redux": "^9.2.0",
@@ -65,5 +65,11 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "typescript-eslint": "^8.34.0"
+  },
+  "overrides": {
+    "react-day-picker": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   }
 }
