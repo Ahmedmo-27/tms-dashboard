@@ -2,6 +2,7 @@ import { tms } from "@/lib/tms-api";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { NotFoundError } from "@/core/api-error";
 import { parseSchedule } from "../utils/parsers/schedule-parser";
+import { formatInTimeZone } from "date-fns-tz";
 
 export const getScheduledClasses = async (
   locationId?: string,
@@ -12,7 +13,12 @@ export const getScheduledClasses = async (
     const params: Record<string, string> = {};
     if (locationId) params.locationId = locationId;
     if (date) {
-      const dateStr = typeof date === "string" ? date : date.toISOString();
+      const dateStr =
+        typeof date === "string"
+          ? (/^\d{4}-\d{2}-\d{2}$/.test(date.trim())
+              ? date.trim()
+              : formatInTimeZone(new Date(date), "Africa/Cairo", "yyyy-MM-dd"))
+          : formatInTimeZone(date, "Africa/Cairo", "yyyy-MM-dd");
       params.date = dateStr;
       params.startDate = dateStr;
     }

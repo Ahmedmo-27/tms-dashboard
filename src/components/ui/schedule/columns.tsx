@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "../button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "../dropdown-menu";
@@ -31,6 +33,96 @@ export type ScheduledClass = {
   locationId?: string;
   scans: any;
 };
+
+function ScheduledClassActionsCell({
+  scls,
+  coaches,
+}: {
+  scls: ScheduledClass;
+  coaches: any[];
+}) {
+  const [activeModal, setActiveModal] = useState<
+    "book" | "slots" | "edit" | "cancel" | null
+  >(null);
+
+  return (
+    <div className="flex justify-center">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Editing {scls.className}</DropdownMenuLabel>
+          <DropdownMenuItem
+            onSelect={() => setActiveModal("book")}
+            className="cursor-pointer"
+          >
+            Book Class
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => setActiveModal("slots")}
+            className="cursor-pointer"
+          >
+            Change remaining slots
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => setActiveModal("edit")}
+            className="cursor-pointer"
+          >
+            Edit Class
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => setActiveModal("cancel")}
+            className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+          >
+            Cancel Class
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {activeModal === "book" && (
+        <BookNonUserDialog
+          scid={scls._id as string}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setActiveModal(null);
+          }}
+        />
+      )}
+      {activeModal === "slots" && (
+        <EditSlotsDialog
+          scheduledClass={scls}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setActiveModal(null);
+          }}
+        />
+      )}
+      {activeModal === "edit" && (
+        <EditClassComponent
+          scheduledClass={scls}
+          coaches={coaches}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setActiveModal(null);
+          }}
+        />
+      )}
+      {activeModal === "cancel" && (
+        <CancelClassDialog
+          scls={scls}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setActiveModal(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 export const getColumns = (
   coaches: any
@@ -136,25 +228,7 @@ export const getColumns = (
     maxSize: 60,
     cell: ({ row }) => {
       const scls = row.original;
-      return (
-        <div className="flex justify-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Editing {scls.className}</DropdownMenuLabel>
-              <BookNonUserDialog scid={scls._id as string} />
-              <EditSlotsDialog scheduledClass={scls} />
-              <EditClassComponent scheduledClass={scls} coaches={coaches} />
-              <CancelClassDialog scls={scls} />
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      );
+      return <ScheduledClassActionsCell scls={scls} coaches={coaches} />;
     },
   },
 ];

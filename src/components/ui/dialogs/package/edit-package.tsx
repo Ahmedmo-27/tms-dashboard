@@ -293,7 +293,7 @@ export default function EditPackageDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {categories.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No categories available
                       </SelectItem>
                     ) : (

@@ -5,10 +5,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  TooltipProvider,
 } from "../tooltip";
 import { Users } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../dialog";
 import { BookedMembersContainer } from "./booked-members-container";
 
 export type Member = {
@@ -42,26 +41,27 @@ export function ShowBookedMembers({ members, scid }: { members: Member[], scid: 
   }, [members, setMemberNames]);
   return (
     <>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              className="h-8 w-8 p-0 cursor-pointer"
-              onClick={() => setOpen(true)}
-            >
-              <Users className="h-4 w-4" />
-              <span className="sr-only">Show booked members</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Show booked members</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            className="h-8 w-8 p-0 cursor-pointer"
+            onClick={() => setOpen(true)}
+          >
+            <Users className="h-4 w-4" />
+            <span className="sr-only">Show booked members</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Show booked members</TooltipContent>
+      </Tooltip>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogHeader>
-          <DialogTitle></DialogTitle>
-        </DialogHeader>
         <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Booked Members</DialogTitle>
+            <DialogDescription className="sr-only">
+              List of booked members for this class
+            </DialogDescription>
+          </DialogHeader>
           <div className="pt-4">
             <BookedMembersContainer members={memberNames} scid={scid} />
           </div>

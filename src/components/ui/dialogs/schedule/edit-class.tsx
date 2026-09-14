@@ -28,6 +28,8 @@ import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { format } from "date-fns";
 import { DatePicker } from "../../date-picker";
 
+import toast from "react-hot-toast";
+
 interface ActionState {
   success: boolean;
   errors: Record<string, string> | null | ApiError;
@@ -43,11 +45,27 @@ interface ActionState {
 export function EditClassComponent({
   coaches,
   scheduledClass,
+  variant = "none",
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   coaches: any[];
   scheduledClass: ScheduledClass;
+  variant?: "menu" | "button" | "none";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = (value: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
   const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>(
     Array.isArray(scheduledClass.coachId)
       ? scheduledClass.coachId
@@ -88,9 +106,16 @@ export function EditClassComponent({
       };
       const result = await editClassAction(currentState, formData);
       if (result.success) {
+        toast.success("Class updated successfully");
         setIsOpen(false);
         return initialState;
       }
+
+      const message =
+        typeof result.errors === "object" && result.errors && "message" in result.errors
+          ? String((result.errors as any).message)
+          : "Failed to update class";
+      toast.error(message);
 
       return {
         ...result,
@@ -113,15 +138,22 @@ export function EditClassComponent({
 
   return (
     <>
-      <DropdownMenuItem
-        onSelect={() => setIsOpen(true)}
-        className="cursor-pointer"
-      >
-        Edit Class
-      </DropdownMenuItem>
+      {variant === "button" && (
+        <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
+          Edit Class
+        </Button>
+      )}
+      {variant === "menu" && (
+        <DropdownMenuItem
+          onSelect={() => setIsOpen(true)}
+          className="cursor-pointer"
+        >
+          Edit Class
+        </DropdownMenuItem>
+      )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>Edit {scheduledClass.className}</DialogTitle>
         </DialogHeader>

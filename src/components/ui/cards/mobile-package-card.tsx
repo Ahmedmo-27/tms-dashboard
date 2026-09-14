@@ -27,6 +27,9 @@ interface MobilePackageCardProps {
 
 export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
   const [isNameExpanded, setIsNameExpanded] = useState(false);
+  const [activeModal, setActiveModal] = useState<
+    "adjust" | "extend" | "freeze" | "cancel" | null
+  >(null);
   const isFrozen = pkg.status === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
 
   const handleUnfreeze = async () => {
@@ -98,10 +101,26 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <AddClasses uid={uid} pkg={pkg} />
-                <ExtendPackage uid={uid} pkg={pkg} />
+                <DropdownMenuItem
+                  onSelect={() => setActiveModal("adjust")}
+                  className="cursor-pointer"
+                >
+                  Adjust classes
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setActiveModal("extend")}
+                  className="cursor-pointer"
+                >
+                  Change package end date
+                </DropdownMenuItem>
                 {!isFrozen && pkg.status === "ACTIVE" && (
-                  <FreezePackageDialog uid={uid} pkg={pkg} />
+                  <DropdownMenuItem
+                    onSelect={() => setActiveModal("freeze")}
+                    className="cursor-pointer text-sky-600 focus:text-sky-700"
+                  >
+                    <Snowflake className="h-4 w-4 mr-2" />
+                    Freeze package
+                  </DropdownMenuItem>
                 )}
                 {isFrozen && (
                   <DropdownMenuItem
@@ -113,7 +132,12 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <CancelPackageDialog uid={uid} pkg={pkg} />
+                <DropdownMenuItem
+                  onSelect={() => setActiveModal("cancel")}
+                  className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  Cancel Package
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -162,6 +186,48 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
             )}
           </div>
         </div>
+
+        {/* Dialogs rendered outside dropdown */}
+        {activeModal === "adjust" && (
+          <AddClasses
+            pkg={pkg}
+            uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal === "extend" && (
+          <ExtendPackage
+            pkg={pkg}
+            uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal === "freeze" && (
+          <FreezePackageDialog
+            pkg={pkg}
+            uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal === "cancel" && (
+          <CancelPackageDialog
+            pkg={pkg}
+            uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   );

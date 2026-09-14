@@ -11,6 +11,7 @@ import { MemberListEntry } from "../../schedule/show-booked-members";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "../../dialog";
@@ -105,6 +106,9 @@ export function CheckInsSelector({
       </DialogTrigger>
       <DialogContent className="pt-10 pb-5 px-5">
         <DialogTitle>Check in guests</DialogTitle>
+        <DialogDescription className="sr-only">
+          Check in guests for this class
+        </DialogDescription>
         <Card className="w-full border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">

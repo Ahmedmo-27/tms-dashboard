@@ -48,7 +48,7 @@ export function MultiSelect({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover modal={true} open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -90,7 +90,11 @@ export function MultiSelect({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+      <PopoverContent
+        className="z-[70] w-full p-0"
+        align="start"
+        sideOffset={4}
+      >
         <Command className="h-auto">
           <CommandInput placeholder="Search..." />
           <CommandList style={{ maxHeight: "240px", overflowY: "auto" }}>
@@ -103,11 +107,6 @@ export function MultiSelect({
                     key={option}
                     value={option}
                     onSelect={() => toggle(option)}
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      toggle(option);
-                    }}
-                    onClick={() => toggle(option)}
                     className="cursor-pointer"
                   >
                     <Check

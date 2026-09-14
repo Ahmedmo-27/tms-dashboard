@@ -17,10 +17,26 @@ import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function CancelClassDialog({
   scls,
+  variant = "none",
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   scls: ScheduledClass;
+  variant?: "menu" | "button" | "none";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +63,7 @@ export default function CancelClassDialog({
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to cancel class";
+      console.error("Failed to delete class:", err);
       setError(message);
       toast.error(message);
     } finally {
@@ -56,12 +73,24 @@ export default function CancelClassDialog({
 
   return (
     <>
-      <DropdownMenuItem
-        onSelect={() => setOpen(true)}
-        className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-      >
-        Cancel Class
-      </DropdownMenuItem>
+      {variant === "button" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-destructive border-destructive/30 hover:bg-destructive/10"
+          onClick={() => setOpen(true)}
+        >
+          Cancel Class
+        </Button>
+      )}
+      {variant === "menu" && (
+        <DropdownMenuItem
+          onSelect={() => setOpen(true)}
+          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+        >
+          Cancel Class
+        </DropdownMenuItem>
+      )}
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent onClick={(e) => e.stopPropagation()}>

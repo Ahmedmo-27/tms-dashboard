@@ -2,7 +2,7 @@ import { getMembers } from "@/lib/data/member";
 import MemberPage from "./memberPage";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPackages } from "@/lib/data/package";
-import { getNextScheduledClasses, getScheduledClasses } from "@/lib/data/schedule";
+import { getNextScheduledClasses } from "@/lib/data/schedule";
 import { Package } from "@/components/ui/packages/columns";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { NetworkError, UnauthorizedError } from "@/core/api-error";
@@ -27,19 +27,13 @@ export default async function Page({
   }
 
   try {
-    const [packages, fullSchedule, upcomingSchedule, data] = await Promise.all([
+    const [packages, upcomingSchedule, data] = await Promise.all([
       getPackages().catch(() => [] as Package[]),
-      getScheduledClasses().catch(() => [] as ScheduledClass[]),
       getNextScheduledClasses().catch(() => [] as ScheduledClass[]),
       getMembers(null, 1, 1, id),
     ]);
 
-    const scheduledClasses: ScheduledClass[] = [
-      ...fullSchedule,
-      ...upcomingSchedule.filter(
-        (cls) => !fullSchedule.some((existing) => existing._id === cls._id)
-      ),
-    ];
+    const scheduledClasses: ScheduledClass[] = upcomingSchedule;
 
     const memberData = data?.data?.[0];
     if (!memberData) {

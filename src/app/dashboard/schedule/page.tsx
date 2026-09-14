@@ -11,18 +11,23 @@ import { getPackages } from "@/lib/data/package";
 import { Package } from "@/components/ui/packages/columns";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
+import { formatInTimeZone } from "date-fns-tz";
 
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ locationId?: string }>;
+  searchParams: Promise<{ locationId?: string; date?: string }>;
 }) {
   try {
     const params = await searchParams;
     const locationId = params.locationId;
+    const dateParam = params.date
+      ? params.date
+      : formatInTimeZone(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+
     const [scheduledClasses, classes, coaches, locationDocs, catalogPackages] =
       await Promise.all([
-        getScheduledClasses(locationId).catch((e) => {
+        getScheduledClasses(locationId, dateParam).catch((e) => {
           if (e instanceof NotFoundError) return [];
           throw e;
         }),
@@ -49,11 +54,13 @@ export default async function Page({
     return (
       <div className="flex flex-col gap-3">
         <SchedulePage
+          key={`${dateParam}:${locationId ?? "all"}`}
           scheduledClasses={scheduledClasses}
           classIdsMap={classIdsMap}
           coaches={coaches}
           locations={locationDocs}
           initialLocationId={locationId}
+          initialDate={dateParam}
           catalogPackages={catalogPackages}
         />
       </div>

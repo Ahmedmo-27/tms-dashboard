@@ -1,9 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { ScheduledClassesContainer } from "@/components/ui/schedule/scheduled-classes-container";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
-import { useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -11,13 +10,12 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import EditSlots from "@/components/ui/dialogs/schedule/edit-slots";
-import { format } from "date-fns";
-import { EditClassComponent } from "@/components/ui/dialogs/schedule/edit-class";
 import type { Location } from "@/lib/data/locations";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
 import { Package } from "@/components/ui/packages/columns";
+import { getScheduledClasses } from "@/lib/data/schedule";
+import { formatInTimeZone } from "date-fns-tz";
+import toast from "react-hot-toast";
 
 interface SchedulePageProps {
   scheduledClasses: ScheduledClass[];
@@ -25,24 +23,36 @@ interface SchedulePageProps {
   coaches: any[];
   locations: Location[];
   initialLocationId?: string;
+  initialDate?: string;
   catalogPackages: Package[];
 }
 
 export function SchedulePage({
   classIdsMap,
   coaches,
-  scheduledClasses,
+  scheduledClasses: initialScheduledClasses,
   locations,
   initialLocationId = "",
+  initialDate,
   catalogPackages,
 }: SchedulePageProps) {
   const { isManagement, isViewingAllBranches } = useBranchContext();
   const initialLocation =
     locations.find((l) => l._id === initialLocationId) ?? locations[0];
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<Date>(() =>
+    initialDate ? new Date(initialDate) : new Date()
+  );
+  const [classes, setClasses] = useState<ScheduledClass[]>(
+    initialScheduledClasses
+  );
+  const [isLoading, setIsLoading] = useState(false);
   const [branchLocation, setBranchLocation] = useState<string>(
     initialLocation?.branchName ?? ""
   );
+
+  useEffect(() => {
+    setClasses(initialScheduledClasses);
+  }, [initialScheduledClasses]);
 
   const managementLocation = initialLocationId
     ? locations.find((l) => l._id === initialLocationId)
@@ -58,14 +68,66 @@ export function SchedulePage({
   const selectedLocationName = isManagement
     ? (managementLocation?.branchName ?? "")
     : branchLocation;
-  const [selectedScheduledClasses, setSelectedScheduledClasses] = useState<
-    ScheduledClass[]
-  >([]);
 
-  useEffect(() => {
-    const targetDateStr = date.toLocaleDateString();
-    const filtered = scheduledClasses.filter((cls) => {
-      const clsDateStr = new Date(cls.startTime).toLocaleDateString();
+  const fetchSchedule = useCallback(
+    async (targetDate: Date, locId?: string) => {
+      setIsLoading(true);
+      try {
+        const dateStr = formatInTimeZone(
+          targetDate,
+          "Africa/Cairo",
+          "yyyy-MM-dd"
+        );
+        const effectiveLocId =
+          isManagement && isViewingAllBranches ? undefined : locId || undefined;
+        const data = await getScheduledClasses(effectiveLocId, dateStr);
+        setClasses(data);
+      } catch (error) {
+        console.error("Failed to load schedule for date", error);
+        toast.error("Failed to load schedule for selected date");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isManagement, isViewingAllBranches]
+  );
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (!selectedDate) return;
+    setDate(selectedDate);
+    const dateStr = formatInTimeZone(
+      selectedDate,
+      "Africa/Cairo",
+      "yyyy-MM-dd"
+    );
+    if (typeof window !== "undefined") {
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.set("date", dateStr);
+      const newUrl = `/dashboard/schedule?${currentParams.toString()}`;
+      window.history.replaceState(null, "", newUrl);
+    }
+    fetchSchedule(selectedDate, selectedLocationId || undefined);
+  };
+
+  const handleBranchChange = (newBranchName: string) => {
+    setBranchLocation(newBranchName);
+    const foundLoc = locations.find((l) => l.branchName === newBranchName);
+    const locId = foundLoc?._id;
+    fetchSchedule(date, locId);
+  };
+
+  const selectedScheduledClasses = useMemo(() => {
+    const targetDateStr = formatInTimeZone(
+      date,
+      "Africa/Cairo",
+      "yyyy-MM-dd"
+    );
+    return classes.filter((cls) => {
+      const clsDateStr = formatInTimeZone(
+        new Date(cls.startTime),
+        "Africa/Cairo",
+        "yyyy-MM-dd"
+      );
       if (clsDateStr !== targetDateStr) return false;
       if (isManagement && isViewingAllBranches) return true;
       return (
@@ -73,24 +135,24 @@ export function SchedulePage({
         (!cls.locationId && cls.location === selectedLocationName)
       );
     });
-
-    setSelectedScheduledClasses(filtered);
   }, [
-    scheduledClasses,
+    classes,
     date,
     selectedLocationId,
     selectedLocationName,
     isManagement,
     isViewingAllBranches,
   ]);
+
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] min-w-0 flex-col-reverse gap-4 overflow-y-auto overflow-x-hidden p-3 md:flex-row">
       <div className="h-full min-w-0 flex-[2]">
         <ScheduledClassesContainer
           scheduledClasses={selectedScheduledClasses}
-          allScheduledClasses={scheduledClasses}
+          allScheduledClasses={classes}
           classIdsMap={classIdsMap}
           date={date || new Date()}
+          isLoading={isLoading}
           coaches={coaches}
           locations={locations}
           defaultLocationId={selectedLocationId}
@@ -104,9 +166,7 @@ export function SchedulePage({
           <Calendar
             mode="single"
             selected={date}
-            onSelect={(d) => {
-              if (d) setDate(d);
-            }}
+            onSelect={handleDateSelect}
             className="rounded-md border bg-card"
             classNames={{
               months:
@@ -141,7 +201,7 @@ export function SchedulePage({
               <Select
                 name="location"
                 value={location}
-                onValueChange={(value) => setBranchLocation(value as string)}
+                onValueChange={handleBranchChange}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
