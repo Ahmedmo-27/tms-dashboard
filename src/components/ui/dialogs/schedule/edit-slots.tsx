@@ -11,23 +11,40 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import toast from "react-hot-toast";
 
 export default function EditSlotsDialog({
   scheduledClass,
+  variant = "none",
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   scheduledClass: ScheduledClass;
+  variant?: "menu" | "button" | "none";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
   const [currentSlots, setCurrentSlots] = useState(
     scheduledClass.availableSlots
   );
-  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     setCurrentSlots(scheduledClass.availableSlots);
   }, [scheduledClass]);
+
   const initialState = {
     success: false,
     errors: null,
@@ -38,34 +55,46 @@ export default function EditSlotsDialog({
     async (currentState: any, formData: FormData) => {
       const result = await editSlotsAction(currentState, formData);
       if (result.success) {
+        toast.success("Slots updated successfully");
         setOpen(false);
         return initialState;
       }
+      const message =
+        (result.errors as any)?.message ?? "Failed to update slots";
+      toast.error(message);
       return result;
     },
     initialState
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <>
+      {variant === "button" && (
+        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+          Change remaining slots
+        </Button>
+      )}
+      {variant === "menu" && (
         <DropdownMenuItem
-          onSelect={(e) => e.preventDefault()}
+          onSelect={() => setOpen(true)}
           className="cursor-pointer"
         >
           Change remaining slots
         </DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add slots to {scheduledClass.className}</DialogTitle>
-          <DialogDescription>
-            Change open slots to selected class
-          </DialogDescription>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Add slots to {scheduledClass.className}</DialogTitle>
+            <DialogDescription>
+              Change open slots for selected class
+            </DialogDescription>
+          </DialogHeader>
           <form action={formAction}>
             <input type="hidden" name="scid" value={scheduledClass._id} />
             <input type="hidden" name="availableSlots" value={currentSlots} />
-            <div className="flex items-center w-full gap-2 justify-center">
+            <div className="flex items-center w-full gap-2 justify-center my-4">
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -99,7 +128,7 @@ export default function EditSlotsDialog({
               typeof state.errors === "object" &&
               "message" in state.errors &&
               (state.errors as { message?: string }).message && (
-                <p className="text-destructive text-sm mt-3">
+                <p className="text-destructive text-sm my-3">
                   {(state.errors as { message?: string }).message}
                 </p>
               )}
@@ -116,8 +145,8 @@ export default function EditSlotsDialog({
               </Button>
             </div>
           </form>
-        </DialogHeader>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

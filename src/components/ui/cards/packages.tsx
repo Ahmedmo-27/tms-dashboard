@@ -31,7 +31,7 @@ import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { MobilePackageCard } from "./mobile-package-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -233,6 +233,10 @@ export default function Packages({
 }) {
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null);
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
+  const [activeModal, setActiveModal] = useState<{
+    type: "adjust" | "extend" | "freeze" | "cancel";
+    pkg: MemberPackage;
+  } | null>(null);
 
   const toggleExpand = (key: string) =>
     setExpandedPkg((prev) => (prev === key ? null : key));
@@ -334,8 +338,8 @@ export default function Packages({
                   const isExpanded = expandedPkg === key;
                   const isFrozen = pkg.status === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
                   return (
-                    <>
-                      <TableRow key={index} className="hover:bg-muted/50 transition-colors">
+                    <Fragment key={key}>
+                      <TableRow className="hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium text-sm py-3 px-2 sm:px-4">
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -435,7 +439,14 @@ export default function Packages({
                                 Unfreeze
                               </Button>
                             ) : (
-                              <ExtendPackage uid={uid} pkg={pkg} variant="button" />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8"
+                                onClick={() => setActiveModal({ type: "extend", pkg })}
+                              >
+                                Extend
+                              </Button>
                             )}
                             <Button
                               variant="ghost"
@@ -461,10 +472,26 @@ export default function Packages({
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
-                                <AddClasses uid={uid} pkg={pkg} />
-                                <ExtendPackage uid={uid} pkg={pkg} />
+                                <DropdownMenuItem
+                                  onSelect={() => setActiveModal({ type: "adjust", pkg })}
+                                  className="cursor-pointer"
+                                >
+                                  Adjust classes
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => setActiveModal({ type: "extend", pkg })}
+                                  className="cursor-pointer"
+                                >
+                                  Change package end date
+                                </DropdownMenuItem>
                                 {!isFrozen && pkg.status === "ACTIVE" && (
-                                  <FreezePackageDialog uid={uid} pkg={pkg} />
+                                  <DropdownMenuItem
+                                    onSelect={() => setActiveModal({ type: "freeze", pkg })}
+                                    className="cursor-pointer text-sky-600 focus:text-sky-700"
+                                  >
+                                    <Snowflake className="h-4 w-4 mr-2" />
+                                    Freeze package
+                                  </DropdownMenuItem>
                                 )}
                                 {isFrozen && (
                                   <DropdownMenuItem
@@ -476,7 +503,12 @@ export default function Packages({
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuSeparator />
-                                <CancelPackageDialog uid={uid} pkg={pkg} />
+                                <DropdownMenuItem
+                                  onSelect={() => setActiveModal({ type: "cancel", pkg })}
+                                  className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                                >
+                                  Cancel Package
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -489,13 +521,55 @@ export default function Packages({
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })
               )}
             </TableBody>
           </Table>
         </div>
+
+        {/* Dialogs rendered outside dropdowns to avoid unmounting on dropdown close */}
+        {activeModal?.type === "adjust" && (
+          <AddClasses
+            pkg={activeModal.pkg}
+            uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal?.type === "extend" && (
+          <ExtendPackage
+            pkg={activeModal.pkg}
+            uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal?.type === "freeze" && (
+          <FreezePackageDialog
+            pkg={activeModal.pkg}
+            uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal?.type === "cancel" && (
+          <CancelPackageDialog
+            pkg={activeModal.pkg}
+            uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   );

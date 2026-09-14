@@ -9,11 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { Trash, X } from "lucide-react";
+import { Trash } from "lucide-react";
 import { cancelBooking } from "@/lib/data/bookings";
 import { toast } from "react-hot-toast";
 
@@ -47,7 +43,6 @@ export default function CancelBookingDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
         <Button
-          onSelect={(e) => e.preventDefault()}
           className="cursor-pointer text-destructive hover:text-destructive w-full"
           variant="outline"
         >

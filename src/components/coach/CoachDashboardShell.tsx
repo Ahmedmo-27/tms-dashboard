@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -286,6 +287,9 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
         <SheetContent side="bottom" className="rounded-t-xl">
           <SheetHeader>
             <SheetTitle>More</SheetTitle>
+            <SheetDescription className="sr-only">
+              Additional coach dashboard navigation options
+            </SheetDescription>
           </SheetHeader>
           <div className="flex flex-col gap-1 px-4 pb-6">
             {moreItems.map(({ href, label, icon: Icon, match }) => (
@@ -318,6 +322,9 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
         <SheetContent side="right" className="w-full sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Notifications</SheetTitle>
+            <SheetDescription className="sr-only">
+              Coach notifications panel
+            </SheetDescription>
           </SheetHeader>
           <div className="px-4 pb-6">
             <NotificationPanel onSelect={() => setNotifOpen(false)} />

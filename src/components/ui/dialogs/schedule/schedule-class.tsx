@@ -214,7 +214,7 @@ export function ScheduleClass({
                   </SelectTrigger>
                   <SelectContent>
                     {locations.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No locations available
                       </SelectItem>
                     ) : (

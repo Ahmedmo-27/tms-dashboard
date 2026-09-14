@@ -48,7 +48,7 @@ export function PackageSearchSelect({
   }, [packages]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover modal={true} open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -69,9 +69,9 @@ export function PackageSearchSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] p-0"
+        className="z-[70] w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
-        onWheel={(e) => e.stopPropagation()}
+        sideOffset={4}
       >
         <Command className="h-auto">
           <CommandInput placeholder={searchPlaceholder} />
@@ -85,15 +85,6 @@ export function PackageSearchSelect({
                     key={pkg._id}
                     value={`${pkg.name} ${label}`}
                     onSelect={() => {
-                      onChange(pkg);
-                      setOpen(false);
-                    }}
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      onChange(pkg);
-                      setOpen(false);
-                    }}
-                    onClick={() => {
                       onChange(pkg);
                       setOpen(false);
                     }}

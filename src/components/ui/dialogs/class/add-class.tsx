@@ -146,7 +146,7 @@ export function AddClass({ categories = [], locations = [] }: AddClassProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {locations.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No locations available
                       </SelectItem>
                     ) : (
@@ -182,7 +182,7 @@ export function AddClass({ categories = [], locations = [] }: AddClassProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {categories.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No categories available
                       </SelectItem>
                     ) : (

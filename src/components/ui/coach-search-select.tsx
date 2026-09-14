@@ -45,7 +45,7 @@ export function CoachSearchSelect({
   }, [coaches, value]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover modal={true} open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -66,9 +66,9 @@ export function CoachSearchSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] p-0"
+        className="z-[70] w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
-        onWheel={(e) => e.stopPropagation()}
+        sideOffset={4}
       >
         <Command className="h-auto">
           <CommandInput placeholder={searchPlaceholder} />
@@ -80,15 +80,6 @@ export function CoachSearchSelect({
                   key={coach._id}
                   value={`${coach.coachName} ${coach.phoneNumber || ""}`}
                   onSelect={() => {
-                    onChange(coach._id === value ? "" : coach._id);
-                    setOpen(false);
-                  }}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    onChange(coach._id === value ? "" : coach._id);
-                    setOpen(false);
-                  }}
-                  onClick={() => {
                     onChange(coach._id === value ? "" : coach._id);
                     setOpen(false);
                   }}

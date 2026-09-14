@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import DeletePackageDialog from "../dialogs/package/delete-package";
 import EditPackageDialog from "../dialogs/package/edit-package";
 import { Eye, EyeClosed, LoaderIcon, Users } from "lucide-react";
-import { Button } from "../button";
+import { Button, buttonVariants } from "../button";
 import { Badge } from "../badge";
 import { changePackageVisibility } from "@/lib/data/package";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,6 @@ import { getPackageBranchLabel } from "@/lib/utils/location-label";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -60,30 +59,28 @@ function PackageVisibilityCell({ pkg }: { pkg: Package }) {
   };
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={handleVisibilityChange}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <LoaderIcon className="animate-spin" />
-            ) : isHidden ? (
-              <EyeClosed />
-            ) : (
-              <Eye />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {isHidden ? "Hidden from members" : "Visible to members"}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={handleVisibilityChange}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <LoaderIcon className="animate-spin" />
+          ) : isHidden ? (
+            <EyeClosed />
+          ) : (
+            <Eye />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {isHidden ? "Hidden from members" : "Visible to members"}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -240,23 +237,17 @@ export function createColumns(
         const pkg = row.original;
         return (
           <div className="flex gap-1.5 lg:gap-2 shrink-0">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    asChild
-                  >
-                    <Link href={`/dashboard/packages/${pkg._id}?page=1`}>
-                      <Users className="h-4 w-4 text-primary" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>View active members</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/dashboard/packages/${pkg._id}?page=1`}
+                  className={cn(buttonVariants({ variant: "outline", size: "icon" }), "h-8 w-8")}
+                >
+                  <Users className="h-4 w-4 text-primary" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>View active members</TooltipContent>
+            </Tooltip>
             <EditPackageDialog
               pkg={pkg}
               classes={classes}

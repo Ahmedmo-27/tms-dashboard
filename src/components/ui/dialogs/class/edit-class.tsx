@@ -108,7 +108,6 @@ export default function EditClassDialog({
   return (
     <div>
       <Button
-        onSelect={(e) => e.preventDefault()}
         onClick={() => setOpen(true)}
         variant="outline"
         className="w-full"
@@ -173,7 +172,7 @@ export default function EditClassDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {categories.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No categories available
                       </SelectItem>
                     ) : (
@@ -208,7 +207,7 @@ export default function EditClassDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {locations.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No locations available
                       </SelectItem>
                     ) : (

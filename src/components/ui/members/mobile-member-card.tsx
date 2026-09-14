@@ -83,8 +83,8 @@ export function MobileMemberCard({ member, pkgId }: MobileMemberCardProps) {
                   <DropdownMenuItem onClick={handleCopyPhone}>
                     Copy phone number
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href={`/dashboard/our-members/${member.id}`}>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/dashboard/our-members/${member.id}`} className="w-full cursor-pointer">
                       View member data
                     </Link>
                   </DropdownMenuItem>

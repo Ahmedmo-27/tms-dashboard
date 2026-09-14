@@ -189,8 +189,8 @@ export const columns = (pkgId?: string): ColumnDef<Member>[] => [
             >
               Copy phone number
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href={`/dashboard/our-members/${member.id}`}>
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/our-members/${member.id}`} className="w-full cursor-pointer">
                 View member data
               </Link>
             </DropdownMenuItem>
