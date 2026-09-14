@@ -7,6 +7,7 @@ import { Package, createColumns } from "../../../components/ui/packages/columns"
 import { AddPackageDialog } from "@/components/ui/dialogs/package/add-package";
 import { Class } from "@/components/ui/classes/columns";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import { PACKAGE_CATEGORIES } from "@/lib/utils/catalog";
 
 export default function PackagesPage({ packages, classes }: { packages: Package[]; classes: Class[] }) {
   const { isViewingAllBranches } = useBranchContext();
@@ -26,9 +27,13 @@ export default function PackagesPage({ packages, classes }: { packages: Package[
           </div>
         </div>
         <div className="w-full sm:w-auto">
-          <AddPackageDialog classes={classes} categories={[]} />
+          <AddPackageDialog
+            classes={classes}
+            categories={PACKAGE_CATEGORIES as unknown as string[]}
+          />
         </div>
       </div>
+
 
       {/* Main Content */}
       <div className="flex-1">

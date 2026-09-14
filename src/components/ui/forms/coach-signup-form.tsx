@@ -192,11 +192,12 @@ export function CoachSignupForm({
               <div className="grid gap-3">
                 <Label htmlFor="coachId">Select Your Name</Label>
                 <Select
-                  value={selectedCoachId}
+                  value={selectedCoachId || undefined}
                   onValueChange={setSelectedCoachId}
                   disabled={loadingCoaches || pending}
                   required
                 >
+
                   <SelectTrigger id="coachId">
                     <SelectValue placeholder={loadingCoaches ? "Loading..." : "Select your name"} />
                   </SelectTrigger>

@@ -12,7 +12,11 @@ import type { Location } from "@/lib/data/locations";
 import { NetworkError, NotFoundError, UnauthorizedError } from "@/core/api-error";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
-import { deriveUniqueCategories } from "@/lib/utils/catalog";
+import {
+  deriveUniqueCategories,
+  CLASS_CATEGORIES,
+  PACKAGE_CATEGORIES,
+} from "@/lib/utils/catalog";
 
 export default async function Page({
   searchParams,
@@ -61,8 +65,8 @@ export default async function Page({
     }
   }
 
-  const classCategories = deriveUniqueCategories(classes);
-  const packageCategories = deriveUniqueCategories(packages);
+  const classCategories = deriveUniqueCategories(classes, CLASS_CATEGORIES);
+  const packageCategories = deriveUniqueCategories(packages, PACKAGE_CATEGORIES);
 
   return (
     <CatalogPage
@@ -75,3 +79,4 @@ export default async function Page({
     />
   );
 }
+

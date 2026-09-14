@@ -357,7 +357,7 @@ export function OpenGymDropInDialog({
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Payment method</Label>
                   <Select
-                    defaultValue="CASH"
+                    value={memberPaymentMethod}
                     onValueChange={setMemberPaymentMethod}
                     disabled={memberPending}
                   >
@@ -473,7 +473,7 @@ export function OpenGymDropInDialog({
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Payment method</Label>
                   <Select
-                    defaultValue="CASH"
+                    value={guestPaymentMethod}
                     onValueChange={setGuestPaymentMethod}
                     disabled={guestPending}
                   >
