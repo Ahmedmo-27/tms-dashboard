@@ -45,7 +45,7 @@ export function CoachSearchSelect({
   }, [coaches, value]);
 
   return (
-    <Popover modal={true} open={open} onOpenChange={setOpen}>
+    <Popover modal={false} open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
