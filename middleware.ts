@@ -11,10 +11,14 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const isLoggedIn = Boolean(token);
 
-  const isAuthPage =
-    pathname === "/login" ||
-    pathname.startsWith("/coach-signup") ||
-    pathname.startsWith("/coach/login");
+  if (pathname === "/") {
+    if (!isLoggedIn) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.search = "";
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
   if (!isLoggedIn && (pathname.startsWith("/dashboard") || pathname.startsWith("/coach"))) {
     // Coach may authenticate with memory Bearer only (no Next cookie) — allow
@@ -30,16 +34,13 @@ export function middleware(request: NextRequest) {
 
   if (isLoggedIn && pathname === "/login") {
     const home = request.nextUrl.clone();
-    home.pathname = "/";
+    home.pathname = "/dashboard/scans-monitor";
     return NextResponse.redirect(home);
   }
-
-  // Silence unused for future tightening of auth pages
-  void isAuthPage;
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/coach/:path*", "/login"],
+  matcher: ["/", "/dashboard/:path*", "/coach/:path*", "/login"],
 };
