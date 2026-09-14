@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 const TOKEN_COOKIE = "token";
 const TOKEN_OPTIONS = {
   httpOnly: true,
-  secure: true,
+  secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
   path: "/",
   maxAge: 7 * 24 * 60 * 60, // 7 days

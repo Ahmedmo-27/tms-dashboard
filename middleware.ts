@@ -12,12 +12,10 @@ export function middleware(request: NextRequest) {
   const isLoggedIn = Boolean(token);
 
   if (pathname === "/") {
-    if (!isLoggedIn) {
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/login";
-      loginUrl.search = "";
-      return NextResponse.redirect(loginUrl);
-    }
+    const target = request.nextUrl.clone();
+    target.pathname = isLoggedIn ? "/dashboard/scans-monitor" : "/login";
+    target.search = "";
+    return NextResponse.redirect(target);
   }
 
   if (!isLoggedIn && (pathname.startsWith("/dashboard") || pathname.startsWith("/coach"))) {
