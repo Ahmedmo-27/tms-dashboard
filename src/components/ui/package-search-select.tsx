@@ -51,6 +51,7 @@ export function PackageSearchSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
@@ -84,6 +85,15 @@ export function PackageSearchSelect({
                     key={pkg._id}
                     value={`${pkg.name} ${label}`}
                     onSelect={() => {
+                      onChange(pkg);
+                      setOpen(false);
+                    }}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      onChange(pkg);
+                      setOpen(false);
+                    }}
+                    onClick={() => {
                       onChange(pkg);
                       setOpen(false);
                     }}

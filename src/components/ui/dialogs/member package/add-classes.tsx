@@ -59,22 +59,22 @@ export default function AddClasses({
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {variant === "button" ? (
-          <Button variant="outline" size="sm">
-            Add classes
-          </Button>
-        ) : (
+    <>
+      {variant === "button" ? (
+        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+          Add classes
+        </Button>
+      ) : (
         <DropdownMenuItem
-          onSelect={(e) => e.preventDefault()}
+          onSelect={() => setOpen(true)}
           className="cursor-pointer"
         >
           Adjust classes
         </DropdownMenuItem>
-        )}
-      </DialogTrigger>
-      <DialogContent>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
         <DialogHeader>
           <DialogTitle>Adjust classes for {pkg.name}</DialogTitle>
           <DialogDescription>
@@ -171,5 +171,6 @@ export default function AddClasses({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

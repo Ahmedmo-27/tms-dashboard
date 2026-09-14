@@ -174,15 +174,6 @@ export default function SubPackage({
               </div>
             )}
 
-            <div className="space-y-2 mt-4">
-              <ManagementBranchField
-                locationId={locationId}
-                onLocationChange={setModalLocationId}
-                needsBranchSelection={needsBranchSelection}
-                disabled={pending}
-              />
-            </div>
-
             {/* Package */}
             <div className="space-y-2 mt-4">
               <Label className="text-sm font-medium">Package</Label>

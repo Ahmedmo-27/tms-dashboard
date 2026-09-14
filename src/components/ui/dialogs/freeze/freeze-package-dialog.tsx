@@ -76,24 +76,24 @@ export function FreezePackageDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {variant === "button" ? (
-          <Button size="sm" variant="outline" className="h-8 gap-1 text-sky-600 border-sky-300 dark:border-sky-800">
-            <Snowflake className="h-3.5 w-3.5" />
-            Freeze
-          </Button>
-        ) : (
-          <DropdownMenuItem
-            onSelect={(e) => e.preventDefault()}
-            className="cursor-pointer text-sky-600 focus:text-sky-700"
-          >
-            <Snowflake className="h-4 w-4 mr-2" />
-            Freeze package
-          </DropdownMenuItem>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[450px]">
+    <>
+      {variant === "button" ? (
+        <Button size="sm" variant="outline" className="h-8 gap-1 text-sky-600 border-sky-300 dark:border-sky-800" onClick={() => setOpen(true)}>
+          <Snowflake className="h-3.5 w-3.5" />
+          Freeze
+        </Button>
+      ) : (
+        <DropdownMenuItem
+          onSelect={() => setOpen(true)}
+          className="cursor-pointer text-sky-600 focus:text-sky-700"
+        >
+          <Snowflake className="h-4 w-4 mr-2" />
+          Freeze package
+        </DropdownMenuItem>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Snowflake className="h-5 w-5 text-sky-500" />
@@ -168,5 +168,6 @@ export function FreezePackageDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
