@@ -93,16 +93,15 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
   };
 
   return (
-    <div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuItem
-          onSelect={(e) => e.preventDefault()}
-          onClick={() => setIsOpen(true)}
-          className="cursor-pointer"
-        >
-          Book Class
-        </DropdownMenuItem>
+    <>
+      <DropdownMenuItem
+        onSelect={() => setIsOpen(true)}
+        className="cursor-pointer"
+      >
+        Book Class
+      </DropdownMenuItem>
 
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="z-50 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
@@ -194,6 +193,6 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

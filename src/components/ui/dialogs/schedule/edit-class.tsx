@@ -112,16 +112,16 @@ export function EditClassComponent({
   const coachMap = new Map(coaches.map((c) => [c.coachName, c._id]));
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <DropdownMenuItem
-          onSelect={(e) => e.preventDefault()}
-          className="cursor-pointer"
-        >
-          Edit Class
-        </DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent>
+    <>
+      <DropdownMenuItem
+        onSelect={() => setIsOpen(true)}
+        className="cursor-pointer"
+      >
+        Edit Class
+      </DropdownMenuItem>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit {scheduledClass.className}</DialogTitle>
         </DialogHeader>
@@ -241,5 +241,6 @@ export function EditClassComponent({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

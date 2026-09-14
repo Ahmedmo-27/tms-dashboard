@@ -47,16 +47,16 @@ export default function EditSlotsDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <DropdownMenuItem
-          onSelect={(e) => e.preventDefault()}
-          className="cursor-pointer"
-        >
-          Change remaining slots
-        </DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent>
+    <>
+      <DropdownMenuItem
+        onSelect={() => setOpen(true)}
+        className="cursor-pointer"
+      >
+        Change remaining slots
+      </DropdownMenuItem>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
         <DialogHeader>
           <DialogTitle>Add slots to {scheduledClass.className}</DialogTitle>
           <DialogDescription>
@@ -119,5 +119,6 @@ export default function EditSlotsDialog({
         </DialogHeader>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
