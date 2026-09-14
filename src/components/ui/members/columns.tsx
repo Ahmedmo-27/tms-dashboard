@@ -27,6 +27,26 @@ export type AdjustmentRecord = {
     | "FRONTDESK_CANCELLATION";
 };
 
+export type FreezeHistory = {
+  startDate: string;
+  endDate?: string;
+  durationDays: number;
+  type: "STANDARD" | "EXTRA" | "ADMIN";
+  reason?: string;
+  approvedBy?: string | { _id: string; name: string };
+  createdAt?: string;
+};
+
+export type FreezeInfo = {
+  isFrozen: boolean;
+  freezeStartDate?: string;
+  freezeEndDate?: string;
+  allowedFreezeDays: number;
+  usedFreezeDays: number;
+  extraFreezeDaysApproved: number;
+  freezeHistory?: FreezeHistory[];
+};
+
 export type MemberPackage = {
   _id: string;
   name: string;
@@ -36,6 +56,7 @@ export type MemberPackage = {
   remainingClasses: number;
   adjustmentHistory: AdjustmentRecord[];
   attendance: { className: string; attendanceDate: string }[];
+  freezeInfo?: FreezeInfo;
 };
 
 export type Booking = {
@@ -58,10 +79,11 @@ export type Member = {
 };
 
 function soonestActiveExpiry(packages: MemberPackage[]): Date | null {
+  const now = new Date().getTime();
   const times = (packages ?? [])
     .filter((pkg) => pkg.status?.toUpperCase() === "ACTIVE" && pkg.pkgEndDate)
     .map((pkg) => new Date(pkg.pkgEndDate).getTime())
-    .filter((time) => !Number.isNaN(time));
+    .filter((time) => !Number.isNaN(time) && time >= now);
   if (times.length === 0) return null;
   return new Date(Math.min(...times));
 }

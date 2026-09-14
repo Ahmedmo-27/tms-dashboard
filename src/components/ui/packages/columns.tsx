@@ -165,8 +165,8 @@ export function createColumns(
                 </Badge>
               )}
               {row.original.isDeprecated && (
-                <Badge variant="destructive" className="text-[10px] bg-red-100 text-red-800 hover:bg-red-200 border-red-200">
-                  Deleted (w/ active members)
+                <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                  Archived
                 </Badge>
               )}
             </div>

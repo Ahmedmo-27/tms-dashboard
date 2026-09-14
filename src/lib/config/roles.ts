@@ -45,6 +45,7 @@ export function isManagementRole(role: string | undefined): boolean {
 export const SHARED_GLOBAL_PAGES = [
   "/dashboard/our-members",
   "/dashboard/member-requests",
+  "/dashboard/package-freezes",
   "/dashboard/tickets",
 ] as const;
 
@@ -98,6 +99,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/sheet": ["management", "branch_admin"],
   "/dashboard/our-members": ["management", "branch_admin"],
   "/dashboard/member-requests": ["management", "branch_admin"],
+  "/dashboard/package-freezes": ["management", "branch_admin"],
   "/dashboard/schedule": ["management", "branch_admin"],
   "/dashboard/catalog": ["management", "branch_admin"],
   "/dashboard/packages": ["management", "branch_admin"],

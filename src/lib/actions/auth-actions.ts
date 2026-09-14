@@ -1,11 +1,11 @@
 "use server";
-import z from "zod";
 import { credentialsSchema } from "@/lib/schemas/credentialsSchema";
 import { newUserSchema } from "@/lib/schemas/newUserSchema";
 import { login, logout } from "@/lib/data/auth";
 import { parseStateError } from "@/lib/utils/state-errors";
 import { registerMember } from "../data/member";
 import { ApiError, NotFoundError } from "@/core/api-error";
+import { redirect } from "next/navigation";
 
 export const registerUser = async (_prevState: unknown, formData: FormData) => {
   try {
@@ -71,9 +71,5 @@ export const loginAction = async (_prevState: unknown, formData: FormData) => {
 
 export const logoutAction = async () => {
   await logout();
-  return {
-    success: true,
-    errors: null,
-    data: null,
-  };
+  redirect("/login");
 };

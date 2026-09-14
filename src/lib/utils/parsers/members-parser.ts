@@ -8,21 +8,18 @@ export const parseMembers = (members: any): Member[] => {
 
     const parsedPackages: any = [];
     (member.packages || []).forEach((pkg: any) => {
-      if (!pkg || !pkg.pkgId) {
-        parsedPackages.push({
-          _id: "ERROR",
-          name: "ERROR - Contact Support",
-          pkgStartDate: "",
-          pkgEndDate: "",
-          remainingClasses: "",
-          status: "",
-          adjustmentHistory: [],
-          attendance: [],
-        });
-        return;
-      }
+      if (!pkg) return;
 
-      const pkgIdStr = pkg.pkgId._id?.toString() ?? pkg.pkgId?.toString() ?? "";
+      const pkgIdStr =
+        pkg.pkgId?._id?.toString() ??
+        pkg.pkgId?.toString() ??
+        pkg._id?.toString() ??
+        "ERROR";
+
+      const pkgName =
+        pkg.pkgId?.name ??
+        pkg.name ??
+        (pkg.pkgId ? "Package" : "Archived Package");
 
       const bundledAttendance = (member.ptAttendance ?? [])
         .filter((rec: any) => {
@@ -36,15 +33,46 @@ export const parseMembers = (members: any): Member[] => {
           attendanceDate: rec.attendanceTime,
         }));
 
+      const rawStatus = (pkg.status ?? "").toUpperCase();
+      const isFrozen = rawStatus === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
+      const pkgEndDateStr = pkg.pkgEndDate ?? "";
+      const pkgStartDateStr = pkg.pkgStartDate ?? "";
+      const remainingClasses =
+        typeof pkg.remainingClasses === "number"
+          ? pkg.remainingClasses
+          : (Number(pkg.remainingClasses) || 0);
+
+      let effectiveStatus = rawStatus;
+      if (rawStatus !== "DELETED") {
+        if (isFrozen) {
+          effectiveStatus = "FROZEN";
+        } else if (
+          pkgEndDateStr &&
+          !isNaN(new Date(pkgEndDateStr).getTime()) &&
+          new Date(pkgEndDateStr) < new Date()
+        ) {
+          effectiveStatus = "EXPIRED";
+        } else if (
+          remainingClasses <= 0 &&
+          pkg.remainingClasses !== undefined &&
+          pkg.remainingClasses !== ""
+        ) {
+          effectiveStatus = "COMPLETED";
+        } else if (!rawStatus || rawStatus === "ACTIVE") {
+          effectiveStatus = "ACTIVE";
+        }
+      }
+
       const parsedPackage = {
         _id: pkgIdStr,
-        name: pkg.pkgId.name ?? "Package",
-        pkgStartDate: pkg.pkgStartDate ?? "",
-        pkgEndDate: pkg.pkgEndDate ?? "",
-        remainingClasses: pkg.remainingClasses ?? 0,
-        status: pkg.status ?? "",
+        name: pkgName,
+        pkgStartDate: pkgStartDateStr,
+        pkgEndDate: pkgEndDateStr,
+        remainingClasses: remainingClasses,
+        status: effectiveStatus,
         adjustmentHistory: pkg.adjustmentHistory ?? [],
         attendance: bundledAttendance,
+        freezeInfo: pkg.freezeInfo,
       };
       parsedPackages.push(parsedPackage);
     });
@@ -86,7 +114,11 @@ export const parseMembers = (members: any): Member[] => {
       email: member.uid.email ?? "",
       packages: parsedPackages,
       bookings: parsedBookings,
-      activePkgs: parsedPackages.filter((p: any) => p.status?.toUpperCase() === "ACTIVE").length,
+      activePkgs: parsedPackages.filter(
+        (p: any) =>
+          p.status?.toUpperCase() === "ACTIVE" &&
+          (!p.pkgEndDate || new Date(p.pkgEndDate) >= new Date())
+      ).length,
       ptAttendance: parsedPtAttendance,
     };
     parsedMembers.push(parsedMember);

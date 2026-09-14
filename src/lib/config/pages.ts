@@ -13,6 +13,7 @@ import {
   Barcode,
   Ticket,
   Mail,
+  Snowflake,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -67,6 +68,12 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           title: "Member Requests",
           url: "/dashboard/member-requests?searchString=&page=1",
           icon: UserPlus,
+          roles: ["management", "branch_admin"],
+        },
+        {
+          title: "Package Freezes",
+          url: "/dashboard/package-freezes",
+          icon: Snowflake,
           roles: ["management", "branch_admin"],
         },
       ],

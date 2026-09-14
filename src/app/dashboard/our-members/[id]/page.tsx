@@ -37,18 +37,7 @@ export default async function Page({
   }
   try {
     const data = await getMembers(null, 1, 1, id);
-    const memberData = data.data[0];
-    const member = {
-      id: memberData.id,
-      name: memberData.name,
-      phone: memberData.phone,
-      email: memberData.email,
-      activePkgs: memberData.packages.length,
-      packages: memberData.packages,
-      bookings: memberData.bookings,
-      ptAttendance: memberData.ptAttendance,
-    };
-
+    const memberData = data?.data?.[0];
     if (!memberData) {
       return (
         <Card className="m-4 sm:m-6">
@@ -58,6 +47,16 @@ export default async function Page({
         </Card>
       );
     }
+    const member = {
+      id: memberData.id,
+      name: memberData.name,
+      phone: memberData.phone,
+      email: memberData.email,
+      activePkgs: memberData.activePkgs,
+      packages: memberData.packages,
+      bookings: memberData.bookings,
+      ptAttendance: memberData.ptAttendance,
+    };
     return (
       <MemberPage
         member={member}

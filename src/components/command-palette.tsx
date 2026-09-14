@@ -18,6 +18,7 @@ import {
   QrCode,
   HelpCircle,
   Send,
+  Snowflake,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -229,6 +230,14 @@ export function CommandPalette() {
         keywords: "support tickets tickets helpdesk issues complaints inquiries staff notes",
         icon: Ticket,
         run: () => go("/dashboard/tickets"),
+      },
+      {
+        id: "package-freezes",
+        label: "Package freezes & requests",
+        keywords:
+          "package freezes freeze requests unfreeze pause subscription hold package member freeze pending freeze requests",
+        icon: Snowflake,
+        run: () => go("/dashboard/package-freezes"),
       },
     ],
     [ensurePackages, go]

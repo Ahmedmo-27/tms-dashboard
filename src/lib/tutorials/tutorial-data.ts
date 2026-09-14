@@ -21,6 +21,10 @@ import {
   Tags,
   Layers,
   Compass,
+  Snowflake,
+  Clock,
+  RotateCcw,
+  Search,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -382,6 +386,107 @@ export const tutorialSections: TutorialSection[] = [
             title: "Approve & Promote",
             description:
               "Click 'Approve' to promote the account to active Member status and enable mobile booking privileges.",
+            icon: UserCheck,
+          },
+        ],
+      },
+      {
+        id: "package-freeze-management",
+        title: "Package Freeze & Early Unfreeze",
+        subtitle: "Overview frozen memberships, search by member, initiate manual freezes, and lift freezes early",
+        icon: Snowflake,
+        roles: ["management", "branch_admin"],
+        badge: "Freeze",
+        keywords: [
+          "freeze",
+          "package freeze",
+          "unfreeze",
+          "freeze member",
+          "pause package",
+          "hold package",
+          "freeze subscription",
+          "lift freeze",
+          "freeze days",
+          "early unfreeze",
+          "package freezes",
+          "freeze history",
+          "frozen packages",
+        ],
+        steps: [
+          {
+            title: "Freeze Overview & Metrics",
+            description:
+              "Review high-level metrics for currently frozen subscriptions, pending requests, and approval counts.",
+            icon: Snowflake,
+          },
+          {
+            title: "Freeze a Member Package",
+            description:
+              "Search any member, pick their active package, and apply a freeze period (days or weeks) with an admin note.",
+            icon: Snowflake,
+          },
+          {
+            title: "Search & Filter Roster",
+            description:
+              "Search frozen subscriptions by member name or phone to quickly locate specific memberships on hold.",
+            icon: Search,
+          },
+          {
+            title: "Frozen Package Details",
+            description:
+              "Inspect remaining freeze days countdown, recalculated package expiration dates, and freeze reasons.",
+            icon: Package,
+          },
+          {
+            title: "Early Unfreeze & Quota Refund",
+            description:
+              "Lift freezes early when members return. Unused days are automatically credited back to their freeze allowance.",
+            icon: RotateCcw,
+          },
+        ],
+      },
+      {
+        id: "freeze-requests-triage",
+        title: "Triage Extra Freeze Requests",
+        subtitle: "Review member freeze requests, evaluate justifications, and approve with custom duration or reject",
+        icon: Clock,
+        roles: ["management", "branch_admin"],
+        badge: "Requests",
+        keywords: [
+          "freeze requests",
+          "extra freeze",
+          "approve freeze",
+          "reject freeze",
+          "member freeze request",
+          "pending freeze",
+          "freeze extension",
+          "freeze reason",
+          "triage freeze",
+          "package freeze requests",
+        ],
+        steps: [
+          {
+            title: "Extra Freeze Queue",
+            description:
+              "Switch to the Extra Freeze Requests tab to inspect member submissions from the mobile app.",
+            icon: Clock,
+          },
+          {
+            title: "Filter Statuses",
+            description:
+              "Filter between Pending submissions awaiting decision, Approved extensions, or Rejected history.",
+            icon: Layers,
+          },
+          {
+            title: "Inspect Justifications",
+            description:
+              "Review the member profile, requested hold days, and submitted reason notes (e.g. travel, injury, exams).",
+            icon: Users,
+          },
+          {
+            title: "Approve or Reject",
+            description:
+              "Approve with full or adjusted duration and admin note, or decline with a clear member-facing reason.",
             icon: UserCheck,
           },
         ],

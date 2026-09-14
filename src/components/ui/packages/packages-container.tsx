@@ -151,7 +151,7 @@ export function PackagesContainer({
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] sm:text-xs lg:text-sm font-medium text-muted-foreground truncate">
-                  Deleted (w/ members)
+                  Archived
                 </p>
                 <p className="text-lg sm:text-xl lg:text-2xl font-bold tabular-nums">
                   {stats.deprecated}
@@ -195,7 +195,7 @@ export function PackagesContainer({
                       [
                         { value: "all", label: "All Statuses" },
                         { value: "active", label: "Active" },
-                        { value: "deprecated", label: "Deleted" },
+                        { value: "deprecated", label: "Archived" },
                       ] as const
                     ).map(({ value, label }) => (
                       <Button
