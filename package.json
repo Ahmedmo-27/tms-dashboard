@@ -65,5 +65,11 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "typescript-eslint": "^8.34.0"
+  },
+  "overrides": {
+    "react-day-picker": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   }
 }
