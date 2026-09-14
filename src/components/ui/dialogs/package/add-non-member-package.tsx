@@ -340,6 +340,7 @@ export function AddNonMemberPackage({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Payment method</Label>
               <Select
+                value={selectedPaymentMethod}
                 disabled={!selectedStartDate || pending}
                 onValueChange={setSelectedPaymentMethod}
               >

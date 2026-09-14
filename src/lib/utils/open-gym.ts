@@ -5,6 +5,7 @@ export const OPEN_GYM_PACKAGE_CATEGORIES = [
   "OPEN_GYM",
   "SPACE_MEMBERSHIP",
   "ULTIMATE_MINDSPACER",
+  "MIXED",
 ] as const;
 
 export function isOpenGymPackage(category: string): boolean {
@@ -34,6 +35,9 @@ export function formatCatalogPackageLabel(pkg: Package): string {
       return `${pkg.name}: ${duration} open gym + ${sessions} class sessions • EGP${pkg.price}`;
     }
     return `${pkg.name}: ${duration} open gym access • EGP${pkg.price}`;
+  }
+  if (pkg.category === "MIXED") {
+    return `${pkg.name}: ${formatRenewalLabel(pkg)} open gym + ${pkg.numberOfSessions} sessions • EGP${pkg.price}`;
   }
   if (isOpenGymPackage(pkg.category)) {
     return `${pkg.name}: ${formatRenewalLabel(pkg)} access • EGP${pkg.price}`;

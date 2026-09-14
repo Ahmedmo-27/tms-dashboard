@@ -28,7 +28,17 @@ interface ActionState {
   };
 }
 
-export function BookNonUserDialog({ scid }: { scid: string }) {
+export function BookNonUserDialog({
+  scid,
+  variant = "none",
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: {
+  scid: string;
+  variant?: "menu" | "button" | "none";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const initialState: ActionState = {
     success: false,
     errors: null,
@@ -36,7 +46,17 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
     defaultValues: { name: "", phoneNumber: "", scid: "" },
   };
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = (value: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -93,17 +113,23 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
   };
 
   return (
-    <div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <>
+      {variant === "button" && (
+        <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
+          Book Class
+        </Button>
+      )}
+      {variant === "menu" && (
         <DropdownMenuItem
-          onSelect={(e) => e.preventDefault()}
-          onClick={() => setIsOpen(true)}
+          onSelect={() => setIsOpen(true)}
           className="cursor-pointer"
         >
           Book Class
         </DropdownMenuItem>
+      )}
 
-        <DialogContent className="z-50 max-w-md">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="z-50 max-w-md" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               Book for a Guest User
@@ -194,6 +220,6 @@ export function BookNonUserDialog({ scid }: { scid: string }) {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

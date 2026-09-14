@@ -56,17 +56,15 @@ export default function DeletePackageDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <div className="w-full">
-          <Button
-            onSelect={(e) => e.preventDefault()}
-            variant="outline"
-            className="cursor-pointer text-destructive hover:text-destructive w-full"
-          >
-            <Trash className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Delete</span>
-            <span className="sm:hidden">Delete</span>
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="cursor-pointer text-destructive hover:text-destructive w-full"
+        >
+          <Trash className="mr-2 h-4 w-4" />
+          <span className="hidden sm:inline">Delete</span>
+          <span className="sm:hidden">Delete</span>
+        </Button>
       </DialogTrigger>
       <DialogContent onClick={(e) => e.stopPropagation()} className="max-w-[95vw] sm:max-w-lg">
         <DialogHeader>

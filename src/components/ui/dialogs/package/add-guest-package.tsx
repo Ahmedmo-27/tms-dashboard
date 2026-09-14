@@ -293,6 +293,7 @@ export default function AddGuestPackage({
             <div className="space-y-2 mt-4">
               <Label className="text-sm font-medium">Payment Method</Label>
               <Select
+                value={selectedPaymentMethod}
                 disabled={!selectedStartDate || pending}
                 onValueChange={setSelectedPaymentMethod}
               >

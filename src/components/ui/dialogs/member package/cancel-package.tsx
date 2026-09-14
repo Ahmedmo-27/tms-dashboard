@@ -6,8 +6,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { unsubscribePackageAction } from "@/lib/actions/member-actions";
 import { toast } from "react-hot-toast";
@@ -16,6 +16,9 @@ import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 export default function CancelPackageDialog({
   uid,
   pkg,
+  variant = "none",
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   uid: string;
   pkg: {
@@ -24,8 +27,21 @@ export default function CancelPackageDialog({
     _id: string;
     pkgStartDate: string;
   };
+  variant?: "menu" | "button" | "none";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,57 +81,68 @@ export default function CancelPackageDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <div className="w-full">
-          <div
-            onSelect={(e) => e.preventDefault()}
-            className="cursor-pointer text-destructive hover:text-destructive w-full text-center"
-          >
-            Cancel Package
-          </div>
-        </div>
-      </DialogTrigger>
-      <DialogContent onClick={(e) => e.stopPropagation()}>
-        <DialogHeader>
-          <DialogTitle>Are you sure you want to delete {pkg.name}?</DialogTitle>
-          <DialogDescription>
-            This action cannot be undone. This will permanently delete your
-            package.
-          </DialogDescription>
-          {error && (
-            <DialogDescription className="text-red-500 whitespace-pre-wrap">
-              {error}
+    <>
+      {variant === "button" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-destructive border-destructive/30 hover:bg-destructive/10"
+          onClick={() => setOpen(true)}
+        >
+          Cancel Package
+        </Button>
+      )}
+      {variant === "menu" && (
+        <DropdownMenuItem
+          onSelect={() => setOpen(true)}
+          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+        >
+          Cancel Package
+        </DropdownMenuItem>
+      )}
+
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Are you sure you want to delete {pkg.name}?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete your
+              package.
             </DialogDescription>
-          )}
-        </DialogHeader>
-        <div className="flex justify-end gap-2 mt-4">
-          <Button
-            type="button"
-            className="cursor-pointer"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              setError(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            className="cursor-pointer"
-            disabled={isDeleting}
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete();
-            }}
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            {error && (
+              <DialogDescription className="text-red-500 whitespace-pre-wrap">
+                {error}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              type="button"
+              className="cursor-pointer"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                setError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="cursor-pointer"
+              disabled={isDeleting}
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

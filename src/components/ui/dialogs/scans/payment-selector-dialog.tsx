@@ -148,13 +148,13 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
                   onValueChange={(value) => setSelectedPaymentMethod(value)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue />
+                    <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
                     {paymentMethods.map((method) => (
                       <SelectItem
                         key={method.value}
-                        value={method.value || ""}
+                        value={method.value}
                         className="hover:bg-accent flex flex-row justify-between"
                       >
                         <div>{method.header}</div>

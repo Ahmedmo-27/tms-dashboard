@@ -50,7 +50,9 @@ export function PackageSearchSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
+
         <Button
+          type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
@@ -68,9 +70,9 @@ export function PackageSearchSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] p-0"
+        className="z-[100] w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
-        onWheel={(e) => e.stopPropagation()}
+        sideOffset={4}
       >
         <Command className="h-auto">
           <CommandInput placeholder={searchPlaceholder} />

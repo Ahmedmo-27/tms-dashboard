@@ -96,11 +96,15 @@ export const addWalkIn = async (
     };
     const locationId = (formData.get("locationId") as string) || undefined;
     const validatedBookingData = walkInSchema.parse(bookingData);
+    const paymentMethod =
+      validatedBookingData.paymentMethod === "WILL_PAY"
+        ? undefined
+        : validatedBookingData.paymentMethod;
     const booking = await bookWalkIn(
       validatedBookingData.name,
       validatedBookingData.phoneNumber || "",
       validatedBookingData.scid,
-      validatedBookingData.paymentMethod,
+      paymentMethod,
       validatedBookingData.amount,
       validatedBookingData.paymentDate,
       locationId,

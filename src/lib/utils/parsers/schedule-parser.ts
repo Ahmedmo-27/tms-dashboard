@@ -31,7 +31,11 @@ export const parseSchedule = (
       parsedBookedMembers.push(parsedBookedMember);
     });
     nonUserBookings.forEach((entry: any) => {
-      if (entry.scid === cls._id && entry.status!=="CANCELLED") {
+      const entryScid =
+        typeof entry.scid === "object" && entry.scid?._id
+          ? String(entry.scid._id)
+          : String(entry.scid ?? "");
+      if (entryScid === String(cls._id) && entry.status !== "CANCELLED") {
         parsedBookedMembers.push({
           name: entry.name,
           phone: entry.phoneNumber,

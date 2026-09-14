@@ -27,7 +27,6 @@ import { useState } from "react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -102,30 +101,28 @@ export function MobilePackageCard({
                 </div>
               </div>
             </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleVisibilityChange}
-                    disabled={isLoading}
-                    className="h-8 w-8 p-0 flex-shrink-0"
-                  >
-                    {isLoading ? (
-                      <LoaderIcon className="h-4 w-4 animate-spin" />
-                    ) : isHidden ? (
-                      <EyeClosed className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isHidden ? "Hidden from members" : "Visible to members"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleVisibilityChange}
+                  disabled={isLoading}
+                  className="h-8 w-8 p-0 flex-shrink-0"
+                >
+                  {isLoading ? (
+                    <LoaderIcon className="h-4 w-4 animate-spin" />
+                  ) : isHidden ? (
+                    <EyeClosed className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isHidden ? "Hidden from members" : "Visible to members"}
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Package details */}

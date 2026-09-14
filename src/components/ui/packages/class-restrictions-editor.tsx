@@ -97,11 +97,11 @@ export function ClassRestrictionsEditor({
             return (
               <div key={index} className="flex items-center gap-2">
                 <Select
-                  value={restriction.cid}
+                  value={restriction.cid || undefined}
                   onValueChange={(val) => updateCid(index, val)}
                 >
                   <SelectTrigger className="flex-1">
-                    <SelectValue />
+                    <SelectValue placeholder="Select class" />
                   </SelectTrigger>
                   <SelectContent>
                     {selectableClasses.map((c) => (
@@ -111,6 +111,7 @@ export function ClassRestrictionsEditor({
                     ))}
                   </SelectContent>
                 </Select>
+
                 <Input
                   type="number"
                   min={1}

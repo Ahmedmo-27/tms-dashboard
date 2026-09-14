@@ -173,12 +173,12 @@ export function ScheduleClass({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Class</Label>
                 <Select
-                  value={selectedClass}
+                  value={selectedClass || undefined}
                   disabled={pending}
                   onValueChange={setSelectedClass}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue />
+                    <SelectValue placeholder="Select a class" />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.from(classIdsMap.entries()).map(([title, id]) => (
@@ -186,7 +186,6 @@ export function ScheduleClass({
                         key={id}
                         value={id}
                         className="hover:bg-accent"
-                        onChange={() => setSelectedClass(id)}
                       >
                         {title}
                       </SelectItem>
@@ -214,7 +213,7 @@ export function ScheduleClass({
                   </SelectTrigger>
                   <SelectContent>
                     {locations.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No locations available
                       </SelectItem>
                     ) : (

@@ -11,14 +11,8 @@ import {
 } from "@/components/ui/table";
 import CancelBookingDialog from "@/components/ui/dialogs/member-bookings/cancel-booking";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MoreHorizontal, X } from "lucide-react";
+import { Calendar, Clock, MoreHorizontal } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ScheduledClass } from "../schedule/columns";
 import BookClass from "../dialogs/member-bookings/book-class";

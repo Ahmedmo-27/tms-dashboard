@@ -119,10 +119,11 @@ export function CreateTicketModal({
           <div className="space-y-2">
             <Label>Problem Category</Label>
             <Select
-              value={category}
+              value={category || undefined}
               onValueChange={setCategory}
               disabled={isLoadingCategories || isSubmitting}
             >
+
               <SelectTrigger>
                 <SelectValue
                   placeholder={
@@ -131,11 +132,17 @@ export function CreateTicketModal({
                 />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat._id} value={cat.name}>
-                    {cat.name}
+                {categories.length === 0 ? (
+                  <SelectItem value="_empty" disabled>
+                    No categories available
                   </SelectItem>
-                ))}
+                ) : (
+                  categories.map((cat) => (
+                    <SelectItem key={cat._id} value={cat.name}>
+                      {cat.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>

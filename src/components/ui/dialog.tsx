@@ -51,6 +51,22 @@ function DialogContent({
   children,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+  React.useEffect(() => {
+    return () => {
+      // Radix / React 19 safety cleanup: ensure document.body pointer-events is reset when dialog closes
+      if (typeof document !== "undefined") {
+        setTimeout(() => {
+          const hasOpenDialog = document.querySelector(
+            "[data-slot='dialog-content'], [data-slot='sheet-content'], [data-slot='dialog-overlay'], [data-slot='sheet-overlay'], [role='dialog']"
+          );
+          if (!hasOpenDialog && document.body.style.pointerEvents === "none") {
+            document.body.style.pointerEvents = "";
+          }
+        }, 0);
+      }
+    };
+  }, []);
+
   return (
     <DialogPortal data-slot="dialog-portal">
        <DialogOverlay />

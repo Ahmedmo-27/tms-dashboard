@@ -27,7 +27,7 @@ import { Class } from "../../classes/columns";
 import { Coach } from "../../coaches/columns";
 import { CoachSearchSelect } from "@/components/ui/coach-search-select";
 import { getCoaches } from "@/lib/data/coaches";
-import { formatCategory } from "@/lib/utils/catalog";
+import { formatCategory, PACKAGE_CATEGORIES } from "@/lib/utils/catalog";
 import { ClassRestrictionsEditor } from "../../packages/class-restrictions-editor";
 
 interface ActionState {
@@ -40,15 +40,21 @@ interface ActionState {
 export default function EditPackageDialog({
   pkg,
   classes,
-  categories,
+  categories = PACKAGE_CATEGORIES as unknown as string[],
   coaches = [],
 }: {
   pkg: Package;
   classes: Class[];
-  categories: string[];
+  categories?: string[];
   coaches?: Coach[];
 }) {
+  const availableCategories =
+    categories && categories.length > 0
+      ? categories
+      : (PACKAGE_CATEGORIES as unknown as string[]);
+
   const classMap = new Map(classes.map((cls) => [cls.title, cls._id]));
+
   const classesOptions = classes.map((cls) => cls.title);
 
   const validOpensClasses = pkg.opensClasses.filter((c) => c != null);
@@ -284,20 +290,20 @@ export default function EditPackageDialog({
                 <Label className="text-sm font-medium">Category</Label>
                 <input type="hidden" name="category" value={selectedCategory} />
                 <Select
-                  defaultValue={selectedCategory}
+                  value={selectedCategory || undefined}
                   disabled={pending}
                   onValueChange={setSelectedCategory}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue />
+                    <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.length === 0 ? (
-                      <SelectItem value="" disabled>
+                    {availableCategories.length === 0 ? (
+                      <SelectItem value="_empty" disabled>
                         No categories available
                       </SelectItem>
                     ) : (
-                      categories.map((category) => (
+                      availableCategories.map((category) => (
                         <SelectItem
                           key={category}
                           value={category}
@@ -315,6 +321,7 @@ export default function EditPackageDialog({
                   </div>
                 )}
               </div>
+
 
               {selectedCategory === "PERSONAL_TRAINING" && (
                 <div className="space-y-2">

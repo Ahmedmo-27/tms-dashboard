@@ -50,7 +50,9 @@ export function MultiSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
+
         <Button
+          type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
@@ -89,7 +91,11 @@ export function MultiSelect({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+      <PopoverContent
+        className="z-[100] w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0"
+        align="start"
+        sideOffset={4}
+      >
         <Command className="h-auto">
           <CommandInput placeholder="Search..." />
           <CommandList style={{ maxHeight: "240px", overflowY: "auto" }}>
@@ -121,3 +127,4 @@ export function MultiSelect({
     </Popover>
   );
 }
+

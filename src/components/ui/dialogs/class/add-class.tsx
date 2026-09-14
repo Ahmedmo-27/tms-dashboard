@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { ApiError } from "@/core/api-error";
-import { formatCategory } from "@/lib/utils/catalog";
+import { formatCategory, CLASS_CATEGORIES } from "@/lib/utils/catalog";
 import type { Location } from "@/lib/data/locations";
 
 interface ActionState {
@@ -41,13 +41,22 @@ interface AddClassProps {
   locations?: Location[];
 }
 
-export function AddClass({ categories = [], locations = [] }: AddClassProps) {
+export function AddClass({
+  categories = CLASS_CATEGORIES as unknown as string[],
+  locations = [],
+}: AddClassProps) {
+  const availableCategories =
+    categories && categories.length > 0
+      ? categories
+      : (CLASS_CATEGORIES as unknown as string[]);
+
   const initialState: ActionState = {
     success: false,
     errors: null,
     data: null,
     defaultValues: {
       title: "",
+
       price: "",
       category: "",
       locations: [],
@@ -137,7 +146,7 @@ export function AddClass({ categories = [], locations = [] }: AddClassProps) {
                 <Label className="text-sm font-medium">Location</Label>
                 <Select
                   name="locations"
-                  value={selectedLocation}
+                  value={selectedLocation || undefined}
                   disabled={pending}
                   onValueChange={setSelectedLocation}
                 >
@@ -146,7 +155,7 @@ export function AddClass({ categories = [], locations = [] }: AddClassProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {locations.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No locations available
                       </SelectItem>
                     ) : (
@@ -173,7 +182,7 @@ export function AddClass({ categories = [], locations = [] }: AddClassProps) {
                 <Label className="text-sm font-medium">Category</Label>
                 <Select
                   name="category"
-                  value={selectedCategory}
+                  value={selectedCategory || undefined}
                   disabled={pending}
                   onValueChange={setSelectedCategory}
                 >
@@ -181,12 +190,12 @@ export function AddClass({ categories = [], locations = [] }: AddClassProps) {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.length === 0 ? (
-                      <SelectItem value="" disabled>
+                    {availableCategories.length === 0 ? (
+                      <SelectItem value="_empty" disabled>
                         No categories available
                       </SelectItem>
                     ) : (
-                      categories.map((category) => (
+                      availableCategories.map((category) => (
                         <SelectItem
                           key={category}
                           value={category}
@@ -204,6 +213,7 @@ export function AddClass({ categories = [], locations = [] }: AddClassProps) {
                   </p>
                 )}
               </div>
+
             </div>
             {state.errors && state.errors.message && (
               <div className="text-destructive">{state.errors.message}</div>

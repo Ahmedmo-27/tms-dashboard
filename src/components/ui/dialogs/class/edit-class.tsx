@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Class, ClassLocation } from "../../classes/columns";
 import { Edit } from "lucide-react";
 import { ApiError } from "@/core/api-error";
-import { formatCategory } from "@/lib/utils/catalog";
+import { formatCategory, CLASS_CATEGORIES } from "@/lib/utils/catalog";
 import type { Location } from "@/lib/data/locations";
 
 interface ActionState {
@@ -60,11 +60,17 @@ const resolveLocationId = (
 
 export default function EditClassDialog({
   cls,
-  categories,
+  categories = CLASS_CATEGORIES as unknown as string[],
   locations = [],
 }: EditClassDialogProps) {
+  const availableCategories =
+    categories && categories.length > 0
+      ? categories
+      : (CLASS_CATEGORIES as unknown as string[]);
+
   const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(cls.category);
+
   const [selectedLocation, setSelectedLocation] = useState(
     resolveLocationId(cls.locations?.[0], locations)
   );
@@ -108,7 +114,6 @@ export default function EditClassDialog({
   return (
     <div>
       <Button
-        onSelect={(e) => e.preventDefault()}
         onClick={() => setOpen(true)}
         variant="outline"
         className="w-full"
@@ -164,20 +169,20 @@ export default function EditClassDialog({
                 <Label className="text-sm font-medium">Category</Label>
                 <Select
                   name="category"
-                  value={selectedCategory}
+                  value={selectedCategory || undefined}
                   disabled={pending}
                   onValueChange={setSelectedCategory}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue />
+                    <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.length === 0 ? (
-                      <SelectItem value="" disabled>
+                    {availableCategories.length === 0 ? (
+                      <SelectItem value="_empty" disabled>
                         No categories available
                       </SelectItem>
                     ) : (
-                      categories.map((category) => (
+                      availableCategories.map((category) => (
                         <SelectItem
                           key={category}
                           value={category}
@@ -199,7 +204,7 @@ export default function EditClassDialog({
                 <Label className="text-sm font-medium">Location</Label>
                 <Select
                   name="locations"
-                  value={selectedLocation}
+                  value={selectedLocation || undefined}
                   disabled={pending}
                   onValueChange={setSelectedLocation}
                 >
@@ -208,7 +213,7 @@ export default function EditClassDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {locations.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="_empty" disabled>
                         No locations available
                       </SelectItem>
                     ) : (
@@ -230,6 +235,7 @@ export default function EditClassDialog({
                   </div>
                 )}
               </div>
+
 
               {state.errors && state.errors.message && (
                 <div className="text-destructive">{state.errors.message}</div>

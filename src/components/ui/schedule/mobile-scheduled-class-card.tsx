@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Card, CardContent } from "../card";
 import { Badge } from "../badge";
 import { Button } from "../button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "../dropdown-menu";
@@ -32,6 +34,10 @@ export function MobileScheduledClassCard({
   scheduledClass, 
   coaches 
 }: MobileScheduledClassCardProps) {
+  const [activeModal, setActiveModal] = useState<
+    "book" | "slots" | "edit" | "cancel" | null
+  >(null);
+
   const handleDropdownClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
@@ -63,7 +69,7 @@ export function MobileScheduledClassCard({
               </div>
             </div>
             <div className="flex-shrink-0" onClick={handleDropdownClick}>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
                     <span className="sr-only">Open menu</span>
@@ -72,10 +78,30 @@ export function MobileScheduledClassCard({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Editing {scheduledClass.className}</DropdownMenuLabel>
-                  <BookNonUserDialog scid={scheduledClass._id as string} />
-                  <EditSlotsDialog scheduledClass={scheduledClass} />
-                  <EditClassComponent scheduledClass={scheduledClass} coaches={coaches} />
-                  <CancelClassDialog scls={scheduledClass} />
+                  <DropdownMenuItem
+                    onSelect={() => setActiveModal("book")}
+                    className="cursor-pointer"
+                  >
+                    Book Class
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setActiveModal("slots")}
+                    className="cursor-pointer"
+                  >
+                    Change remaining slots
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setActiveModal("edit")}
+                    className="cursor-pointer"
+                  >
+                    Edit Class
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setActiveModal("cancel")}
+                    className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                  >
+                    Cancel Class
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -136,6 +162,45 @@ export function MobileScheduledClassCard({
             </div>
           </div>
         </div>
+
+        {/* Dialogs rendered outside dropdown */}
+        {activeModal === "book" && (
+          <BookNonUserDialog
+            scid={scheduledClass._id as string}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal === "slots" && (
+          <EditSlotsDialog
+            scheduledClass={scheduledClass}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal === "edit" && (
+          <EditClassComponent
+            scheduledClass={scheduledClass}
+            coaches={coaches}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal === "cancel" && (
+          <CancelClassDialog
+            scls={scheduledClass}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   );

@@ -17,10 +17,26 @@ import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function CancelClassDialog({
   scls,
+  variant = "none",
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   scls: ScheduledClass;
+  variant?: "menu" | "button" | "none";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +63,7 @@ export default function CancelClassDialog({
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to cancel class";
+      console.error("Failed to delete class:", err);
       setError(message);
       toast.error(message);
     } finally {
@@ -55,54 +72,67 @@ export default function CancelClassDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+    <>
+      {variant === "button" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-destructive border-destructive/30 hover:bg-destructive/10"
+          onClick={() => setOpen(true)}
+        >
+          Cancel Class
+        </Button>
+      )}
+      {variant === "menu" && (
         <DropdownMenuItem
-          onSelect={(e) => e.preventDefault()}
-          className="cursor-pointer text-destructive"
+          onSelect={() => setOpen(true)}
+          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
         >
           Cancel Class
         </DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent onClick={(e) => e.stopPropagation()}>
-        <DialogHeader>
-          <DialogTitle>Are you sure you want to cancel {scls.className}?</DialogTitle>
-          <DialogDescription>
-            Make sure you contacted all booked members.
-          </DialogDescription>
-          {error && (
-            <DialogDescription className="text-red-500 whitespace-pre-wrap">
-              {error}
+      )}
+
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Are you sure you want to cancel {scls.className}?</DialogTitle>
+            <DialogDescription>
+              Make sure you contacted all booked members.
             </DialogDescription>
-          )}
-        </DialogHeader>
-        <div className="flex justify-end gap-2 mt-4">
-          <Button
-            type="button"
-            className="cursor-pointer"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              setError(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            className="cursor-pointer"
-            disabled={isDeleting}
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete();
-            }}
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            {error && (
+              <DialogDescription className="text-red-500 whitespace-pre-wrap">
+                {error}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              type="button"
+              className="cursor-pointer"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                setError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="cursor-pointer"
+              disabled={isDeleting}
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -126,6 +126,11 @@
     @apply bg-background text-foreground;
   }
 
+  body:not([data-scroll-locked]),
+  body[data-scroll-locked="false"] {
+    pointer-events: auto !important;
+  }
+
   /* Global scrollbars matching theme */
   ::-webkit-scrollbar {
     width: 6px;

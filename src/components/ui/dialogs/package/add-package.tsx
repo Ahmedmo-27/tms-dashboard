@@ -25,7 +25,7 @@ import { Class } from "../../classes/columns";
 import { Coach } from "../../coaches/columns";
 import { CoachSearchSelect } from "@/components/ui/coach-search-select";
 import { getCoaches } from "@/lib/data/coaches";
-import { formatCategory } from "@/lib/utils/catalog";
+import { formatCategory, PACKAGE_CATEGORIES } from "@/lib/utils/catalog";
 import { ClassRestrictionsEditor } from "../../packages/class-restrictions-editor";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
@@ -48,13 +48,18 @@ interface ActionState {
 
 export function AddPackageDialog({
   classes,
-  categories,
+  categories = PACKAGE_CATEGORIES as unknown as string[],
   coaches = [],
 }: {
   classes: Class[];
-  categories: string[];
+  categories?: string[];
   coaches?: Coach[];
 }) {
+  const availableCategories =
+    categories && categories.length > 0
+      ? categories
+      : (PACKAGE_CATEGORIES as unknown as string[]);
+
   const initialState: ActionState = {
     success: false,
     errors: null,
@@ -108,6 +113,10 @@ export function AddPackageDialog({
       if (result.success) {
         setIsOpen(false);
         setSelectedCoachId("");
+        setSelectedCategory("");
+        setSelectedClassTitles([]);
+        setSelectedClassIds([]);
+        setClassRestrictions([]);
         return initialState;
       }
       return {
@@ -132,21 +141,29 @@ export function AddPackageDialog({
     { cid: string; limit: number }[]
   >([]);
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      resetModalBranch();
+      setSelectedCoachId("");
+      setSelectedCategory("");
+      setSelectedClassTitles([]);
+      setSelectedClassIds([]);
+      setClassRestrictions([]);
+    }
+  };
+
   return (
     <div>
       <Button
-        onClick={() => {
-          resetModalBranch();
-          setSelectedCoachId("");
-          setIsOpen(true);
-        }}
+        onClick={() => handleOpenChange(true)}
         className="w-full sm:w-auto"
       >
         <Plus className="mr-2 h-4 w-4" />
         <span className="hidden sm:inline">Add Package</span>
         <span className="sm:hidden">Add</span>
       </Button>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto z-50">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
@@ -268,9 +285,7 @@ export function AddPackageDialog({
                 <Label className="text-sm font-medium">Category</Label>
                 <input type="hidden" name="category" value={selectedCategory} />
                 <Select
-                  defaultValue={
-                    state?.defaultValues?.category || selectedCategory
-                  }
+                  value={selectedCategory || undefined}
                   disabled={pending}
                   onValueChange={setSelectedCategory}
                 >
@@ -278,12 +293,12 @@ export function AddPackageDialog({
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.length === 0 ? (
-                      <SelectItem value="" disabled>
+                    {availableCategories.length === 0 ? (
+                      <SelectItem value="_empty" disabled>
                         No categories available
                       </SelectItem>
                     ) : (
-                      categories.map((category) => (
+                      availableCategories.map((category) => (
                         <SelectItem
                           key={category}
                           value={category}
@@ -301,6 +316,7 @@ export function AddPackageDialog({
                   </p>
                 )}
               </div>
+
 
               {selectedCategory === "PERSONAL_TRAINING" && (
                 <div className="space-y-2">
