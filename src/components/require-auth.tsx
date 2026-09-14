@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
-import { tms } from "@/lib/tms-api";
+import { getAuthenticatedUser } from "@/lib/data/auth";
 import { setCredentials, logout } from "@/lib/store/features/authSlice";
 import { isCoachRole, isStaffRole } from "@/lib/config/roles";
 
@@ -14,12 +14,21 @@ const RequireAuth = ({ children }: { children: ReactNode }) => {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const resolveAuth = async () => {
       // Always re-verify with the server — never trust persisted Redux alone.
       try {
-        const res = await tms.get("/auth/verifyToken");
-        const userData = res.data?.data?.user ?? res.data?.user;
-        const role = userData?.role as string | undefined;
+        const userData = await getAuthenticatedUser();
+        if (!mounted) return;
+
+        if (!userData) {
+          dispatch(logout());
+          router.replace("/login");
+          return;
+        }
+
+        const role = userData.role as string | undefined;
 
         if (isCoachRole(role)) {
           router.replace("/coach/today");
@@ -34,14 +43,22 @@ const RequireAuth = ({ children }: { children: ReactNode }) => {
         dispatch(logout());
         router.replace("/login");
       } catch {
-        dispatch(logout());
-        router.replace("/login");
+        if (mounted) {
+          dispatch(logout());
+          router.replace("/login");
+        }
       } finally {
-        setCheckingSession(false);
+        if (mounted) {
+          setCheckingSession(false);
+        }
       }
     };
 
     resolveAuth();
+
+    return () => {
+      mounted = false;
+    };
   }, [router, dispatch]);
 
   if (checkingSession) return null;

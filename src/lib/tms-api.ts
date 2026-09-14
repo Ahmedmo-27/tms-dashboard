@@ -1,11 +1,13 @@
 import axios from "axios";
-import { getToken, deleteToken } from "./cookie";
+import { getToken } from "./cookie";
 import { ApiError, UnauthorizedError } from "@/core/api-error";
 
-const API_URL = process.env.NEXT_PUBLIC_TMS_API_URL as string;
+const API_URL =
+  process.env.NEXT_PUBLIC_TMS_API_URL ||
+  (typeof window !== "undefined" ? window.location.origin : "");
 
-if (!API_URL) {
-  throw new Error("NEXT_PUBLIC_TMS_API_URL environment variable is not set");
+if (!API_URL && typeof window === "undefined") {
+  console.warn("NEXT_PUBLIC_TMS_API_URL environment variable is not set");
 }
 
 export const tms = axios.create({
@@ -18,30 +20,17 @@ export const tms = axios.create({
   timeout: 30000,
 });
 
-let handlingUnauthorized = false;
-
 tms.interceptors.response.use(
   (response) => response,
   async (error) => {
     const apiError = ApiError.handle(error);
-    if (apiError instanceof UnauthorizedError && !handlingUnauthorized) {
-      handlingUnauthorized = true;
-      try {
-        if (typeof window === "undefined") {
-          await deleteToken();
-        } else {
-          // Clear client session markers; HttpOnly cookie cleared via logout route when possible
-          try {
-            localStorage.removeItem("persist:root");
-          } catch {
-            /* ignore */
-          }
-          if (!window.location.pathname.startsWith("/login")) {
-            window.location.assign("/login");
-          }
+    if (apiError instanceof UnauthorizedError) {
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("persist:root");
+        } catch {
+          /* ignore */
         }
-      } finally {
-        handlingUnauthorized = false;
       }
     }
     return Promise.reject(apiError);
