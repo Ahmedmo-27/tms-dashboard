@@ -97,9 +97,11 @@ export function ScanContainer({
     }
   }, [router, searchParams]);
 
+  const locationId = searchParams.get("locationId") || undefined;
+
   const fetchAll = useCallback(async (date: Date, silent = false) => {
     try {
-      const data = await fetchScansMonitorData(date, date);
+      const data = await fetchScansMonitorData(date, date, locationId);
       setScans(data.scans);
       setDailyAttendance(data.dailyAttendance);
     } catch {
@@ -107,7 +109,7 @@ export function ScanContainer({
         toast.error("Failed to refresh scans.");
       }
     }
-  }, []);
+  }, [locationId]);
 
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return;

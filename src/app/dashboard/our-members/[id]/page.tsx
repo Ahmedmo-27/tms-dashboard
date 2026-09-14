@@ -15,17 +15,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const packages: Package[] = await getPackages();
-  const [fullSchedule, upcomingSchedule] = await Promise.all([
-    getScheduledClasses(),
-    getNextScheduledClasses(),
-  ]);
-  const scheduledClasses: ScheduledClass[] = [
-    ...fullSchedule,
-    ...upcomingSchedule.filter(
-      (cls) => !fullSchedule.some((existing) => existing._id === cls._id)
-    ),
-  ];
+
   if (!id) {
     return (
       <Card className="m-4 sm:m-6">
@@ -35,8 +25,22 @@ export default async function Page({
       </Card>
     );
   }
+
   try {
-    const data = await getMembers(null, 1, 1, id);
+    const [packages, fullSchedule, upcomingSchedule, data] = await Promise.all([
+      getPackages().catch(() => [] as Package[]),
+      getScheduledClasses().catch(() => [] as ScheduledClass[]),
+      getNextScheduledClasses().catch(() => [] as ScheduledClass[]),
+      getMembers(null, 1, 1, id),
+    ]);
+
+    const scheduledClasses: ScheduledClass[] = [
+      ...fullSchedule,
+      ...upcomingSchedule.filter(
+        (cls) => !fullSchedule.some((existing) => existing._id === cls._id)
+      ),
+    ];
+
     const memberData = data?.data?.[0];
     if (!memberData) {
       return (
@@ -70,5 +74,14 @@ export default async function Page({
     } else if (error instanceof UnauthorizedError) {
       return <UnauthorizedPage />;
     }
+    return (
+      <Card className="m-4 sm:m-6">
+        <CardContent className="flex items-center justify-center h-24 sm:h-32 p-4 sm:p-6">
+          <p className="text-sm sm:text-base text-muted-foreground text-center">
+            {error instanceof Error ? error.message : "Member not found"}
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 }

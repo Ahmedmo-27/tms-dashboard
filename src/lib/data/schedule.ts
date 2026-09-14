@@ -4,19 +4,26 @@ import { NotFoundError } from "@/core/api-error";
 import { parseSchedule } from "../utils/parsers/schedule-parser";
 
 export const getScheduledClasses = async (
-  locationId?: string
+  locationId?: string,
+  date?: string | Date
 ): Promise<ScheduledClass[]> => {
   try {
     let scheduledClasses: any = [];
-    const params = locationId ? { locationId } : undefined;
-    const response = await tms.get("/admin/schedule", { params });
+    const params: Record<string, string> = {};
+    if (locationId) params.locationId = locationId;
+    if (date) {
+      const dateStr = typeof date === "string" ? date : date.toISOString();
+      params.date = dateStr;
+      params.startDate = dateStr;
+    }
+    const response = await tms.get("/admin/schedule", { params: Object.keys(params).length ? params : undefined });
     const nonUserBookingsResponse = await tms.get("/admin/nonUserBooking", {
-      params,
+      params: Object.keys(params).length ? params : undefined,
     });
-    if (response.data.data) {
+    if (response.data?.data) {
       scheduledClasses = parseSchedule(
         response.data.data,
-        nonUserBookingsResponse.data.data
+        nonUserBookingsResponse.data?.data || []
       );
       return scheduledClasses;
     } else {
