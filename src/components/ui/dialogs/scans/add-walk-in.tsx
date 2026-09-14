@@ -17,6 +17,21 @@ import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 import { Plus, ArrowBigRight } from "lucide-react";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const paymentMethods = [
+  { value: "CASH", header: "Cash" },
+  { value: "VISA", header: "Visa" },
+  { value: "INSTAPAY", header: "Instapay" },
+  { value: "VALU", header: "Valu" },
+  { value: "WILL_PAY", header: "Pay Later (Will Pay)" },
+];
 
 interface ActionState {
   success: boolean;
@@ -64,6 +79,7 @@ export function AddWalkIn({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
 
   const handleDateChange = (date: string) => {
     setPaymentDate(date);
@@ -73,6 +89,7 @@ export function AddWalkIn({
     setIsOpen(open);
     if (!open) {
       setIsLoading(false);
+      setPaymentMethod("CASH");
     }
   };
 
@@ -229,6 +246,28 @@ export function AddWalkIn({
                   />
                 </div>
                 <input type="hidden" name="paymentDate" value={paymentDate} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="walk-in-payment-method" className="text-sm font-medium">
+                  Payment Method
+                </Label>
+                <Select
+                  name="paymentMethod"
+                  value={paymentMethod}
+                  onValueChange={setPaymentMethod}
+                >
+                  <SelectTrigger id="walk-in-payment-method">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.header}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
