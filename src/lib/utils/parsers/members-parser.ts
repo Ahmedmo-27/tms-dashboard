@@ -42,6 +42,10 @@ export const parseMembers = (members: any): Member[] => {
           ? pkg.remainingClasses
           : (Number(pkg.remainingClasses) || 0);
 
+      const isSpaceEligible =
+        pkgName &&
+        /spacer\s*mix|open\s*gym|ultimate\s*mindspacer|space\s*membership/i.test(pkgName);
+
       let effectiveStatus = rawStatus;
       if (rawStatus !== "DELETED") {
         if (isFrozen) {
@@ -55,7 +59,8 @@ export const parseMembers = (members: any): Member[] => {
         } else if (
           remainingClasses <= 0 &&
           pkg.remainingClasses !== undefined &&
-          pkg.remainingClasses !== ""
+          pkg.remainingClasses !== "" &&
+          !isSpaceEligible
         ) {
           effectiveStatus = "COMPLETED";
         } else if (!rawStatus || rawStatus === "ACTIVE") {
