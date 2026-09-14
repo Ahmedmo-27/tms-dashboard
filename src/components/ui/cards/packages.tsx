@@ -461,7 +461,7 @@ export default function Packages({
                                 <ChevronDown className="h-4 w-4" />
                               )}
                             </Button>
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="ghost"

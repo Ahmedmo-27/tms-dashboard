@@ -69,7 +69,7 @@ export function MobileScheduledClassCard({
               </div>
             </div>
             <div className="flex-shrink-0" onClick={handleDropdownClick}>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
                     <span className="sr-only">Open menu</span>

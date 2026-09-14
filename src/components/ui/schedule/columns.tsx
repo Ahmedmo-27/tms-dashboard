@@ -47,7 +47,7 @@ function ScheduledClassActionsCell({
 
   return (
     <div className="flex justify-center">
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
             <span className="sr-only">Open menu</span>
