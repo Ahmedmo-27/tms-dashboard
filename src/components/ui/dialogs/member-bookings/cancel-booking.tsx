@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Trash } from "lucide-react";
-import { cancelBooking } from "@/lib/data/bookings";
+import { cancelBookingAction } from "@/lib/actions/member-actions";
 import { toast } from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export default function CancelBookingDialog({
   scid,
@@ -29,12 +30,20 @@ export default function CancelBookingDialog({
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      await cancelBooking(uid, scid);
-      toast.success("Booking cancelled successfully");
-      setOpen(false);
-    } catch (error) {
-      toast.error((error as Error).message || "Failed to cancel booking");
-      setError((error as Error).message)
+      setError(null);
+      const res = await cancelBookingAction(uid, scid);
+      if (res.success) {
+        toast.success("Booking cancelled successfully");
+        setOpen(false);
+      } else {
+        const msg = getActionErrorMessage(res, "Failed to cancel booking");
+        toast.error(msg);
+        setError(msg);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to cancel booking";
+      toast.error(msg);
+      setError(msg);
     } finally {
       setIsDeleting(false);
     }

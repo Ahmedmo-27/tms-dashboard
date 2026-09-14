@@ -21,6 +21,7 @@ import { Snowflake, Search, Loader2, Check, User, Package as PackageIcon } from 
 import { useDebounce } from "@/hooks/useDebounce";
 import toast from "react-hot-toast";
 import { format, addDays } from "date-fns";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export function AdminFreezeMemberDialog({
   onSuccess,
@@ -114,10 +115,7 @@ export function AdminFreezeMemberDialog({
         handleResetMember();
         onSuccess?.();
       } else {
-        const errorMsg =
-          (res.errors as { message?: string; clientMessage?: string })?.message ||
-          (res.errors as { message?: string; clientMessage?: string })?.clientMessage ||
-          "Failed to freeze package";
+        const errorMsg = getActionErrorMessage(res, "Failed to freeze package");
         toast.error(errorMsg);
       }
     } catch (err: unknown) {

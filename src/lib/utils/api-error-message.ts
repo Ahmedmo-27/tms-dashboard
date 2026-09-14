@@ -83,7 +83,7 @@ function formatPackageSubscriberConflict(
  */
 export function getApiErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    const context = error.context as {
+    const context = (error.context || {}) as {
       code?: string;
       impact?: PackageDeleteImpact;
       message?: string;
@@ -114,22 +114,43 @@ export function getApiErrorMessage(error: unknown): string {
     return error.message || context.message || "An error occurred";
   }
 
-  if (error instanceof Error && error.message) {
-    return error.message;
+  if (error && typeof error === "object") {
+    const err = error as Record<string, any>;
+    if (err.response?.data) {
+      const data = err.response.data;
+      if (typeof data === "string" && data.trim()) return data;
+      if (typeof data.message === "string" && data.message.trim()) return data.message;
+      if (typeof data.error === "string" && data.error.trim()) return data.error;
+    }
+    if (typeof err.message === "string" && err.message.trim()) {
+      return err.message;
+    }
+    if (typeof err.error === "string" && err.error.trim()) {
+      return err.error;
+    }
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return error;
   }
 
   return "An error occurred";
 }
 
-/** Read `errors.message` from a server-action result without fighting union types. */
+/** Read `errors.message` or `errors.clientMessage` from a server-action result without fighting union types. */
 export function getActionErrorMessage(
   result: unknown,
   fallback = "An error occurred",
 ): string {
   if (!result || typeof result !== "object") return fallback;
   const errors = (result as { errors?: unknown }).errors;
-  if (!errors || typeof errors !== "object") return fallback;
-  const message = (errors as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim()) return message;
+  if (!errors) return fallback;
+  if (typeof errors === "string" && errors.trim()) return errors;
+  if (typeof errors === "object") {
+    const errObj = errors as Record<string, unknown>;
+    if (typeof errObj.message === "string" && errObj.message.trim()) return errObj.message;
+    if (typeof errObj.clientMessage === "string" && errObj.clientMessage.trim()) return errObj.clientMessage;
+    if (typeof errObj.error === "string" && errObj.error.trim()) return errObj.error;
+  }
   return fallback;
 }

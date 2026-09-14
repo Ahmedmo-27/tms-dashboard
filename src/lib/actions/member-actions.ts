@@ -259,6 +259,7 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
       {
         overrideTimeRestrictions:
           overrideTimeRestrictions && canOverride,
+        allowOverbooking: true,
       }
     );
 
@@ -316,20 +317,14 @@ export const bookDropInAction = async (_prevState: any, formData: FormData) => {
   }
 };
 
-// Leave for refactoring
-export const cancelBookingAction = async (
-  _prevState: any,
-  formData: FormData
-) => {
+export const cancelBookingAction = async (uid: string, scid: string) => {
   try {
-    const uid = formData.get("uid") as string;
-    const scid = formData.get("scid") as string;
-
     const response = await cancelBooking(uid, scid);
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
     revalidatePath("/dashboard/scans-monitor");
+    revalidatePath("/dashboard/schedule");
 
     return {
       success: true,
@@ -337,6 +332,6 @@ export const cancelBookingAction = async (
       data: response,
     };
   } catch (error) {
-    return parseStateError(error as Error);
+    return parseStateError(error);
   }
 };

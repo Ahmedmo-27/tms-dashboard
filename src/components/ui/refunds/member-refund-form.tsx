@@ -17,7 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { tms } from "@/lib/tms-api";
-import { ApiError } from "@/core/api-error";
 import {
   memberRefundSchema,
   MemberRefundFormValues,
@@ -26,20 +25,10 @@ import {
 import { RecordedAtField } from "./recorded-at-field";
 import { RecentPaymentPicker } from "./recent-payment-picker";
 import { cn } from "@/lib/utils";
+import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 
 interface MemberSearchResponse {
   data: MemberSearchResultDto[];
-}
-
-function getApiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) {
-    const context = err.context as { message?: string; code?: string };
-    return err.message ?? context.code ?? "An error occurred";
-  }
-  if (err instanceof Error) {
-    return err.message;
-  }
-  return "An error occurred";
 }
 
 export function MemberRefundForm() {

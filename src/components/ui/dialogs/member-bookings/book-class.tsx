@@ -34,7 +34,7 @@ import { canOverrideBookingTimeRestrictions } from "@/lib/config/roles";
 
 interface ActionState {
   success: boolean;
-  errors: Record<string, string> | ApiError | null;
+  errors: Record<string, string> | null;
   data: any | null;
   defaultValues?: {
     uid: string;
@@ -81,6 +81,7 @@ export default function BookClass({
       {
         overrideTimeRestrictions:
           canOverrideTime && overrideTimeRestrictions,
+        allowOverbooking: true,
       }
     );
   }, [
@@ -95,7 +96,9 @@ export default function BookClass({
   const requiresTimeOverride = useMemo(() => {
     if (!cls) return false;
     return isBookingTimeRestriction(
-      getBookingEligibility(member, cls, catalogPackages, scheduledClasses)
+      getBookingEligibility(member, cls, catalogPackages, scheduledClasses, {
+        allowOverbooking: true,
+      })
     );
   }, [cls, member, catalogPackages, scheduledClasses]);
 

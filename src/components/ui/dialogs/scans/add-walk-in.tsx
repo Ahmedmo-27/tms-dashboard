@@ -35,7 +35,7 @@ const paymentMethods = [
 
 interface ActionState {
   success: boolean;
-  errors: Record<string, string | boolean> | null | ApiError;
+  errors: Record<string, string | boolean> | null;
   data: unknown | null;
   usrId?: string;
   defaultValues?: {
@@ -142,9 +142,7 @@ export function AddWalkIn({
   );
 
   const fieldErrors =
-    state.errors &&
-    typeof state.errors === "object" &&
-    !(state.errors instanceof ApiError)
+    state.errors && typeof state.errors === "object"
       ? (state.errors as Record<string, string | boolean>)
       : null;
 

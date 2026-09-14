@@ -8,7 +8,7 @@ import { Check, Loader2 } from "lucide-react";
 import { acceptMemberAction } from "@/lib/actions/member-actions";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { ApiError } from "@/core/api-error";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export type PendingPackage = {
   pkgName: string;
@@ -36,10 +36,10 @@ function AcceptMemberButton({ uid, name }: { uid: string; name: string }) {
         return;
       }
 
-      const message =
-        result.errors instanceof ApiError
-          ? result.errors.message
-          : result.errors?.message || "Failed to accept member request.";
+      const message = getActionErrorMessage(
+        result,
+        "Failed to accept member request."
+      );
       toast.error(message);
     } catch {
       toast.error("Failed to accept member request.");
