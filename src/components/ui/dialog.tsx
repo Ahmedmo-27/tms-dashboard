@@ -57,7 +57,7 @@ function DialogContent({
       if (typeof document !== "undefined") {
         setTimeout(() => {
           const hasOpenDialog = document.querySelector(
-            "[data-slot='dialog-content'], [data-slot='dialog-overlay'], [role='dialog']"
+            "[data-slot='dialog-content'], [data-slot='sheet-content'], [data-slot='dialog-overlay'], [data-slot='sheet-overlay'], [role='dialog']"
           );
           if (!hasOpenDialog && document.body.style.pointerEvents === "none") {
             document.body.style.pointerEvents = "";

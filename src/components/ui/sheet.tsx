@@ -52,6 +52,22 @@ function SheetContent({
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
 }) {
+  React.useEffect(() => {
+    return () => {
+      // Radix / React 19 safety cleanup: ensure document.body pointer-events is reset when sheet closes
+      if (typeof document !== "undefined") {
+        setTimeout(() => {
+          const hasOpenDialog = document.querySelector(
+            "[data-slot='dialog-content'], [data-slot='sheet-content'], [data-slot='dialog-overlay'], [data-slot='sheet-overlay'], [role='dialog']"
+          );
+          if (!hasOpenDialog && document.body.style.pointerEvents === "none") {
+            document.body.style.pointerEvents = "";
+          }
+        }, 0);
+      }
+    };
+  }, []);
+
   return (
     <SheetPortal>
       <SheetOverlay />
