@@ -45,8 +45,9 @@ export function CoachSearchSelect({
   }, [coaches, value]);
 
   return (
-    <Popover modal={false} open={open} onOpenChange={setOpen}>
+    <Popover modal={true} open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
+
         <Button
           type="button"
           variant="outline"
@@ -66,7 +67,7 @@ export function CoachSearchSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[70] w-[var(--radix-popover-trigger-width)] p-0"
+        className="z-[100] w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
         sideOffset={4}
       >
@@ -80,7 +81,7 @@ export function CoachSearchSelect({
                   key={coach._id}
                   value={`${coach.coachName} ${coach.phoneNumber || ""}`}
                   onSelect={() => {
-                    onChange(coach._id === value ? "" : coach._id);
+                    onChange(coach._id);
                     setOpen(false);
                   }}
                   className="cursor-pointer"

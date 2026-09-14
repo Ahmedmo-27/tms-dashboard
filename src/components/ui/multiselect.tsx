@@ -48,8 +48,9 @@ export function MultiSelect({
   };
 
   return (
-    <Popover modal={false} open={open} onOpenChange={setOpen}>
+    <Popover modal={true} open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
+
         <Button
           type="button"
           variant="outline"
@@ -91,7 +92,7 @@ export function MultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[70] w-full p-0"
+        className="z-[100] w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0"
         align="start"
         sideOffset={4}
       >
@@ -126,3 +127,4 @@ export function MultiSelect({
     </Popover>
   );
 }
+

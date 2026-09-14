@@ -48,8 +48,9 @@ export function PackageSearchSelect({
   }, [packages]);
 
   return (
-    <Popover modal={false} open={open} onOpenChange={setOpen}>
+    <Popover modal={true} open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
+
         <Button
           type="button"
           variant="outline"
@@ -69,7 +70,7 @@ export function PackageSearchSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[70] w-[var(--radix-popover-trigger-width)] p-0"
+        className="z-[100] w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
         sideOffset={4}
       >

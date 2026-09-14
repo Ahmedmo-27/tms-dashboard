@@ -1,5 +1,28 @@
-export function deriveUniqueCategories(items: { category: string }[]): string[] {
-  return [...new Set(items.map((i) => i.category))].sort();
+export const PACKAGE_CATEGORIES = [
+  "FUNCTIONAL_TRAINING",
+  "STUDIO",
+  "PERSONAL_TRAINING",
+  "PRE_POST_NATAL",
+  "MIXED",
+  "SPACE_MEMBERSHIP",
+  "ULTIMATE_MINDSPACER",
+  "OPEN_GYM",
+] as const;
+
+export const CLASS_CATEGORIES = [
+  "FUNCTIONAL_TRAINING",
+  "STUDIO",
+  "PRE_POST_NATAL",
+  "WORKSHOPS",
+  "WORKSPACE",
+] as const;
+
+export function deriveUniqueCategories(
+  items: { category: string }[],
+  fallback: readonly string[] = []
+): string[] {
+  const set = new Set([...fallback, ...items.map((i) => i.category).filter(Boolean)]);
+  return [...set].sort();
 }
 
 export function formatCategory(category: string): string {
@@ -29,3 +52,4 @@ export function getCategoryColor(category: string): string {
 export function formatSessionCount(sessions: string): string {
   return sessions === "1000" ? "Unlimited" : sessions;
 }
+
