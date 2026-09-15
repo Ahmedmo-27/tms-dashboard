@@ -24,20 +24,31 @@ export function CoachSettings() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setError(null);
     try {
       await changeCoachPassword(coachApi, currentPassword, newPassword);
       toast.success("Password updated.");
       setCurrentPassword("");
       setNewPassword("");
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "message" in err
-          ? String((err as { message: string }).message)
-          : "Could not update password.";
+    } catch (err: any) {
+      const code = err?.response?.data?.code || err?.context?.code;
+      const serverMsg = err?.response?.data?.message || err?.context?.message;
+      let message = serverMsg || "Could not update password.";
+      if (code === "INVALID_CREDENTIALS") {
+        message = "Current password is incorrect.";
+      } else if (code === "WEAK_PASSWORD") {
+        message = serverMsg || "Password must be at least 10 characters with letters, numbers, and symbols.";
+      } else if (code === "MISSING_FIELDS") {
+        message = "Please provide both current and new passwords.";
+      } else if (code === "USER_NOT_FOUND") {
+        message = "Coach account not found.";
+      }
+      setError(message);
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -76,6 +87,11 @@ export function CoachSettings() {
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-3">
+            {error && (
+              <div className="rounded-md bg-destructive/10 p-3 text-xs text-destructive">
+                {error}
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="currentPassword">Current password</Label>
               <Input
@@ -83,7 +99,10 @@ export function CoachSettings() {
                 type="password"
                 autoComplete="current-password"
                 value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
+                onChange={(e) => {
+                  setCurrentPassword(e.target.value);
+                  if (error) setError(null);
+                }}
                 required
               />
             </div>
@@ -94,7 +113,10 @@ export function CoachSettings() {
                 type="password"
                 autoComplete="new-password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  if (error) setError(null);
+                }}
                 minLength={10}
                 required
               />

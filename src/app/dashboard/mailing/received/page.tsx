@@ -37,23 +37,31 @@ export default function ReceivedPage() {
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
   const [search, setSearch] = useState("");
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchEmails();
   }, []);
 
   const fetchEmails = async () => {
+    setIsLoading(true);
     try {
       const response = await tms.get("/admin/mail/inbox");
-      setEmails(response.data);
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+      setEmails(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch inbox", error);
+      setEmails([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const filteredEmails = emails.filter(email => 
-    email.subject.toLowerCase().includes(search.toLowerCase()) || 
-    email.from.toLowerCase().includes(search.toLowerCase())
+  const filteredEmails = (Array.isArray(emails) ? emails : []).filter(email => 
+    (email.subject || "").toLowerCase().includes(search.toLowerCase()) || 
+    (email.from || "").toLowerCase().includes(search.toLowerCase())
   );
 
   const handleReply = (email: ReceivedEmail) => {
@@ -62,7 +70,7 @@ export default function ReceivedPage() {
     const replyEmail = match ? match[1] : email.from;
     
     // Navigate to compose with pre-filled fields
-    router.push(`/dashboard/mailing?replyTo=${encodeURIComponent(replyEmail)}&subject=${encodeURIComponent(email.subject)}`);
+    router.push(`/dashboard/mailing?replyTo=${encodeURIComponent(replyEmail)}&subject=${encodeURIComponent(email.subject || "")}`);
   };
 
   return (
@@ -97,7 +105,16 @@ export default function ReceivedPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEmails.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <p className="text-sm">Loading inbox emails...</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredEmails.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
@@ -117,14 +134,14 @@ export default function ReceivedPage() {
                     <TableCell className="truncate max-w-[250px]" title={email.from}>
                       <div className="flex items-center gap-2">
                         {!email.isRead && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
-                        {email.from.replace(/<.*>/, "")}
+                        {(email.from || "").replace(/<.*>/, "")}
                       </div>
                     </TableCell>
                     <TableCell className="truncate max-w-[400px]" title={email.subject}>
                       {email.subject || "(No Subject)"}
                     </TableCell>
                     <TableCell className="text-right text-xs whitespace-nowrap text-muted-foreground">
-                      {format(new Date(email.date), "MMM d, yyyy h:mm a")}
+                      {email.date ? format(new Date(email.date), "MMM d, yyyy h:mm a") : "-"}
                     </TableCell>
                   </TableRow>
                 ))

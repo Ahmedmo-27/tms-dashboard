@@ -119,11 +119,14 @@ export function PackageDetail({ memberId }: PackageDetailProps) {
   const [packages, setPackages] = useState<MemberPackageData[]>([]);
   const [history, setHistory] = useState<DeductionHistoryItemDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [deductTarget, setDeductTarget] = useState<MemberPackageData | null>(null);
 
   useEffect(() => {
     const fetchPackages = async () => {
       setLoading(true);
+      setError(null);
       try {
         const [pkgRes, deductions] = await Promise.all([
           coachApi.get(`/api/coach/clients/${memberId}/packages`),
@@ -135,15 +138,23 @@ export function PackageDetail({ memberId }: PackageDetailProps) {
         if (member?.phoneNumber) setPhone(member.phoneNumber);
         setPackages(Array.isArray(raw) ? (raw as MemberPackageData[]) : []);
         setHistory(deductions);
-      } catch {
-        toast.error("Failed to load packages.");
+      } catch (err: any) {
+        const code = err?.response?.data?.code || err?.context?.code;
+        const msg =
+          code === "ACCESS_DENIED"
+            ? "You do not have permission to view this client's packages."
+            : code === "MEMBER_NOT_FOUND"
+            ? "Member profile not found."
+            : err?.response?.data?.message || err?.context?.message || "Failed to load packages.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPackages();
-  }, [memberId, coachApi]);
+  }, [memberId, coachApi, reloadKey]);
 
   const handlePackageUpdated = (updated: MemberPackageData) => {
     setPackages((prev) =>
@@ -201,13 +212,25 @@ export function PackageDetail({ memberId }: PackageDetailProps) {
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <div className="h-3.5 w-24 animate-pulse rounded bg-muted" />
-                  <div className="h-3.5 w-16 animate-pulse rounded bg-muted" />
+                  <div className="h-3.5 w-16 animate-pulse rounded-full bg-muted" />
                 </div>
                 <div className="h-2 w-full animate-pulse rounded-full bg-muted" />
               </div>
               <div className="h-3 w-32 animate-pulse rounded bg-muted" />
             </div>
           ))}
+        </div>
+      ) : error && packages.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => setReloadKey((k) => k + 1)}
+          >
+            Try again
+          </Button>
         </div>
       ) : packages.length === 0 ? (
         <p className="py-12 text-center text-muted-foreground">

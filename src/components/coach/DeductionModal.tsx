@@ -130,25 +130,30 @@ export function DeductionModal({
       toast.success("Class deducted successfully.");
       onSuccess(res.data.data.package);
       handleClose();
-    } catch (err: unknown) {
+    } catch (err: any) {
       setConfirming(false);
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        const serverMessage = err.response?.data?.message as string | undefined;
+      const status = err?.response?.status;
+      const code = err?.response?.data?.code || err?.context?.code || "";
+      const serverMessage = err?.response?.data?.message || err?.context?.message || err?.message || "";
 
-        if (status === 403) {
-          setApiError(
-            "You don't have a scheduled session with this member for this package."
-          );
-        } else if (status === 400 && serverMessage === "NO_CLASSES_REMAINING") {
-          setApiError("This package has no remaining classes.");
-        } else if (status === 400 && serverMessage === "PACKAGE_NOT_ACTIVE") {
-          setApiError("This package is no longer active.");
-        } else {
-          setApiError(serverMessage ?? "An unexpected error occurred.");
-        }
+      if (status === 403 || code === "ACCESS_DENIED") {
+        setApiError(
+          "You don't have permission to deduct sessions for this member's package."
+        );
+      } else if (code === "NO_CLASSES_REMAINING" || serverMessage === "NO_CLASSES_REMAINING") {
+        setApiError("This package has no remaining classes.");
+      } else if (code === "PACKAGE_NOT_ACTIVE" || serverMessage === "PACKAGE_NOT_ACTIVE") {
+        setApiError("This package is no longer active.");
+      } else if (code === "INVALID_PACKAGE") {
+        setApiError("Deduction is only allowed for Personal Training packages.");
+      } else if (code === "PACKAGE_NOT_FOUND") {
+        setApiError("Package not found for the given start date.");
+      } else if (code === "INVALID_ID") {
+        setApiError("Invalid member ID format.");
+      } else if (serverMessage && !serverMessage.includes("status code")) {
+        setApiError(serverMessage);
       } else {
-        setApiError("An unexpected error occurred.");
+        setApiError("An unexpected error occurred. Please try again.");
       }
     }
   };

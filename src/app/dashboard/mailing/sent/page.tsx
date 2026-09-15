@@ -33,23 +33,31 @@ export default function SentPage() {
   const [logs, setLogs] = useState<MailLog[]>([]);
   const [search, setSearch] = useState("");
   const [selectedMail, setSelectedMail] = useState<MailLog | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchLogs();
   }, []);
 
   const fetchLogs = async () => {
+    setIsLoading(true);
     try {
       const response = await tms.get("/admin/mail/logs");
-      setLogs(response.data);
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+      setLogs(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch logs", error);
+      setLogs([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const filteredLogs = logs.filter(log => 
-    log.subject.toLowerCase().includes(search.toLowerCase()) || 
-    log.mode.toLowerCase().includes(search.toLowerCase())
+  const filteredLogs = (Array.isArray(logs) ? logs : []).filter(log => 
+    (log.subject || "").toLowerCase().includes(search.toLowerCase()) || 
+    (log.mode || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -86,7 +94,16 @@ export default function SentPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLogs.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <p className="text-sm">Loading sent emails...</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredLogs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
@@ -114,7 +131,7 @@ export default function SentPage() {
                       {Array.isArray(log.recipients) ? log.recipients.join(", ") : `${log.recipients} people`}
                     </TableCell>
                     <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
-                      {format(new Date(log.sent_at), "MMM d, yyyy h:mm a")}
+                      {log.sent_at ? format(new Date(log.sent_at), "MMM d, yyyy h:mm a") : "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       {log.status === "sent" ? (

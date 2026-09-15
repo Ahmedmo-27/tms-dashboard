@@ -45,6 +45,7 @@ export function CoachTicketsView() {
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -54,6 +55,7 @@ export function CoachTicketsView() {
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
+    setFetchError(null);
     try {
       const res = await getCoachTickets(
         coachApi,
@@ -64,11 +66,17 @@ export function CoachTicketsView() {
       );
       setData(res.data);
       setTotal(res.total);
-    } catch {
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.context?.message ||
+        "Failed to load tickets.";
+      setFetchError(msg);
       setData([]);
       setTotal(0);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [coachApi, status, debouncedSearch, page]);
 
   useEffect(() => {
@@ -180,6 +188,18 @@ export function CoachTicketsView() {
                   </div>
                 ))}
               </div>
+            ) : fetchError && data.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-sm text-destructive">{fetchError}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={fetchData}
+                >
+                  Try again
+                </Button>
+              </div>
             ) : data.length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">
                 No tickets yet. Create one if you need help from the front desk.
@@ -213,6 +233,18 @@ export function CoachTicketsView() {
             {isLoading ? (
               <div className="p-4">
                 <SkeletonTable columns={4} rows={6} showSearch={false} showPagination={false} />
+              </div>
+            ) : fetchError && data.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-sm text-destructive">{fetchError}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={fetchData}
+                >
+                  Try again
+                </Button>
               </div>
             ) : (
               <DataTable columns={columns} data={data} />
