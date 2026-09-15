@@ -37,6 +37,7 @@ import {
   Home,
   Settings,
   MoreHorizontal,
+  Mail,
 } from "lucide-react";
 import { NotificationPanel } from "@/components/coach/NotificationPanel";
 import toast from "react-hot-toast";
@@ -65,6 +66,7 @@ function titleForPath(pathname: string, items: NavItem[]): string {
   if (pathname.startsWith("/coach/clients/")) return "Client";
   if (pathname.startsWith("/coach/settings")) return "Settings";
   if (pathname.startsWith("/coach/scans")) return "Scans";
+  if (pathname.startsWith("/coach/mailing")) return "Mailing";
   return "Coach Portal";
 }
 
@@ -74,7 +76,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const coachApi = useCoachApi();
 
-  const { coachId, name, notifications, hasPtSessions, hasScheduledClasses, token, capabilitiesLoaded } =
+  const { coachId, name, role, notifications, hasPtSessions, hasScheduledClasses, token, capabilitiesLoaded } =
     useAppSelector((state: RootState) => state.coach);
 
   const [moreOpen, setMoreOpen] = useState(false);
@@ -93,8 +95,11 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     ) {
       toast.error("Scheduled Classes are not enabled for your account");
       router.replace("/coach/today");
+    } else if (pathname.startsWith("/coach/mailing") && role !== "managing_coach") {
+      toast.error("Mailing dashboard is not enabled for your account");
+      router.replace("/coach/today");
     }
-  }, [pathname, hasPtSessions, hasScheduledClasses, capabilitiesLoaded, router]);
+  }, [pathname, hasPtSessions, hasScheduledClasses, role, capabilitiesLoaded, router]);
 
   const unreadCount = (notifications as { read: boolean }[]).filter((n) => !n.read).length;
 
@@ -189,6 +194,16 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
             label: "Scans",
             icon: ScanLine,
             match: (p: string) => p.startsWith("/coach/scans"),
+          },
+        ]
+      : []),
+    ...(role === "managing_coach"
+      ? [
+          {
+            href: "/coach/mailing",
+            label: "Mailing",
+            icon: Mail,
+            match: (p: string) => p.startsWith("/coach/mailing"),
           },
         ]
       : []),

@@ -138,6 +138,17 @@ async function main() {
     canAccessPage("management", "/dashboard/not-a-real-page") === true,
   );
   check("D-H3 coach has no dashboard access", canAccessPage("coach", "/dashboard") === false);
+  check("D-H3 managing_coach has no dashboard staff access", canAccessPage("managing_coach", "/dashboard") === false);
+
+  // --- coach role helpers contract ---
+  const isCoachRole = (role) => role === "coach" || role === "managing_coach";
+  const isManagingCoachRole = (role) => role === "managing_coach";
+  check("isCoachRole true for coach", isCoachRole("coach") === true);
+  check("isCoachRole true for managing_coach", isCoachRole("managing_coach") === true);
+  check("isCoachRole false for member", isCoachRole("member") === false);
+  check("isCoachRole false for management", isCoachRole("management") === false);
+  check("isManagingCoachRole true for managing_coach", isManagingCoachRole("managing_coach") === true);
+  check("isManagingCoachRole false for coach", isManagingCoachRole("coach") === false);
 
   // --- redux persist partialize contract (D-C1) ---
   const partialize = (state) => {

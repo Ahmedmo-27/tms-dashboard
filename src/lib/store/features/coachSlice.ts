@@ -18,6 +18,7 @@ interface CoachState {
   name: string | null;
   email: string | null;
   phoneNumber: string | null;
+  role: string | null;
   branchName: string | null;
   token: string | null;
   clients: CoachClient[];
@@ -37,6 +38,7 @@ const initialState: CoachState = {
   name: null,
   email: null,
   phoneNumber: null,
+  role: null,
   branchName: null,
   token: null,
   clients: [],
@@ -63,6 +65,7 @@ const coachSlice = createSlice({
         name?: string;
         email?: string;
         phoneNumber?: string;
+        role?: string | null;
         branchName?: string | null;
         hasPtSessions?: boolean;
         hasScheduledClasses?: boolean;
@@ -75,6 +78,9 @@ const coachSlice = createSlice({
       if (action.payload.email !== undefined) state.email = action.payload.email;
       if (action.payload.phoneNumber !== undefined) {
         state.phoneNumber = action.payload.phoneNumber;
+      }
+      if (action.payload.role !== undefined) {
+        state.role = action.payload.role;
       }
       if (action.payload.branchName !== undefined) {
         state.branchName = action.payload.branchName;

@@ -11,6 +11,7 @@ export interface CoachSessionResult {
   name: string;
   email?: string;
   phoneNumber?: string;
+  role?: string;
   branchName?: string | null;
   hasPtSessions: boolean;
   hasScheduledClasses: boolean;
@@ -45,6 +46,7 @@ export async function getCoachSession(): Promise<CoachSessionResult | null> {
       name: profile.name || user.name || "Coach",
       email: profile.email || user.email,
       phoneNumber: profile.phoneNumber || user.phoneNumber,
+      role: profile.role || user.role,
       branchName: profile.branchName ?? null,
       hasPtSessions: Boolean(profile.hasPtSessions),
       hasScheduledClasses: Boolean(profile.hasScheduledClasses),

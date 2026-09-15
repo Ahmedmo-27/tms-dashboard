@@ -91,6 +91,7 @@ export function LoginForm({
               token: loginData.token,
               coachId: loginData.userId,
               name: loginData.name,
+              role: loginData.role,
               hasPtSessions: loginData.hasPtSessions as boolean | undefined,
               hasScheduledClasses: loginData.hasScheduledClasses as boolean | undefined,
               capabilitiesLoaded: false,

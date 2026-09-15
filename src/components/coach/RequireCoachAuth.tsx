@@ -46,6 +46,7 @@ const RequireCoachAuth = ({ children }: { children: ReactNode }) => {
             name: session.name,
             email: session.email,
             phoneNumber: session.phoneNumber,
+            role: session.role,
             branchName: session.branchName,
             hasPtSessions: session.hasPtSessions,
             hasScheduledClasses: session.hasScheduledClasses,
