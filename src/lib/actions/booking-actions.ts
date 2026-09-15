@@ -28,16 +28,7 @@ export const bookNonUserAction = async (
       data: booking,
     };
   } catch (e) {
-    if (e instanceof ApiError) {
-      return {
-        success: false,
-        errors: {
-          message: e.message,
-        },
-        data: null,
-      };
-    }
-   return parseStateError(e as Error);
+    return parseStateError(e);
   }
 };
 

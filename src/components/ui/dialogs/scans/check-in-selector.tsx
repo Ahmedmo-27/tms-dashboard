@@ -19,6 +19,7 @@ import { attendNonUserBooking, cancelNonUserBooking, recordManualAttendance, rem
 import { AddWalkIn } from "./add-walk-in";
 import { toast } from "react-hot-toast";
 import { whatsAppHref } from "@/lib/utils/phone";
+import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 
 export function CheckInsSelector({
   members,
@@ -48,7 +49,7 @@ export function CheckInsSelector({
       toast.success("Guest checked in");
     } catch (err) {
       setError(err as Error);
-      toast.error((err as Error).message);
+      toast.error(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +62,7 @@ export function CheckInsSelector({
       toast.success("Booking cancelled successfully");
     } catch (err) {
       setError(err as Error);
-      toast.error((err as Error).message);
+      toast.error(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +77,7 @@ export function CheckInsSelector({
       toast.success("Attendance recorded");
     } catch (err) {
       setError(err as Error);
-      toast.error((err as Error).message);
+      toast.error(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +92,7 @@ export function CheckInsSelector({
       toast.success("Attendance removed");
     } catch (err) {
       setError(err as Error);
-      toast.error((err as Error).message);
+      toast.error(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

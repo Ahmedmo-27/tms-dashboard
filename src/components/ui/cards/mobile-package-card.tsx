@@ -19,6 +19,7 @@ import CancelPackageDialog from "../dialogs/member package/cancel-package";
 import { FreezePackageDialog } from "../dialogs/freeze/freeze-package-dialog";
 import { adminUnfreezePackageAction } from "@/lib/actions/freeze-actions";
 import toast from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 interface MobilePackageCardProps {
   pkg: MemberPackage;
@@ -38,7 +39,7 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
       if (res.success) {
         toast.success("Package unfrozen successfully!");
       } else {
-        toast.error((res.errors as { message?: string })?.message || "Failed to unfreeze package");
+        toast.error(getActionErrorMessage(res, "Failed to unfreeze package"));
       }
     } catch (err: unknown) {
       toast.error((err as Error).message || "Failed to unfreeze package");

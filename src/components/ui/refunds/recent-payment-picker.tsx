@@ -7,22 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { tms } from "@/lib/tms-api";
-import { ApiError } from "@/core/api-error";
 import { MemberRecentPayment } from "@/lib/validations/refunds";
+import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 
 interface MemberRecentPaymentsResponse {
   data: MemberRecentPayment[];
-}
-
-function getApiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) {
-    const context = err.context as { message?: string; code?: string };
-    return err.message ?? context.code ?? "An error occurred";
-  }
-  if (err instanceof Error) {
-    return err.message;
-  }
-  return "An error occurred";
 }
 
 interface RecentPaymentPickerProps {

@@ -39,8 +39,17 @@ const PASSWORD_RULES = [
 // ─── API error → human-readable message ──────────────────────────────────────
 
 function friendlyError(err: any): string {
-  const code: string = err?.response?.data?.error ?? "";
-  const msg: string  = err?.response?.data?.message ?? "";
+  const code: string =
+    err?.context?.code ??
+    err?.context?.error ??
+    err?.response?.data?.code ??
+    err?.response?.data?.error ??
+    "";
+  const msg: string =
+    err?.context?.message ??
+    err?.response?.data?.message ??
+    err?.message ??
+    "";
 
   const map: Record<string, string> = {
     EMAIL_ALREADY_EXISTS:   "That email address is already registered. Try logging in instead.",

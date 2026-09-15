@@ -313,7 +313,10 @@ export function CoachScansMonitor() {
       setClasses(scansRes.data.data ?? []);
       setPtScans(hasPtSessions && ptRes ? ptRes.data.data ?? [] : []);
     } catch (err: any) {
-      const msg = err?.response?.data?.message || "Failed to load scans monitor.";
+      const msg =
+        err?.response?.data?.message ||
+        err?.context?.message ||
+        "Failed to load scans monitor.";
       setError(msg);
       toast.error(msg);
     } finally {

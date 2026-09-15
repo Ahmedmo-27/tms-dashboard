@@ -13,7 +13,7 @@ import { User as MemberRequest } from "./columns";
 import { acceptMemberAction } from "@/lib/actions/member-actions";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { ApiError } from "@/core/api-error";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 interface MobileMemberRequestCardProps {
   memberRequest: MemberRequest;
@@ -39,10 +39,10 @@ export function MobileMemberRequestCard({ memberRequest }: MobileMemberRequestCa
         return;
       }
 
-      const message =
-        result.errors instanceof ApiError
-          ? result.errors.message
-          : result.errors?.message || "Failed to accept member request.";
+      const message = getActionErrorMessage(
+        result,
+        "Failed to accept member request."
+      );
       toast.error(message);
     } catch {
       toast.error("Failed to accept member request.");

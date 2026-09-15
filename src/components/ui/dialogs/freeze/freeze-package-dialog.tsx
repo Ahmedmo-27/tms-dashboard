@@ -19,6 +19,7 @@ import { adminFreezePackageAction } from "@/lib/actions/freeze-actions";
 import { Snowflake, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MemberPackage } from "@/components/ui/members/columns";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export function FreezePackageDialog({
   pkg,
@@ -76,10 +77,7 @@ export function FreezePackageDialog({
         setOpen(false);
         onSuccess?.();
       } else {
-        const errorMsg =
-          (res.errors as { message?: string; clientMessage?: string })?.message ||
-          (res.errors as { message?: string; clientMessage?: string })?.clientMessage ||
-          "Failed to freeze package";
+        const errorMsg = getActionErrorMessage(res, "Failed to freeze package");
         toast.error(errorMsg);
       }
     } catch (err: unknown) {

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
-import { getAuthenticatedUser } from "@/lib/data/auth";
+import { getAuthenticatedUser, logout as serverLogout } from "@/lib/data/auth";
 import { setCredentials, logout } from "@/lib/store/features/authSlice";
 import { isCoachRole, isStaffRole } from "@/lib/config/roles";
 
@@ -23,6 +23,7 @@ const RequireAuth = ({ children }: { children: ReactNode }) => {
         if (!mounted) return;
 
         if (!userData) {
+          await serverLogout();
           dispatch(logout());
           router.replace("/login");
           return;
@@ -40,10 +41,12 @@ const RequireAuth = ({ children }: { children: ReactNode }) => {
           return;
         }
 
+        await serverLogout();
         dispatch(logout());
         router.replace("/login");
       } catch {
         if (mounted) {
+          await serverLogout();
           dispatch(logout());
           router.replace("/login");
         }

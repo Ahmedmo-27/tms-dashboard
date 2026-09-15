@@ -67,24 +67,31 @@ export function CoachCalendar() {
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     format(new Date(), "yyyy-MM-dd")
   );
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const fetchSchedule = async () => {
       dispatch(setScheduleLoading(true));
+      setScheduleError(null);
       try {
         const mondayISO = format(currentWeekStart, "yyyy-MM-dd");
         const res = await coachApi.get(`/api/coach/schedule?weekStart=${mondayISO}`);
         dispatch(setSchedule(res.data.data));
-      } catch (err) {
-        console.error("Failed to load schedule", err);
-        toast.error("Failed to load schedule.");
+      } catch (err: any) {
+        const msg =
+          err?.response?.data?.message ||
+          err?.context?.message ||
+          "Failed to load schedule.";
+        setScheduleError(msg);
+        toast.error(msg);
       } finally {
         dispatch(setScheduleLoading(false));
       }
     };
 
     fetchSchedule();
-  }, [coachApi, currentWeekStart, dispatch]);
+  }, [coachApi, currentWeekStart, dispatch, reloadKey]);
 
   useEffect(() => {
     if (!schedule?.days?.length) return;
@@ -324,9 +331,21 @@ export function CoachCalendar() {
     return (
       <div className="space-y-4">
         {renderToolbar()}
-        <p className="py-12 text-center text-muted-foreground">
-          No schedule data available.
-        </p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            {scheduleError || "No schedule data available."}
+          </p>
+          {scheduleError && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => setReloadKey((k) => k + 1)}
+            >
+              Try again
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

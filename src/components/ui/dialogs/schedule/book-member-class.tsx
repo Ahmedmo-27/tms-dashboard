@@ -241,12 +241,8 @@ export function BookMemberClassDialog({
   }, [selectedClassId]);
 
   const errorMessage =
-    state?.errors && typeof state.errors === "object"
-      ? "message" in state.errors
-        ? (state.errors as { message?: string }).message
-        : state.errors instanceof ApiError
-          ? state.errors.message
-          : undefined
+    state?.errors && typeof state.errors === "object" && "message" in state.errors
+      ? (state.errors as { message?: string }).message
       : undefined;
 
   return (

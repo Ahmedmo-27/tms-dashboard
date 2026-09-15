@@ -18,7 +18,7 @@ import { ArrowBigRight } from "lucide-react";
 
 interface ActionState {
   success: boolean;
-  errors: Record<string, string | boolean> | null | ApiError;
+  errors: Record<string, string | boolean> | null;
   data: any | null;
   usrId?: string;
   defaultValues?: {
@@ -100,9 +100,7 @@ export function BookNonUserDialog({
   );
 
   const fieldErrors =
-    state.errors &&
-    typeof state.errors === "object" &&
-    !(state.errors instanceof ApiError)
+    state.errors && typeof state.errors === "object"
       ? (state.errors as Record<string, string | boolean>)
       : null;
 

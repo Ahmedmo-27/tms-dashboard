@@ -101,8 +101,13 @@ export function CreateTicketModal({
       toast.success("Ticket submitted successfully");
       onOpenChange(false);
       onCreated();
-    } catch {
-      toast.error("Failed to submit ticket");
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.context?.message ||
+        err?.message ||
+        "Failed to submit ticket";
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

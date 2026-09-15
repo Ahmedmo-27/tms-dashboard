@@ -35,6 +35,7 @@ export function CoachToday() {
   const [data, setData] = useState<TodaySummaryDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -42,14 +43,15 @@ export function CoachToday() {
       setError(null);
       try {
         setData(await getCoachToday(coachApi));
-      } catch {
-        setError("Could not load today’s summary.");
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.context?.message || err?.message || "Could not load today’s summary.";
+        setError(msg.includes("status code") ? "Could not load today's summary. Please try again." : msg);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [coachApi]);
+  }, [coachApi, reloadKey]);
 
   if (loading) {
     return <CoachTodaySkeleton />;
@@ -57,8 +59,11 @@ export function CoachToday() {
 
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
         <p className="text-sm">{error ?? "Nothing to show yet."}</p>
+        <Button variant="outline" size="sm" onClick={() => setReloadKey(k => k + 1)}>
+          Try again
+        </Button>
       </div>
     );
   }

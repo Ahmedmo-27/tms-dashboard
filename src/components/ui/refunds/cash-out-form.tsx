@@ -15,23 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { tms } from "@/lib/tms-api";
-import { ApiError } from "@/core/api-error";
 import { cashOutSchema, CashOutFormValues } from "@/lib/validations/refunds";
 import { RecordedAtField } from "./recorded-at-field";
 import { cn } from "@/lib/utils";
 import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
-
-function getApiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) {
-    const context = err.context as { message?: string; code?: string };
-    return err.message ?? context.code ?? "An error occurred";
-  }
-  if (err instanceof Error) {
-    return err.message;
-  }
-  return "An error occurred";
-}
+import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 
 export function CashOutForm() {
   const {

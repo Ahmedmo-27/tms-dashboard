@@ -15,6 +15,7 @@ import { adminUnfreezePackageAction } from "@/lib/actions/freeze-actions";
 import { PlayCircle, Loader2, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export function UnfreezePackageDialog({
   memberId,
@@ -46,10 +47,7 @@ export function UnfreezePackageDialog({
         setOpen(false);
         onSuccess?.();
       } else {
-        const errorMsg =
-          (res.errors as { message?: string; clientMessage?: string })?.message ||
-          (res.errors as { message?: string; clientMessage?: string })?.clientMessage ||
-          "Failed to unfreeze package";
+        const errorMsg = getActionErrorMessage(res, "Failed to unfreeze package");
         toast.error(errorMsg);
       }
     } catch (err: unknown) {

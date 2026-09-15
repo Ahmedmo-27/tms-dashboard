@@ -4,10 +4,9 @@ import type { ReactNode } from "react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { tms } from "@/lib/tms-api";
-import { setCoachCredentials } from "@/lib/store/features/coachSlice";
+import { logoutCoach, setCoachCredentials } from "@/lib/store/features/coachSlice";
+import { getCoachSession, logoutCoachAction } from "@/lib/actions/coach-auth-actions";
 import { Loader2 } from "lucide-react";
-import type { CoachMeDto } from "@/types/coach.types";
 
 const RequireCoachAuth = ({ children }: { children: ReactNode }) => {
   const token = useAppSelector((state) => state.coach.token);
@@ -17,71 +16,72 @@ const RequireCoachAuth = ({ children }: { children: ReactNode }) => {
   );
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const [checking, setChecking] = useState(!(token || coachId) || !capabilitiesLoaded);
+  const [checking, setChecking] = useState(!token || !coachId || !capabilitiesLoaded);
 
   useEffect(() => {
-    if ((token || coachId) && capabilitiesLoaded) {
+    let mounted = true;
+
+    // If token and capabilities are already in memory, session is valid
+    if (token && coachId && capabilitiesLoaded) {
       setChecking(false);
       return;
     }
 
     const verify = async () => {
       try {
-        const authHeaders = token
-          ? { Authorization: `Bearer ${token}` }
-          : undefined;
+        const session = await getCoachSession();
+        if (!mounted) return;
 
-        let resolvedCoachId = coachId;
-        let resolvedName: string | undefined;
-
-        if (!token && !coachId) {
-          const res = await tms.get("/api/coach/auth/verifyToken");
-          const userData = res.data?.data?.user;
-          if (!userData) {
-            router.replace("/login");
-            return;
-          }
-          resolvedCoachId = userData._id;
-          resolvedName = userData.name;
+        if (!session) {
+          await logoutCoachAction();
+          dispatch(logoutCoach());
+          router.replace("/login");
+          return;
         }
-
-        const meRes = await tms.get("/api/coach/me", { headers: authHeaders });
-        const profile = meRes.data.data as CoachMeDto;
 
         dispatch(
           setCoachCredentials({
-            token: token ?? null,
-            coachId: resolvedCoachId ?? "",
-            name: profile.name || resolvedName,
-            email: profile.email,
-            phoneNumber: profile.phoneNumber,
-            branchName: profile.branchName,
-            hasPtSessions: profile.hasPtSessions,
-            hasScheduledClasses: profile.hasScheduledClasses,
+            token: session.token,
+            coachId: session.coachId,
+            name: session.name,
+            email: session.email,
+            phoneNumber: session.phoneNumber,
+            branchName: session.branchName,
+            hasPtSessions: session.hasPtSessions,
+            hasScheduledClasses: session.hasScheduledClasses,
             capabilitiesLoaded: true,
           })
         );
         setChecking(false);
       } catch {
-        router.replace("/login");
+        if (mounted) {
+          await logoutCoachAction();
+          dispatch(logoutCoach());
+          router.replace("/login");
+        }
       }
     };
 
     verify();
+
+    return () => {
+      mounted = false;
+    };
   }, [token, coachId, capabilitiesLoaded, router, dispatch]);
 
   if (checking) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-3 bg-background text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-sm">Checking session…</p>
+        <p className="text-sm">Checking coach session…</p>
       </div>
     );
   }
 
-  if (!token && !coachId) return null;
+  if (!token || !coachId) return null;
 
   return <>{children}</>;
 };
 
 export default RequireCoachAuth;
+

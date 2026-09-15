@@ -121,11 +121,16 @@ function ComposeForm() {
     setConfirmModalOpen(false);
     try {
       const response = await tms.post("/admin/mail/send", payload);
-      toast.success(`Successfully sent to ${response.data.sent} recipients!`);
+      const sentCount = response.data?.data?.sent ?? response.data?.sent;
+      toast.success(
+        sentCount !== undefined 
+          ? `Successfully sent to ${sentCount} recipients!` 
+          : "Mail sent successfully!"
+      );
       reset();
       setAttachment(null);
     } catch (error: any) {
-      toast.error(error?.response?.data?.error || "Failed to send email");
+      toast.error(error?.response?.data?.message || error?.response?.data?.error || "Failed to send email");
     } finally {
       setIsLoading(false);
       setPendingData(null);

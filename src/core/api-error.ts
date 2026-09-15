@@ -13,21 +13,26 @@ export class ApiError extends Error {
     if (error.response) {
       // Server responded with error
       const { data, status } = error.response;
+      const message =
+        typeof data === "string"
+          ? data
+          : data?.message || data?.error || (data?.errors ? (typeof data.errors === "string" ? data.errors : JSON.stringify(data.errors)) : undefined);
+      const context = typeof data === "object" && data !== null ? data : { raw: data };
       switch (status) {
         case 400:
-          return new BadRequestError(data.message || "Bad Request", data);
+          return new BadRequestError(message || "Bad Request", context);
         case 404:
-          return new NotFoundError(data.message || "Not Found", data);
+          return new NotFoundError(message || "Not Found", context);
         case 401:
-          return new UnauthorizedError(data.message || "Unauthorized", data);
+          return new UnauthorizedError(message || "Unauthorized", context);
         case 403:
-          return new UnauthorizedError(data.message || "Forbidden", data);
+          return new UnauthorizedError(message || "Forbidden", context);
         case 409:
-          return new ConflictError(data.message || "Conflict Error", data)
+          return new ConflictError(message || "Conflict Error", context);
         default:
           return new InternalError(
-            data.message || "Internal Server Error",
-            data
+            message || "Internal Server Error",
+            context
           );
       }
     } else if (error.request) {
@@ -38,7 +43,7 @@ export class ApiError extends Error {
         { error }
       );
     } else {
-      return new InternalError("Request Configuration Error", { error });
+      return new InternalError(error?.message || "Request Configuration Error", { error });
     }
   }
 }

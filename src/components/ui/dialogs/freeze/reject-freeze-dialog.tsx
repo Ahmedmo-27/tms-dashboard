@@ -17,6 +17,7 @@ import { FreezeRequestItem } from "@/lib/data/freeze";
 import { rejectFreezeAction } from "@/lib/actions/freeze-actions";
 import { X, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 
 export function RejectFreezeDialog({
   request,
@@ -44,10 +45,7 @@ export function RejectFreezeDialog({
         setOpen(false);
         onSuccess?.();
       } else {
-        const errorMsg =
-          (res.errors as { message?: string; clientMessage?: string })?.message ||
-          (res.errors as { message?: string; clientMessage?: string })?.clientMessage ||
-          "Failed to reject freeze request";
+        const errorMsg = getActionErrorMessage(res, "Failed to reject freeze request");
         toast.error(errorMsg);
       }
     } catch (err: unknown) {
