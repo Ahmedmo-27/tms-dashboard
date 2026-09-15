@@ -26,20 +26,25 @@ import {
 } from "../dropdown-menu";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { PaymentDatePicker } from "./date-picker";
+import { PaymentDateRangePicker } from "./payment-date-range-picker";
 import { useRouter, useSearchParams } from "next/navigation";
-import { format, formatDate } from "date-fns";
+import { format, formatDate, isSameDay } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { isOutflowTransaction } from "@/lib/utils/parsers/payments-parser";
 import { ExportPaymentsDialog } from "./export-payments-dialog";
 import { CopyPaymentsForSheetButton } from "./copy-payments-for-sheet-button";
+import type { DateRange } from "react-day-picker";
 
 export default function PaymentsContainer({
   payments,
   initialDate,
+  initialStartDate,
+  initialEndDate,
 }: {
   payments: Payment[];
   initialDate?: string;
+  initialStartDate?: string;
+  initialEndDate?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -51,9 +56,19 @@ export default function PaymentsContainer({
   const isOutflow = (payment: Payment) => isOutflowTransaction(payment);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    initialDate ? new Date(initialDate) : undefined
-  );
+
+  const effectiveStart = initialStartDate || initialDate;
+  const effectiveEnd = initialEndDate || initialStartDate || initialDate;
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    if (effectiveStart) {
+      return {
+        from: new Date(effectiveStart),
+        to: effectiveEnd ? new Date(effectiveEnd) : new Date(effectiveStart),
+      };
+    }
+    return undefined;
+  });
 
   // Calculate payment statistics
   const stats = useMemo(() => {
@@ -82,10 +97,13 @@ export default function PaymentsContainer({
       return acc;
     }, {} as Record<string, number>);
 
+    const outflows = payments.filter((p) => isOutflow(p));
+
     return {
       totalAmount,
       totalPayments: payments.filter((p) => !isOutflow(p)).length,
       todayPayments: todayPayments.length,
+      totalOutflows: outflows.length,
       uniqueMembers,
       paymentMethods,
     };
@@ -113,35 +131,82 @@ export default function PaymentsContainer({
     });
   }, [payments, searchTerm, selectedMethod, selectedType]);
 
+  const isViewingToday = useMemo(() => {
+    const todayCairo = formatInTimeZone(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+    if (!dateRange?.from) return true;
+    const fromCairo = formatInTimeZone(dateRange.from, "Africa/Cairo", "yyyy-MM-dd");
+    const toCairo = dateRange.to
+      ? formatInTimeZone(dateRange.to, "Africa/Cairo", "yyyy-MM-dd")
+      : fromCairo;
+    return fromCairo === todayCairo && toCairo === todayCairo;
+  }, [dateRange]);
+
+  const hasDateInUrl =
+    searchParams.has("date") ||
+    searchParams.has("startDate") ||
+    searchParams.has("endDate") ||
+    searchParams.has("from") ||
+    searchParams.has("to");
+
+  const canClearDateFilter = hasDateInUrl || !isViewingToday;
+
   const handleRefresh = () => {
     setIsRefreshing(true);
     router.refresh();
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  const handleDateChange = (date: Date | undefined) => {
-    setSelectedDate(date);
-
-    // Create new URL with date parameter
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
     const params = new URLSearchParams(searchParams.toString());
-    if (date) {
-      // Convert to UTC date string (YYYY-MM-DD format)
-      const utcDateString = formatDate(date, "yyyy-MM-dd"); 
-      params.set("date", utcDateString);
+
+    if (range?.from) {
+      const fromStr = formatDate(range.from, "yyyy-MM-dd");
+      const toStr = range.to ? formatDate(range.to, "yyyy-MM-dd") : fromStr;
+
+      if (fromStr === toStr) {
+        params.set("date", fromStr);
+        params.delete("startDate");
+        params.delete("endDate");
+        params.delete("from");
+        params.delete("to");
+      } else {
+        params.set("startDate", fromStr);
+        params.set("endDate", toStr);
+        params.delete("date");
+        params.delete("from");
+        params.delete("to");
+      }
     } else {
       params.delete("date");
+      params.delete("startDate");
+      params.delete("endDate");
+      params.delete("from");
+      params.delete("to");
     }
 
-    // Navigate to new URL
     router.push(`/dashboard/payments?${params.toString()}`);
   };
 
   const clearDateFilter = () => {
-    setSelectedDate(undefined);
+    setDateRange(undefined);
     const params = new URLSearchParams(searchParams.toString());
     params.delete("date");
+    params.delete("startDate");
+    params.delete("endDate");
+    params.delete("from");
+    params.delete("to");
     router.push(`/dashboard/payments?${params.toString()}`);
   };
+
+  const rangeDisplaySubtitle = useMemo(() => {
+    if (!dateRange?.from) return null;
+    const fromText = format(dateRange.from, "MMM dd, yyyy");
+    if (!dateRange.to || isSameDay(dateRange.from, dateRange.to)) {
+      return `for ${fromText}`;
+    }
+    return `for ${fromText} – ${format(dateRange.to, "MMM dd, yyyy")}`;
+  }, [dateRange]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -155,7 +220,7 @@ export default function PaymentsContainer({
                   Total Revenue
                 </p>
                 <p className="text-lg sm:text-2xl font-bold truncate">
-                  ${stats.totalAmount.toLocaleString()}
+                  EGP {stats.totalAmount.toLocaleString()}
                 </p>
               </div>
               <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0" />
@@ -182,9 +247,11 @@ export default function PaymentsContainer({
             <div className="flex items-center">
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
-                  Today's Payments
+                  {isViewingToday ? "Today's Payments" : "Refunds & Outflows"}
                 </p>
-                <p className="text-lg sm:text-2xl font-bold">{stats.todayPayments}</p>
+                <p className="text-lg sm:text-2xl font-bold">
+                  {isViewingToday ? stats.todayPayments : stats.totalOutflows}
+                </p>
               </div>
               <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0" />
             </div>
@@ -214,9 +281,9 @@ export default function PaymentsContainer({
               <CardTitle className="text-lg sm:text-xl">Payment Transactions</CardTitle>
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {filteredPayments.length} of {payments.length} payments
-                {selectedDate && (
+                {rangeDisplaySubtitle && (
                   <span className="ml-1 sm:ml-2 text-primary">
-                    for {format(selectedDate, "MMM dd, yyyy")}
+                    {rangeDisplaySubtitle}
                   </span>
                 )}
               </p>
@@ -224,13 +291,13 @@ export default function PaymentsContainer({
 
             <div className="flex flex-wrap items-center gap-2 min-w-0">
               <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
-                <PaymentDatePicker
-                  className="w-full sm:w-[200px]"
-                  selectedDate={selectedDate}
-                  onDateChange={handleDateChange}
-                  placeholder="Filter by date"
+                <PaymentDateRangePicker
+                  className="w-full sm:w-[260px]"
+                  dateRange={dateRange}
+                  onDateRangeChange={handleDateRangeChange}
+                  placeholder="Filter by date or period"
                 />
-                {selectedDate && (
+                {canClearDateFilter && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -370,6 +437,8 @@ export default function PaymentsContainer({
         <ExportPaymentsDialog
           open={exportOpen}
           onOpenChange={setExportOpen}
+          initialFromDate={dateRange?.from}
+          initialToDate={dateRange?.to ?? dateRange?.from}
         />
 
         <CardContent className="p-0 sm:p-6">

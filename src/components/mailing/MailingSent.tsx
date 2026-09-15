@@ -38,11 +38,15 @@ export function MailingSent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchLogs();
+    fetchLogs(false);
+    const interval = setInterval(() => {
+      fetchLogs(true);
+    }, 15000);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchLogs = async () => {
-    setIsLoading(true);
+  const fetchLogs = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const response = await tms.get("/admin/mail/logs");
       const data = Array.isArray(response.data)
@@ -51,9 +55,9 @@ export function MailingSent() {
       setLogs(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch logs", error);
-      setLogs([]);
+      if (!silent) setLogs([]);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 

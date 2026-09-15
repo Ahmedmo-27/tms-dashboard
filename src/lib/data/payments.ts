@@ -35,10 +35,14 @@ export type BranchFilter = {
 async function fetchFromEndpoints(
   endpoints: readonly string[],
   date?: string,
-  locationId?: string
+  locationId?: string,
+  startDate?: string,
+  endDate?: string
 ): Promise<RawPaymentRecord[]> {
   const searchParams = new URLSearchParams();
   if (date) searchParams.set("date", date);
+  if (startDate) searchParams.set("startDate", startDate);
+  if (endDate) searchParams.set("endDate", endDate);
   if (locationId) searchParams.set("locationId", locationId);
   const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
 
@@ -96,35 +100,52 @@ export const getPaymentsForDateRange = async (
     return [];
   }
 
-  const { eachDayOfInterval, format, parseISO } = await import("date-fns");
+  try {
+    onProgress?.(1, 2);
+    const rangePayments = await withRetry(() =>
+      getPayments(undefined, undefined, startDate, endDate)
+    );
+    onProgress?.(2, 2);
+    return filterPaymentsByBranches(rangePayments, branches);
+  } catch (error) {
+    // Fallback to day-by-day fetch if single-range query fails
+    const { eachDayOfInterval, format, parseISO } = await import("date-fns");
 
-  const days = eachDayOfInterval({
-    start: parseISO(startDate),
-    end: parseISO(endDate),
-  });
+    const days = eachDayOfInterval({
+      start: parseISO(startDate),
+      end: parseISO(endDate),
+    });
 
-  const allPayments: Payment[] = [];
+    const allPayments: Payment[] = [];
 
-  for (let i = 0; i < days.length; i++) {
-    const dateStr = format(days[i], "yyyy-MM-dd");
+    for (let i = 0; i < days.length; i++) {
+      const dateStr = format(days[i], "yyyy-MM-dd");
 
-    const dayPayments = await withRetry(() => getPayments(dateStr));
-    allPayments.push(...filterPaymentsByBranches(dayPayments, branches));
+      const dayPayments = await withRetry(() => getPayments(dateStr));
+      allPayments.push(...filterPaymentsByBranches(dayPayments, branches));
 
-    onProgress?.(i + 1, days.length);
+      onProgress?.(i + 1, days.length);
 
-    if (i < days.length - 1) {
-      await sleep(EXPORT_DAY_DELAY_MS);
+      if (i < days.length - 1) {
+        await sleep(EXPORT_DAY_DELAY_MS);
+      }
     }
-  }
 
-  return allPayments;
+    return allPayments;
+  }
 };
 
-export const getPayments = async (date?: string, locationId?: string) => {
+export const getPayments = async (
+  date?: string,
+  locationId?: string,
+  startDate?: string,
+  endDate?: string
+) => {
   try {
     const params: Record<string, string> = {};
     if (date) params.date = date;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
     if (locationId) params.locationId = locationId;
     const dateQuery =
       Object.keys(params).length > 0
@@ -137,12 +158,16 @@ export const getPayments = async (date?: string, locationId?: string) => {
     const refundRecords = await fetchFromEndpoints(
       REFUND_LIST_ENDPOINTS,
       date,
-      locationId
+      locationId,
+      startDate,
+      endDate
     );
     const cashOutRecords = await fetchFromEndpoints(
       CASHOUT_LIST_ENDPOINTS,
       date,
-      locationId
+      locationId,
+      startDate,
+      endDate
     );
 
     const mergedRecords = mergePaymentRecords(

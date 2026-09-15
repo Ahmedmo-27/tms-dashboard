@@ -23,14 +23,18 @@ import { isRateLimitError } from "@/lib/utils/retry-request";
 interface ExportPaymentsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialFromDate?: Date;
+  initialToDate?: Date;
 }
 
 export function ExportPaymentsDialog({
   open,
   onOpenChange,
+  initialFromDate,
+  initialToDate,
 }: ExportPaymentsDialogProps) {
-  const [fromDate, setFromDate] = useState<Date | undefined>();
-  const [toDate, setToDate] = useState<Date | undefined>();
+  const [fromDate, setFromDate] = useState<Date | undefined>(initialFromDate);
+  const [toDate, setToDate] = useState<Date | undefined>(initialToDate);
   const [activeDateField, setActiveDateField] = useState<"from" | "to" | null>(null);
   const { locations, isLoading: isLoadingLocations } = useLocations(true);
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
@@ -38,6 +42,12 @@ export function ExportPaymentsDialog({
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(
     null
   );
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialFromDate) setFromDate(initialFromDate);
+    if (initialToDate) setToDate(initialToDate);
+  }, [open, initialFromDate, initialToDate]);
 
   useEffect(() => {
     if (!open || locations.length === 0) return;

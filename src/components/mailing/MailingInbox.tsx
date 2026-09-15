@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { tms } from "@/lib/tms-api";
-import { Search, Inbox, Reply, Mail } from "lucide-react";
+import { Search, Inbox, Reply, Mail, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,19 +46,44 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
   const [mailboxEmail, setMailboxEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    fetchEmails();
+    fetchEmails(false);
     tms.get("/admin/mail/profile")
       .then((res) => {
         const data = res.data?.data || res.data;
         if (data?.email) setMailboxEmail(data.email);
       })
       .catch(() => {});
+
+    // Silent live refresh every 10 seconds (Gmail-like auto-refresh)
+    const pollInterval = setInterval(() => {
+      fetchEmails(true);
+    }, 10000);
+
+    // Background IMAP sync check every 40 seconds
+    const syncInterval = setInterval(() => {
+      tms.post("/admin/mail/sync")
+        .then((res) => {
+          const data = Array.isArray(res.data)
+            ? res.data
+            : res.data?.data || [];
+          if (Array.isArray(data)) {
+            setEmails(data);
+          }
+        })
+        .catch(() => {});
+    }, 40000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearInterval(syncInterval);
+    };
   }, []);
 
-  const fetchEmails = async () => {
-    setIsLoading(true);
+  const fetchEmails = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const response = await tms.get("/admin/mail/inbox");
       const data = Array.isArray(response.data)
@@ -66,9 +92,26 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
       setEmails(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch inbox", error);
-      setEmails([]);
+      if (!silent) setEmails([]);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await tms.post("/admin/mail/sync");
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+      setEmails(Array.isArray(data) ? data : []);
+      toast.success("Inbox synced!");
+    } catch (error) {
+      console.error("Failed to sync inbox", error);
+      toast.error("Failed to sync inbox");
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -101,15 +144,27 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
                 )}
               </CardDescription>
             </div>
-            <div className="relative w-full sm:w-64 shrink-0">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search sender or subject..."
-                className="pl-8 bg-muted/50 border-none"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64 shrink-0">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search sender or subject..."
+                  className="pl-8 bg-muted/50 border-none"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleSync}
+                disabled={isSyncing || isLoading}
+                title="Check for new emails"
+                className="shrink-0"
+              >
+                <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+              </Button>
             </div>
           </div>
         </CardHeader>
