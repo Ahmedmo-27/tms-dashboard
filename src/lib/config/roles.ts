@@ -30,7 +30,11 @@ export function isStaffRole(role: string | undefined): boolean {
 }
 
 export function isCoachRole(role: string | undefined): boolean {
-  return role === "coach";
+  return role === "coach" || role === "managing_coach";
+}
+
+export function isManagingCoachRole(role: string | undefined): boolean {
+  return role === "managing_coach";
 }
 
 export function isBranchScopedRole(role: string | undefined): boolean {

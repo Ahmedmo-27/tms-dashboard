@@ -1,5 +1,5 @@
 import { MailingCompose } from "@/components/mailing/MailingCompose";
 
-export default function ComposePage() {
+export default function CoachComposePage() {
   return <MailingCompose />;
 }
