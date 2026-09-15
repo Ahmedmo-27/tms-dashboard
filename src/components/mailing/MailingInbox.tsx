@@ -25,6 +25,8 @@ import { sanitizeHtml } from "@/lib/utils/sanitize-html";
 export type ReceivedEmail = {
   _id: string;
   from: string;
+  to?: string;
+  recipientEmail?: string;
   subject: string;
   text: string;
   html: string;
@@ -41,10 +43,17 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
   const [search, setSearch] = useState("");
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
+  const [mailboxEmail, setMailboxEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchEmails();
+    tms.get("/admin/mail/profile")
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        if (data?.email) setMailboxEmail(data.email);
+      })
+      .catch(() => {});
   }, []);
 
   const fetchEmails = async () => {
@@ -84,7 +93,13 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-2xl">Inbox</CardTitle>
-              <CardDescription>Emails received at your administrative address.</CardDescription>
+              <CardDescription>
+                {mailboxEmail ? (
+                  <>Inbox for <span className="font-semibold text-foreground">{mailboxEmail}</span></>
+                ) : (
+                  "Emails received at your personal mailbox address."
+                )}
+              </CardDescription>
             </div>
             <div className="relative w-full sm:w-64 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -173,8 +188,14 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
                     <DialogTitle className="text-xl font-bold truncate">
                       {selectedEmail.subject || "(No Subject)"}
                     </DialogTitle>
-                    <div className="text-sm text-muted-foreground flex flex-col sm:flex-row sm:gap-4">
+                    <div className="text-sm text-muted-foreground flex flex-col sm:flex-row sm:gap-4 sm:flex-wrap">
                       <span><strong>From:</strong> {selectedEmail.from}</span>
+                      {(selectedEmail.to || selectedEmail.recipientEmail || mailboxEmail) && (
+                        <span>
+                          <strong>To:</strong>{" "}
+                          {selectedEmail.to || selectedEmail.recipientEmail || mailboxEmail}
+                        </span>
+                      )}
                       <span><strong>Date:</strong> {selectedEmail.date ? (
                         (() => {
                           const date = new Date(selectedEmail.date);

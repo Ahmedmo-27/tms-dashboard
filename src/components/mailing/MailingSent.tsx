@@ -27,6 +27,8 @@ export type MailLog = {
   sent_at: string;
   status: string;
   error_msg?: string;
+  sender_email?: string;
+  sender_name?: string;
 };
 
 export function MailingSent() {
@@ -166,6 +168,11 @@ export function MailingSent() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <DialogTitle className="text-xl font-bold">{selectedMail.subject}</DialogTitle>
+                    {selectedMail.sender_email && (
+                      <div className="text-xs text-muted-foreground">
+                        <span><strong>From:</strong> {selectedMail.sender_name ? `${selectedMail.sender_name} <${selectedMail.sender_email}>` : selectedMail.sender_email}</span>
+                      </div>
+                    )}
                     <div className="flex gap-2 items-center text-xs text-muted-foreground">
                       <span className="capitalize">Target: {selectedMail.mode}</span>
                       <span>•</span>

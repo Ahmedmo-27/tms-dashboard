@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -57,6 +58,19 @@ function ComposeForm() {
   });
 
   const subjectValue = watch("subject", "");
+
+  const [senderProfile, setSenderProfile] = useState<{ email: string; name: string } | null>(null);
+
+  useEffect(() => {
+    tms.get("/admin/mail/profile")
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        if (data?.email) {
+          setSenderProfile({ email: data.email, name: data.name });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (replyTo) {
@@ -145,6 +159,19 @@ function ComposeForm() {
           <CardDescription>Compose and send an email to your members or coaches.</CardDescription>
         </CardHeader>
         <CardContent className="px-0">
+          {senderProfile && (
+            <div className="mx-6 mb-6 p-3 bg-muted/40 border rounded-lg flex flex-wrap items-center justify-between text-xs gap-2">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-foreground">Sender:</span>
+                <span className="font-medium text-foreground">{senderProfile.name}</span>
+                <span className="text-muted-foreground">&lt;{senderProfile.email}&gt;</span>
+              </div>
+              <Badge variant="outline" className="text-[11px] font-normal">
+                Personal Mailbox
+              </Badge>
+            </div>
+          )}
+
           <div className="px-6 mb-6" data-walkthrough="mail-send-mode">
             <Label className="text-sm font-semibold mb-2 block">Send Mode</Label>
             <Select value={activeTab} onValueChange={handleTabChange}>
