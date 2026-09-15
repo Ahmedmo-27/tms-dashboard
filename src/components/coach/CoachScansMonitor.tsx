@@ -31,6 +31,9 @@ import {
   RefreshCw,
   CalendarX,
   MapPin,
+  CheckCircle2,
+  ClipboardCheck,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Dialog,
@@ -48,6 +51,10 @@ import {
   type FailedScanPayload,
 } from "@/lib/socket";
 import { CoachScansSkeleton } from "@/components/ui/loading/coach-skeletons";
+import {
+  ConfirmAttendanceDialog,
+  AttendanceConfirmationData,
+} from "./ConfirmAttendanceDialog";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -66,10 +73,13 @@ interface CoachClassScanData {
   category: string;
   startTime: string;
   endTime: string;
+  startTimeIso?: string;
+  endTimeIso?: string;
   capacity: number;
   bookedCount: number;
   location: string | null;
   scans: CoachScan[];
+  attendanceConfirmation?: AttendanceConfirmationData | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -81,6 +91,27 @@ function formatTime12h(time: string): string {
   const period = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${hour12}:${minute} ${period}`;
+}
+
+function isSessionPastHalfway(data: CoachClassScanData, now: number): boolean {
+  if (data.startTimeIso && data.endTimeIso) {
+    const start = new Date(data.startTimeIso).getTime();
+    const end = new Date(data.endTimeIso).getTime();
+    const halfway = start + (end - start) / 2;
+    return now >= halfway;
+  }
+  try {
+    const [startH, startM] = data.startTime.split(":").map(Number);
+    const [endH, endM] = data.endTime.split(":").map(Number);
+    const startDate = new Date();
+    startDate.setHours(startH, startM, 0, 0);
+    const endDate = new Date();
+    endDate.setHours(endH, endM, 0, 0);
+    const halfway = startDate.getTime() + (endDate.getTime() - startDate.getTime()) / 2;
+    return now >= halfway;
+  } catch {
+    return false;
+  }
 }
 
 function statusLabel(status: CoachScan["status"]) {
@@ -188,24 +219,53 @@ function PtAttendanceCard({
 
 function ClassScanCard({
   data,
+  currentTime,
   onSelect,
+  onConfirmAttendance,
 }: {
   data: CoachClassScanData;
+  currentTime: number;
   onSelect: (scan: CoachScan) => void;
+  onConfirmAttendance: (session: CoachClassScanData) => void;
 }) {
   const successCount = data.scans.filter((s) => s.status === "SUCCESS").length;
+  const isHalfway = isSessionPastHalfway(data, currentTime);
+  const isConfirmed = Boolean(data.attendanceConfirmation?.confirmed);
 
   return (
     <Card className="w-full">
       <CardHeader className="space-y-3 p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold">{data.classTitle}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-semibold">{data.classTitle}</h3>
+              {isConfirmed ? (
+                data.attendanceConfirmation?.hasMissingPlace ? (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 gap-1 text-xs font-normal"
+                    title={`Attendance confirmed with missing place (${data.attendanceConfirmation.confirmedCount} present)`}
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    Missing Place
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 gap-1 text-xs font-normal"
+                    title={`Attendance confirmed (${data.attendanceConfirmation?.confirmedCount} present)`}
+                  >
+                    <CheckCircle2 className="h-3 w-3" />
+                    Confirmed
+                  </Badge>
+                )
+              ) : null}
+            </div>
             <Badge variant="outline" className="mt-1 font-normal text-xs">
               {data.category}
             </Badge>
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
               <span>
@@ -226,6 +286,41 @@ function ClassScanCard({
               <UserCheck className="h-4 w-4" />
               <span>{successCount} checked in</span>
             </div>
+
+            {/* Halfway Attendance Confirmation Button */}
+            {isHalfway ? (
+              isConfirmed ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "h-7 text-xs font-medium gap-1.5 cursor-pointer",
+                    data.attendanceConfirmation?.hasMissingPlace
+                      ? "border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400"
+                      : "border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
+                  )}
+                  onClick={() => onConfirmAttendance(data)}
+                  title="Click to view or edit attendance headcount"
+                >
+                  {data.attendanceConfirmation?.hasMissingPlace ? (
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  ) : (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  )}
+                  {data.attendanceConfirmation?.confirmedCount} Confirmed
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7 text-xs font-medium gap-1.5 shadow-xs cursor-pointer"
+                  onClick={() => onConfirmAttendance(data)}
+                >
+                  <ClipboardCheck className="h-3.5 w-3.5" />
+                  Confirm Attendance
+                </Button>
+              )
+            ) : null}
           </div>
         </div>
       </CardHeader>
@@ -297,6 +392,16 @@ export function CoachScansMonitor() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [peek, setPeek] = useState<CoachScan | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
+  const [confirmingSession, setConfirmingSession] = useState<CoachClassScanData | null>(null);
+
+  // Periodic timer so halfway buttons appear dynamically without manual reload
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchAll = useCallback(async (date: Date) => {
     setLoading(true);
@@ -330,7 +435,7 @@ export function CoachScansMonitor() {
     fetchAll(selectedDate);
   }, [selectedDate, fetchAll]);
 
-  // Real-time: refresh on any scan event
+  // Real-time: refresh on any scan or attendance event
   useEffect(() => {
     const socket = createTmsSocket(token);
     const handleRefresh = () => fetchAll(selectedDate);
@@ -340,10 +445,12 @@ export function CoachScansMonitor() {
     };
 
     socket.on("SUCCESS-SCAN", handleRefresh);
+    socket.on("ATTENDANCE-CONFIRMED", handleRefresh);
     socket.on("FAILED-SCAN", handleFailedScan);
 
     return () => {
       socket.off("SUCCESS-SCAN", handleRefresh);
+      socket.off("ATTENDANCE-CONFIRMED", handleRefresh);
       socket.off("FAILED-SCAN", handleFailedScan);
       socket.disconnect();
     };
@@ -428,7 +535,9 @@ export function CoachScansMonitor() {
                   <ClassScanCard
                     key={cls.scheduledClassId}
                     data={cls}
+                    currentTime={currentTime}
                     onSelect={setPeek}
+                    onConfirmAttendance={setConfirmingSession}
                   />
                 ))}
               </div>
@@ -436,6 +545,13 @@ export function CoachScansMonitor() {
           )}
         </div>
       )}
+
+      <ConfirmAttendanceDialog
+        session={confirmingSession}
+        open={!!confirmingSession}
+        onOpenChange={(open) => !open && setConfirmingSession(null)}
+        onSuccess={() => fetchAll(selectedDate)}
+      />
 
       <Dialog open={!!peek} onOpenChange={(open) => !open && setPeek(null)}>
         <DialogContent className="sm:max-w-sm">

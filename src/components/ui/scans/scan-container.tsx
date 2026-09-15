@@ -141,6 +141,7 @@ export function ScanContainer({
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("SUCCESS-SCAN", handleRefresh);
+    socket.on("ATTENDANCE-CONFIRMED", handleRefresh);
     socket.on("FAILED-SCAN", handleFailedScan);
 
     if (socket.connected) {
@@ -151,6 +152,7 @@ export function ScanContainer({
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("SUCCESS-SCAN", handleRefresh);
+      socket.off("ATTENDANCE-CONFIRMED", handleRefresh);
       socket.off("FAILED-SCAN", handleFailedScan);
       socket.disconnect();
       setSocketConnected(false);
