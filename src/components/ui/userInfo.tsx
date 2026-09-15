@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { LogOut } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth-actions";
 import { logout } from "@/lib/store/features/authSlice";
+import { logoutCoach } from "@/lib/store/features/coachSlice";
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { isBranchScopedRole } from "@/lib/config/roles";
@@ -23,6 +24,7 @@ export function UserInfo() {
   useEffect(() => {
     if (state?.success) {
       dispatch(logout());
+      dispatch(logoutCoach());
       router.push("/login");
     }
   }, [state?.success, dispatch, router]);

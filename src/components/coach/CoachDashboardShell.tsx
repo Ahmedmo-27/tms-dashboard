@@ -42,6 +42,8 @@ import { NotificationPanel } from "@/components/coach/NotificationPanel";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
+import { logoutCoachAction } from "@/lib/actions/coach-auth-actions";
+
 interface CoachNewPackagePayload {
   memberId?: string;
   memberName: string;
@@ -72,11 +74,27 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const coachApi = useCoachApi();
 
-  const { coachId, name, notifications, hasPtSessions, hasScheduledClasses, token } =
+  const { coachId, name, notifications, hasPtSessions, hasScheduledClasses, token, capabilitiesLoaded } =
     useAppSelector((state: RootState) => state.coach);
 
   const [moreOpen, setMoreOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  // Capability guard: prevent direct navigation to unsupported coach sections
+  useEffect(() => {
+    if (!capabilitiesLoaded) return;
+
+    if (pathname.startsWith("/coach/clients") && !hasPtSessions) {
+      toast.error("Personal Training is not enabled for your account");
+      router.replace("/coach/today");
+    } else if (
+      (pathname.startsWith("/coach/schedule") || pathname.startsWith("/coach/scans")) &&
+      !hasScheduledClasses
+    ) {
+      toast.error("Scheduled Classes are not enabled for your account");
+      router.replace("/coach/today");
+    }
+  }, [pathname, hasPtSessions, hasScheduledClasses, capabilitiesLoaded, router]);
 
   const unreadCount = (notifications as { read: boolean }[]).filter((n) => !n.read).length;
 
@@ -115,9 +133,13 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     };
   }, [coachApi, dispatch]);
 
-  const handleLogout = useCallback(() => {
-    dispatch(logoutCoach());
-    router.replace("/login");
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutCoachAction();
+    } finally {
+      dispatch(logoutCoach());
+      router.replace("/login");
+    }
   }, [dispatch, router]);
 
   const openNotifications = async () => {
