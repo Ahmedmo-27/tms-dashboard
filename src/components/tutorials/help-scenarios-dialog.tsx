@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePathname } from "next/navigation";
 import {
   tutorialSections,
   TutorialScenario,
+  TutorialRole,
 } from "@/lib/tutorials/tutorial-data";
 import { useWalkthrough } from "@/lib/tutorials/walkthrough-context";
 import { useAppSelector } from "@/lib/hooks";
@@ -30,12 +32,21 @@ import {
 } from "lucide-react";
 
 export function HelpScenariosDialog() {
+  const pathname = usePathname();
   const { isHelpModalOpen, closeHelpModal, startTutorial } = useWalkthrough();
   const user = useAppSelector((state) => state.auth.user);
-  const userRole = toPermissionRole(user?.role as string | undefined) ?? "branch_admin";
+  const coachRole = useAppSelector((state) => state.coach.role);
+
+  const isCoachPortal = pathname?.startsWith("/coach") || Boolean(coachRole && !user);
+  const staffRole: PermissionRole = toPermissionRole(user?.role as string | undefined) ?? "branch_admin";
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRoleFilter, setSelectedRoleFilter] = useState<"all" | PermissionRole>("all");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<"all" | TutorialRole>("all");
+
+  // Reset role filter when portal changes
+  useEffect(() => {
+    setSelectedRoleFilter("all");
+  }, [isCoachPortal]);
 
   const filteredSections = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -43,7 +54,26 @@ export function HelpScenariosDialog() {
     return tutorialSections
       .map((section) => {
         const scenarios = section.scenarios.filter((scenario) => {
-          // Role filter
+          // Portal scope filtering: coach portal only shows coach scenarios; staff portal only shows staff scenarios
+          const isCoachScenario = scenario.roles.some(
+            (r) => r === "coach" || r === "managing_coach"
+          );
+
+          if (isCoachPortal) {
+            if (!isCoachScenario) return false;
+            // Regular coaches cannot see managing_coach only scenarios
+            if (coachRole !== "managing_coach" && !scenario.roles.includes("coach")) {
+              return false;
+            }
+          } else {
+            // Staff portal: skip coach-only scenarios
+            const isStaffScenario = scenario.roles.some(
+              (r) => r === "branch_admin" || r === "management"
+            );
+            if (!isStaffScenario) return false;
+          }
+
+          // Specific tab role filter
           if (
             selectedRoleFilter !== "all" &&
             !scenario.roles.includes(selectedRoleFilter)
@@ -75,7 +105,7 @@ export function HelpScenariosDialog() {
         };
       })
       .filter((section) => section.scenarios.length > 0);
-  }, [searchQuery, selectedRoleFilter]);
+  }, [searchQuery, selectedRoleFilter, isCoachPortal, coachRole]);
 
   const totalScenariosCount = useMemo(() => {
     return filteredSections.reduce((acc, sec) => acc + sec.scenarios.length, 0);
@@ -85,6 +115,22 @@ export function HelpScenariosDialog() {
     closeHelpModal();
     startTutorial(scenarioId);
   };
+
+  const portalBadge = isCoachPortal
+    ? coachRole === "managing_coach"
+      ? "Managing Coach Portal"
+      : "Coach Portal"
+    : staffRole === "management"
+    ? "Management Portal"
+    : "Branch Admin Portal";
+
+  const portalDescription = isCoachPortal
+    ? "Interactive step-by-step guides for your daily schedule, PT clients, session attendance, and check-in radar."
+    : "Step-by-step interactive walkthroughs for gym operations, member onboarding, scheduling, POS, and management.";
+
+  const searchPlaceholder = isCoachPortal
+    ? "Search coach guides (e.g. attendance confirmation, deduct PT, schedule, scans, tickets)..."
+    : "Search functionalities (e.g. add package, guest package, subscribe to open gym, refund, schedule)...";
 
   return (
     <Dialog open={isHelpModalOpen} onOpenChange={(open) => !open && closeHelpModal()}>
@@ -99,11 +145,11 @@ export function HelpScenariosDialog() {
                   Tutorials & Interactive Guides
                 </DialogTitle>
                 <Badge variant="secondary" className="text-xs capitalize font-mono">
-                  {userRole === "management" ? "Management Portal" : "Branch Admin Portal"}
+                  {portalBadge}
                 </Badge>
               </div>
               <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-                Step-by-step interactive walkthroughs for gym operations, member onboarding, scheduling, POS, and management.
+                {portalDescription}
               </DialogDescription>
             </div>
           </div>
@@ -113,7 +159,7 @@ export function HelpScenariosDialog() {
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search functionalities (e.g. add package, guest package, subscribe to open gym, refund, schedule)..."
+                placeholder={searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 text-sm"
@@ -121,20 +167,36 @@ export function HelpScenariosDialog() {
             </div>
             <Tabs
               value={selectedRoleFilter}
-              onValueChange={(val) => setSelectedRoleFilter(val as "all" | PermissionRole)}
+              onValueChange={(val) => setSelectedRoleFilter(val as "all" | TutorialRole)}
               className="w-full sm:w-auto"
             >
-              <TabsList className="h-9">
-                <TabsTrigger value="all" className="text-xs">
-                  All
-                </TabsTrigger>
-                <TabsTrigger value="branch_admin" className="text-xs">
-                  Branch Admin
-                </TabsTrigger>
-                <TabsTrigger value="management" className="text-xs">
-                  Management
-                </TabsTrigger>
-              </TabsList>
+              {isCoachPortal ? (
+                <TabsList className="h-9">
+                  <TabsTrigger value="all" className="text-xs">
+                    All Guides
+                  </TabsTrigger>
+                  <TabsTrigger value="coach" className="text-xs">
+                    Coach
+                  </TabsTrigger>
+                  {coachRole === "managing_coach" && (
+                    <TabsTrigger value="managing_coach" className="text-xs">
+                      Managing
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+              ) : (
+                <TabsList className="h-9">
+                  <TabsTrigger value="all" className="text-xs">
+                    All
+                  </TabsTrigger>
+                  <TabsTrigger value="branch_admin" className="text-xs">
+                    Branch Admin
+                  </TabsTrigger>
+                  <TabsTrigger value="management" className="text-xs">
+                    Management
+                  </TabsTrigger>
+                </TabsList>
+              )}
             </Tabs>
           </div>
         </DialogHeader>

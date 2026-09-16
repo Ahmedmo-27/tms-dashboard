@@ -11,7 +11,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export function HelpButton({ className }: { className?: string }) {
+export function HelpButton({
+  className,
+  "data-walkthrough": dataWalkthrough = "help-btn",
+}: {
+  className?: string;
+  "data-walkthrough"?: string;
+}) {
   const { openHelpModal } = useWalkthrough();
 
   return (
@@ -22,7 +28,7 @@ export function HelpButton({ className }: { className?: string }) {
             type="button"
             variant="outline"
             size="sm"
-            data-walkthrough="help-btn"
+            data-walkthrough={dataWalkthrough}
             onClick={() => openHelpModal()}
             className={`h-9 px-2.5 sm:px-3 gap-1.5 text-muted-foreground hover:text-foreground shrink-0 ${className ?? ""}`}
             aria-label="Tutorials and guides"

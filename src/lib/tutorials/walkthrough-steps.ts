@@ -515,4 +515,251 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
       fallbackSelector: '[data-walkthrough="freeze-requests-table"]',
     },
   ],
+
+  "coach-today-overview": [
+    {
+      targetSelector: '[data-walkthrough="coach-today-next"]',
+      route: "/coach/today",
+      title: "Next Session Spotlight",
+      description:
+        "Your upcoming class appears right at the top, showing scheduled time, room location, and enrolled capacity so you know where you need to be next.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-today-classes"]',
+      route: "/coach/today",
+      title: "Today's Schedule & Roster",
+      description:
+        "All of your classes scheduled for today are listed here. Click on any class to immediately open the attendee roster modal or navigate to its live check-in scan.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-today-scans"]',
+      route: "/coach/today",
+      title: "Daily Scans & Activity Summary",
+      description:
+        "Review today's total turnstile check-ins, failed access scans, and will-pay alerts. Click 'Open scans' to jump straight into the live radar.",
+      placement: "right",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-today-pt-alerts"]',
+      route: "/coach/today",
+      title: "Personal Training Attention",
+      description:
+        "Highlights trainees with only 1 or 2 sessions remaining or packages expiring within 14 days, prompting timely renewals.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+  ],
+
+  "coach-attendance-confirmation": [
+    {
+      targetSelector: '[data-walkthrough="coach-scans-header"]',
+      route: "/coach/scans",
+      title: "Live Scans & Date Selector",
+      description:
+        "Use the date picker and quick 'Today' button to inspect check-ins. Real-time sockets update this screen automatically as members tap turnstiles.",
+      placement: "bottom",
+      fallbackSelector: "header",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-class-scan-card"]',
+      route: "/coach/scans",
+      title: "Scheduled Class Card",
+      description:
+        "Each class displays enrolled member check-ins, category, timing, and attendance confirmation badges.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-confirm-attendance-btn"]',
+      route: "/coach/scans",
+      title: "Halfway Headcount Confirmation",
+      description:
+        "Once your class reaches its halfway mark, the 'Confirm Attendance' button unlocks. Click it to verify physical studio headcount, flag missing places, and submit audit notes.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="coach-class-scan-card"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-class-scans-table"]',
+      route: "/coach/scans",
+      title: "Attendee Verification List",
+      description:
+        "Review each attendee's check-in timestamp and status (Checked in, Failed, or Will Pay) to confirm who arrived in the studio.",
+      placement: "top",
+      fallbackSelector: '[data-walkthrough="coach-class-scan-card"]',
+    },
+  ],
+
+  "coach-class-schedule-roster": [
+    {
+      targetSelector: '[data-walkthrough="coach-calendar-week-nav"]',
+      route: "/coach/schedule",
+      title: "Weekly Calendar Navigation",
+      description:
+        "Jump between previous, current, and upcoming weeks using the Monday-start week controls to inspect schedules and prep workout plans.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-calendar-day-selector"]',
+      route: "/coach/schedule",
+      title: "Day-by-Day Selector",
+      description:
+        "Switch between individual days of the week on mobile or desktop to focus on a specific day's workout schedule.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="coach-calendar-week-nav"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-calendar-session-card"]',
+      route: "/coach/schedule",
+      title: "Class Sessions & Capacity",
+      description:
+        "Session cards display category, start/end times, room location, and enrolled capacity (e.g. 10/12 booked).",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-session-clients-btn"]',
+      route: "/coach/schedule",
+      title: "Enrolled Attendee Roster",
+      description:
+        "Click on any session to open the full attendee modal with member names, phone numbers, and package types.",
+      placement: "left",
+      fallbackSelector: '[data-walkthrough="coach-calendar-session-card"]',
+    },
+  ],
+
+  "coach-scans-radar": [
+    {
+      targetSelector: '[data-walkthrough="coach-scans-header"]',
+      route: "/coach/scans",
+      title: "Radar Controls & Live Socket",
+      description:
+        "The live radar stays synced via WebSocket. New turnstile check-ins and attendance confirmations refresh automatically.",
+      placement: "bottom",
+      fallbackSelector: "header",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-scans-pt"]',
+      route: "/coach/scans",
+      title: "Personal Training Check-ins",
+      description:
+        "If you conduct Personal Training sessions, trainees checking in for your PT packages appear in this dedicated section.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-class-scan-card"]',
+      route: "/coach/scans",
+      title: "Class Check-in Logs",
+      description:
+        "Inspect member names, check-in timestamps, phone numbers, and turnstile pass/fail statuses for every session today.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-scans-row"]',
+      route: "/coach/scans",
+      title: "Member Quick Peek",
+      description:
+        "Click any member check-in row to view contact details, initiate a direct phone call, or jump to their client profile.",
+      placement: "top",
+      fallbackSelector: '[data-walkthrough="coach-class-scan-card"]',
+    },
+  ],
+
+  "coach-pt-client-management": [
+    {
+      targetSelector: '[data-walkthrough="coach-clients-search"]',
+      route: "/coach/clients",
+      title: "Client Roster Search",
+      description:
+        "Search your assigned personal training clients by name or phone number with real-time debounced filtering.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-clients-filters"]',
+      route: "/coach/clients",
+      title: "Status & Expiry Filter Chips",
+      description:
+        "Filter between Active or Past trainees, or quickly isolate clients whose packages have <= 2 sessions left or expire within 14 days.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="coach-clients-search"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-clients-card"]',
+      route: "/coach/clients",
+      title: "Client Profile & Package Overview",
+      description:
+        "Click on any client to view their package validity, remaining classes progress bar, and contact options.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-package-deduct-btn"]',
+      route: "/coach/clients",
+      title: "Deduct Completed PT Session",
+      description:
+        "Click Deduct to register a completed workout session, select session date, and enter a mandatory audit reason.",
+      placement: "left",
+      fallbackSelector: '[data-walkthrough="coach-clients-card"]',
+    },
+  ],
+
+  "coach-tickets-support": [
+    {
+      targetSelector: '[data-walkthrough="coach-tickets-tabs"]',
+      route: "/coach/tickets",
+      title: "Ticket Status Tabs",
+      description:
+        "Filter your submitted requests across Pending, In Progress, Resolved, or Rejected statuses.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-tickets-create-btn"]',
+      route: "/coach/tickets",
+      title: "Submit Maintenance or Help Ticket",
+      description:
+        "Click '+ New Ticket' to report equipment issues (e.g. broken cables, studio temperature), scheduling conflicts, or member requests.",
+      placement: "bottom",
+      fallbackSelector: "header",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-tickets-table"]',
+      route: "/coach/tickets",
+      title: "Ticket Resolution Tracking",
+      description:
+        "Inspect management responses, priority levels, and resolution timestamps in real time.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+  ],
+
+  "coach-mailing-broadcasts": [
+    {
+      targetSelector: '[data-walkthrough="coach-nav-mailing"]',
+      route: "/coach/today",
+      title: "Managing Coach Mail Center",
+      description:
+        "Managing Coaches have access to the gym email center in the sidebar to send announcements and communicate with branch members.",
+      placement: "right",
+      fallbackSelector: "aside",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-help-btn"]',
+      route: "/coach/today",
+      title: "Interactive Guides Anytime",
+      description:
+        "Click the Guides button in the header at any time to browse tutorials or replay any step-by-step walkthrough.",
+      placement: "bottom",
+      fallbackSelector: "header",
+    },
+  ],
 };
+

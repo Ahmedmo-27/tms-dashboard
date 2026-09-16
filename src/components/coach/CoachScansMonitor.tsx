@@ -148,7 +148,7 @@ function PtAttendanceCard({
   const successCount = scans.filter((s) => s.status === "SUCCESS").length;
 
   return (
-    <Card className="w-full col-span-full">
+    <Card data-walkthrough="coach-scans-pt" className="w-full col-span-full">
       <CardHeader className="p-4">
         <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
@@ -188,6 +188,7 @@ function PtAttendanceCard({
                   scans.map((scan, i) => (
                     <TableRow
                       key={i}
+                      data-walkthrough="coach-scans-row"
                       className="cursor-pointer"
                       onClick={() => onSelect(scan)}
                     >
@@ -233,7 +234,7 @@ function ClassScanCard({
   const isConfirmed = Boolean(data.attendanceConfirmation?.confirmed);
 
   return (
-    <Card className="w-full">
+    <Card data-walkthrough="coach-class-scan-card" className="w-full">
       <CardHeader className="space-y-3 p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -293,6 +294,7 @@ function ClassScanCard({
                 <Button
                   size="sm"
                   variant="outline"
+                  data-walkthrough="coach-confirm-attendance-btn"
                   className={cn(
                     "h-7 text-xs font-medium gap-1.5 cursor-pointer",
                     data.attendanceConfirmation?.hasMissingPlace
@@ -313,6 +315,7 @@ function ClassScanCard({
                 <Button
                   size="sm"
                   variant="default"
+                  data-walkthrough="coach-confirm-attendance-btn"
                   className="h-7 text-xs font-medium gap-1.5 shadow-xs cursor-pointer"
                   onClick={() => onConfirmAttendance(data)}
                 >
@@ -326,7 +329,7 @@ function ClassScanCard({
       </CardHeader>
 
       <CardContent className="p-0">
-        <ScrollArea className="h-[250px] rounded-md border">
+        <ScrollArea data-walkthrough="coach-class-scans-table" className="h-[250px] rounded-md border">
           <div className="p-4">
             <Table>
               <TableHeader>
@@ -469,7 +472,10 @@ export function CoachScansMonitor() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2 border-b pb-3">
+      <div
+        data-walkthrough="coach-scans-header"
+        className="flex flex-wrap items-center justify-end gap-2 border-b pb-3"
+      >
         <Button
           variant="outline"
           size="sm"

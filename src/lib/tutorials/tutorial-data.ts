@@ -25,9 +25,17 @@ import {
   Clock,
   RotateCcw,
   Search,
+  ClipboardCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Home,
+  ScanLine,
+  Calendar,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
+
+export type TutorialRole = PermissionRole | "coach" | "managing_coach";
 
 export type IconComponent = ComponentType<{ className?: string }>;
 
@@ -42,7 +50,7 @@ export interface TutorialScenario {
   title: string;
   subtitle: string;
   icon: IconComponent;
-  roles: readonly PermissionRole[];
+  roles: readonly TutorialRole[];
   badge?: string;
   keywords?: string[];
   steps: TutorialStep[];
@@ -50,7 +58,7 @@ export interface TutorialScenario {
 
 export interface TutorialSection {
   title: string;
-  roles?: readonly PermissionRole[];
+  roles?: readonly TutorialRole[];
   scenarios: TutorialScenario[];
 }
 
@@ -975,6 +983,323 @@ export const tutorialSections: TutorialSection[] = [
       },
     ],
   },
+  {
+    title: "Coach Operations & Daily Hub",
+    roles: ["coach", "managing_coach"],
+    scenarios: [
+      {
+        id: "coach-today-overview",
+        title: "Coach Overview & Today's Hub",
+        subtitle: "Quick access to next session, daily timetable, scan totals, and expiring PT alerts",
+        icon: Home,
+        roles: ["coach", "managing_coach"],
+        badge: "Daily Hub",
+        keywords: [
+          "today",
+          "next session",
+          "coach dashboard",
+          "classes today",
+          "pt alerts",
+          "overview",
+          "quick summary",
+          "scans summary",
+        ],
+        steps: [
+          {
+            title: "Next Session Spotlight",
+            description:
+              "Track your immediate upcoming class, scheduled room, timing, and current booking count right from the top card.",
+            icon: Clock,
+          },
+          {
+            title: "Today's Schedule & Roster",
+            description:
+              "View all classes assigned to you today. Click on any class to instantly view the booked attendee list and contact info.",
+            icon: Calendar,
+          },
+          {
+            title: "Daily Scans & Activity Summary",
+            description:
+              "Monitor today's check-ins, failed scans, and will-pay alerts. Jump straight into the Scans Monitor for real-time details.",
+            icon: ScanLine,
+          },
+          {
+            title: "Personal Training Attention",
+            description:
+              "Spot clients with low remaining sessions (<= 2) or packages expiring soon (<= 14 days) so you can arrange renewals.",
+            icon: AlertTriangle,
+          },
+        ],
+      },
+      {
+        id: "coach-attendance-confirmation",
+        title: "Class Attendance Headcount Confirmation",
+        subtitle: "Confirm live attendee headcount at the session halfway mark with notes & missing place alerts",
+        icon: ClipboardCheck,
+        roles: ["coach", "managing_coach"],
+        badge: "Attendance",
+        keywords: [
+          "attendance",
+          "headcount",
+          "confirm attendance",
+          "halfway",
+          "missing place",
+          "class headcount",
+          "session attendance",
+          "roll call",
+          "confirm headcount",
+        ],
+        steps: [
+          {
+            title: "Halfway Mark Requirement",
+            description:
+              "Attendance headcount confirmation unlocks dynamically once the session reaches its halfway point (start + half duration).",
+            icon: Clock,
+          },
+          {
+            title: "Open Confirmation Dialog",
+            description:
+              "Click 'Confirm Attendance' on the class card in Scans Monitor. The button highlights in primary green once unlocked.",
+            icon: ClipboardCheck,
+          },
+          {
+            title: "Count Present Trainees",
+            description:
+              "Verify the physical headcount in the studio. Use the count stepper to match the actual number of attendees.",
+            icon: Users,
+          },
+          {
+            title: "Flag Missing Places & Notes",
+            description:
+              "Check 'Missing Place' if any booked attendees failed to show up, and add optional session notes for gym management.",
+            icon: AlertTriangle,
+          },
+          {
+            title: "Live Confirmation Sync",
+            description:
+              "Upon submitting, the class status updates instantly across all connected screens with verified count badges.",
+            icon: CheckCircle2,
+          },
+        ],
+      },
+      {
+        id: "coach-class-schedule-roster",
+        title: "Weekly Schedule & Attendee Rosters",
+        subtitle: "Browse weekly class timetables, day-by-day views, and registered member lists",
+        icon: CalendarDays,
+        roles: ["coach", "managing_coach"],
+        badge: "Schedule",
+        keywords: [
+          "schedule",
+          "calendar",
+          "week schedule",
+          "class roster",
+          "booked clients",
+          "registered members",
+          "capacity",
+          "day view",
+          "clients modal",
+        ],
+        steps: [
+          {
+            title: "Week-by-Week Navigation",
+            description:
+              "Navigate previous and future weeks using the week picker to review upcoming bookings or past session attendance.",
+            icon: CalendarDays,
+          },
+          {
+            title: "Day Tabs Selector",
+            description:
+              "Switch between individual days of the week to inspect your daily class lineup and break times.",
+            icon: Clock,
+          },
+          {
+            title: "Class Session Details",
+            description:
+              "Review each session card showing category, start/end times, room location, and capacity ratio (e.g. 8/12 booked).",
+            icon: Layers,
+          },
+          {
+            title: "Attendee Roster & Contacts",
+            description:
+              "Click any class to launch the Session Clients modal, displaying booked member names, phone numbers, and active packages.",
+            icon: Users,
+          },
+        ],
+      },
+      {
+        id: "coach-scans-radar",
+        title: "Live Check-in Scans Monitor",
+        subtitle: "Real-time turnstile socket updates, PT attendance, and member phone peeks",
+        icon: ScanBarcode,
+        roles: ["coach", "managing_coach"],
+        badge: "Live Radar",
+        keywords: [
+          "scans",
+          "live radar",
+          "socket",
+          "turnstile",
+          "pt attendance",
+          "check in",
+          "failed scan",
+          "peek member",
+          "scan monitor",
+        ],
+        steps: [
+          {
+            title: "Real-Time WebSocket Radar",
+            description:
+              "The Scans Monitor stays connected via WebSocket, instantly refreshing whenever a client taps in at the turnstile.",
+            icon: ScanBarcode,
+          },
+          {
+            title: "Personal Training Check-ins",
+            description:
+              "The top PT section displays all trainees checking in for your assigned personal training packages today.",
+            icon: UserCheck,
+          },
+          {
+            title: "Scheduled Class Scans",
+            description:
+              "Each scheduled class lists verified check-ins, exact scan times, and check-in status (Checked in, Failed, or Will Pay).",
+            icon: CalendarDays,
+          },
+          {
+            title: "Member Phone & Quick Peek",
+            description:
+              "Click on any check-in row to view the member's phone number, initiate a quick call, or open their client profile.",
+            icon: Users,
+          },
+        ],
+      },
+      {
+        id: "coach-pt-client-management",
+        title: "PT Clients & Session Deductions",
+        subtitle: "Search assigned clients, inspect package balances, and deduct sessions with audit notes",
+        icon: UserCheck,
+        roles: ["coach", "managing_coach"],
+        badge: "Personal Training",
+        keywords: [
+          "clients",
+          "pt clients",
+          "deduct session",
+          "deduction",
+          "packages",
+          "classes remaining",
+          "audit log",
+          "client search",
+          "deduct",
+        ],
+        steps: [
+          {
+            title: "Client Roster Search",
+            description:
+              "Search your assigned personal training clients by name or phone number with instant debounced filtering.",
+            icon: Search,
+          },
+          {
+            title: "Filter by Status & Alerts",
+            description:
+              "Use filter chips to switch between Active and Past clients, or isolate trainees with low sessions or expiring packages.",
+            icon: Layers,
+          },
+          {
+            title: "Client Package Profile",
+            description:
+              "Open any client to view active packages, start/end dates, total classes, and remaining session progress bar.",
+            icon: Package,
+          },
+          {
+            title: "Deduct Completed Session",
+            description:
+              "Click 'Deduct' on the package to record a completed workout. Enter session date and a mandatory audit reason.",
+            icon: UserCheck,
+          },
+          {
+            title: "Deduction Audit Trail",
+            description:
+              "Review the transparent deduction history log recording every session deduction timestamp and reason.",
+            icon: Clock,
+          },
+        ],
+      },
+      {
+        id: "coach-tickets-support",
+        title: "Support & Equipment Tickets",
+        subtitle: "Report equipment breakdowns, room maintenance, or scheduling issues directly to management",
+        icon: Ticket,
+        roles: ["coach", "managing_coach"],
+        badge: "Support",
+        keywords: [
+          "tickets",
+          "support ticket",
+          "broken equipment",
+          "maintenance",
+          "helpdesk",
+          "report issue",
+          "management ticket",
+          "new ticket",
+        ],
+        steps: [
+          {
+            title: "Coach Tickets Dashboard",
+            description:
+              "View all your operational and maintenance requests categorized by Pending, In Progress, Resolved, or Rejected.",
+            icon: Ticket,
+          },
+          {
+            title: "Submit New Ticket",
+            description:
+              "Click '+ New Ticket' to submit repair requests (e.g. treadmill maintenance, AC issue, missing props) or schedule questions.",
+            icon: Ticket,
+          },
+          {
+            title: "Live Resolution Tracking",
+            description:
+              "Track management responses, resolution notes, and status changes in real time.",
+            icon: CheckCircle2,
+          },
+        ],
+      },
+      {
+        id: "coach-mailing-broadcasts",
+        title: "Managing Coach Communications",
+        subtitle: "Broadcast emails, announcements, and member communications across your branch",
+        icon: Mail,
+        roles: ["managing_coach"],
+        badge: "Managing Coach",
+        keywords: [
+          "mailing",
+          "broadcast",
+          "email",
+          "announcements",
+          "managing coach",
+          "sent mail",
+          "inbox",
+        ],
+        steps: [
+          {
+            title: "Mail Center",
+            description:
+              "As a Managing Coach, access the gym mailing center to coordinate with staff and send member announcements.",
+            icon: Mail,
+          },
+          {
+            title: "Compose Broadcast",
+            description:
+              "Draft branch updates or fitness announcements with formatted message body and dispatch to target recipients.",
+            icon: Send,
+          },
+          {
+            title: "Inbox & Sent Audit",
+            description:
+              "Monitor incoming email responses and inspect sent delivery logs directly inside the portal.",
+            icon: Inbox,
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 export function findTutorialScenario(id: string): TutorialScenario | undefined {
@@ -989,13 +1314,22 @@ export function findTutorialScenario(id: string): TutorialScenario | undefined {
 export function getTutorialSectionsForRole(
   role: string | undefined
 ): TutorialSection[] {
-  const permRole: PermissionRole =
-    role === "branch_admin" ? "branch_admin" : "management";
+  let effectiveRole: TutorialRole = "branch_admin";
+  if (role === "managing_coach") {
+    effectiveRole = "managing_coach";
+  } else if (role === "coach") {
+    effectiveRole = "coach";
+  } else if (role === "management" || role === "admin") {
+    effectiveRole = "management";
+  } else if (role === "branch_admin") {
+    effectiveRole = "branch_admin";
+  }
 
   return tutorialSections
     .map((section) => ({
       ...section,
-      scenarios: section.scenarios.filter((s) => s.roles.includes(permRole)),
+      scenarios: section.scenarios.filter((s) => s.roles.includes(effectiveRole)),
     }))
     .filter((section) => section.scenarios.length > 0);
 }
+

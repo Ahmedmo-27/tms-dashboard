@@ -74,7 +74,7 @@ function PackageCard({
       : null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+    <div data-walkthrough="coach-package-card" className="flex flex-col gap-3 rounded-xl border bg-card p-4">
       <div className="flex items-start justify-between gap-2">
         <p className="truncate text-sm leading-tight font-semibold">{label}</p>
         <StatusBadge isExpired={pkg.isExpired} daysUntilExpiry={pkg.daysUntilExpiry} />
@@ -100,6 +100,7 @@ function PackageCard({
         <Button
           size="sm"
           variant="outline"
+          data-walkthrough="coach-package-deduct-btn"
           className="mt-auto w-full"
           disabled={pkg.isExpired || pkg.remainingClasses === 0}
           onClick={onDeduct}

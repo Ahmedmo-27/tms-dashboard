@@ -176,7 +176,7 @@ export function ClientList() {
         </p>
       </div>
 
-      <div className="relative">
+      <div data-walkthrough="coach-clients-search" className="relative">
         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search by name or phone..."
@@ -199,23 +199,25 @@ export function ClientList() {
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Chip label="Active" selected={status === "active"} onClick={() => setStatusFilter("active")} />
-        <Chip label="Past" selected={status === "past"} onClick={() => setStatusFilter("past")} />
-        <Chip label="All" selected={status === "all"} onClick={() => setStatusFilter("all")} />
-      </div>
+      <div data-walkthrough="coach-clients-filters" className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          <Chip label="Active" selected={status === "active"} onClick={() => setStatusFilter("active")} />
+          <Chip label="Past" selected={status === "past"} onClick={() => setStatusFilter("past")} />
+          <Chip label="All" selected={status === "all"} onClick={() => setStatusFilter("all")} />
+        </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Chip
-          label="Low remaining"
-          selected={alert === "low"}
-          onClick={() => toggleAlert("low")}
-        />
-        <Chip
-          label="Expiring soon"
-          selected={alert === "expiring"}
-          onClick={() => toggleAlert("expiring")}
-        />
+        <div className="flex flex-wrap gap-2">
+          <Chip
+            label="Low remaining"
+            selected={alert === "low"}
+            onClick={() => toggleAlert("low")}
+          />
+          <Chip
+            label="Expiring soon"
+            selected={alert === "expiring"}
+            onClick={() => toggleAlert("expiring")}
+          />
+        </div>
       </div>
 
       {isInitialLoad ? (
@@ -251,7 +253,7 @@ export function ClientList() {
         </p>
       ) : (
         <div className={cn("space-y-4", isRefreshing && "opacity-60")}>
-          <div className="divide-y overflow-hidden rounded-lg border">
+          <div data-walkthrough="coach-clients-card" className="divide-y overflow-hidden rounded-lg border">
             {safeClients.map((client: ClientDto) => {
               const tel = telHref(client.phoneNumber);
               const low = client.remainingClasses !== null && client.remainingClasses <= 2;

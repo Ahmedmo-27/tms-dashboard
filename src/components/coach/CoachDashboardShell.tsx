@@ -38,8 +38,11 @@ import {
   Settings,
   MoreHorizontal,
   Mail,
+  HelpCircle,
 } from "lucide-react";
 import { NotificationPanel } from "@/components/coach/NotificationPanel";
+import { HelpButton } from "@/components/tutorials/help-button";
+import { useWalkthrough } from "@/lib/tutorials/walkthrough-context";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +61,7 @@ type NavItem = {
   label: string;
   icon: React.ElementType;
   match: (path: string) => boolean;
+  dataWalkthrough?: string;
 };
 
 function titleForPath(pathname: string, items: NavItem[]): string {
@@ -75,6 +79,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const coachApi = useCoachApi();
+  const { openHelpModal } = useWalkthrough();
 
   const { coachId, name, role, notifications, hasPtSessions, hasScheduledClasses, token, capabilitiesLoaded } =
     useAppSelector((state: RootState) => state.coach);
@@ -163,6 +168,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       label: "Today",
       icon: Home,
       match: (p) => p.startsWith("/coach/today") || p === "/coach" || p === "/coach/dashboard",
+      dataWalkthrough: "coach-nav-today",
     },
     ...(hasPtSessions
       ? [
@@ -171,6 +177,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
             label: "Clients",
             icon: Users,
             match: (p: string) => p.startsWith("/coach/clients"),
+            dataWalkthrough: "coach-nav-clients",
           },
         ]
       : []),
@@ -181,6 +188,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
             label: "Schedule",
             icon: Calendar,
             match: (p: string) => p.startsWith("/coach/schedule"),
+            dataWalkthrough: "coach-nav-schedule",
           },
         ]
       : []),
@@ -194,6 +202,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
             label: "Scans",
             icon: ScanLine,
             match: (p: string) => p.startsWith("/coach/scans"),
+            dataWalkthrough: "coach-nav-scans",
           },
         ]
       : []),
@@ -204,6 +213,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
             label: "Mailing",
             icon: Mail,
             match: (p: string) => p.startsWith("/coach/mailing"),
+            dataWalkthrough: "coach-nav-mailing",
           },
         ]
       : []),
@@ -212,12 +222,14 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       label: "Tickets",
       icon: Ticket,
       match: (p) => p.startsWith("/coach/tickets"),
+      dataWalkthrough: "coach-nav-tickets",
     },
     {
       href: "/coach/settings",
       label: "Settings",
       icon: Settings,
       match: (p) => p.startsWith("/coach/settings"),
+      dataWalkthrough: "coach-nav-settings",
     },
   ];
 
@@ -226,10 +238,11 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
 
   const SidebarNav = (
     <nav className="flex flex-col gap-1 p-4">
-      {allNav.map(({ href, label, icon: Icon, match }) => (
+      {allNav.map(({ href, label, icon: Icon, match, dataWalkthrough }) => (
         <Link
           key={href}
           href={href}
+          data-walkthrough={dataWalkthrough}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
             match(pathname)
@@ -246,7 +259,10 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <aside className="hidden md:flex md:w-56 md:flex-col shrink-0 border-r">
+      <aside
+        data-walkthrough="coach-sidebar"
+        className="hidden md:flex md:w-56 md:flex-col shrink-0 border-r"
+      >
         <div className="border-b p-4">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Coach Portal
@@ -272,12 +288,14 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
           <div className="min-w-0 flex-1">
             <span className="text-sm font-semibold">{pageTitle}</span>
           </div>
+          <HelpButton className="shrink-0" data-walkthrough="coach-help-btn" />
           <Button
             variant="ghost"
             size="icon"
             className="relative"
             onClick={openNotifications}
             aria-label="Notifications"
+            data-walkthrough="coach-notif-btn"
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
@@ -343,6 +361,17 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
                 {label}
               </Link>
             ))}
+            <Button
+              variant="ghost"
+              className="justify-start gap-3"
+              onClick={() => {
+                setMoreOpen(false);
+                openHelpModal();
+              }}
+            >
+              <HelpCircle className="h-5 w-5 text-primary" />
+              Guides & Walkthroughs
+            </Button>
             <Button
               variant="ghost"
               className="mt-2 justify-start gap-3 text-destructive hover:text-destructive"
