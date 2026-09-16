@@ -13,14 +13,10 @@ import {
 } from "../utils/parsers/payments-parser";
 
 const REFUND_LIST_ENDPOINTS = [
-  "/api/admin/refunds/list",
   "/admin/refunds/list",
 ] as const;
 
 const CASHOUT_LIST_ENDPOINTS = [
-  "/api/admin/refunds/cashout",
-  "/api/admin/refunds/cashouts",
-  "/admin/refunds/cashout",
   "/admin/refunds/cashouts",
 ] as const;
 
@@ -152,23 +148,43 @@ export const getPayments = async (
         ? `?${new URLSearchParams(params).toString()}`
         : "";
 
-    const response = await tms.get(`/admin/payments${dateQuery}`);
-    const paymentRecords = normalizePaymentsPayload(response.data.data);
+    // For historical date ranges, allow up to 60s to prevent premature ECONNABORTED
+    const isLargeRange = Boolean(startDate && endDate && startDate !== endDate);
+    const timeout = isLargeRange ? 60000 : 30000;
 
-    const refundRecords = await fetchFromEndpoints(
-      REFUND_LIST_ENDPOINTS,
-      date,
-      locationId,
-      startDate,
-      endDate
-    );
-    const cashOutRecords = await fetchFromEndpoints(
-      CASHOUT_LIST_ENDPOINTS,
-      date,
-      locationId,
-      startDate,
-      endDate
-    );
+    const response = await tms.get(`/admin/payments${dateQuery}`, { timeout });
+    const paymentRecords = normalizePaymentsPayload(response.data?.data);
+
+    // If the response is from TMS API's unified PaymentsService (which already combines
+    // payments, member refunds, and cashouts) or already includes money-out/refund entries,
+    // return directly without firing redundant secondary endpoint requests.
+    const isUnifiedApi =
+      response.data?.message === "Fetched Payments!" ||
+      paymentRecords.some(
+        (r) => r.entryType === "REFUND" || r.entryType === "CASHOUT" || r.isMoneyOut === true
+      );
+
+    if (isUnifiedApi || paymentRecords.length > 0) {
+      return parsePayments(paymentRecords);
+    }
+
+    // Legacy fallback only for older API backends where refunds were kept separate:
+    const [refundRecords, cashOutRecords] = await Promise.all([
+      fetchFromEndpoints(
+        REFUND_LIST_ENDPOINTS,
+        date,
+        locationId,
+        startDate,
+        endDate
+      ),
+      fetchFromEndpoints(
+        CASHOUT_LIST_ENDPOINTS,
+        date,
+        locationId,
+        startDate,
+        endDate
+      ),
+    ]);
 
     const mergedRecords = mergePaymentRecords(
       paymentRecords,
