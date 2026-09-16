@@ -143,12 +143,94 @@ async function main() {
   // --- coach role helpers contract ---
   const isCoachRole = (role) => role === "coach" || role === "managing_coach";
   const isManagingCoachRole = (role) => role === "managing_coach";
+  const isStaffRole = (role) => {
+    const p = toPermissionRole(role);
+    return p !== null;
+  };
   check("isCoachRole true for coach", isCoachRole("coach") === true);
   check("isCoachRole true for managing_coach", isCoachRole("managing_coach") === true);
   check("isCoachRole false for member", isCoachRole("member") === false);
   check("isCoachRole false for management", isCoachRole("management") === false);
   check("isManagingCoachRole true for managing_coach", isManagingCoachRole("managing_coach") === true);
   check("isManagingCoachRole false for coach", isManagingCoachRole("coach") === false);
+
+  check("isStaffRole true for admin", isStaffRole("admin") === true);
+  check("isStaffRole true for management", isStaffRole("management") === true);
+  check("isStaffRole true for branch_admin", isStaffRole("branch_admin") === true);
+  check("isStaffRole false for coach", isStaffRole("coach") === false);
+  check("isStaffRole false for managing_coach", isStaffRole("managing_coach") === false);
+  check("isStaffRole false for member", isStaffRole("member") === false);
+  check("isStaffRole false for user", isStaffRole("user") === false);
+
+  // --- getDashboardRouteForRole contract ---
+  const COACH_DASHBOARD_HOME = "/coach/today";
+  const STAFF_DASHBOARD_HOME = "/dashboard/scans-monitor";
+  const getDashboardRouteForRole = (role) => {
+    if (!role) return null;
+    if (isCoachRole(role)) return COACH_DASHBOARD_HOME;
+    if (isStaffRole(role)) return STAFF_DASHBOARD_HOME;
+    return null;
+  };
+
+  check("getDashboardRouteForRole coach -> /coach/today", getDashboardRouteForRole("coach") === "/coach/today");
+  check("getDashboardRouteForRole managing_coach -> /coach/today", getDashboardRouteForRole("managing_coach") === "/coach/today");
+  check("getDashboardRouteForRole admin -> /dashboard/scans-monitor", getDashboardRouteForRole("admin") === "/dashboard/scans-monitor");
+  check("getDashboardRouteForRole management -> /dashboard/scans-monitor", getDashboardRouteForRole("management") === "/dashboard/scans-monitor");
+  check("getDashboardRouteForRole branch_admin -> /dashboard/scans-monitor", getDashboardRouteForRole("branch_admin") === "/dashboard/scans-monitor");
+  check("getDashboardRouteForRole member -> null", getDashboardRouteForRole("member") === null);
+  check("getDashboardRouteForRole user -> null", getDashboardRouteForRole("user") === null);
+  check("getDashboardRouteForRole undefined -> null", getDashboardRouteForRole(undefined) === null);
+
+  // --- middleware role redirection contract ---
+  const simulateMiddleware = (pathname, role, hasToken) => {
+    const isCoach = isCoachRole(role);
+    const isStaff = isStaffRole(role);
+    const isAuthenticated = Boolean(hasToken) && (isCoach || isStaff);
+    const dashboardHome = getDashboardRouteForRole(role);
+
+    if (pathname === "/") {
+      if (!isAuthenticated || !dashboardHome) return "/login";
+      return dashboardHome;
+    }
+    if (pathname === "/login") {
+      if (isAuthenticated && dashboardHome) return dashboardHome;
+      return "next";
+    }
+    if (pathname.startsWith("/dashboard")) {
+      if (!isAuthenticated || !isStaff) {
+        if (isCoach) return COACH_DASHBOARD_HOME;
+        return "/login";
+      }
+      return "next";
+    }
+    if (pathname.startsWith("/coach")) {
+      if (Boolean(hasToken) && isStaff && !isCoach) {
+        return STAFF_DASHBOARD_HOME;
+      }
+      return "next";
+    }
+    return "next";
+  };
+
+  check("Middleware: / redirects coach to /coach/today", simulateMiddleware("/", "coach", true) === "/coach/today");
+  check("Middleware: / redirects managing_coach to /coach/today", simulateMiddleware("/", "managing_coach", true) === "/coach/today");
+  check("Middleware: / redirects admin to /dashboard/scans-monitor", simulateMiddleware("/", "admin", true) === "/dashboard/scans-monitor");
+  check("Middleware: / redirects management to /dashboard/scans-monitor", simulateMiddleware("/", "management", true) === "/dashboard/scans-monitor");
+  check("Middleware: / redirects branch_admin to /dashboard/scans-monitor", simulateMiddleware("/", "branch_admin", true) === "/dashboard/scans-monitor");
+  check("Middleware: / redirects member to /login", simulateMiddleware("/", "member", true) === "/login");
+  check("Middleware: / redirects unauthenticated to /login", simulateMiddleware("/", null, false) === "/login");
+
+  check("Middleware: /login redirects managing_coach to /coach/today", simulateMiddleware("/login", "managing_coach", true) === "/coach/today");
+  check("Middleware: /login redirects branch_admin to /dashboard/scans-monitor", simulateMiddleware("/login", "branch_admin", true) === "/dashboard/scans-monitor");
+  check("Middleware: /login lets unauthenticated view login", simulateMiddleware("/login", null, false) === "next");
+  check("Middleware: /login lets member view login without loop", simulateMiddleware("/login", "member", true) === "next");
+
+  check("Middleware: /dashboard/scans-monitor redirects managing_coach to /coach/today", simulateMiddleware("/dashboard/scans-monitor", "managing_coach", true) === "/coach/today");
+  check("Middleware: /dashboard/scans-monitor allows branch_admin", simulateMiddleware("/dashboard/scans-monitor", "branch_admin", true) === "next");
+  check("Middleware: /dashboard/scans-monitor redirects member to /login", simulateMiddleware("/dashboard/scans-monitor", "member", true) === "/login");
+
+  check("Middleware: /coach/today allows managing_coach", simulateMiddleware("/coach/today", "managing_coach", true) === "next");
+  check("Middleware: /coach/today redirects management to /dashboard/scans-monitor", simulateMiddleware("/coach/today", "management", true) === "/dashboard/scans-monitor");
 
   // --- redux persist partialize contract (D-C1) ---
   const partialize = (state) => {

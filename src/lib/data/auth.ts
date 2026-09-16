@@ -2,7 +2,7 @@
 
 import { tms } from "@/lib/tms-api";
 import { deleteToken, getToken, setToken } from "../cookie";
-import { isCoachRole } from "@/lib/config/roles";
+import { isCoachRole, isStaffRole } from "@/lib/config/roles";
 
 interface LoginResponsePayload {
   token?: string;
@@ -28,6 +28,12 @@ export const login = async ({
 
     if (!loginData?.token) {
       throw new Error("Invalid login response");
+    }
+
+    if (!isStaffRole(loginData.role) && !isCoachRole(loginData.role)) {
+      throw new Error(
+        "Unauthorized role. This account does not have dashboard access."
+      );
     }
 
     await setToken(loginData.token);

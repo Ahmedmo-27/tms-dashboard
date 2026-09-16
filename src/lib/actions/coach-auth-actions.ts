@@ -2,7 +2,7 @@
 
 import { tms } from "@/lib/tms-api";
 import { getToken, deleteToken } from "@/lib/cookie";
-import { isCoachRole } from "@/lib/config/roles";
+import { isCoachRole, isStaffRole } from "@/lib/config/roles";
 import type { CoachMeDto } from "@/types/coach.types";
 
 export interface CoachSessionResult {
@@ -17,19 +17,32 @@ export interface CoachSessionResult {
   hasScheduledClasses: boolean;
 }
 
-export async function getCoachSession(): Promise<CoachSessionResult | null> {
+export type CoachSessionResolution =
+  | { status: "coach"; session: CoachSessionResult }
+  | { status: "staff"; role: string }
+  | { status: "unauthenticated" };
+
+export async function getCoachSession(): Promise<CoachSessionResolution> {
   try {
     const token = await getToken();
     if (!token) {
-      return null;
+      return { status: "unauthenticated" };
     }
 
     // Verify token and retrieve user details
     const verifyRes = await tms.get("/auth/verifyToken");
     const user = verifyRes.data?.data?.user ?? verifyRes.data?.user;
 
-    if (!user || !isCoachRole(user.role)) {
-      return null;
+    if (!user) {
+      return { status: "unauthenticated" };
+    }
+
+    if (isStaffRole(user.role)) {
+      return { status: "staff", role: user.role };
+    }
+
+    if (!isCoachRole(user.role)) {
+      return { status: "unauthenticated" };
     }
 
     // Fetch coach profile & capabilities
@@ -37,22 +50,25 @@ export async function getCoachSession(): Promise<CoachSessionResult | null> {
     const profile = meRes.data?.data as CoachMeDto;
 
     if (!profile) {
-      return null;
+      return { status: "unauthenticated" };
     }
 
     return {
-      token,
-      coachId: user._id || user.userId || "",
-      name: profile.name || user.name || "Coach",
-      email: profile.email || user.email,
-      phoneNumber: profile.phoneNumber || user.phoneNumber,
-      role: profile.role || user.role,
-      branchName: profile.branchName ?? null,
-      hasPtSessions: Boolean(profile.hasPtSessions),
-      hasScheduledClasses: Boolean(profile.hasScheduledClasses),
+      status: "coach",
+      session: {
+        token,
+        coachId: user._id || user.userId || "",
+        name: profile.name || user.name || "Coach",
+        email: profile.email || user.email,
+        phoneNumber: profile.phoneNumber || user.phoneNumber,
+        role: profile.role || user.role,
+        branchName: profile.branchName ?? null,
+        hasPtSessions: Boolean(profile.hasPtSessions),
+        hasScheduledClasses: Boolean(profile.hasScheduledClasses),
+      },
     };
   } catch {
-    return null;
+    return { status: "unauthenticated" };
   }
 }
 
