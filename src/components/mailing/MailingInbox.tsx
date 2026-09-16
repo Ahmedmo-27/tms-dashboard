@@ -33,6 +33,7 @@ import { getToken } from "@/lib/cookie";
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -115,6 +116,9 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const [search, setSearch] = useState("");
   const [filterTab, setFilterTab] = useState<"all" | "unread">("all");
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
@@ -123,9 +127,48 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
   const [isSyncing, setIsSyncing] = useState(false);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
   const [copiedBody, setCopiedBody] = useState(false);
+  const [unreadTotal, setUnreadTotal] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await tms.get("/admin/mail/unread-count");
+      const count = res.data?.data?.unreadCount ?? res.data?.unreadCount ?? 0;
+      setUnreadTotal(count);
+    } catch (err) {
+      console.debug("Failed to fetch unread count:", err);
+    }
+  };
+
+  const fetchEmails = async (silent = false, customPage = page) => {
+    if (!silent) setIsLoading(true);
+    try {
+      const params: any = {
+        page: customPage,
+        limit: pageSize,
+      };
+      if (search.trim()) params.search = search.trim();
+      if (filterTab === "unread") params.status = "unread";
+
+      const response = await tms.get("/admin/mail/inbox", { params });
+      const data = response.data?.data || response.data;
+      if (Array.isArray(data)) {
+        setEmails(data);
+        setTotalCount(data.length);
+      } else if (data && typeof data === "object") {
+        setEmails(Array.isArray(data.emails) ? data.emails : []);
+        setTotalCount(typeof data.total === "number" ? data.total : (data.emails?.length || 0));
+      }
+    } catch (error) {
+      console.error("Failed to fetch inbox", error);
+      if (!silent) setEmails([]);
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchEmails(false);
+    fetchEmails(false, 1);
+    fetchUnreadCount();
     tms.get("/admin/mail/profile")
       .then((res) => {
         const data = res.data?.data || res.data;
@@ -135,19 +178,23 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
 
     // Silent live refresh every 15 seconds
     const pollInterval = setInterval(() => {
-      fetchEmails(true);
+      fetchEmails(true, page);
+      fetchUnreadCount();
     }, 15000);
 
     // Background IMAP sync check every 40 seconds
     const syncInterval = setInterval(() => {
-      tms.post("/admin/mail/sync")
+      tms.post("/admin/mail/sync", { page, limit: pageSize })
         .then((res) => {
-          const data = Array.isArray(res.data)
-            ? res.data
-            : res.data?.data || [];
-          if (Array.isArray(data) && data.length > 0) {
+          const data = res.data?.data || res.data;
+          if (Array.isArray(data)) {
             setEmails(data);
+            setTotalCount(data.length);
+          } else if (data && typeof data === "object" && Array.isArray(data.emails)) {
+            setEmails(data.emails);
+            setTotalCount(typeof data.total === "number" ? data.total : data.emails.length);
           }
+          fetchUnreadCount();
         })
         .catch(() => {});
     }, 40000);
@@ -162,21 +209,18 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
       socket.on("mail:newEmail", (payload: any) => {
         const emailId = payload.id || payload._id;
         if (!emailId) return;
-        setEmails((prev) => {
-          if (prev.some((e) => e._id === emailId)) return prev;
-          const newEmailRecord: ReceivedEmail = {
-            _id: emailId,
-            from: payload.from,
-            to: payload.to,
-            recipientEmail: payload.recipientEmail,
-            subject: payload.subject,
-            text: payload.snippet || "",
-            html: "",
-            date: payload.date || new Date().toISOString(),
-            isRead: false,
-          };
-          return [newEmailRecord, ...prev];
-        });
+
+        if (mailboxEmail) {
+          const myMail = mailboxEmail.toLowerCase();
+          const toStr = (payload.to || "").toLowerCase();
+          const recStr = (payload.recipientEmail || "").toLowerCase();
+          if (recStr !== myMail && !toStr.includes(myMail)) {
+            return;
+          }
+        }
+
+        setUnreadTotal((prev) => prev + 1);
+        fetchEmails(true, 1);
       });
     });
 
@@ -185,7 +229,12 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
       clearInterval(syncInterval);
       if (socket) socket.disconnect();
     };
-  }, []);
+  }, [page, mailboxEmail]);
+
+  useEffect(() => {
+    setPage(1);
+    fetchEmails(false, 1);
+  }, [search, filterTab]);
 
   const handleSelectEmail = async (email: ReceivedEmail) => {
     setSelectedEmail(email);
@@ -194,6 +243,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
         prev.map((e) => (e._id === email._id ? { ...e, isRead: true } : e))
       );
       dispatch(markMailNotificationRead(email._id));
+      setUnreadTotal((prev) => Math.max(0, prev - 1));
 
       try {
         await tms.patch(`/admin/mail/${email._id}/read`);
@@ -216,8 +266,10 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
 
     if (newReadState) {
       dispatch(markMailNotificationRead(email._id));
+      setUnreadTotal((prev) => Math.max(0, prev - 1));
     } else {
       dispatch(markMailNotificationUnread(email._id));
+      setUnreadTotal((prev) => prev + 1);
     }
 
     try {
@@ -230,7 +282,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
   };
 
   const handleMarkAllRead = async () => {
-    if (unreadCount === 0) return;
+    if (unreadTotal === 0 && unreadCount === 0) return;
     setIsMarkingAll(true);
     try {
       await tms.patch("/admin/mail/read-all");
@@ -238,6 +290,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
       if (selectedEmail) {
         setSelectedEmail({ ...selectedEmail, isRead: true });
       }
+      setUnreadTotal(0);
       dispatch(markAllMailNotificationsRead());
       toast.success("All emails marked as read");
     } catch (err) {
@@ -248,30 +301,19 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
     }
   };
 
-  const fetchEmails = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    try {
-      const response = await tms.get("/admin/mail/inbox");
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data?.data || [];
-      setEmails(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Failed to fetch inbox", error);
-      if (!silent) setEmails([]);
-    } finally {
-      if (!silent) setIsLoading(false);
-    }
-  };
-
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const response = await tms.post("/admin/mail/sync");
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data?.data || [];
-      setEmails(Array.isArray(data) ? data : []);
+      const response = await tms.post("/admin/mail/sync", { page, limit: pageSize });
+      const data = response.data?.data || response.data;
+      if (Array.isArray(data)) {
+        setEmails(data);
+        setTotalCount(data.length);
+      } else if (data && typeof data === "object") {
+        setEmails(Array.isArray(data.emails) ? data.emails : []);
+        setTotalCount(typeof data.total === "number" ? data.total : (data.emails?.length || 0));
+      }
+      fetchUnreadCount();
       toast.success("Inbox refreshed from mail server!");
     } catch (error) {
       console.error("Failed to sync inbox", error);
@@ -301,6 +343,13 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
   });
 
   const unreadCount = (Array.isArray(emails) ? emails : []).filter((e) => !e.isRead).length;
+  const pageCount = Math.ceil(totalCount / pageSize) || 1;
+
+  const handlePageChange = (pageIndex: number) => {
+    const newPage = pageIndex + 1;
+    setPage(newPage);
+    fetchEmails(false, newPage);
+  };
 
   const handleReply = (email: ReceivedEmail) => {
     const { email: replyEmail } = parseSender(email.from);
@@ -322,11 +371,11 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
                   Inbox
                 </CardTitle>
                 <Badge variant="secondary" className="text-xs font-normal">
-                  {emails.length} total
+                  {totalCount} total
                 </Badge>
-                {unreadCount > 0 && (
+                {unreadTotal > 0 && (
                   <Badge className="text-xs bg-primary text-primary-foreground font-semibold">
-                    {unreadCount} unread
+                    {unreadTotal} unread
                   </Badge>
                 )}
               </div>
@@ -402,7 +451,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                All Messages ({emails.length})
+                All Messages ({filterTab === "all" ? totalCount : emails.length})
               </button>
               <button
                 onClick={() => setFilterTab("unread")}
@@ -413,7 +462,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Unread ({unreadCount})
+                Unread ({unreadTotal})
               </button>
             </div>
           </div>
@@ -566,6 +615,19 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
             </Table>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
+
+          {/* Pagination Footer */}
+          {totalCount > pageSize && (
+            <div className="p-4 border-t bg-muted/10">
+              <TablePagination
+                pageIndex={page - 1}
+                pageCount={pageCount}
+                total={totalCount}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
