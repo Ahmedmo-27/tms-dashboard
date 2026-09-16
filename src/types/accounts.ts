@@ -8,6 +8,18 @@ export type AccountRole =
   | "member"
   | "user";
 
+export const EMAIL_ELIGIBLE_ROLES = [
+  "management",
+  "admin",
+  "mailer",
+  "managing_coach",
+] as const;
+
+export function isEmailEligibleRole(role: string | null | undefined): boolean {
+  if (!role) return false;
+  return (EMAIL_ELIGIBLE_ROLES as readonly string[]).includes(role);
+}
+
 export interface BranchLocation {
   _id: string;
   branchName: string;

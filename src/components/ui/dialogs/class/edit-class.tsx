@@ -24,6 +24,11 @@ import { Edit } from "lucide-react";
 import { ApiError } from "@/core/api-error";
 import { formatCategory, CLASS_CATEGORIES } from "@/lib/utils/catalog";
 import type { Location } from "@/lib/data/locations";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ActionState {
   success: boolean;
@@ -41,6 +46,7 @@ interface EditClassDialogProps {
   cls: Class;
   categories: string[];
   locations?: Location[];
+  compact?: boolean;
 }
 
 const resolveLocationId = (
@@ -62,6 +68,7 @@ export default function EditClassDialog({
   cls,
   categories = CLASS_CATEGORIES as unknown as string[],
   locations = [],
+  compact = false,
 }: EditClassDialogProps) {
   const availableCategories =
     categories && categories.length > 0
@@ -111,17 +118,29 @@ export default function EditClassDialog({
     initialState
   );
 
+  const triggerButton = (
+    <Button
+      onClick={() => setOpen(true)}
+      variant="outline"
+      size={compact ? "icon" : "default"}
+      className={compact ? "h-8 w-8 cursor-pointer shrink-0" : "w-full cursor-pointer"}
+    >
+      <Edit className={compact ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+      {!compact && <span>Edit</span>}
+      {compact && <span className="sr-only">Edit Class</span>}
+    </Button>
+  );
+
   return (
     <div>
-      <Button
-        onClick={() => setOpen(true)}
-        variant="outline"
-        className="w-full"
-      >
-        <Edit className="mr-2 h-4 w-4" />
-        <span className="hidden sm:inline">Edit</span>
-        <span className="sm:hidden">Edit</span>
-      </Button>
+      {compact ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{triggerButton}</TooltipTrigger>
+          <TooltipContent>Edit Class</TooltipContent>
+        </Tooltip>
+      ) : (
+        triggerButton
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto z-50">
           <DialogHeader>

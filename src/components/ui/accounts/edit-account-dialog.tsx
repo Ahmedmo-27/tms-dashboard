@@ -21,8 +21,13 @@ import {
 } from "@/components/ui/select";
 import { useLocations } from "@/lib/hooks/use-locations";
 import { updateAccount } from "@/lib/data/accounts";
-import type { AccountRole, UserAccount } from "@/types/accounts";
+import {
+  type AccountRole,
+  type UserAccount,
+  isEmailEligibleRole,
+} from "@/types/accounts";
 import { toast } from "react-hot-toast";
+import { Badge } from "@/components/ui/badge";
 import {
   UserCog,
   Eye,
@@ -33,6 +38,7 @@ import {
   Copy,
   Loader2,
   ShieldAlert,
+  Mail,
 } from "lucide-react";
 
 interface EditAccountDialogProps {
@@ -156,8 +162,16 @@ export function EditAccountDialog({
         role,
         locationId: role === "branch_admin" ? locationId : null,
         password: password ? password : undefined,
-        tmsEmail: role === "mailer" ? (tmsEmail.trim() ? tmsEmail.trim().toLowerCase() : null) : undefined,
-        sendAsName: role === "mailer" ? (sendAsName.trim() ? sendAsName.trim() : null) : undefined,
+        tmsEmail: isEmailEligibleRole(role)
+          ? tmsEmail.trim()
+            ? tmsEmail.trim().toLowerCase()
+            : null
+          : null,
+        sendAsName: isEmailEligibleRole(role)
+          ? sendAsName.trim()
+            ? sendAsName.trim()
+            : null
+          : null,
       });
 
       toast.success(`Account for ${name} updated successfully!`);
@@ -197,6 +211,7 @@ export function EditAccountDialog({
               <Label htmlFor="edit-name">Full Name *</Label>
               <Input
                 id="edit-name"
+                placeholder="e.g. Ahmed Mostafa"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -283,27 +298,110 @@ export function EditAccountDialog({
             </div>
           )}
 
-          {/* Conditional Mailer Fields */}
-          {role === "mailer" && (
-            <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-tmsemail">TMS Email</Label>
-                <Input
-                  id="edit-tmsemail"
-                  type="email"
-                  placeholder="newsletter@the-mind-space.com"
-                  value={tmsEmail}
-                  onChange={(e) => setTmsEmail(e.target.value)}
-                />
+          {/* Email Variables Section for Eligible Roles */}
+          {isEmailEligibleRole(role) && (
+            <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3.5 dark:border-amber-900/50 dark:bg-amber-950/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="font-semibold text-xs text-amber-900 dark:text-amber-200 uppercase tracking-wider">
+                    Email Variables & Outbound Identity
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-2 py-0 border-amber-300 text-amber-800 dark:text-amber-300 dark:border-amber-800 font-normal"
+                >
+                  Eligible Role ({role})
+                </Badge>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-sendas">Send-As Name</Label>
-                <Input
-                  id="edit-sendas"
-                  placeholder="The Mind Space Team"
-                  value={sendAsName}
-                  onChange={(e) => setSendAsName(e.target.value)}
-                />
+
+              <p className="text-xs text-muted-foreground">
+                Configures outbound sending identity for Brevo broadcasts and incoming message routing in the IMAP inbox.
+              </p>
+
+              <div className="space-y-3 pt-1">
+                {/* TMS Email */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="edit-tmsemail" className="text-xs">
+                      TMS Sender Email (tmsEmail)
+                    </Label>
+                    {name && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const prefix = name
+                            .toLowerCase()
+                            .trim()
+                            .replace(/[^a-z0-9]/g, "");
+                          if (prefix) setTmsEmail(`${prefix}@the-mind-space.com`);
+                        }}
+                        className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                      >
+                        Auto-generate @the-mind-space.com
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="edit-tmsemail"
+                    type="email"
+                    placeholder="e.g. newsletter@the-mind-space.com or management@the-mind-space.com"
+                    value={tmsEmail}
+                    onChange={(e) => setTmsEmail(e.target.value)}
+                    className="h-8 text-xs bg-background"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Sender email for Brevo outgoing communications and IMAP reply routing.
+                  </p>
+                </div>
+
+                {/* Send-As Name */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="edit-sendas" className="text-xs">
+                      Send-As Display Name (sendAsName)
+                    </Label>
+                    {name && (
+                      <button
+                        type="button"
+                        onClick={() => setSendAsName(name.trim())}
+                        className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                      >
+                        Use account name
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="edit-sendas"
+                    placeholder="e.g. The Mind Space Team or Management Office"
+                    value={sendAsName}
+                    onChange={(e) => setSendAsName(e.target.value)}
+                    className="h-8 text-xs bg-background"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Friendly sender name shown to recipients in their email inbox.
+                  </p>
+                </div>
+
+                {/* Live Preview */}
+                <div className="rounded border border-amber-200/60 bg-background/80 p-2 text-xs">
+                  <span className="text-muted-foreground text-[11px] block mb-0.5 font-medium">
+                    Outbound Identity Preview:
+                  </span>
+                  <div className="font-mono text-[11px] text-foreground flex items-center gap-1 overflow-hidden text-ellipsis">
+                    <span className="text-amber-700 dark:text-amber-400 font-semibold">From:</span>
+                    <span>&quot;{sendAsName.trim() || name.trim() || "The Mind Space"}&quot;</span>
+                    <span className="text-muted-foreground">
+                      &lt;
+                      {tmsEmail.trim() ||
+                        (email.trim() && email.includes("@")
+                          ? email.trim()
+                          : "info@the-mind-space.com")}
+                      &gt;
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           )}

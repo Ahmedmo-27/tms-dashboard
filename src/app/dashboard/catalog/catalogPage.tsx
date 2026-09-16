@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense } from "react";
+import React, { Suspense, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Dumbbell, Package as PackageIcon, UserCheck } from "lucide-react";
@@ -42,19 +42,27 @@ function CatalogPageInner({
   const activeTab = searchParams.get("tab") ?? "classes";
   const { isViewingAllBranches } = useBranchContext();
 
-  const classColumns = createClassColumns(
-    packages,
-    classCategories,
-    locations,
-    isViewingAllBranches
+  const classColumns = useMemo(
+    () =>
+      createClassColumns(
+        packages,
+        classCategories,
+        locations,
+        isViewingAllBranches
+      ),
+    [packages, classCategories, locations, isViewingAllBranches]
   );
-  const packageColumns = createPackageColumns(
-    classes,
-    packageCategories,
-    isViewingAllBranches,
-    coaches
+  const packageColumns = useMemo(
+    () =>
+      createPackageColumns(
+        classes,
+        packageCategories,
+        isViewingAllBranches,
+        coaches
+      ),
+    [classes, packageCategories, isViewingAllBranches, coaches]
   );
-  const coachColumns = createCoachColumns();
+  const coachColumns = useMemo(() => createCoachColumns(), []);
 
   const handleTabChange = (value: string) => {
     router.push(`/dashboard/catalog?tab=${value}`);

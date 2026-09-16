@@ -14,13 +14,20 @@ import { Package } from "../../packages/columns";
 import { editPackage } from "@/lib/data/package";
 import { useRouter } from "next/navigation";
 import { Layers } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function ManagePackagesDialog({
   cls,
   packages,
+  compact = false,
 }: {
   cls: Class;
   packages: Package[];
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -96,17 +103,29 @@ export default function ManagePackagesDialog({
     }
   };
 
+  const triggerButton = (
+    <Button
+      variant="outline"
+      size={compact ? "icon" : "default"}
+      className={compact ? "h-8 w-8 cursor-pointer shrink-0" : "w-full cursor-pointer"}
+      onClick={handleOpen}
+    >
+      <Layers className={compact ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+      {!compact && <span>Packages</span>}
+      {compact && <span className="sr-only">Manage Packages</span>}
+    </Button>
+  );
+
   return (
     <div>
-      <Button
-        variant="outline"
-        className="w-full"
-        onClick={handleOpen}
-      >
-        <Layers className="mr-2 h-4 w-4" />
-        <span className="hidden sm:inline">Packages</span>
-        <span className="sm:hidden">Pkgs</span>
-      </Button>
+      {compact ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{triggerButton}</TooltipTrigger>
+          <TooltipContent>Manage Packages</TooltipContent>
+        </Tooltip>
+      ) : (
+        triggerButton
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto z-50">
           <DialogHeader>

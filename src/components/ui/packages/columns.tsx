@@ -236,12 +236,12 @@ export function createColumns(
       cell: ({ row }) => {
         const pkg = row.original;
         return (
-          <div className="flex gap-1.5 lg:gap-2 shrink-0">
+          <div className="flex items-center justify-end gap-1.5 lg:gap-2 shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
                   href={`/dashboard/packages/${pkg._id}?page=1`}
-                  className={cn(buttonVariants({ variant: "outline", size: "icon" }), "h-8 w-8")}
+                  className={cn(buttonVariants({ variant: "outline", size: "icon" }), "h-8 w-8 cursor-pointer shrink-0")}
                 >
                   <Users className="h-4 w-4 text-primary" />
                 </Link>
@@ -253,8 +253,9 @@ export function createColumns(
               classes={classes}
               categories={packageCategories}
               coaches={coaches}
+              compact
             />
-            <DeletePackageDialog pkg={pkg} />
+            <DeletePackageDialog pkg={pkg} compact />
           </div>
         );
       },

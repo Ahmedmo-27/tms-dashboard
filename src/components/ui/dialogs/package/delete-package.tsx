@@ -13,11 +13,19 @@ import { deletePackageAction } from "@/lib/actions/package-actions";
 import { Trash } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { getActionErrorMessage } from "@/lib/utils/api-error-message";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function DeletePackageDialog({
   pkg,
+  compact = false,
 }: {
   pkg: { name: string; _id: string };
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -53,19 +61,38 @@ export default function DeletePackageDialog({
     }
   };
 
+  const triggerButton = (
+    <Button
+      type="button"
+      className={cn(
+        "cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10",
+        compact ? "h-8 w-8 shrink-0" : "w-full"
+      )}
+      variant="outline"
+      size={compact ? "icon" : "default"}
+    >
+      <Trash className={compact ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+      {!compact && <span>Delete</span>}
+      {compact && <span className="sr-only">Delete Package</span>}
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button
-          type="button"
-          variant="outline"
-          className="cursor-pointer text-destructive hover:text-destructive w-full"
-        >
-          <Trash className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Delete</span>
-          <span className="sm:hidden">Delete</span>
-        </Button>
-      </DialogTrigger>
+      {compact ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+              {triggerButton}
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Delete Package</TooltipContent>
+        </Tooltip>
+      ) : (
+        <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+          {triggerButton}
+        </DialogTrigger>
+      )}
       <DialogContent onClick={(e) => e.stopPropagation()} className="max-w-[95vw] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Are you sure you want to delete {pkg.name}?</DialogTitle>
