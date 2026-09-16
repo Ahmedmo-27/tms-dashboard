@@ -130,19 +130,29 @@ export function createColumns(
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
-      size: 120,
+      size: 145,
       cell: ({ row }) => {
         const cls = row.original;
         return (
-          <div className="flex items-center justify-end gap-1.5 shrink-0">
-            <ManagePackagesDialog cls={cls} packages={packages} compact />
+          <div className="flex items-center justify-end gap-2 shrink-0">
+            <ManagePackagesDialog
+              cls={cls}
+              packages={packages}
+              compact
+              buttonClassName="h-9.5 w-9.5"
+            />
             <EditClassDialog
               cls={cls}
               categories={classCategories}
               locations={locations}
               compact
+              buttonClassName="h-9.5 w-9.5"
             />
-            <DeleteClassDialog cls={cls} compact />
+            <DeleteClassDialog
+              cls={cls}
+              compact
+              buttonClassName="h-9.5 w-9.5"
+            />
           </div>
         );
       },

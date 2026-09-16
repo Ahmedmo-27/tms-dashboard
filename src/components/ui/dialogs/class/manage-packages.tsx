@@ -14,6 +14,7 @@ import { Package } from "../../packages/columns";
 import { editPackage } from "@/lib/data/package";
 import { useRouter } from "next/navigation";
 import { Layers } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -24,10 +25,12 @@ export default function ManagePackagesDialog({
   cls,
   packages,
   compact = false,
+  buttonClassName,
 }: {
   cls: Class;
   packages: Package[];
   compact?: boolean;
+  buttonClassName?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -107,10 +110,13 @@ export default function ManagePackagesDialog({
     <Button
       variant="outline"
       size={compact ? "icon" : "default"}
-      className={compact ? "h-8 w-8 cursor-pointer shrink-0" : "w-full cursor-pointer"}
+      className={cn(
+        compact ? "h-9 w-9 cursor-pointer shrink-0" : "w-full cursor-pointer",
+        buttonClassName
+      )}
       onClick={handleOpen}
     >
-      <Layers className={compact ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+      <Layers className={compact ? "size-4.5" : "mr-2 h-4 w-4"} />
       {!compact && <span>Packages</span>}
       {compact && <span className="sr-only">Manage Packages</span>}
     </Button>

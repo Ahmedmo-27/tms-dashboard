@@ -24,6 +24,7 @@ import { Edit } from "lucide-react";
 import { ApiError } from "@/core/api-error";
 import { formatCategory, CLASS_CATEGORIES } from "@/lib/utils/catalog";
 import type { Location } from "@/lib/data/locations";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -47,6 +48,7 @@ interface EditClassDialogProps {
   categories: string[];
   locations?: Location[];
   compact?: boolean;
+  buttonClassName?: string;
 }
 
 const resolveLocationId = (
@@ -69,6 +71,7 @@ export default function EditClassDialog({
   categories = CLASS_CATEGORIES as unknown as string[],
   locations = [],
   compact = false,
+  buttonClassName,
 }: EditClassDialogProps) {
   const availableCategories =
     categories && categories.length > 0
@@ -123,9 +126,12 @@ export default function EditClassDialog({
       onClick={() => setOpen(true)}
       variant="outline"
       size={compact ? "icon" : "default"}
-      className={compact ? "h-8 w-8 cursor-pointer shrink-0" : "w-full cursor-pointer"}
+      className={cn(
+        compact ? "h-9 w-9 cursor-pointer shrink-0" : "w-full cursor-pointer",
+        buttonClassName
+      )}
     >
-      <Edit className={compact ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+      <Edit className={compact ? "size-4.5" : "mr-2 h-4 w-4"} />
       {!compact && <span>Edit</span>}
       {compact && <span className="sr-only">Edit Class</span>}
     </Button>

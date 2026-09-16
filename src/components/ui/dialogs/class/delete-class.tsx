@@ -23,9 +23,11 @@ import {
 export default function DeleteClassDialog({
   cls,
   compact = false,
+  buttonClassName,
 }: {
   cls: { title: string; _id: string };
   compact?: boolean;
+  buttonClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -66,12 +68,13 @@ export default function DeleteClassDialog({
       type="button"
       className={cn(
         "cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10",
-        compact ? "h-8 w-8 shrink-0" : "w-full"
+        compact ? "h-9 w-9 shrink-0" : "w-full",
+        buttonClassName
       )}
       variant="outline"
       size={compact ? "icon" : "default"}
     >
-      <Trash className={compact ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+      <Trash className={compact ? "size-4.5" : "mr-2 h-4 w-4"} />
       {!compact && <span>Delete</span>}
       {compact && <span className="sr-only">Delete Class</span>}
     </Button>
