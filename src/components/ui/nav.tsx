@@ -20,7 +20,7 @@ export const Nav = () => {
     <Breadcrumb data-walkthrough="header-breadcrumbs">
       <BreadcrumbList>
         <BreadcrumbItem className="hidden md:block">
-          <BreadcrumbLink href={STAFF_HOME}>The Mind Space</BreadcrumbLink>
+          <BreadcrumbLink href="/dashboard">The Mind Space</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator className="hidden md:block" />
         <BreadcrumbItem>

@@ -166,7 +166,7 @@ export function MailingSent() {
     <>
       <div className="space-y-6">
         {/* Top Summary Stat Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div data-walkthrough="sent-metrics" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="p-4 border shadow-2xs rounded-xl bg-card">
             <div className="flex items-center justify-between text-muted-foreground mb-1">
               <span className="text-xs font-medium">Total Messages</span>
@@ -178,13 +178,11 @@ export function MailingSent() {
 
           <Card className="p-4 border shadow-2xs rounded-xl bg-card">
             <div className="flex items-center justify-between text-muted-foreground mb-1">
-              <span className="text-xs font-medium">Delivered</span>
+              <span className="text-xs font-medium">Successful Deliveries</span>
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             </div>
             <div className="text-2xl font-bold text-foreground">{sentCount}</div>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-              {totalCount > 0 ? `${Math.round((sentCount / totalCount) * 100)}% successful` : "No dispatches yet"}
-            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Dispatched to recipients</p>
           </Card>
 
           <Card className="p-4 border shadow-2xs rounded-xl bg-card">
@@ -207,7 +205,7 @@ export function MailingSent() {
         </div>
 
         {/* Sent History Table Card */}
-        <Card className="border shadow-xs rounded-xl overflow-hidden bg-card flex flex-col min-h-[500px]">
+        <Card data-walkthrough="sent-logs-list" className="border shadow-xs rounded-xl overflow-hidden bg-card flex flex-col min-h-[500px]">
           <CardHeader className="p-4 sm:p-6 pb-4 border-b bg-muted/15 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>

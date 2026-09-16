@@ -28,6 +28,7 @@ import {
   Layers,
   Compass,
   CheckCircle2,
+  HelpCircle,
 } from "lucide-react";
 
 export function HelpScenariosDialog() {
@@ -74,9 +75,14 @@ export function HelpScenariosDialog() {
             } else {
               // Staff portal: skip coach-only scenarios
               const isStaffScenario = scenario.roles.some(
-                (r) => r === "branch_admin" || r === "management"
+                (r) => r === "branch_admin" || r === "management" || r === "mailer"
               );
               if (!isStaffScenario) return false;
+
+              // Mailer users only see scenarios they have permissions for
+              if (staffRole === "mailer" && !scenario.roles.includes("mailer")) {
+                return false;
+              }
             }
 
             // Specific tab role filter
@@ -131,7 +137,7 @@ export function HelpScenariosDialog() {
         };
       })
       .filter((section) => section.scenarios.length > 0);
-  }, [searchQuery, selectedRoleFilter, isCoachPortal, coachRole, hasPtSessions]);
+  }, [searchQuery, selectedRoleFilter, isCoachPortal, coachRole, hasPtSessions, staffRole]);
 
   const totalScenariosCount = useMemo(() => {
     return filteredSections.reduce((acc, sec) => acc + sec.scenarios.length, 0);
@@ -146,6 +152,8 @@ export function HelpScenariosDialog() {
     ? coachRole === "managing_coach"
       ? "Managing Coach Portal"
       : "Coach Portal"
+    : staffRole === "mailer"
+    ? "Mailing & Communications Portal"
     : staffRole === "management"
     ? "Management Portal"
     : "Branch Admin Portal";
@@ -154,38 +162,47 @@ export function HelpScenariosDialog() {
     ? hasPtSessions
       ? "Interactive step-by-step guides for your daily schedule, PT clients, session attendance, and check-in radar."
       : "Interactive step-by-step guides for your daily schedule, session attendance, and check-in radar."
+    : staffRole === "mailer"
+    ? "Step-by-step interactive walkthroughs for composing emails, managing your connected mailbox, and tracking sent delivery logs."
     : "Step-by-step interactive walkthroughs for gym operations, member onboarding, scheduling, POS, and management.";
 
   const searchPlaceholder = isCoachPortal
     ? hasPtSessions
       ? "Search coach guides (e.g. attendance confirmation, deduct PT, schedule, scans, tickets)..."
       : "Search coach guides (e.g. attendance confirmation, schedule, scans, tickets)..."
+    : staffRole === "mailer"
+    ? "Search email guides (e.g. compose, broadcast, templates, sync inbox, sent logs)..."
     : "Search functionalities (e.g. add package, guest package, subscribe to open gym, refund, schedule)...";
 
   return (
     <Dialog open={isHelpModalOpen} onOpenChange={(open) => !open && closeHelpModal()}>
-      <DialogContent className="max-w-3xl max-h-[85vh] p-0 overflow-hidden flex flex-col gap-0 border-border bg-background shadow-2xl">
-        {/* Header */}
-        <DialogHeader className="p-6 pb-4 border-b">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                  <Compass className="w-5 h-5 text-primary" />
-                  Tutorials & Interactive Guides
-                </DialogTitle>
-                <Badge variant="secondary" className="text-xs capitalize font-mono">
-                  {portalBadge}
-                </Badge>
+      <DialogContent className="max-w-4xl max-h-[85vh] h-[750px] p-0 flex flex-col gap-0 overflow-hidden border shadow-2xl">
+        {/* Header Bar */}
+        <DialogHeader className="p-6 pb-4 border-b bg-muted/20 shrink-0">
+          <div className="flex items-center justify-between gap-4 mb-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                <HelpCircle className="w-5 h-5" />
               </div>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-                {portalDescription}
-              </DialogDescription>
+              <div>
+                <DialogTitle className="text-xl font-bold">Interactive System Guides</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  {portalDescription}
+                </DialogDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs font-semibold">
+                {portalBadge}
+              </Badge>
+              <Badge variant="outline" className="text-xs font-normal">
+                {totalScenariosCount} Guides
+              </Badge>
             </div>
           </div>
 
-          {/* Search & Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 pt-3">
+          {/* Search Bar & Role Tabs */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -214,6 +231,15 @@ export function HelpScenariosDialog() {
                     </TabsTrigger>
                   )}
                 </TabsList>
+              ) : staffRole === "mailer" ? (
+                <TabsList className="h-9">
+                  <TabsTrigger value="all" className="text-xs">
+                    All Guides
+                  </TabsTrigger>
+                  <TabsTrigger value="mailer" className="text-xs">
+                    Mailing
+                  </TabsTrigger>
+                </TabsList>
               ) : (
                 <TabsList className="h-9">
                   <TabsTrigger value="all" className="text-xs">
@@ -224,6 +250,9 @@ export function HelpScenariosDialog() {
                   </TabsTrigger>
                   <TabsTrigger value="management" className="text-xs">
                     Management
+                  </TabsTrigger>
+                  <TabsTrigger value="mailer" className="text-xs">
+                    Mailing
                   </TabsTrigger>
                 </TabsList>
               )}

@@ -419,49 +419,94 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
     {
       targetSelector: '[data-walkthrough="mail-send-mode"]',
       route: "/dashboard/mailing",
-      title: "Send Mode Selector",
+      title: "Audience Targeting",
       description:
-        "Choose to send a broadcast to all active members & coaches, members only, coaches only, or manual email addresses.",
+        "Choose who receives your email: Direct (specific addresses), Broadcast All (all active members & staff), Active Members, or Coaches.",
       placement: "bottom",
       fallbackSelector: "main",
     },
     {
-      targetSelector: '[data-walkthrough="mail-compose-form"]',
+      targetSelector: '[data-walkthrough="mail-subject"]',
       route: "/dashboard/mailing",
-      title: "Rich Email Composer",
+      title: "Subject & Topic Tags",
       description:
-        "Draft your announcement subject, body, and attach documents or schedule flyers.",
+        "Specify a clear subject line and click quick-tag buttons like [Announcement] or [Urgent] for instant message priority.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="mail-body"]',
+      route: "/dashboard/mailing",
+      title: "Rich Content & Templates",
+      description:
+        "Format your message with bold text, headings, bullet lists, and CTA action buttons, or apply pre-built email templates.",
       placement: "top",
       fallbackSelector: "main",
     },
     {
-      targetSelector: '[data-walkthrough="mail-send-btn"]',
+      targetSelector: '[data-walkthrough="mail-attachment"]',
       route: "/dashboard/mailing",
-      title: "Dispatch Broadcast",
+      title: "File Attachments",
       description:
-        "Click Send Email to preview the recipient count in a confirmation dialog and dispatch via Brevo.",
-      placement: "left",
+        "Attach documents, flyers, schedules, or images (up to 5MB) directly to your outbound message.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="mail-send-button"]',
+      route: "/dashboard/mailing",
+      title: "Review & Dispatch",
+      description:
+        "Click Send Mail to review the confirmation preview with recipient counts and dispatch securely via Brevo transactional mail.",
+      placement: "top",
       fallbackSelector: "main",
     },
   ],
 
   "inbox-sent-logs": [
     {
-      targetSelector: '[data-walkthrough="sidebar-nav"]',
+      targetSelector: '[data-walkthrough="inbox-sync-btn"]',
       route: "/dashboard/mailing/received",
-      title: "Synced IMAP Inbox",
+      title: "Mail Server Sync",
       description:
-        "Read client email replies sent to the gym address directly inside the dashboard.",
-      placement: "right",
+        "Click 'Sync Mailbox' to immediately query the IMAP mail server for new incoming inquiries or member responses.",
+      placement: "bottom",
       fallbackSelector: "main",
     },
     {
-      targetSelector: '[data-walkthrough="sidebar-nav"]',
-      route: "/dashboard/mailing/sent",
-      title: "Sent Mail Audit Trail",
+      targetSelector: '[data-walkthrough="inbox-search"]',
+      route: "/dashboard/mailing/received",
+      title: "Search & Unread Filters",
       description:
-        "Review outbound broadcast delivery timestamps, recipient lists, and delivery confirmation statuses.",
-      placement: "right",
+        "Instantly filter between All and Unread emails, or search by sender name, email address, or message subject.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="inbox-email-list"]',
+      route: "/dashboard/mailing/received",
+      title: "Messages & Direct Reply",
+      description:
+        "Browse received emails in the table, click any row to open the complete message preview, copy addresses, or click Reply.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="sent-metrics"]',
+      route: "/dashboard/mailing/sent",
+      title: "Sent Delivery Metrics",
+      description:
+        "Track delivery performance cards showing total dispatches, successfully sent emails, delivery failures, and mass broadcasts.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="sent-logs-list"]',
+      route: "/dashboard/mailing/sent",
+      title: "Sent Dispatches Audit Trail",
+      description:
+        "Inspect every outbound email log, recipient counts, timestamps, sender identity, and error diagnostics for troubleshooting.",
+      placement: "top",
       fallbackSelector: "main",
     },
   ],

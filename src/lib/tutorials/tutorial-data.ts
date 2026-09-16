@@ -33,6 +33,8 @@ import {
   Calendar,
   Download,
   Filter,
+  Paperclip,
+  Sparkles,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -932,8 +934,8 @@ export const tutorialSections: TutorialSection[] = [
         title: "Compose & Broadcast Outbound Emails",
         subtitle: "Rich Brevo email composer for broadcast announcements, members, and coaches",
         icon: Send,
-        roles: ["management"],
-        badge: "Management",
+        roles: ["management", "mailer", "managing_coach"],
+        badge: "Communications",
         keywords: [
           "email broadcast",
           "broadcast email",
@@ -944,30 +946,37 @@ export const tutorialSections: TutorialSection[] = [
           "mail members",
           "mail coaches",
           "mass email",
+          "mailing",
         ],
         steps: [
           {
-            title: "Mailing Composer",
+            title: "Audience Selection",
             description:
-              "Open Mail > Compose to launch the rich email composer powered by the Brevo transactional API.",
-            icon: Send,
-          },
-          {
-            title: "Select Send Mode",
-            description:
-              "Choose between Broadcast (All active members & coaches), Members Only, Coaches Only, or Manual recipient emails.",
+              "Choose between Direct (manual email addresses), Broadcast All, Active Members only, or Coaches only.",
             icon: Users,
           },
           {
-            title: "Subject, Body & Attachments",
+            title: "Subject & Topic",
             description:
-              "Compose your announcement subject, rich text body, and optional PDF/image attachments.",
-            icon: Mail,
+              "Set a clear subject line and use optional tags like [Announcement] or [Urgent] for priority.",
+            icon: Tags,
           },
           {
-            title: "Send Confirmation",
+            title: "Message Body & Formatting",
             description:
-              "Review the recipient count and dispatch the outbound email safely.",
+              "Draft your content with bold, italics, bullet lists, headings, and CTA button links, or pick a template.",
+            icon: Sparkles,
+          },
+          {
+            title: "File Attachments",
+            description:
+              "Attach PDF documents, schedules, or image assets up to 5MB directly to your outbound message.",
+            icon: Paperclip,
+          },
+          {
+            title: "Review & Dispatch",
+            description:
+              "Click Send Mail to review the confirmation preview with recipient counts and dispatch via Brevo.",
             icon: Send,
           },
         ],
@@ -977,8 +986,8 @@ export const tutorialSections: TutorialSection[] = [
         title: "IMAP Synced Inbox & Sent Mail Delivery Logs",
         subtitle: "Review incoming client replies and inspect outbound delivery audit trails",
         icon: Inbox,
-        roles: ["management"],
-        badge: "Management",
+        roles: ["management", "mailer", "managing_coach"],
+        badge: "Communications",
         keywords: [
           "inbox",
           "sent mail",
@@ -987,18 +996,37 @@ export const tutorialSections: TutorialSection[] = [
           "delivery logs",
           "mail audit",
           "received mail",
+          "mailing",
         ],
         steps: [
           {
-            title: "Synced Inbox",
+            title: "Mail Server Sync",
             description:
-              "Navigate to Mail > Inbox to read incoming emails received via the background IMAP worker.",
+              "Click 'Sync Mailbox' to immediately query the IMAP mail server for new incoming inquiries or member replies.",
+            icon: RotateCcw,
+          },
+          {
+            title: "Search & Unread Filters",
+            description:
+              "Search by sender, subject, or keywords, or filter to unread messages to stay on top of communications.",
+            icon: Search,
+          },
+          {
+            title: "Inbox Messages & Direct Reply",
+            description:
+              "Review incoming emails in the table, open full message preview, copy addresses, or click Reply to compose an answer.",
             icon: Inbox,
           },
           {
-            title: "Sent Mail Audit Trail",
+            title: "Sent Delivery Metrics",
             description:
-              "Open Mail > Sent to verify delivery timestamps, recipient email addresses, and dispatch statuses.",
+              "Navigate to Mail > Sent to monitor total messages, delivered count, delivery failures, and broadcasts.",
+            icon: Layers,
+          },
+          {
+            title: "Sent Audit Trail & Diagnostics",
+            description:
+              "Inspect every outbound email dispatch, recipient counts, timestamps, and failure error messages.",
             icon: Send,
           },
         ],
@@ -1352,6 +1380,8 @@ export function getTutorialSectionsForRole(
     effectiveRole = "management";
   } else if (role === "branch_admin") {
     effectiveRole = "branch_admin";
+  } else if (role === "mailer" || role === "mailing") {
+    effectiveRole = "mailer";
   }
 
   return tutorialSections

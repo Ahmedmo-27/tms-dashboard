@@ -242,6 +242,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
             {/* Sync & Refresh Button */}
             <div className="flex items-center gap-2">
               <Button
+                data-walkthrough="inbox-sync-btn"
                 variant="outline"
                 size="sm"
                 onClick={handleSync}
@@ -257,7 +258,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
           {/* Search Bar & Filter Tabs */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
             {/* Search Input */}
-            <div className="relative w-full sm:w-80">
+            <div data-walkthrough="inbox-search" className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
@@ -305,7 +306,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
         </CardHeader>
 
         {/* Mail List Area */}
-        <CardContent className="p-0 flex-1 flex flex-col">
+        <CardContent data-walkthrough="inbox-email-list" className="p-0 flex-1 flex flex-col">
           <ScrollArea className="h-full w-full flex-1">
             <Table>
               <TableHeader className="bg-muted/30 sticky top-0">

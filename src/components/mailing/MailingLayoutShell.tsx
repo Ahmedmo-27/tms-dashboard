@@ -146,7 +146,10 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
           </nav>
 
           {/* Desktop Nav: Sleek Vertical Sidebar */}
-          <nav className="hidden lg:flex flex-col space-y-1 bg-card rounded-xl border p-2 shadow-xs">
+          <nav
+            data-walkthrough="mail-nav-items"
+            className="hidden lg:flex flex-col space-y-1 bg-card rounded-xl border p-2 shadow-xs"
+          >
             {navItems.map((item) => {
               const isActive = item.exact
                 ? pathname === item.href
@@ -191,7 +194,10 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
 
           {/* Active Mailbox Card */}
           {profile && (
-            <div className="bg-card rounded-xl border p-4 space-y-3 shadow-xs">
+            <div
+              data-walkthrough="mail-profile-card"
+              className="bg-card rounded-xl border p-4 space-y-3 shadow-xs"
+            >
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
                   <ShieldCheck className="h-3.5 w-3.5 text-primary" />
