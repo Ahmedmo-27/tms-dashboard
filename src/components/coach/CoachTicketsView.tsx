@@ -131,7 +131,7 @@ export function CoachTicketsView() {
             <Badge variant="secondary" className="text-xs font-normal">
               Total: {total}
             </Badge>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" onClick={() => setCreateOpen(true)} data-walkthrough="coach-tickets-create-btn">
               <Plus className="mr-2 h-4 w-4" />
               Create Ticket
             </Button>
@@ -139,7 +139,7 @@ export function CoachTicketsView() {
         </div>
 
         <div className="space-y-4 p-4">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" data-walkthrough="coach-tickets-tabs">
             {STATUS_TABS.map((tab) => (
               <Button
                 key={tab.value}
@@ -229,7 +229,7 @@ export function CoachTicketsView() {
             )}
           </div>
 
-          <div className="hidden rounded-md border md:block">
+          <div className="hidden rounded-md border md:block" data-walkthrough="coach-tickets-table">
             {isLoading ? (
               <div className="p-4">
                 <SkeletonTable columns={4} rows={6} showSearch={false} showPagination={false} />

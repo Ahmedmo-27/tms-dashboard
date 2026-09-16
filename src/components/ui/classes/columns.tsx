@@ -55,6 +55,10 @@ export function createColumns(
     if (normalized === "0" || normalized === "0.00" || Number(normalized) === 0) {
       return "Free";
     }
+    const num = Number(normalized);
+    if (!isNaN(num)) {
+      return `EGP ${num.toLocaleString()}`;
+    }
     return normalized;
   };
 
@@ -62,17 +66,21 @@ export function createColumns(
     {
       accessorKey: "title",
       header: "Title",
+      size: 220,
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.title}</span>
+        <span className="font-medium text-foreground block max-w-[200px] xl:max-w-[280px] truncate">
+          {row.original.title}
+        </span>
       ),
     },
     {
       accessorKey: "category",
       header: "Category",
+      size: 140,
       cell: ({ row }) => (
         <Badge
           className={cn(
-            "text-xs font-medium",
+            "text-xs font-medium whitespace-nowrap",
             getCategoryColor(row.original.category)
           )}
         >
@@ -83,13 +91,16 @@ export function createColumns(
     {
       accessorKey: "price",
       header: "Price",
+      size: 110,
       cell: ({ row }) => {
         const price = formatPrice(row.original.price);
         return (
           <span
             className={cn(
-              "tabular-nums",
-              price === "Free" && "text-green-600 dark:text-green-400 font-medium"
+              "tabular-nums whitespace-nowrap font-medium",
+              price === "Free"
+                ? "text-green-600 dark:text-green-400"
+                : "text-foreground"
             )}
           >
             {price}
@@ -102,12 +113,13 @@ export function createColumns(
           {
             accessorKey: "locations",
             header: "Location",
+            size: 160,
             cell: ({ row }: { row: { original: Class } }) => {
               const label =
                 formatLocations(row.original.locations, locationMap) ||
                 "No location";
               return (
-                <span className="text-muted-foreground max-w-[200px] truncate block">
+                <span className="text-muted-foreground text-xs sm:text-sm max-w-[160px] xl:max-w-[200px] truncate block">
                   {label}
                 </span>
               );
@@ -118,17 +130,29 @@ export function createColumns(
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
+      size: 145,
       cell: ({ row }) => {
         const cls = row.original;
         return (
-          <div className="flex gap-1.5 justify-end">
-            <ManagePackagesDialog cls={cls} packages={packages} />
+          <div className="flex items-center justify-end gap-2 shrink-0">
+            <ManagePackagesDialog
+              cls={cls}
+              packages={packages}
+              compact
+              buttonClassName="h-9.5 w-9.5"
+            />
             <EditClassDialog
               cls={cls}
               categories={classCategories}
               locations={locations}
+              compact
+              buttonClassName="h-9.5 w-9.5"
             />
-            <DeleteClassDialog cls={cls} />
+            <DeleteClassDialog
+              cls={cls}
+              compact
+              buttonClassName="h-9.5 w-9.5"
+            />
           </div>
         );
       },

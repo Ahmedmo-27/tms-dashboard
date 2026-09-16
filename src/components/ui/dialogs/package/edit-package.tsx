@@ -29,6 +29,11 @@ import { CoachSearchSelect } from "@/components/ui/coach-search-select";
 import { getCoaches } from "@/lib/data/coaches";
 import { formatCategory, PACKAGE_CATEGORIES } from "@/lib/utils/catalog";
 import { ClassRestrictionsEditor } from "../../packages/class-restrictions-editor";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ActionState {
   success: boolean;
@@ -42,11 +47,13 @@ export default function EditPackageDialog({
   classes,
   categories = PACKAGE_CATEGORIES as unknown as string[],
   coaches = [],
+  compact = false,
 }: {
   pkg: Package;
   classes: Class[];
   categories?: string[];
   coaches?: Coach[];
+  compact?: boolean;
 }) {
   const availableCategories =
     categories && categories.length > 0
@@ -149,18 +156,30 @@ export default function EditPackageDialog({
       ? (state.errors as Record<string, string>)[key]
       : null;
 
+  const triggerButton = (
+    <Button
+      onSelect={(e) => e.preventDefault()}
+      onClick={() => setOpen(true)}
+      variant="outline"
+      size={compact ? "icon" : "default"}
+      className={compact ? "h-8 w-8 cursor-pointer shrink-0" : "cursor-pointer w-full"}
+    >
+      <Edit className={compact ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+      {!compact && <span>Edit</span>}
+      {compact && <span className="sr-only">Edit Package</span>}
+    </Button>
+  );
+
   return (
     <div>
-      <Button
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setOpen(true)}
-        variant="outline"
-        className="cursor-pointer w-full"
-      >
-        <Edit className="mr-2 h-4 w-4" />
-        <span className="hidden sm:inline">Edit</span>
-        <span className="sm:hidden">Edit</span>
-      </Button>
+      {compact ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{triggerButton}</TooltipTrigger>
+          <TooltipContent>Edit Package</TooltipContent>
+        </Tooltip>
+      ) : (
+        triggerButton
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto z-50">
           <DialogHeader>

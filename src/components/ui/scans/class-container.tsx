@@ -14,7 +14,7 @@ import {
 import { ScrollArea, ScrollBar } from "../scroll-area";
 import { cn } from "@/lib/utils";
 import { mapMethodToSheetLabel } from "@/lib/utils/copy-class-for-sheet";
-import { Clock, Users, UserCheck, X, AlertTriangle } from "lucide-react";
+import { Clock, Users, UserCheck, X, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ScheduledClass } from "../schedule/columns";
 import { format } from "date-fns";
 import { CheckInsSelector } from "../dialogs/scans/check-in-selector";
@@ -152,12 +152,21 @@ export const ClassContainer = ({
     }
   };
 
+  const startTimeMs = new Date(classData.startTime).getTime();
+  const endTimeMs = new Date(classData.endTime).getTime();
+  const halfwayMs =
+    !isNaN(startTimeMs) && !isNaN(endTimeMs)
+      ? startTimeMs + (endTimeMs - startTimeMs) / 2
+      : 0;
+  const isPastHalfway = halfwayMs > 0 && Date.now() >= halfwayMs;
+  const attendanceConfirmation = classData.attendanceConfirmation;
+
   return (
     <Card className="w-full">
       <CardHeader className="space-y-4 p-4">
         <div>
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-lg font-semibold">{classData.className}</h3>
               {showBranch && classData.location ? (
                 <BranchPill label={classData.location} />
@@ -165,6 +174,98 @@ export const ClassContainer = ({
               <Badge variant="outline" className="font-normal">
                 {classData.coachName}
               </Badge>
+
+              {/* Attendance Confirmation Mark for Management & Branch Admin */}
+              {attendanceConfirmation?.confirmed ? (
+                attendanceConfirmation.hasMissingPlace ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="cursor-pointer">
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:border-amber-500/60 dark:text-amber-400 dark:bg-amber-950/40 font-medium"
+                        >
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                          Missing Place ({attendanceConfirmation.confirmedCount}/{classData.bookedMembers.length})
+                        </Badge>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-3 text-xs space-y-1.5" align="start">
+                      <p className="font-semibold text-sm flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="h-4 w-4" /> Missing Place
+                      </p>
+                      <p className="text-muted-foreground">
+                        Confirmed Headcount:{" "}
+                        <span className="font-medium text-foreground">
+                          {attendanceConfirmation.confirmedCount}
+                        </span>
+                      </p>
+                      <p className="text-muted-foreground">
+                        Booked Members:{" "}
+                        <span className="font-medium text-foreground">
+                          {classData.bookedMembers.length}
+                        </span>
+                      </p>
+                      {attendanceConfirmation.confirmedAt ? (
+                        <p className="text-muted-foreground">
+                          Confirmed at:{" "}
+                          {format(new Date(attendanceConfirmation.confirmedAt), "hh:mm a")}
+                        </p>
+                      ) : null}
+                      {attendanceConfirmation.notes ? (
+                        <p className="text-muted-foreground border-t pt-1 mt-1 italic">
+                          "{attendanceConfirmation.notes}"
+                        </p>
+                      ) : null}
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="cursor-pointer">
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-500/60 dark:text-emerald-400 dark:bg-emerald-950/40 font-medium"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                          Attendance Confirmed ({attendanceConfirmation.confirmedCount})
+                        </Badge>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-3 text-xs space-y-1.5" align="start">
+                      <p className="font-semibold text-sm flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="h-4 w-4" /> Attendance Confirmed
+                      </p>
+                      <p className="text-muted-foreground">
+                        Confirmed Headcount:{" "}
+                        <span className="font-medium text-foreground">
+                          {attendanceConfirmation.confirmedCount}
+                        </span>
+                      </p>
+                      {attendanceConfirmation.confirmedAt ? (
+                        <p className="text-muted-foreground">
+                          Confirmed at:{" "}
+                          {format(new Date(attendanceConfirmation.confirmedAt), "hh:mm a")}
+                        </p>
+                      ) : null}
+                      {attendanceConfirmation.notes ? (
+                        <p className="text-muted-foreground border-t pt-1 mt-1 italic">
+                          "{attendanceConfirmation.notes}"
+                        </p>
+                      ) : null}
+                    </PopoverContent>
+                  </Popover>
+                )
+              ) : isPastHalfway ? (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-dashed text-muted-foreground text-xs font-normal"
+                  title="Session is past halfway; coach attendance confirmation pending"
+                >
+                  <Clock className="h-3 w-3" />
+                  Awaiting Confirmation
+                </Badge>
+              ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <CheckInsSelector members={classData.bookedMembers} classData={classData} />

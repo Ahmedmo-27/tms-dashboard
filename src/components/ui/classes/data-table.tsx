@@ -150,7 +150,7 @@ export function DataTable<TData, TValue>({
         )}
       >
         <div className="overflow-x-auto -mx-px">
-          <Table className="min-w-[720px] w-full">
+          <Table className="min-w-[750px] w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
@@ -160,10 +160,16 @@ export function DataTable<TData, TValue>({
                   {headerGroup.headers.map((header) => (
                     <TableHead
                       key={header.id}
+                      style={{
+                        width: header.column.columnDef.size
+                          ? `${header.column.columnDef.size}px`
+                          : undefined,
+                      }}
                       className={cn(
                         "bg-muted/30 h-10 px-2 text-xs font-medium text-muted-foreground lg:h-11 lg:px-3 lg:text-sm xl:px-4",
                         "transition-colors hover:bg-muted/50 whitespace-nowrap",
-                        "first:rounded-tl-lg last:rounded-tr-lg"
+                        "first:rounded-tl-lg last:rounded-tr-lg",
+                        header.id === "actions" && "text-right"
                       )}
                     >
                       {header.isPlaceholder
@@ -181,7 +187,7 @@ export function DataTable<TData, TValue>({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className={cn(
-                      "group cursor-pointer border-b last:border-0",
+                      "group border-b last:border-0",
                       "transition-colors hover:bg-muted/50 active:bg-muted/70",
                       "data-[state=selected]:bg-muted"
                     )}
@@ -189,6 +195,11 @@ export function DataTable<TData, TValue>({
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}
+                        style={{
+                          width: cell.column.columnDef.size
+                            ? `${cell.column.columnDef.size}px`
+                            : undefined,
+                        }}
                         className={cn(
                           "px-2 py-2.5 text-xs lg:px-3 lg:py-3 lg:text-sm xl:px-4 align-middle",
                           "group-last:last:rounded-br-lg group-last:first:rounded-bl-lg"

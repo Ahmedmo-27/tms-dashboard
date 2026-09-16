@@ -97,6 +97,20 @@ export const parseSchedule = (
       classPrice: cls.cid?.price?.toString(),
       bookedMembers: parsedBookedMembers,
       scans: allScans,
+      attendanceConfirmation: cls.attendanceConfirmation
+        ? {
+            confirmed: Boolean(cls.attendanceConfirmation.confirmed),
+            confirmedCount: Number(cls.attendanceConfirmation.confirmedCount ?? 0),
+            hasMissingPlace: Boolean(cls.attendanceConfirmation.hasMissingPlace),
+            confirmedAt: cls.attendanceConfirmation.confirmedAt
+              ? new Date(cls.attendanceConfirmation.confirmedAt).toISOString()
+              : undefined,
+            confirmedBy: cls.attendanceConfirmation.confirmedBy
+              ? String(cls.attendanceConfirmation.confirmedBy)
+              : undefined,
+            notes: cls.attendanceConfirmation.notes,
+          }
+        : undefined,
     };
     scheduledClasses.push(parsedClass);
   });

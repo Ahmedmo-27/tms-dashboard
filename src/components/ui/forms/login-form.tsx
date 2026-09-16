@@ -21,7 +21,11 @@ import {
   setCoachCredentials,
 } from "@/lib/store/features/coachSlice";
 import { ApiError } from "@/core/api-error";
-import { isCoachRole, isStaffRole } from "@/lib/config/roles";
+import {
+  isCoachRole,
+  isStaffRole,
+  getDashboardRouteForRole,
+} from "@/lib/config/roles";
 
 type LoginRole = "coach" | "management" | "branch_admin" | "admin" | string;
 
@@ -77,6 +81,20 @@ export function LoginForm({
           };
         }
 
+        const targetDashboard = getDashboardRouteForRole(loginData.role);
+
+        if (!targetDashboard) {
+          return {
+            success: false,
+            errors: {
+              message:
+                "Unauthorized role. This account does not have dashboard access.",
+            },
+            data: null,
+            defaultValues,
+          };
+        }
+
         if (isCoachRole(loginData.role)) {
           if (!loginData.token) {
             return {
@@ -97,14 +115,14 @@ export function LoginForm({
               capabilitiesLoaded: false,
             })
           );
-          router.push("/coach/today");
+          router.push(targetDashboard);
           return initialState;
         }
 
         if (isStaffRole(loginData.role)) {
           dispatch(logoutCoach());
           dispatch(setCredentials(loginData));
-          router.push("/dashboard");
+          router.push(targetDashboard);
           return initialState;
         }
 

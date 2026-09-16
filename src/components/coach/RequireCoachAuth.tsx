@@ -29,16 +29,23 @@ const RequireCoachAuth = ({ children }: { children: ReactNode }) => {
 
     const verify = async () => {
       try {
-        const session = await getCoachSession();
+        const res = await getCoachSession();
         if (!mounted) return;
 
-        if (!session) {
+        if (res.status === "staff") {
+          // A staff member navigated to coach routes — redirect them to their staff dashboard
+          router.replace("/dashboard/scans-monitor");
+          return;
+        }
+
+        if (res.status === "unauthenticated") {
           await logoutCoachAction();
           dispatch(logoutCoach());
           router.replace("/login");
           return;
         }
 
+        const session = res.session;
         dispatch(
           setCoachCredentials({
             token: session.token,

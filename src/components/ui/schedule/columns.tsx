@@ -17,6 +17,15 @@ import EditSlotsDialog from "../dialogs/schedule/edit-slots";
 import { EditClassComponent } from "../dialogs/schedule/edit-class";
 import { BookNonUserDialog } from "../dialogs/schedule/book-non-user";
 
+export interface AttendanceConfirmation {
+  confirmed: boolean;
+  confirmedCount: number;
+  hasMissingPlace: boolean;
+  confirmedAt?: string;
+  confirmedBy?: string;
+  notes?: string;
+}
+
 export type ScheduledClass = {
   _id?: string;
   cid: string;
@@ -32,6 +41,7 @@ export type ScheduledClass = {
   location?: string;
   locationId?: string;
   scans: any;
+  attendanceConfirmation?: AttendanceConfirmation;
 };
 
 function ScheduledClassActionsCell({

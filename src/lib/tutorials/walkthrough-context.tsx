@@ -18,6 +18,8 @@ import {
   walkthroughScenarios,
   WalkthroughStep,
 } from "./walkthrough-steps";
+import { useAppSelector } from "@/lib/hooks";
+import toast from "react-hot-toast";
 
 interface WalkthroughContextValue {
   isActive: boolean;
@@ -61,15 +63,40 @@ export function WalkthroughProvider({
 
   const targetElementRef = useRef<HTMLElement | null>(null);
 
-  const activeScenario = useMemo(
-    () => (activeScenarioId ? findTutorialScenario(activeScenarioId) ?? null : null),
-    [activeScenarioId]
-  );
+  const coachState = useAppSelector((state) => state.coach);
+  const isCoach = pathname?.startsWith("/coach") || Boolean(coachState.role);
+  const hasPtSessions = coachState.hasPtSessions;
 
-  const steps = useMemo<WalkthroughStep[]>(
-    () => (activeScenarioId ? walkthroughScenarios[activeScenarioId] ?? [] : []),
-    [activeScenarioId]
-  );
+  const activeScenario = useMemo(() => {
+    if (!activeScenarioId) return null;
+    const scenario = findTutorialScenario(activeScenarioId);
+    if (!scenario) return null;
+
+    if (isCoach && !hasPtSessions) {
+      const adaptedSteps = scenario.steps.filter((s) => !s.requiresPt);
+      let adaptedSubtitle = scenario.subtitle;
+      if (scenario.id === "coach-today-overview") {
+        adaptedSubtitle = "Quick access to next session, daily timetable, and scan totals";
+      } else if (scenario.id === "coach-scans-radar") {
+        adaptedSubtitle = "Real-time turnstile socket updates and member phone peeks";
+      }
+      return {
+        ...scenario,
+        subtitle: adaptedSubtitle,
+        steps: adaptedSteps,
+      };
+    }
+    return scenario;
+  }, [activeScenarioId, isCoach, hasPtSessions]);
+
+  const steps = useMemo<WalkthroughStep[]>(() => {
+    if (!activeScenarioId) return [];
+    const allSteps = walkthroughScenarios[activeScenarioId] ?? [];
+    if (isCoach && !hasPtSessions) {
+      return allSteps.filter((s) => !s.requiresPt);
+    }
+    return allSteps;
+  }, [activeScenarioId, isCoach, hasPtSessions]);
 
   const currentStep = useMemo<WalkthroughStep | null>(() => {
     if (!activeScenarioId || stepIndex < 0 || stepIndex >= steps.length) {
@@ -187,8 +214,19 @@ export function WalkthroughProvider({
   const startTutorial = useCallback(
     (scenarioId: string) => {
       const scenario = findTutorialScenario(scenarioId);
-      const scenarioSteps = walkthroughScenarios[scenarioId];
-      if (!scenario || !scenarioSteps || scenarioSteps.length === 0) return;
+      if (!scenario) return;
+
+      if (isCoach && !hasPtSessions && (scenario.requiresPt || scenario.badge === "Personal Training")) {
+        toast.error("Personal Training is not enabled for your account");
+        return;
+      }
+
+      const allSteps = walkthroughScenarios[scenarioId] ?? [];
+      const scenarioSteps = isCoach && !hasPtSessions
+        ? allSteps.filter((s) => !s.requiresPt)
+        : allSteps;
+
+      if (scenarioSteps.length === 0) return;
 
       setIsHelpModalOpen(false);
       setActiveScenarioId(scenarioId);
@@ -203,7 +241,7 @@ export function WalkthroughProvider({
         router.push(firstStep.route);
       }
     },
-    [pathname, router]
+    [pathname, router, isCoach, hasPtSessions]
   );
 
   const nextStep = useCallback(() => {

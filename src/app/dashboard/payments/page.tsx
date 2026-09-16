@@ -21,13 +21,49 @@ function cairoDateParam(raw?: string): string {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; locationId?: string }>;
+  searchParams: Promise<{
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+    from?: string;
+    to?: string;
+    locationId?: string;
+  }>;
 }) {
   const params = await searchParams;
-  const dateParam = cairoDateParam(params.date);
+  const rawStart = params.startDate || params.from;
+  const rawEnd = params.endDate || params.to;
+
+  let startDate: string;
+  let endDate: string;
+
+  if (rawStart || rawEnd) {
+    const s = cairoDateParam(rawStart || rawEnd);
+    const e = cairoDateParam(rawEnd || rawStart);
+    if (s <= e) {
+      startDate = s;
+      endDate = e;
+    } else {
+      startDate = e;
+      endDate = s;
+    }
+  } else if (params.date) {
+    startDate = cairoDateParam(params.date);
+    endDate = startDate;
+  } else {
+    const today = cairoDateParam();
+    startDate = today;
+    endDate = today;
+  }
+
   const locationId = params.locationId;
   try {
-    const payments = await getPayments(dateParam, locationId);
+    const payments = await getPayments(
+      startDate === endDate ? startDate : undefined,
+      locationId,
+      startDate,
+      endDate
+    );
     return (
       <div className="flex min-h-full flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:gap-8 lg:p-8">
         {/* Header Section */}
@@ -46,8 +82,13 @@ export default async function Page({
         <Separator />
 
         {/* Main Content */}
-        <div className="flex-1" data-walkthrough="payments-table">
-          <PaymentsContainer payments={payments} initialDate={dateParam} />
+        <div className="flex-1" data-walkthrough="payments-container">
+          <PaymentsContainer
+            payments={payments}
+            initialDate={startDate === endDate ? startDate : undefined}
+            initialStartDate={startDate}
+            initialEndDate={endDate}
+          />
         </div>
       </div>
     );

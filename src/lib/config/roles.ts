@@ -10,39 +10,69 @@ export const STAFF_ROLES = [
   "management",
   "branch_admin",
   "admin",
+  "mailer",
 ] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
-export type PermissionRole = "management" | "branch_admin";
+export type PermissionRole = "management" | "branch_admin" | "mailer";
 
 export function toPermissionRole(
-  role: string | undefined
+  role: string | null | undefined
 ): PermissionRole | null {
   if (!role) return null;
   if (role === "admin" || role === "management") return "management";
   if (role === "branch_admin") return role;
+  if (role === "mailer") return "mailer";
   return null;
 }
 
-export function isStaffRole(role: string | undefined): boolean {
+export function isStaffRole(role: string | null | undefined): boolean {
   return toPermissionRole(role) !== null;
 }
 
-export function isCoachRole(role: string | undefined): boolean {
+export function isCoachRole(role: string | null | undefined): boolean {
   return role === "coach" || role === "managing_coach";
 }
 
-export function isManagingCoachRole(role: string | undefined): boolean {
+export function isManagingCoachRole(role: string | null | undefined): boolean {
   return role === "managing_coach";
 }
 
-export function isBranchScopedRole(role: string | undefined): boolean {
+export function isMailerRole(role: string | null | undefined): boolean {
+  return toPermissionRole(role) === "mailer";
+}
+
+export function isBranchScopedRole(role: string | null | undefined): boolean {
   return toPermissionRole(role) === "branch_admin";
 }
 
-export function isManagementRole(role: string | undefined): boolean {
+export function isManagementRole(role: string | null | undefined): boolean {
   return toPermissionRole(role) === "management";
+}
+
+export const STAFF_DASHBOARD_HOME = "/dashboard/scans-monitor";
+export const COACH_DASHBOARD_HOME = "/coach/today";
+export const MAILER_DASHBOARD_HOME = "/dashboard/mailing";
+
+/**
+ * Resolves the primary dashboard landing route for an authorized role.
+ * Returns null if the role does not have access to any dashboard (e.g. member, user).
+ */
+export function getDashboardRouteForRole(
+  role: string | null | undefined
+): string | null {
+  if (!role) return null;
+  if (isCoachRole(role)) {
+    return COACH_DASHBOARD_HOME;
+  }
+  if (isMailerRole(role)) {
+    return MAILER_DASHBOARD_HOME;
+  }
+  if (isStaffRole(role)) {
+    return STAFF_DASHBOARD_HOME;
+  }
+  return null;
 }
 
 /** Pages that show cross-branch member data for all staff. */
@@ -97,7 +127,7 @@ export function canActAsBranchAdmin(
 }
 
 export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
-  "/dashboard": ["management", "branch_admin"],
+  "/dashboard": ["management", "branch_admin", "mailer"],
   "/dashboard/scans-monitor": ["management", "branch_admin"],
   "/dashboard/qr-codes": ["management", "branch_admin"],
   "/dashboard/sheet": ["management", "branch_admin"],
@@ -114,9 +144,10 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/checkout": ["management", "branch_admin"],
   "/dashboard/orders": ["management", "branch_admin"],
   "/dashboard/products": ["management", "branch_admin"],
-  "/dashboard/mailing": ["management"],
-  "/dashboard/mailing/sent": ["management"],
-  "/dashboard/mailing/received": ["management"],
+  "/dashboard/mailing": ["management", "mailer"],
+  "/dashboard/mailing/sent": ["management", "mailer"],
+  "/dashboard/mailing/received": ["management", "mailer"],
+  "/dashboard/accounts": ["management"],
 };
 
 export function canAccessPage(
@@ -145,7 +176,8 @@ export function canAccessPage(
 export const MANAGEMENT_ONLY_ACTIONS = {
   locationCrud: ["management"] as const,
   ticketCategoryCrud: ["management"] as const,
-  mail: ["management"] as const,
+  mail: ["management", "mailer"] as const,
+  accountCrud: ["management"] as const,
 } as const;
 
 /** Branch operational actions — management needs a selected branch. */

@@ -14,6 +14,7 @@ import {
   Ticket,
   Mail,
   Snowflake,
+  UserCog,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -148,18 +149,29 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           title: "Compose",
           url: "/dashboard/mailing",
           icon: Mail,
-          roles: ["management"],
+          roles: ["management", "mailer"],
         },
         {
           title: "Inbox",
           url: "/dashboard/mailing/received",
           icon: Mail,
-          roles: ["management"],
+          roles: ["management", "mailer"],
         },
         {
           title: "Sent",
           url: "/dashboard/mailing/sent",
           icon: Mail,
+          roles: ["management", "mailer"],
+        },
+      ],
+    },
+    {
+      title: "Management",
+      items: [
+        {
+          title: "Accounts",
+          url: "/dashboard/accounts",
+          icon: UserCog,
           roles: ["management"],
         },
       ],
@@ -175,6 +187,10 @@ function navItemPath(url: string): string {
 
 export const getPageTitle = (path: string): string => {
   const pathname = navItemPath(path);
+
+  if (pathname === "/dashboard/accounts" || pathname.startsWith("/dashboard/accounts/")) {
+    return "Accounts Management";
+  }
 
   if (pathname.startsWith("/dashboard/our-members/")) {
     return "Member";

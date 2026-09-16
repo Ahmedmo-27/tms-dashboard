@@ -13,11 +13,21 @@ import { deleteClassAction } from "@/lib/actions/class-actions";
 import { Trash } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { getActionErrorMessage } from "@/lib/utils/api-error-message";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function DeleteClassDialog({
   cls,
+  compact = false,
+  buttonClassName,
 }: {
   cls: { title: string; _id: string };
+  compact?: boolean;
+  buttonClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -53,19 +63,39 @@ export default function DeleteClassDialog({
     }
   };
 
+  const triggerButton = (
+    <Button
+      type="button"
+      className={cn(
+        "cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10",
+        compact ? "h-9 w-9 shrink-0" : "w-full",
+        buttonClassName
+      )}
+      variant="outline"
+      size={compact ? "icon" : "default"}
+    >
+      <Trash className={compact ? "size-4.5" : "mr-2 h-4 w-4"} />
+      {!compact && <span>Delete</span>}
+      {compact && <span className="sr-only">Delete Class</span>}
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button
-          type="button"
-          className="cursor-pointer text-destructive hover:text-destructive w-full"
-          variant="outline"
-        >
-          <Trash className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Delete</span>
-          <span className="sm:hidden">Delete</span>
-        </Button>
-      </DialogTrigger>
+      {compact ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+              {triggerButton}
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Delete Class</TooltipContent>
+        </Tooltip>
+      ) : (
+        <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+          {triggerButton}
+        </DialogTrigger>
+      )}
       <DialogContent onClick={(e) => e.stopPropagation()} className="max-w-[95vw] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Are you sure you want to delete {cls.title}?</DialogTitle>

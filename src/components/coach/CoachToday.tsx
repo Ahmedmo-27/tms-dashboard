@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCoachApi } from "@/hooks/useCoachApi";
 import { getCoachToday } from "@/lib/data/coach-portal";
-import type { TodaySummaryDto } from "@/types/coach.types";
+import type { TodaySummaryDto, SessionDto } from "@/types/coach.types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,9 +15,13 @@ import {
   Ticket,
   Users,
   AlertTriangle,
+  ChevronRight,
 } from "lucide-react";
-import { useAppSelector } from "@/lib/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { setSchedule } from "@/lib/store/features/coachSlice";
+import { SessionClientsModal } from "@/components/coach/SessionClientsModal";
 import { CoachTodaySkeleton } from "@/components/ui/loading/coach-skeletons";
+import { startOfWeek, format } from "date-fns";
 
 function formatTime12h(time: string): string {
   const [hourStr, minuteStr] = time.split(":");
@@ -30,12 +34,82 @@ function formatTime12h(time: string): string {
 
 export function CoachToday() {
   const coachApi = useCoachApi();
+  const dispatch = useAppDispatch();
   const hasPtSessions = useAppSelector((s) => s.coach.hasPtSessions);
   const hasScheduledClasses = useAppSelector((s) => s.coach.hasScheduledClasses);
+  const schedule = useAppSelector((s) => s.coach.schedule);
+
   const [data, setData] = useState<TodaySummaryDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const [selectedSession, setSelectedSession] = useState<SessionDto | null>(null);
+  const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
+
+  const handleOpenRoster = async (
+    scheduledClassId: string,
+    classTitle: string,
+    category: string,
+    startTime: string,
+    endTime: string,
+    capacity: number,
+    bookedCount: number
+  ) => {
+    // 1. Check if session exists in memory schedule
+    if (schedule?.days) {
+      for (const day of schedule.days) {
+        const found = day.sessions.find((s: SessionDto) => s.scheduledClassId === scheduledClassId);
+        if (found) {
+          setSelectedSession(found);
+          return;
+        }
+      }
+    }
+
+    // 2. Otherwise load current week schedule
+    setLoadingSessionId(scheduledClassId);
+    try {
+      const mondayISO = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
+      const res = await coachApi.get(`/api/coach/schedule?weekStart=${mondayISO}`);
+      const schedData = res.data.data;
+      if (schedData) {
+        dispatch(setSchedule(schedData));
+        for (const day of schedData.days ?? []) {
+          const found = day.sessions.find((s: any) => s.scheduledClassId === scheduledClassId);
+          if (found) {
+            setSelectedSession(found);
+            return;
+          }
+        }
+      }
+      setSelectedSession({
+        scheduledClassId,
+        classTitle,
+        category,
+        startTime,
+        endTime,
+        capacity,
+        bookedCount,
+        location: null,
+        clients: [],
+      });
+    } catch {
+      setSelectedSession({
+        scheduledClassId,
+        classTitle,
+        category,
+        startTime,
+        endTime,
+        capacity,
+        bookedCount,
+        location: null,
+        clients: [],
+      });
+    } finally {
+      setLoadingSessionId(null);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -74,7 +148,7 @@ export function CoachToday() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card data-walkthrough="coach-today-next">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Next session</CardTitle>
         </CardHeader>
@@ -91,9 +165,11 @@ export function CoachToday() {
                   {next.bookedCount} / {next.capacity} booked
                 </p>
               </div>
-              <Button asChild size="sm">
-                <Link href="/coach/schedule">Open schedule</Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button asChild size="sm">
+                  <Link href="/coach/schedule">Open schedule</Link>
+                </Button>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -107,7 +183,7 @@ export function CoachToday() {
       </Card>
 
       {hasScheduledClasses && (
-        <Card>
+        <Card data-walkthrough="coach-today-classes">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Calendar className="h-4 w-4" />
@@ -123,18 +199,40 @@ export function CoachToday() {
               data.todaySessions.map((s) => (
                 <div
                   key={s.scheduledClassId}
-                  className="flex items-center justify-between rounded-lg border px-3 py-2"
+                  onClick={() =>
+                    handleOpenRoster(
+                      s.scheduledClassId,
+                      s.classTitle,
+                      s.category,
+                      s.startTime,
+                      s.endTime,
+                      s.capacity,
+                      s.bookedCount
+                    )
+                  }
+                  className="group flex items-center justify-between rounded-lg border px-3 py-2 transition-colors hover:bg-muted/60 cursor-pointer"
+                  title="Click to view enrolled clients roster"
                 >
                   <div>
-                    <p className="text-sm font-medium">{s.classTitle}</p>
+                    <p className="text-sm font-medium flex items-center gap-1.5 group-hover:text-primary transition-colors">
+                      {s.classTitle}
+                      {loadingSessionId === s.scheduledClassId ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       <Clock className="mr-1 inline h-3 w-3" />
                       {formatTime12h(s.startTime)} – {formatTime12h(s.endTime)}
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {s.bookedCount}/{s.capacity}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {s.bookedCount}/{s.capacity}
+                    </span>
+                    <Users className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
                 </div>
               ))
             )}
@@ -144,7 +242,7 @@ export function CoachToday() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {hasScheduledClasses && (
-          <Card>
+          <Card data-walkthrough="coach-today-scans">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <ScanLine className="h-4 w-4" />
@@ -176,7 +274,7 @@ export function CoachToday() {
           </Card>
         )}
 
-        <Card>
+        <Card data-walkthrough="coach-today-tickets">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Ticket className="h-4 w-4" />
@@ -199,7 +297,7 @@ export function CoachToday() {
       </div>
 
       {hasPtSessions && (
-        <Card>
+        <Card data-walkthrough="coach-today-pt-alerts">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4" />
@@ -233,6 +331,13 @@ export function CoachToday() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {selectedSession && (
+        <SessionClientsModal
+          session={selectedSession}
+          onClose={() => setSelectedSession(null)}
+        />
       )}
     </div>
   );

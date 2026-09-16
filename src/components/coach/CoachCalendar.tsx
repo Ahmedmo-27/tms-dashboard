@@ -260,7 +260,10 @@ export function CoachCalendar() {
     format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
 
   const renderToolbar = () => (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      data-walkthrough="coach-calendar-week-nav"
+      className="flex flex-wrap items-center justify-between gap-3"
+    >
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
@@ -354,7 +357,10 @@ export function CoachCalendar() {
     <div className="flex h-full flex-col gap-4">
       {renderToolbar()}
 
-      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+      <div
+        data-walkthrough="coach-calendar-day-selector"
+        className="grid grid-cols-7 gap-1.5 sm:gap-2"
+      >
         {schedule.days.map((day: DayDto) => {
           const isToday = day.date === todayIso;
           const isActive = day.date === selectedDate;
@@ -427,6 +433,7 @@ export function CoachCalendar() {
               return (
                 <div
                   key={session.scheduledClassId}
+                  data-walkthrough="coach-calendar-session-card"
                   className={cn(
                     "flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between",
                     isNext && "border-primary"
@@ -468,6 +475,7 @@ export function CoachCalendar() {
                     size="sm"
                     variant="outline"
                     className="shrink-0"
+                    data-walkthrough="coach-session-clients-btn"
                     onClick={() => setClientsModalSession(session)}
                   >
                     Show clients

@@ -20,10 +20,12 @@ import { toast } from "react-hot-toast";
 
 type CopyPaymentsForSheetButtonProps = {
   payments: Payment[];
+  disabled?: boolean;
 };
 
 export function CopyPaymentsForSheetButton({
   payments,
+  disabled = false,
 }: CopyPaymentsForSheetButtonProps) {
   const [open, setOpen] = useState(false);
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(
@@ -87,7 +89,7 @@ export function CopyPaymentsForSheetButton({
         <Button
           variant="outline"
           size="sm"
-          disabled={payments.length === 0}
+          disabled={disabled || payments.length === 0}
           className="h-9 flex-1 sm:flex-none"
         >
           <ClipboardCopy className="h-4 w-4 sm:mr-2" />

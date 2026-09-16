@@ -7,6 +7,7 @@ export interface WalkthroughStep {
   blockAction?: boolean;
   openSidebar?: boolean;
   fallbackSelector?: string;
+  requiresPt?: boolean;
 }
 
 export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
@@ -332,12 +333,48 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
 
   "payments-ledger": [
     {
+      targetSelector: '[data-walkthrough="payments-stats"]',
+      route: "/dashboard/payments",
+      title: "Financial Overview & Metrics",
+      description:
+        "Track total revenue in EGP, successful payments, unique paying members, and dynamic today's receipts or period refunds & outflows.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="payments-date-filter"]',
+      route: "/dashboard/payments",
+      title: "Payment Period & Date Range Filter",
+      description:
+        "Select custom payment periods (e.g. from 7/5/2026 to 4/9/2026) using the interactive dual calendar, or quickly jump to presets like Today, Yesterday, Last 7 Days, This Month, or Last Month. Click Apply to confirm your selection.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="payments-search-filter"]',
+      route: "/dashboard/payments",
+      title: "Search & Categorization",
+      description:
+        "Search payments by member name, phone, purpose, or reason. Filter by transaction type (Payments Only vs. Refunds & Cash Outs) or payment method (Cash, Visa, Instapay, ValU, App).",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
       targetSelector: '[data-walkthrough="payments-table"]',
       route: "/dashboard/payments",
-      title: "Financial Transactions Ledger",
+      title: "Transaction Ledger Table",
       description:
-        "Comprehensive searchable log of all package purchases, drop-ins, and POS checkouts.",
+        "Audit recorded transactions with exact Cairo timestamp, amount, payment method badge, purpose, and branch location.",
       placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="payments-export-btn"]',
+      route: "/dashboard/payments",
+      title: "Export & Spreadsheet Tools",
+      description:
+        "Download an Excel report pre-filled with your active date range across selected branches, or copy formatted data directly for Google Sheets.",
+      placement: "bottom",
       fallbackSelector: "main",
     },
   ],
@@ -382,49 +419,94 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
     {
       targetSelector: '[data-walkthrough="mail-send-mode"]',
       route: "/dashboard/mailing",
-      title: "Send Mode Selector",
+      title: "Audience Targeting",
       description:
-        "Choose to send a broadcast to all active members & coaches, members only, coaches only, or manual email addresses.",
+        "Choose who receives your email: Direct (specific addresses), Broadcast All (all active members & staff), Active Members, or Coaches.",
       placement: "bottom",
       fallbackSelector: "main",
     },
     {
-      targetSelector: '[data-walkthrough="mail-compose-form"]',
+      targetSelector: '[data-walkthrough="mail-subject"]',
       route: "/dashboard/mailing",
-      title: "Rich Email Composer",
+      title: "Subject & Topic Tags",
       description:
-        "Draft your announcement subject, body, and attach documents or schedule flyers.",
+        "Specify a clear subject line and click quick-tag buttons like [Announcement] or [Urgent] for instant message priority.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="mail-body"]',
+      route: "/dashboard/mailing",
+      title: "Rich Content & Templates",
+      description:
+        "Format your message with bold text, headings, bullet lists, and CTA action buttons, or apply pre-built email templates.",
       placement: "top",
       fallbackSelector: "main",
     },
     {
-      targetSelector: '[data-walkthrough="mail-send-btn"]',
+      targetSelector: '[data-walkthrough="mail-attachment"]',
       route: "/dashboard/mailing",
-      title: "Dispatch Broadcast",
+      title: "File Attachments",
       description:
-        "Click Send Email to preview the recipient count in a confirmation dialog and dispatch via Brevo.",
-      placement: "left",
+        "Attach documents, flyers, schedules, or images (up to 5MB) directly to your outbound message.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="mail-send-button"]',
+      route: "/dashboard/mailing",
+      title: "Review & Dispatch",
+      description:
+        "Click Send Mail to review the confirmation preview with recipient counts and dispatch securely via Brevo transactional mail.",
+      placement: "top",
       fallbackSelector: "main",
     },
   ],
 
   "inbox-sent-logs": [
     {
-      targetSelector: '[data-walkthrough="sidebar-nav"]',
+      targetSelector: '[data-walkthrough="inbox-sync-btn"]',
       route: "/dashboard/mailing/received",
-      title: "Synced IMAP Inbox",
+      title: "Mail Server Sync",
       description:
-        "Read client email replies sent to the gym address directly inside the dashboard.",
-      placement: "right",
+        "Click 'Sync Mailbox' to immediately query the IMAP mail server for new incoming inquiries or member responses.",
+      placement: "bottom",
       fallbackSelector: "main",
     },
     {
-      targetSelector: '[data-walkthrough="sidebar-nav"]',
-      route: "/dashboard/mailing/sent",
-      title: "Sent Mail Audit Trail",
+      targetSelector: '[data-walkthrough="inbox-search"]',
+      route: "/dashboard/mailing/received",
+      title: "Search & Unread Filters",
       description:
-        "Review outbound broadcast delivery timestamps, recipient lists, and delivery confirmation statuses.",
-      placement: "right",
+        "Instantly filter between All and Unread emails, or search by sender name, email address, or message subject.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="inbox-email-list"]',
+      route: "/dashboard/mailing/received",
+      title: "Messages & Direct Reply",
+      description:
+        "Browse received emails in the table, click any row to open the complete message preview, copy addresses, or click Reply.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="sent-metrics"]',
+      route: "/dashboard/mailing/sent",
+      title: "Sent Delivery Metrics",
+      description:
+        "Track delivery performance cards showing total dispatches, successfully sent emails, delivery failures, and mass broadcasts.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="sent-logs-list"]',
+      route: "/dashboard/mailing/sent",
+      title: "Sent Dispatches Audit Trail",
+      description:
+        "Inspect every outbound email log, recipient counts, timestamps, sender identity, and error diagnostics for troubleshooting.",
+      placement: "top",
       fallbackSelector: "main",
     },
   ],
@@ -515,4 +597,257 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
       fallbackSelector: '[data-walkthrough="freeze-requests-table"]',
     },
   ],
+
+  "coach-today-overview": [
+    {
+      targetSelector: '[data-walkthrough="coach-today-next"]',
+      route: "/coach/today",
+      title: "Next Session Spotlight",
+      description:
+        "Your upcoming class appears right at the top, showing scheduled time, room location, and enrolled capacity so you know where you need to be next.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-today-classes"]',
+      route: "/coach/today",
+      title: "Today's Schedule & Roster",
+      description:
+        "All of your classes scheduled for today are listed here. Click on any class to immediately open the attendee roster modal or navigate to its live check-in scan.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-today-scans"]',
+      route: "/coach/today",
+      title: "Daily Scans & Activity Summary",
+      description:
+        "Review today's total turnstile check-ins, failed access scans, and will-pay alerts. Click 'Open scans' to jump straight into the live radar.",
+      placement: "right",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-today-pt-alerts"]',
+      route: "/coach/today",
+      title: "Personal Training Attention",
+      description:
+        "Highlights trainees with only 1 or 2 sessions remaining or packages expiring within 14 days, prompting timely renewals.",
+      placement: "top",
+      fallbackSelector: "main",
+      requiresPt: true,
+    },
+  ],
+
+  "coach-attendance-confirmation": [
+    {
+      targetSelector: '[data-walkthrough="coach-scans-header"]',
+      route: "/coach/scans",
+      title: "Live Scans & Date Selector",
+      description:
+        "Use the date picker and quick 'Today' button to inspect check-ins. Real-time sockets update this screen automatically as members tap turnstiles.",
+      placement: "bottom",
+      fallbackSelector: "header",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-class-scan-card"]',
+      route: "/coach/scans",
+      title: "Scheduled Class Card",
+      description:
+        "Each class displays enrolled member check-ins, category, timing, and attendance confirmation badges.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-confirm-attendance-btn"]',
+      route: "/coach/scans",
+      title: "Halfway Headcount Confirmation",
+      description:
+        "Once your class reaches its halfway mark, the 'Confirm Attendance' button unlocks. Click it to verify physical studio headcount, flag missing places, and submit audit notes.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="coach-class-scan-card"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-class-scans-table"]',
+      route: "/coach/scans",
+      title: "Attendee Verification List",
+      description:
+        "Review each attendee's check-in timestamp and status (Checked in, Failed, or Will Pay) to confirm who arrived in the studio.",
+      placement: "top",
+      fallbackSelector: '[data-walkthrough="coach-class-scan-card"]',
+    },
+  ],
+
+  "coach-class-schedule-roster": [
+    {
+      targetSelector: '[data-walkthrough="coach-calendar-week-nav"]',
+      route: "/coach/schedule",
+      title: "Weekly Calendar Navigation",
+      description:
+        "Jump between previous, current, and upcoming weeks using the Monday-start week controls to inspect schedules and prep workout plans.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-calendar-day-selector"]',
+      route: "/coach/schedule",
+      title: "Day-by-Day Selector",
+      description:
+        "Switch between individual days of the week on mobile or desktop to focus on a specific day's workout schedule.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="coach-calendar-week-nav"]',
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-calendar-session-card"]',
+      route: "/coach/schedule",
+      title: "Class Sessions & Capacity",
+      description:
+        "Session cards display category, start/end times, room location, and enrolled capacity (e.g. 10/12 booked).",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-session-clients-btn"]',
+      route: "/coach/schedule",
+      title: "Enrolled Attendee Roster",
+      description:
+        "Click on any session to open the full attendee modal with member names, phone numbers, and package types.",
+      placement: "left",
+      fallbackSelector: '[data-walkthrough="coach-calendar-session-card"]',
+    },
+  ],
+
+  "coach-scans-radar": [
+    {
+      targetSelector: '[data-walkthrough="coach-scans-header"]',
+      route: "/coach/scans",
+      title: "Radar Controls & Live Socket",
+      description:
+        "The live radar stays synced via WebSocket. New turnstile check-ins and attendance confirmations refresh automatically.",
+      placement: "bottom",
+      fallbackSelector: "header",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-scans-pt"]',
+      route: "/coach/scans",
+      title: "Personal Training Check-ins",
+      description:
+        "If you conduct Personal Training sessions, trainees checking in for your PT packages appear in this dedicated section.",
+      placement: "bottom",
+      fallbackSelector: "main",
+      requiresPt: true,
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-class-scan-card"]',
+      route: "/coach/scans",
+      title: "Class Check-in Logs",
+      description:
+        "Inspect member names, check-in timestamps, phone numbers, and turnstile pass/fail statuses for every session today.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-scans-row"]',
+      route: "/coach/scans",
+      title: "Member Quick Peek",
+      description:
+        "Click any member check-in row to view contact details, initiate a direct phone call, or jump to their client profile.",
+      placement: "top",
+      fallbackSelector: '[data-walkthrough="coach-class-scan-card"]',
+    },
+  ],
+
+  "coach-pt-client-management": [
+    {
+      targetSelector: '[data-walkthrough="coach-clients-search"]',
+      route: "/coach/clients",
+      title: "Client Roster Search",
+      description:
+        "Search your assigned personal training clients by name or phone number with real-time debounced filtering.",
+      placement: "bottom",
+      fallbackSelector: "main",
+      requiresPt: true,
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-clients-filters"]',
+      route: "/coach/clients",
+      title: "Status & Expiry Filter Chips",
+      description:
+        "Filter between Active or Past trainees, or quickly isolate clients whose packages have <= 2 sessions left or expire within 14 days.",
+      placement: "bottom",
+      fallbackSelector: '[data-walkthrough="coach-clients-search"]',
+      requiresPt: true,
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-clients-card"]',
+      route: "/coach/clients",
+      title: "Client Profile & Package Overview",
+      description:
+        "Click on any client to view their package validity, remaining classes progress bar, and contact options.",
+      placement: "top",
+      fallbackSelector: "main",
+      requiresPt: true,
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-package-deduct-btn"]',
+      route: "/coach/clients",
+      title: "Deduct Completed PT Session",
+      description:
+        "Click Deduct to register a completed workout session, select session date, and enter a mandatory audit reason.",
+      placement: "left",
+      fallbackSelector: '[data-walkthrough="coach-clients-card"]',
+      requiresPt: true,
+    },
+  ],
+
+  "coach-tickets-support": [
+    {
+      targetSelector: '[data-walkthrough="coach-tickets-tabs"]',
+      route: "/coach/tickets",
+      title: "Ticket Status Tabs",
+      description:
+        "Filter your submitted requests across Pending, In Progress, Resolved, or Rejected statuses.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-tickets-create-btn"]',
+      route: "/coach/tickets",
+      title: "Submit Maintenance or Help Ticket",
+      description:
+        "Click '+ New Ticket' to report equipment issues (e.g. broken cables, studio temperature), scheduling conflicts, or member requests.",
+      placement: "bottom",
+      fallbackSelector: "header",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-tickets-table"]',
+      route: "/coach/tickets",
+      title: "Ticket Resolution Tracking",
+      description:
+        "Inspect management responses, priority levels, and resolution timestamps in real time.",
+      placement: "top",
+      fallbackSelector: "main",
+    },
+  ],
+
+  "coach-mailing-broadcasts": [
+    {
+      targetSelector: '[data-walkthrough="coach-nav-mailing"]',
+      route: "/coach/today",
+      title: "Managing Coach Mail Center",
+      description:
+        "Managing Coaches have access to the gym email center in the sidebar to send announcements and communicate with branch members.",
+      placement: "right",
+      fallbackSelector: "aside",
+    },
+    {
+      targetSelector: '[data-walkthrough="coach-help-btn"]',
+      route: "/coach/today",
+      title: "Interactive Guides Anytime",
+      description:
+        "Click the Guides button in the header at any time to browse tutorials or replay any step-by-step walkthrough.",
+      placement: "bottom",
+      fallbackSelector: "header",
+    },
+  ],
 };
+
