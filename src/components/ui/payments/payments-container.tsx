@@ -211,7 +211,10 @@ export default function PaymentsContainer({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Summary Statistics */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+        data-walkthrough="payments-stats"
+      >
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
@@ -290,7 +293,10 @@ export default function PaymentsContainer({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 min-w-0">
-              <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
+              <div
+                className="flex items-center gap-2 w-full sm:w-auto min-w-0"
+                data-walkthrough="payments-date-filter"
+              >
                 <PaymentDateRangePicker
                   className="w-full sm:w-[260px]"
                   dateRange={dateRange}
@@ -310,7 +316,10 @@ export default function PaymentsContainer({
                 )}
               </div>
 
-              <div className="relative w-full sm:min-w-[180px] sm:flex-1 sm:max-w-[240px]">
+              <div
+                className="relative w-full sm:min-w-[180px] sm:flex-1 sm:max-w-[240px]"
+                data-walkthrough="payments-search-filter"
+              >
                 <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search payments..."
@@ -327,6 +336,7 @@ export default function PaymentsContainer({
                     variant="outline"
                     size="sm"
                     className="h-9 w-[calc(50%-0.25rem)] sm:w-auto shrink-0 justify-center"
+                    data-walkthrough="payments-type-filter"
                   >
                     <span className="truncate">
                       {selectedType === "all"
@@ -367,6 +377,7 @@ export default function PaymentsContainer({
                     variant="outline"
                     size="sm"
                     className="h-9 w-[calc(50%-0.25rem)] sm:w-auto shrink-0 justify-center"
+                    data-walkthrough="payments-method-filter"
                   >
                     <span className="truncate">{selectedMethod || "All Methods"}</span>
                     {selectedMethod && (
@@ -425,6 +436,7 @@ export default function PaymentsContainer({
                   size="sm"
                   className="h-9 flex-1 sm:flex-none"
                   onClick={() => setExportOpen(true)}
+                  data-walkthrough="payments-export-btn"
                 >
                   <Download className="h-4 w-4 sm:mr-2" />
                   <span>Export</span>
@@ -442,7 +454,7 @@ export default function PaymentsContainer({
         />
 
         <CardContent className="p-0 sm:p-6">
-          <div className="rounded-md border overflow-hidden">
+          <div className="rounded-md border overflow-hidden" data-walkthrough="payments-table">
             {filteredPayments.length > 0 ? (
               <DataTable columns={columns} data={filteredPayments} />
             ) : payments.length > 0 ? (

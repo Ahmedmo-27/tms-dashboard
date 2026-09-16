@@ -333,12 +333,48 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
 
   "payments-ledger": [
     {
+      targetSelector: '[data-walkthrough="payments-stats"]',
+      route: "/dashboard/payments",
+      title: "Financial Overview & Metrics",
+      description:
+        "Track total revenue in EGP, successful payments, unique paying members, and dynamic today's receipts or period refunds & outflows.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="payments-date-filter"]',
+      route: "/dashboard/payments",
+      title: "Payment Period & Date Range Filter",
+      description:
+        "Select custom payment periods (e.g. from 7/5/2026 to 4/9/2026) using the interactive dual calendar, or quickly jump to presets like Today, Yesterday, Last 7 Days, This Month, or Last Month. Click Apply to confirm your selection.",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="payments-search-filter"]',
+      route: "/dashboard/payments",
+      title: "Search & Categorization",
+      description:
+        "Search payments by member name, phone, purpose, or reason. Filter by transaction type (Payments Only vs. Refunds & Cash Outs) or payment method (Cash, Visa, Instapay, ValU, App).",
+      placement: "bottom",
+      fallbackSelector: "main",
+    },
+    {
       targetSelector: '[data-walkthrough="payments-table"]',
       route: "/dashboard/payments",
-      title: "Financial Transactions Ledger",
+      title: "Transaction Ledger Table",
       description:
-        "Comprehensive searchable log of all package purchases, drop-ins, and POS checkouts.",
+        "Audit recorded transactions with exact Cairo timestamp, amount, payment method badge, purpose, and branch location.",
       placement: "top",
+      fallbackSelector: "main",
+    },
+    {
+      targetSelector: '[data-walkthrough="payments-export-btn"]',
+      route: "/dashboard/payments",
+      title: "Export & Spreadsheet Tools",
+      description:
+        "Download an Excel report pre-filled with your active date range across selected branches, or copy formatted data directly for Google Sheets.",
+      placement: "bottom",
       fallbackSelector: "main",
     },
   ],

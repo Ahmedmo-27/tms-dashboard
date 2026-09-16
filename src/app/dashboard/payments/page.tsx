@@ -82,7 +82,7 @@ export default async function Page({
         <Separator />
 
         {/* Main Content */}
-        <div className="flex-1" data-walkthrough="payments-table">
+        <div className="flex-1" data-walkthrough="payments-container">
           <PaymentsContainer
             payments={payments}
             initialDate={startDate === endDate ? startDate : undefined}

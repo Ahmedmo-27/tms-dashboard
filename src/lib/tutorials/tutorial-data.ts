@@ -31,6 +31,8 @@ import {
   Home,
   ScanLine,
   Calendar,
+  Download,
+  Filter,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -783,16 +785,34 @@ export const tutorialSections: TutorialSection[] = [
         ],
         steps: [
           {
-            title: "Payments Ledger",
+            title: "Financial Summary",
             description:
-              "Open Payments to view all financial transactions recorded across mobile and in-gym checkouts.",
+              "Review aggregate revenue in EGP, transaction counts, and period refund/outflow statistics.",
             icon: DollarSign,
           },
           {
-            title: "Filter by Date & Method",
+            title: "Pick Payment Periods",
             description:
-              "Filter logs by date range and payment method (Cash, POS Card, Geidea Online, Drop-in).",
+              "Filter transactions by custom periods (e.g. from 7/5/2026 to 4/9/2026) or quick presets (Today, Yesterday, Last 7 Days, This Month, Last Month).",
+            icon: Calendar,
+          },
+          {
+            title: "Filter by Type & Method",
+            description:
+              "Narrow down by search keywords, transaction type (Payments Only vs. Refunds & Cash Outs), or payment method (Cash, Visa, Instapay, ValU).",
+            icon: Filter,
+          },
+          {
+            title: "Inspect Transactions",
+            description:
+              "Browse member details, amounts, locations, and transaction status in the live ledger.",
             icon: CreditCard,
+          },
+          {
+            title: "Export & Spreadsheet Copy",
+            description:
+              "Export the active payment period to Excel or copy tab-separated rows for Google Sheets.",
+            icon: Download,
           },
         ],
       },
