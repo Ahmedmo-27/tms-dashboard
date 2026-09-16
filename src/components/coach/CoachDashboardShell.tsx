@@ -43,6 +43,7 @@ import {
 import { NotificationPanel } from "@/components/coach/NotificationPanel";
 import { HelpButton } from "@/components/tutorials/help-button";
 import { useWalkthrough } from "@/lib/tutorials/walkthrough-context";
+import { MailNotificationListener } from "@/components/mailing/MailNotificationListener";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +108,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   }, [pathname, hasPtSessions, hasScheduledClasses, role, capabilitiesLoaded, router]);
 
   const unreadCount = (notifications as { read: boolean }[]).filter((n) => !n.read).length;
+  const mailUnreadCount = useAppSelector((state: RootState) => state.mail.unreadCount);
 
   useEffect(() => {
     if (!coachId) return;
@@ -238,27 +240,38 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
 
   const SidebarNav = (
     <nav className="flex flex-col gap-1 p-4">
-      {allNav.map(({ href, label, icon: Icon, match, dataWalkthrough }) => (
-        <Link
-          key={href}
-          href={href}
-          data-walkthrough={dataWalkthrough}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-            match(pathname)
-              ? "bg-primary text-primary-foreground"
-              : "hover:bg-muted"
-          )}
-        >
-          <Icon className="h-5 w-5" />
-          <span>{label}</span>
-        </Link>
-      ))}
+      {allNav.map(({ href, label, icon: Icon, match, dataWalkthrough }) => {
+        const isMailing = href.startsWith("/coach/mailing");
+        return (
+          <Link
+            key={href}
+            href={href}
+            data-walkthrough={dataWalkthrough}
+            className={cn(
+              "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              match(pathname)
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            )}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <Icon className="h-5 w-5" />
+              <span className="truncate">{label}</span>
+            </div>
+            {isMailing && mailUnreadCount > 0 && (
+              <span className="ml-auto flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground leading-none">
+                {mailUnreadCount > 9 ? "9+" : mailUnreadCount}
+              </span>
+            )}
+          </Link>
+        );
+      })}
     </nav>
   );
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      {role === "managing_coach" && <MailNotificationListener />}
       <aside
         data-walkthrough="coach-sidebar"
         className="hidden md:flex md:w-56 md:flex-col shrink-0 border-r"

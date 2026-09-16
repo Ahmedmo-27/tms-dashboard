@@ -4,6 +4,7 @@ import { persistReducer } from "redux-persist";
 import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 import authReducer from "./features/authSlice";
 import coachReducer from "./features/coachSlice";
+import mailReducer from "./features/mailSlice";
 
 const createNoopStorage = () => ({
   getItem(_key: string) {
@@ -25,6 +26,7 @@ const storage =
 const rootReducer = combineReducers({
   auth: authReducer,
   coach: coachReducer,
+  mail: mailReducer,
 });
 
 type RootReducerState = ReturnType<typeof rootReducer>;
