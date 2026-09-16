@@ -11,7 +11,6 @@ export const STAFF_ROLES = [
   "branch_admin",
   "admin",
   "mailer",
-  "mailing",
 ] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
@@ -24,7 +23,7 @@ export function toPermissionRole(
   if (!role) return null;
   if (role === "admin" || role === "management") return "management";
   if (role === "branch_admin") return role;
-  if (role === "mailer" || role === "mailing") return "mailer";
+  if (role === "mailer") return "mailer";
   return null;
 }
 
@@ -148,6 +147,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/mailing": ["management", "mailer"],
   "/dashboard/mailing/sent": ["management", "mailer"],
   "/dashboard/mailing/received": ["management", "mailer"],
+  "/dashboard/accounts": ["management"],
 };
 
 export function canAccessPage(
@@ -177,6 +177,7 @@ export const MANAGEMENT_ONLY_ACTIONS = {
   locationCrud: ["management"] as const,
   ticketCategoryCrud: ["management"] as const,
   mail: ["management", "mailer"] as const,
+  accountCrud: ["management"] as const,
 } as const;
 
 /** Branch operational actions — management needs a selected branch. */

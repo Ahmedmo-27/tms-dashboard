@@ -1380,7 +1380,7 @@ export function getTutorialSectionsForRole(
     effectiveRole = "management";
   } else if (role === "branch_admin") {
     effectiveRole = "branch_admin";
-  } else if (role === "mailer" || role === "mailing") {
+  } else if (role === "mailer") {
     effectiveRole = "mailer";
   }
 
