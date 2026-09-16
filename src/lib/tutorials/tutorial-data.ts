@@ -43,6 +43,7 @@ export interface TutorialStep {
   title: string;
   description: string;
   icon?: IconComponent;
+  requiresPt?: boolean;
 }
 
 export interface TutorialScenario {
@@ -54,6 +55,7 @@ export interface TutorialScenario {
   badge?: string;
   keywords?: string[];
   steps: TutorialStep[];
+  requiresPt?: boolean;
 }
 
 export interface TutorialSection {
@@ -1028,6 +1030,7 @@ export const tutorialSections: TutorialSection[] = [
             description:
               "Spot clients with low remaining sessions (<= 2) or packages expiring soon (<= 14 days) so you can arrange renewals.",
             icon: AlertTriangle,
+            requiresPt: true,
           },
         ],
       },
@@ -1157,6 +1160,7 @@ export const tutorialSections: TutorialSection[] = [
             description:
               "The top PT section displays all trainees checking in for your assigned personal training packages today.",
             icon: UserCheck,
+            requiresPt: true,
           },
           {
             title: "Scheduled Class Scans",
@@ -1179,6 +1183,7 @@ export const tutorialSections: TutorialSection[] = [
         icon: UserCheck,
         roles: ["coach", "managing_coach"],
         badge: "Personal Training",
+        requiresPt: true,
         keywords: [
           "clients",
           "pt clients",
@@ -1312,7 +1317,11 @@ export function findTutorialScenario(id: string): TutorialScenario | undefined {
 }
 
 export function getTutorialSectionsForRole(
-  role: string | undefined
+  role: string | undefined,
+  options?: {
+    hasPtSessions?: boolean;
+    hasScheduledClasses?: boolean;
+  }
 ): TutorialSection[] {
   let effectiveRole: TutorialRole = "branch_admin";
   if (role === "managing_coach") {
@@ -1328,7 +1337,21 @@ export function getTutorialSectionsForRole(
   return tutorialSections
     .map((section) => ({
       ...section,
-      scenarios: section.scenarios.filter((s) => s.roles.includes(effectiveRole)),
+      scenarios: section.scenarios
+        .filter((s) => {
+          if (!s.roles.includes(effectiveRole)) return false;
+          if (options?.hasPtSessions === false && s.requiresPt) return false;
+          return true;
+        })
+        .map((s) => {
+          if (options?.hasPtSessions === false) {
+            return {
+              ...s,
+              steps: s.steps.filter((st) => !st.requiresPt),
+            };
+          }
+          return s;
+        }),
     }))
     .filter((section) => section.scenarios.length > 0);
 }

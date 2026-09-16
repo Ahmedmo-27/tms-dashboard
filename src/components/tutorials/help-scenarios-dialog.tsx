@@ -25,7 +25,6 @@ import { toPermissionRole, PermissionRole } from "@/lib/config/roles";
 import {
   Search,
   Play,
-  Sparkles,
   Layers,
   Compass,
   CheckCircle2,
@@ -35,7 +34,9 @@ export function HelpScenariosDialog() {
   const pathname = usePathname();
   const { isHelpModalOpen, closeHelpModal, startTutorial } = useWalkthrough();
   const user = useAppSelector((state) => state.auth.user);
-  const coachRole = useAppSelector((state) => state.coach.role);
+  const coachState = useAppSelector((state) => state.coach);
+  const coachRole = coachState.role;
+  const hasPtSessions = coachState.hasPtSessions;
 
   const isCoachPortal = pathname?.startsWith("/coach") || Boolean(coachRole && !user);
   const staffRole: PermissionRole = toPermissionRole(user?.role as string | undefined) ?? "branch_admin";
@@ -53,51 +54,76 @@ export function HelpScenariosDialog() {
 
     return tutorialSections
       .map((section) => {
-        const scenarios = section.scenarios.filter((scenario) => {
-          // Portal scope filtering: coach portal only shows coach scenarios; staff portal only shows staff scenarios
-          const isCoachScenario = scenario.roles.some(
-            (r) => r === "coach" || r === "managing_coach"
-          );
+        const scenarios = section.scenarios
+          .filter((scenario) => {
+            // Portal scope filtering: coach portal only shows coach scenarios; staff portal only shows staff scenarios
+            const isCoachScenario = scenario.roles.some(
+              (r) => r === "coach" || r === "managing_coach"
+            );
 
-          if (isCoachPortal) {
-            if (!isCoachScenario) return false;
-            // Regular coaches cannot see managing_coach only scenarios
-            if (coachRole !== "managing_coach" && !scenario.roles.includes("coach")) {
+            if (isCoachPortal) {
+              if (!isCoachScenario) return false;
+              // Regular coaches cannot see managing_coach only scenarios
+              if (coachRole !== "managing_coach" && !scenario.roles.includes("coach")) {
+                return false;
+              }
+              // Coaches who don't have PT packages don't see PT tutorials
+              if (!hasPtSessions && (scenario.requiresPt || scenario.badge === "Personal Training")) {
+                return false;
+              }
+            } else {
+              // Staff portal: skip coach-only scenarios
+              const isStaffScenario = scenario.roles.some(
+                (r) => r === "branch_admin" || r === "management"
+              );
+              if (!isStaffScenario) return false;
+            }
+
+            // Specific tab role filter
+            if (
+              selectedRoleFilter !== "all" &&
+              !scenario.roles.includes(selectedRoleFilter)
+            ) {
               return false;
             }
-          } else {
-            // Staff portal: skip coach-only scenarios
-            const isStaffScenario = scenario.roles.some(
-              (r) => r === "branch_admin" || r === "management"
+
+            return true;
+          })
+          .map((scenario) => {
+            if (isCoachPortal && !hasPtSessions) {
+              const adaptedSteps = scenario.steps.filter((s) => !s.requiresPt);
+              let adaptedSubtitle = scenario.subtitle;
+              if (scenario.id === "coach-today-overview") {
+                adaptedSubtitle = "Quick access to next session, daily timetable, and scan totals";
+              } else if (scenario.id === "coach-scans-radar") {
+                adaptedSubtitle = "Real-time turnstile socket updates and member phone peeks";
+              }
+              return {
+                ...scenario,
+                subtitle: adaptedSubtitle,
+                steps: adaptedSteps,
+              };
+            }
+            return scenario;
+          })
+          .filter((scenario) => {
+            // Search query filter
+            if (!query) return true;
+            const matchTitle = scenario.title.toLowerCase().includes(query);
+            const matchSubtitle = scenario.subtitle.toLowerCase().includes(query);
+            const matchKeywords =
+              scenario.keywords?.some(
+                (kw) =>
+                  kw.toLowerCase().includes(query) ||
+                  query.includes(kw.toLowerCase())
+              ) ?? false;
+            const matchSteps = scenario.steps.some(
+              (s) =>
+                s.title.toLowerCase().includes(query) ||
+                s.description.toLowerCase().includes(query)
             );
-            if (!isStaffScenario) return false;
-          }
-
-          // Specific tab role filter
-          if (
-            selectedRoleFilter !== "all" &&
-            !scenario.roles.includes(selectedRoleFilter)
-          ) {
-            return false;
-          }
-
-          // Search query filter
-          if (!query) return true;
-          const matchTitle = scenario.title.toLowerCase().includes(query);
-          const matchSubtitle = scenario.subtitle.toLowerCase().includes(query);
-          const matchKeywords =
-            scenario.keywords?.some(
-              (kw) =>
-                kw.toLowerCase().includes(query) ||
-                query.includes(kw.toLowerCase())
-            ) ?? false;
-          const matchSteps = scenario.steps.some(
-            (s) =>
-              s.title.toLowerCase().includes(query) ||
-              s.description.toLowerCase().includes(query)
-          );
-          return matchTitle || matchSubtitle || matchKeywords || matchSteps;
-        });
+            return matchTitle || matchSubtitle || matchKeywords || matchSteps;
+          });
 
         return {
           ...section,
@@ -105,7 +131,7 @@ export function HelpScenariosDialog() {
         };
       })
       .filter((section) => section.scenarios.length > 0);
-  }, [searchQuery, selectedRoleFilter, isCoachPortal, coachRole]);
+  }, [searchQuery, selectedRoleFilter, isCoachPortal, coachRole, hasPtSessions]);
 
   const totalScenariosCount = useMemo(() => {
     return filteredSections.reduce((acc, sec) => acc + sec.scenarios.length, 0);
@@ -125,11 +151,15 @@ export function HelpScenariosDialog() {
     : "Branch Admin Portal";
 
   const portalDescription = isCoachPortal
-    ? "Interactive step-by-step guides for your daily schedule, PT clients, session attendance, and check-in radar."
+    ? hasPtSessions
+      ? "Interactive step-by-step guides for your daily schedule, PT clients, session attendance, and check-in radar."
+      : "Interactive step-by-step guides for your daily schedule, session attendance, and check-in radar."
     : "Step-by-step interactive walkthroughs for gym operations, member onboarding, scheduling, POS, and management.";
 
   const searchPlaceholder = isCoachPortal
-    ? "Search coach guides (e.g. attendance confirmation, deduct PT, schedule, scans, tickets)..."
+    ? hasPtSessions
+      ? "Search coach guides (e.g. attendance confirmation, deduct PT, schedule, scans, tickets)..."
+      : "Search coach guides (e.g. attendance confirmation, schedule, scans, tickets)..."
     : "Search functionalities (e.g. add package, guest package, subscribe to open gym, refund, schedule)...";
 
   return (

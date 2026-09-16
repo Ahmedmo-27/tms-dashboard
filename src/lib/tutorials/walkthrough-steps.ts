@@ -7,6 +7,7 @@ export interface WalkthroughStep {
   blockAction?: boolean;
   openSidebar?: boolean;
   fallbackSelector?: string;
+  requiresPt?: boolean;
 }
 
 export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
@@ -552,6 +553,7 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
         "Highlights trainees with only 1 or 2 sessions remaining or packages expiring within 14 days, prompting timely renewals.",
       placement: "top",
       fallbackSelector: "main",
+      requiresPt: true,
     },
   ],
 
@@ -651,6 +653,7 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
         "If you conduct Personal Training sessions, trainees checking in for your PT packages appear in this dedicated section.",
       placement: "bottom",
       fallbackSelector: "main",
+      requiresPt: true,
     },
     {
       targetSelector: '[data-walkthrough="coach-class-scan-card"]',
@@ -681,6 +684,7 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
         "Search your assigned personal training clients by name or phone number with real-time debounced filtering.",
       placement: "bottom",
       fallbackSelector: "main",
+      requiresPt: true,
     },
     {
       targetSelector: '[data-walkthrough="coach-clients-filters"]',
@@ -690,6 +694,7 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
         "Filter between Active or Past trainees, or quickly isolate clients whose packages have <= 2 sessions left or expire within 14 days.",
       placement: "bottom",
       fallbackSelector: '[data-walkthrough="coach-clients-search"]',
+      requiresPt: true,
     },
     {
       targetSelector: '[data-walkthrough="coach-clients-card"]',
@@ -699,6 +704,7 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
         "Click on any client to view their package validity, remaining classes progress bar, and contact options.",
       placement: "top",
       fallbackSelector: "main",
+      requiresPt: true,
     },
     {
       targetSelector: '[data-walkthrough="coach-package-deduct-btn"]',
@@ -708,6 +714,7 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
         "Click Deduct to register a completed workout session, select session date, and enter a mandatory audit reason.",
       placement: "left",
       fallbackSelector: '[data-walkthrough="coach-clients-card"]',
+      requiresPt: true,
     },
   ],
 
