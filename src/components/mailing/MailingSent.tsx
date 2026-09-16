@@ -24,6 +24,7 @@ import { toast } from "react-hot-toast";
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,9 @@ function formatSentDate(dateStr: string) {
 
 export function MailingSent() {
   const [logs, setLogs] = useState<MailLog[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const [search, setSearch] = useState("");
   const [audienceFilter, setAudienceFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -98,22 +102,26 @@ export function MailingSent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [copiedBody, setCopiedBody] = useState(false);
 
-  useEffect(() => {
-    fetchLogs(false);
-    const interval = setInterval(() => {
-      fetchLogs(true);
-    }, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchLogs = async (silent = false) => {
+  const fetchLogs = async (silent = false, customPage = page) => {
     if (!silent) setIsLoading(true);
     try {
-      const response = await tms.get("/admin/mail/logs");
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data?.data || [];
-      setLogs(Array.isArray(data) ? data : []);
+      const params: any = {
+        page: customPage,
+        limit: pageSize,
+      };
+      if (search.trim()) params.search = search.trim();
+      if (audienceFilter !== "all") params.mode = audienceFilter;
+      if (statusFilter !== "all") params.status = statusFilter;
+
+      const response = await tms.get("/admin/mail/logs", { params });
+      const data = response.data?.data || response.data;
+      if (Array.isArray(data)) {
+        setLogs(data);
+        setTotalCount(data.length);
+      } else if (data && typeof data === "object") {
+        setLogs(Array.isArray(data.logs) ? data.logs : []);
+        setTotalCount(typeof data.total === "number" ? data.total : (data.logs?.length || 0));
+      }
     } catch (error) {
       console.error("Failed to fetch logs", error);
       if (!silent) setLogs([]);
@@ -125,9 +133,22 @@ export function MailingSent() {
     }
   };
 
+  useEffect(() => {
+    fetchLogs(false, 1);
+    const interval = setInterval(() => {
+      fetchLogs(true, page);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [page]);
+
+  useEffect(() => {
+    setPage(1);
+    fetchLogs(false, 1);
+  }, [search, audienceFilter, statusFilter]);
+
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchLogs(false);
+    fetchLogs(false, page);
   };
 
   const handleCopyBody = (text: string) => {
@@ -140,7 +161,6 @@ export function MailingSent() {
   const safeLogs = Array.isArray(logs) ? logs : [];
 
   // Metrics
-  const totalCount = safeLogs.length;
   const sentCount = safeLogs.filter((l) => l.status === "sent").length;
   const failedCount = safeLogs.filter((l) => l.status === "failed").length;
   const broadcastCount = safeLogs.filter((l) => l.mode === "broadcast").length;
@@ -155,6 +175,14 @@ export function MailingSent() {
 
     return matchesSearch && matchesAudience && matchesStatus;
   });
+
+  const pageCount = Math.ceil(totalCount / pageSize) || 1;
+
+  const handlePageChange = (pageIndex: number) => {
+    const newPage = pageIndex + 1;
+    setPage(newPage);
+    fetchLogs(false, newPage);
+  };
 
   const getRecipientCount = (recipients: number | string[]) => {
     if (typeof recipients === "number") return recipients;
@@ -408,6 +436,19 @@ export function MailingSent() {
               </Table>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
+
+            {/* Pagination Footer */}
+            {totalCount > pageSize && (
+              <div className="p-4 border-t bg-muted/10">
+                <TablePagination
+                  pageIndex={page - 1}
+                  pageCount={pageCount}
+                  total={totalCount}
+                  pageSize={pageSize}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
