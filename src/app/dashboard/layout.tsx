@@ -15,6 +15,8 @@ import { HelpButton } from "@/components/tutorials/help-button";
 import { HelpScenariosDialog } from "@/components/tutorials/help-scenarios-dialog";
 import { WalkthroughOverlay } from "@/components/tutorials/walkthrough-overlay";
 import { WalkthroughProvider } from "@/lib/tutorials/walkthrough-context";
+import { MailNotificationListener } from "@/components/mailing/MailNotificationListener";
+import { MailNotificationBell } from "@/components/mailing/MailNotificationBell";
 import { Suspense } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -23,6 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <RequireAuth>
         <RequirePageAccess>
           <WalkthroughProvider>
+            <MailNotificationListener />
             <SidebarProvider>
               <AppSidebar />
               <SidebarInset className="min-h-0">
@@ -37,6 +40,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <DashboardBranchBar />
                     </Suspense>
                     <CommandPalette />
+                    <MailNotificationBell />
                     <HelpButton />
                   </div>
                 </header>
