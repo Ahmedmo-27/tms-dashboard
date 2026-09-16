@@ -10,7 +10,7 @@ import {
   isSameDay,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { CalendarIcon, Check } from "lucide-react";
+import { CalendarIcon, Check, Loader2 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ export interface PaymentDateRangePickerProps {
   dateRange?: DateRange;
   onDateRangeChange?: (range: DateRange | undefined) => void;
   placeholder?: string;
+  isLoading?: boolean;
 }
 
 type Preset = {
@@ -41,6 +42,7 @@ export function PaymentDateRangePicker({
   dateRange,
   onDateRangeChange,
   placeholder = "Pick a period",
+  isLoading = false,
 }: PaymentDateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [tempRange, setTempRange] = React.useState<DateRange | undefined>(
@@ -155,13 +157,19 @@ export function PaymentDateRangePicker({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
+          disabled={isLoading}
           className={cn(
-            "justify-start text-left font-normal min-h-[40px] px-3",
+            "justify-start text-left font-normal min-h-[40px] px-3 transition-opacity",
             !dateRange?.from && "text-muted-foreground",
+            isLoading && "opacity-80 cursor-wait",
             className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+          {isLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin text-primary" />
+          ) : (
+            <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+          )}
           <span className="truncate">{displayText}</span>
         </Button>
       </PopoverTrigger>

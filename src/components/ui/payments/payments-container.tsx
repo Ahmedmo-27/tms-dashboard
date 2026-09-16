@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../card";
 import { Input } from "../input";
 import { Button } from "../button";
 import { Badge } from "../badge";
+import { Skeleton } from "../skeleton";
 import {
   Search,
   RefreshCw,
@@ -15,6 +16,7 @@ import {
   Calendar,
   Users,
   X,
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "../dropdown-menu";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { PaymentDateRangePicker } from "./payment-date-range-picker";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -48,13 +50,13 @@ export default function PaymentsContainer({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<"all" | "payments" | "refunds">("all");
 
   const isOutflow = (payment: Payment) => isOutflowTransaction(payment);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
 
   const effectiveStart = initialStartDate || initialDate;
@@ -69,6 +71,17 @@ export default function PaymentsContainer({
     }
     return undefined;
   });
+
+  useEffect(() => {
+    if (effectiveStart) {
+      setDateRange({
+        from: new Date(effectiveStart),
+        to: effectiveEnd ? new Date(effectiveEnd) : new Date(effectiveStart),
+      });
+    } else {
+      setDateRange(undefined);
+    }
+  }, [effectiveStart, effectiveEnd]);
 
   // Calculate payment statistics
   const stats = useMemo(() => {
@@ -151,9 +164,9 @@ export default function PaymentsContainer({
   const canClearDateFilter = hasDateInUrl || !isViewingToday;
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    router.refresh();
-    setTimeout(() => setIsRefreshing(false), 1000);
+    startTransition(() => {
+      router.refresh();
+    });
   };
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
@@ -185,7 +198,9 @@ export default function PaymentsContainer({
       params.delete("to");
     }
 
-    router.push(`/dashboard/payments?${params.toString()}`);
+    startTransition(() => {
+      router.push(`/dashboard/payments?${params.toString()}`);
+    });
   };
 
   const clearDateFilter = () => {
@@ -196,7 +211,9 @@ export default function PaymentsContainer({
     params.delete("endDate");
     params.delete("from");
     params.delete("to");
-    router.push(`/dashboard/payments?${params.toString()}`);
+    startTransition(() => {
+      router.push(`/dashboard/payments?${params.toString()}`);
+    });
   };
 
   const rangeDisplaySubtitle = useMemo(() => {
@@ -215,60 +232,76 @@ export default function PaymentsContainer({
         className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
         data-walkthrough="payments-stats"
       >
-        <Card>
+        <Card className={cn("transition-all duration-200", isPending && "opacity-75")}>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
                   Total Revenue
                 </p>
-                <p className="text-lg sm:text-2xl font-bold truncate">
-                  EGP {stats.totalAmount.toLocaleString()}
-                </p>
+                {isPending ? (
+                  <Skeleton className="h-7 w-28 mt-1 rounded" />
+                ) : (
+                  <p className="text-lg sm:text-2xl font-bold truncate">
+                    EGP {stats.totalAmount.toLocaleString()}
+                  </p>
+                )}
               </div>
               <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={cn("transition-all duration-200", isPending && "opacity-75")}>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
                   Total Payments
                 </p>
-                <p className="text-lg sm:text-2xl font-bold">{stats.totalPayments}</p>
+                {isPending ? (
+                  <Skeleton className="h-7 w-16 mt-1 rounded" />
+                ) : (
+                  <p className="text-lg sm:text-2xl font-bold">{stats.totalPayments}</p>
+                )}
               </div>
               <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={cn("transition-all duration-200", isPending && "opacity-75")}>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
                   {isViewingToday ? "Today's Payments" : "Refunds & Outflows"}
                 </p>
-                <p className="text-lg sm:text-2xl font-bold">
-                  {isViewingToday ? stats.todayPayments : stats.totalOutflows}
-                </p>
+                {isPending ? (
+                  <Skeleton className="h-7 w-16 mt-1 rounded" />
+                ) : (
+                  <p className="text-lg sm:text-2xl font-bold">
+                    {isViewingToday ? stats.todayPayments : stats.totalOutflows}
+                  </p>
+                )}
               </div>
               <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={cn("transition-all duration-200", isPending && "opacity-75")}>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
                   Unique Members
                 </p>
-                <p className="text-lg sm:text-2xl font-bold">{stats.uniqueMembers}</p>
+                {isPending ? (
+                  <Skeleton className="h-7 w-16 mt-1 rounded" />
+                ) : (
+                  <p className="text-lg sm:text-2xl font-bold">{stats.uniqueMembers}</p>
+                )}
               </div>
               <Users className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 flex-shrink-0" />
             </div>
@@ -282,12 +315,21 @@ export default function PaymentsContainer({
           <div className="flex flex-col gap-3 sm:gap-4 min-w-0">
             <div className="min-w-0">
               <CardTitle className="text-lg sm:text-xl">Payment Transactions</CardTitle>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {filteredPayments.length} of {payments.length} payments
-                {rangeDisplaySubtitle && (
-                  <span className="ml-1 sm:ml-2 text-primary">
-                    {rangeDisplaySubtitle}
+              <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+                {isPending ? (
+                  <span className="inline-flex items-center gap-1.5 text-primary font-medium animate-pulse">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Updating payments for selected interval...
                   </span>
+                ) : (
+                  <>
+                    <span>{filteredPayments.length} of {payments.length} payments</span>
+                    {rangeDisplaySubtitle && (
+                      <span className="text-primary font-medium">
+                        {rangeDisplaySubtitle}
+                      </span>
+                    )}
+                  </>
                 )}
               </p>
             </div>
@@ -302,12 +344,14 @@ export default function PaymentsContainer({
                   dateRange={dateRange}
                   onDateRangeChange={handleDateRangeChange}
                   placeholder="Filter by date or period"
+                  isLoading={isPending}
                 />
                 {canClearDateFilter && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={clearDateFilter}
+                    disabled={isPending}
                     className="h-9 w-9 p-0 shrink-0"
                   >
                     <X className="h-4 w-4" />
@@ -417,25 +461,26 @@ export default function PaymentsContainer({
                   variant="outline"
                   size="sm"
                   onClick={handleRefresh}
-                  disabled={isRefreshing}
+                  disabled={isPending}
                   className="h-9 flex-1 sm:flex-none"
                 >
                   <RefreshCw
                     className={cn(
                       "h-4 w-4 sm:mr-2",
-                      isRefreshing && "animate-spin"
+                      isPending && "animate-spin"
                     )}
                   />
                   <span>Refresh</span>
                 </Button>
 
-                <CopyPaymentsForSheetButton payments={filteredPayments} />
+                <CopyPaymentsForSheetButton payments={filteredPayments} disabled={isPending} />
 
                 <Button
                   variant="outline"
                   size="sm"
                   className="h-9 flex-1 sm:flex-none"
                   onClick={() => setExportOpen(true)}
+                  disabled={isPending}
                   data-walkthrough="payments-export-btn"
                 >
                   <Download className="h-4 w-4 sm:mr-2" />
@@ -455,7 +500,39 @@ export default function PaymentsContainer({
 
         <CardContent className="p-0 sm:p-6">
           <div className="rounded-md border overflow-hidden" data-walkthrough="payments-table">
-            {filteredPayments.length > 0 ? (
+            {isPending ? (
+              <div className="flex flex-col">
+                <div className="flex items-center justify-center gap-2 p-3 bg-muted/20 border-b text-xs text-muted-foreground animate-pulse">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span>Loading payment transactions for the selected interval...</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-muted/30 border-b">
+                  <Skeleton className="h-4 w-20 rounded" />
+                  <Skeleton className="h-4 w-28 rounded" />
+                  <Skeleton className="h-4 w-24 rounded hidden sm:block" />
+                  <Skeleton className="h-4 w-16 rounded hidden md:block" />
+                  <Skeleton className="h-4 w-16 rounded" />
+                  <Skeleton className="h-4 w-16 rounded" />
+                </div>
+                <div className="divide-y divide-border/40">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-28 rounded" />
+                          <Skeleton className="h-3 w-20 rounded" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-4 w-24 rounded hidden sm:block" />
+                      <Skeleton className="h-4 w-20 rounded hidden md:block" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                      <Skeleton className="h-4 w-16 rounded font-mono" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : filteredPayments.length > 0 ? (
               <DataTable columns={columns} data={filteredPayments} />
             ) : payments.length > 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
