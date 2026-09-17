@@ -15,6 +15,15 @@ import {
   Mail,
   Snowflake,
   UserCog,
+  LayoutDashboard,
+  PieChart,
+  Timer,
+  ClipboardList,
+  Dumbbell,
+  Hourglass,
+  Building2,
+  Repeat,
+  BookOpenCheck,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -31,8 +40,24 @@ export type NavGroup = {
   items: NavItem[];
 };
 
+const FINANCE_ROLES: readonly PermissionRole[] = ["management", "accountant"];
+
 export const pagesMetadata: { navMain: NavGroup[] } = {
   navMain: [
+    {
+      title: "Finance",
+      items: [
+        { title: "Overview", url: "/dashboard/finance", icon: LayoutDashboard, roles: FINANCE_ROLES },
+        { title: "Sales", url: "/dashboard/finance/sales", icon: PieChart, roles: FINANCE_ROLES },
+        { title: "Coach Hours", url: "/dashboard/finance/coach-hours", icon: Timer, roles: FINANCE_ROLES },
+        { title: "Coach Package Tracking", url: "/dashboard/finance/coach-packages", icon: ClipboardList, roles: FINANCE_ROLES },
+        { title: "PT Analytics", url: "/dashboard/finance/pt", icon: Dumbbell, roles: FINANCE_ROLES },
+        { title: "Deferred Revenue", url: "/dashboard/finance/deferred-revenue", icon: Hourglass, roles: FINANCE_ROLES },
+        { title: "Branches", url: "/dashboard/finance/branches", icon: Building2, roles: FINANCE_ROLES },
+        { title: "Retention", url: "/dashboard/finance/retention", icon: Repeat, roles: FINANCE_ROLES },
+        { title: "Ledger & Refunds", url: "/dashboard/finance/ledger", icon: BookOpenCheck, roles: FINANCE_ROLES },
+      ],
+    },
     {
       title: "Front Desk",
       items: [
@@ -98,7 +123,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           title: "Payments",
           url: "/dashboard/payments",
           icon: DollarSign,
-          roles: ["management", "branch_admin"],
+          roles: ["management", "branch_admin", "accountant"],
         },
         {
           title: "Refunds",
@@ -155,13 +180,13 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           title: "Inbox",
           url: "/dashboard/mailing/received",
           icon: Mail,
-          roles: ["management", "mailer"],
+          roles: ["management", "mailer", "accountant"],
         },
         {
           title: "Sent",
           url: "/dashboard/mailing/sent",
           icon: Mail,
-          roles: ["management", "mailer"],
+          roles: ["management", "mailer", "accountant"],
         },
       ],
     },

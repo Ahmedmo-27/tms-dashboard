@@ -5,6 +5,7 @@ export type AccountRole =
   | "coach"
   | "managing_coach"
   | "mailer"
+  | "accountant"
   | "member"
   | "user";
 
@@ -13,6 +14,7 @@ export const EMAIL_ELIGIBLE_ROLES = [
   "admin",
   "mailer",
   "managing_coach",
+  "accountant",
 ] as const;
 
 export function isEmailEligibleRole(role: string | null | undefined): boolean {

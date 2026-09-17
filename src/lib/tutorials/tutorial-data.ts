@@ -1382,6 +1382,8 @@ export function getTutorialSectionsForRole(
     effectiveRole = "branch_admin";
   } else if (role === "mailer") {
     effectiveRole = "mailer";
+  } else if (role === "accountant") {
+    effectiveRole = "accountant";
   }
 
   return tutorialSections

@@ -3,10 +3,10 @@
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 export function BranchActionBanner() {
-  const { isManagement, isBranchScopedPage, isViewingAllBranches } =
+  const { canViewAllBranches, isBranchScopedPage, isViewingAllBranches } =
     useBranchContext();
 
-  if (!isManagement || !isBranchScopedPage || !isViewingAllBranches) {
+  if (!canViewAllBranches || !isBranchScopedPage || !isViewingAllBranches) {
     return null;
   }
 

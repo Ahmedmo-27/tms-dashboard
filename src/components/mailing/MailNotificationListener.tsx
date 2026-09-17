@@ -33,7 +33,7 @@ export function MailNotificationListener() {
   const socketRef = useRef<any>(null);
 
   const role = (authUser?.role as string) || coachUser?.role || "";
-  const hasMailingAccess = ["management", "admin", "managing_coach", "mailer"].includes(role);
+  const hasMailingAccess = ["management", "admin", "managing_coach", "mailer", "accountant"].includes(role);
   const isManagingCoach = role === "managing_coach";
 
   useEffect(() => {

@@ -5,8 +5,8 @@ import { BranchLocationFilter } from "@/components/ui/branch-location-filter";
 import { BranchActionBanner } from "@/components/ui/branch-action-banner";
 import { useLocations } from "@/lib/hooks/use-locations";
 import {
+  canViewAllBranches,
   isBranchScopedPage,
-  isManagementRole,
 } from "@/lib/config/roles";
 import { useAppSelector } from "@/lib/hooks";
 
@@ -16,7 +16,7 @@ export function DashboardBranchBar() {
   const role = user?.role as string | undefined;
 
   const showBar =
-    isManagementRole(role) && isBranchScopedPage(pathname);
+    canViewAllBranches(role) && isBranchScopedPage(pathname);
 
   const { locations } = useLocations(showBar);
 
