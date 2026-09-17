@@ -50,32 +50,35 @@ export const AttendanceContainer = ({
   };
   return (
     <Card className="w-full">
-      <CardHeader className="space-y-4 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold">{title}</h3>
+      <CardHeader className="space-y-3 p-4">
+        {/* Name */}
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold">{title}</h3>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          {headerActions}
+          {sheetCopy ? (
+            <CopyAttendanceForSheetButton
+              scans={classScans}
+              mapMethod={sheetCopy.mapMethod}
+              classPrice={sheetCopy.classPrice}
+            />
+          ) : null}
+        </div>
+
+        {/* Bookings */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground pt-0.5">
+          <div className="flex items-center gap-1">
+            <Users className="h-4 w-4" />
+            <span>
+              {classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0}
+            </span>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {headerActions}
-            {sheetCopy ? (
-              <CopyAttendanceForSheetButton
-                scans={classScans}
-                mapMethod={sheetCopy.mapMethod}
-                classPrice={sheetCopy.classPrice}
-              />
-            ) : null}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>
-                {classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <UserCheck className="h-4 w-4" />
-              <span>{classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0} checked in</span>
-            </div>
-            </div>
+          <div className="flex items-center gap-1">
+            <UserCheck className="h-4 w-4" />
+            <span>{classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0} checked in</span>
           </div>
         </div>
       </CardHeader>
