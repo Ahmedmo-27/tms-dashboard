@@ -233,13 +233,41 @@ export function resolvePaymentLocation(record: RawPaymentRecord): string {
   );
 }
 
+export function resolvePtPaymentPurpose(record: {
+  purpose?: string;
+  note?: string;
+}): string | null {
+  const note = record.note?.trim();
+  if (!note) return null;
+
+  const ptWithCoachMatch = note.match(
+    /^(?:Personal training (?:guest )?drop-?in with|PT drop-?in with|PT with)\s+([^;]+)/i
+  );
+  if (ptWithCoachMatch) {
+    const coachName = ptWithCoachMatch[1].trim();
+    return `PT dropin with ${coachName}`;
+  }
+
+  if (
+    record.purpose === "DROPIN" &&
+    /^(?:Personal training (?:guest )?drop-?in|PT drop-?in)/i.test(note)
+  ) {
+    return "PT dropin";
+  }
+
+  return null;
+}
+
 export const parsePayments = (payments: unknown): Payment[] => {
   const records = normalizePaymentsPayload(payments);
 
   return records.map((payment) => {
     const { isCashOut, isRefunded } = getTransactionFlags(payment);
 
-    let purpose = resolveOpenGymPaymentPurpose(payment) ?? "";
+    let purpose =
+      resolveOpenGymPaymentPurpose(payment) ??
+      resolvePtPaymentPurpose(payment) ??
+      "";
     if (!purpose && payment.pkgId) {
       purpose = payment.pkgId.name;
     } else if (!purpose && payment.scid) {
@@ -259,7 +287,17 @@ export const parsePayments = (payments: unknown): Payment[] => {
       ? "Cash Out"
       : (resolvedMemberName ?? (isRefunded ? "Refund" : "—"));
 
+    const paymentRecordId = (payment._id ?? payment.id)?.toString();
+    const resolvedLocId =
+      typeof payment.locationId === "object" && payment.locationId !== null
+        ? (payment.locationId as any)._id?.toString()
+        : typeof payment.locationId === "string"
+        ? payment.locationId
+        : undefined;
+
     return {
+      _id: paymentRecordId,
+      id: paymentRecordId,
       memberName,
       phone: resolvePhoneFromRecord(payment),
       purpose:
@@ -279,6 +317,9 @@ export const parsePayments = (payments: unknown): Payment[] => {
       isCashOut,
       refundReason,
       paymentLabel: payment.paymentLabel ?? null,
+      note: payment.note,
+      locationId: resolvedLocId,
+      rawPayment: payment,
     };
   });
 };

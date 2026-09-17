@@ -79,14 +79,18 @@ export const parseDailyAttendance = (scans: any) => {
 
   (record.ptAttendance ?? []).forEach((scan: any) => {
     const status = parseScanStatus(scan.status);
+    let method = scan.method || "";
+    if (typeof method === "string" && /^PT with\s+/i.test(method)) {
+      method = method.replace(/^PT with\s+/i, "PT dropin with ");
+    }
     const parsedScan: ClassScan = {
-      member: scan.uid?.name || "Unknown Member",
+      member: scan.uid?.name || scan.guestName || "Unknown Member",
       memberId: getMemberId(scan.uid),
-      phone: scan.uid?.phoneNumber || "No Phone",
+      phone: scan.uid?.phoneNumber || scan.guestPhone || "No Phone",
       time: new Date(scan.time).toString(),
-      method: scan.method,
+      method,
       status,
-      statusDetail: getFailedStatusDetail(status, scan.method),
+      statusDetail: getFailedStatusDetail(status, method),
       branchLabel: getBranchLabel(scan.locationId) ?? undefined,
     };
     output.pt.push(parsedScan);

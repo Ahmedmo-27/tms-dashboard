@@ -12,6 +12,8 @@ import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
 import AddGuestPackage from "../dialogs/package/add-guest-package";
 import { OpenGymDropInDialog } from "../dialogs/open-gym/open-gym-drop-in-dialog";
+import { PtDropInDialog } from "../dialogs/pt/pt-drop-in-dialog";
+import { PtPricingDialog } from "../dialogs/pt/pt-pricing-dialog";
 import { OpenGymSubscribeDialog } from "../dialogs/open-gym/open-gym-subscribe-dialog";
 import { fetchScansMonitorData } from "@/lib/data/scans";
 import {
@@ -253,6 +255,21 @@ export function ScanContainer({
             classScans={dailyAttendance.pt}
             showBranch={isViewingAllBranches}
             sheetCopy={{ mapMethod: mapPtMethodToSheetLabel }}
+            headerActions={
+              <div className="flex items-center gap-1.5">
+                <PtPricingDialog
+                  triggerLabel="Pricing"
+                  variant="outline"
+                  size="sm"
+                  triggerClassName="min-h-[36px] text-xs px-2.5"
+                />
+                <PtDropInDialog
+                  triggerLabel="Add drop-in"
+                  triggerClassName="min-h-[36px]"
+                  onSuccess={() => fetchAll(selectedDate, true)}
+                />
+              </div>
+            }
           />
         </div>
         <div data-walkthrough="scan-attendance-opengym">

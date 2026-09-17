@@ -13,6 +13,7 @@ import SubPackage from "@/components/ui/dialogs/member package/sub-package";
 import AddClasses from "@/components/ui/dialogs/member package/add-classes";
 import BookClass from "@/components/ui/dialogs/member-bookings/book-class";
 import BookDropIn from "@/components/ui/dialogs/member-bookings/book-drop-in";
+import { PtDropInDialog } from "@/components/ui/dialogs/pt/pt-drop-in-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function MemberWorkspace({
@@ -71,6 +72,7 @@ export function MemberWorkspace({
               catalogPackages={packages}
             />
             <BookDropIn uid={member.id} memberName={member.name} />
+            <PtDropInDialog uid={member.id} memberName={member.name} triggerLabel="PT drop-in" />
             {activePackage && (
               <AddClasses uid={member.id} pkg={activePackage} variant="button" />
             )}

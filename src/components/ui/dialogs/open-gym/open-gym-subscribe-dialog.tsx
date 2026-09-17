@@ -163,13 +163,21 @@ export function OpenGymSubscribeDialog({
         }
         const response = await tms.get("/admin/member", { params });
         const members = response.data.data.members ?? [];
-        setSearchResults(
-          members.map((m: any) => ({
-            id: m.uid._id,
-            name: m.uid.name,
-            phone: m.uid.phoneNumber,
-          }))
-        );
+        const seen = new Set<string>();
+        const uniqueHits: MemberSearchHit[] = [];
+        for (const m of members) {
+          const rawId = m.uid?._id ?? m._id;
+          const id = rawId ? String(rawId) : "";
+          if (id && !seen.has(id)) {
+            seen.add(id);
+            uniqueHits.push({
+              id,
+              name: m.uid?.name || "Unknown",
+              phone: m.uid?.phoneNumber || "",
+            });
+          }
+        }
+        setSearchResults(uniqueHits);
         setShowSuggestions(true);
       } catch {
         setSearchResults([]);
@@ -272,9 +280,9 @@ export function OpenGymSubscribeDialog({
                 )}
                 {showSuggestions && searchResults.length > 0 && (
                   <div className="rounded-md border max-h-40 overflow-y-auto">
-                    {searchResults.map((member) => (
+                    {searchResults.map((member, idx) => (
                       <button
-                        key={member.id}
+                        key={`${member.id}-${idx}`}
                         type="button"
                         className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex flex-col"
                         onClick={() => {

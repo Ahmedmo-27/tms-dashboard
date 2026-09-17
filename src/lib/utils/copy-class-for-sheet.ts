@@ -52,7 +52,18 @@ export function mapMethodToSheetLabel(method: string): MethodSheetMapping {
 export function mapPtMethodToSheetLabel(method: string): MethodSheetMapping {
   const normalized = (method || "").trim().toLowerCase();
 
-  if (normalized === "drop in" || normalized === "drop-in") {
+  if (
+    normalized === "drop in" ||
+    normalized === "drop-in" ||
+    normalized === "dropin" ||
+    normalized.startsWith("drop in") ||
+    normalized.startsWith("drop-in") ||
+    normalized.startsWith("dropin") ||
+    normalized.includes("pt drop in") ||
+    normalized.includes("pt drop-in") ||
+    normalized.includes("pt dropin") ||
+    normalized.includes("dropin")
+  ) {
     return { kind: "dropin" };
   }
 

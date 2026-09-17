@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ScheduledClass } from "../schedule/columns";
 import BookClass from "../dialogs/member-bookings/book-class";
 import BookDropIn from "../dialogs/member-bookings/book-drop-in";
+import { PtDropInDialog } from "../dialogs/pt/pt-drop-in-dialog";
 import { MobileBookingCard } from "./mobile-booking-card";
 import { Member } from "../members/columns";
 import { Package } from "../packages/columns";
@@ -73,6 +74,7 @@ export default function Bookings({
               catalogPackages={catalogPackages}
             />
             <BookDropIn uid={uid} memberName={memberName} />
+            <PtDropInDialog uid={uid} memberName={memberName} triggerLabel="PT drop-in" />
           </div>
         </div>
       </CardHeader>
