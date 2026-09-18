@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { Badge } from "../badge";
 import { Avatar, AvatarFallback } from "../avatar";
 import { Card, CardContent } from "../card";
+import { Button } from "../button";
 import {
   CreditCard,
   Banknote,
@@ -9,6 +10,8 @@ import {
   Building2,
   Phone,
   MapPin,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Payment } from "./columns";
 import { OutflowPurposeCell } from "./outflow-details-dialog";
@@ -44,9 +47,17 @@ const getPaymentMethodColor = (method: string) => {
 
 interface MobilePaymentCardProps {
   payment: Payment;
+  isManagement?: boolean;
+  onEdit?: (payment: Payment) => void;
+  onDelete?: (payment: Payment) => void;
 }
 
-export function MobilePaymentCard({ payment }: MobilePaymentCardProps) {
+export function MobilePaymentCard({
+  payment,
+  isManagement,
+  onEdit,
+  onDelete,
+}: MobilePaymentCardProps) {
   const memberName = payment.memberName ?? "—";
   const initials = memberName
     .split(" ")
@@ -147,6 +158,35 @@ export function MobilePaymentCard({ payment }: MobilePaymentCardProps) {
                 <MapPin className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate">{payment.location}</span>
               </div>
+            </div>
+          )}
+
+          {/* Actions for Management */}
+          {isManagement && !isOutflow && (onEdit || onDelete) && (
+            <div className="pt-2 border-t flex items-center justify-end gap-2">
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => onEdit(payment)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+                  disabled={Boolean(payment.isRefunded)}
+                  onClick={() => onDelete(payment)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              )}
             </div>
           )}
         </div>

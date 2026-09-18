@@ -200,3 +200,27 @@ export const getPayments = async (
     throw error;
   }
 };
+
+export type UpdatePaymentPayload = {
+  _id: string;
+  amount?: number;
+  paymentMethod?: string;
+  paymentTime?: string | Date;
+  purpose?: string;
+  note?: string;
+  nonMemberName?: string;
+  nonMemberPhone?: string;
+  locationId?: string;
+};
+
+export const updatePayment = async (payload: UpdatePaymentPayload) => {
+  const { _id, ...body } = payload;
+  const response = await tms.patch(`/admin/payments/${_id}`, body);
+  return response.data;
+};
+
+export const deletePayment = async (paymentId: string) => {
+  const response = await tms.delete(`/admin/payments/${paymentId}`);
+  return response.data;
+};
+
