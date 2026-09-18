@@ -88,19 +88,19 @@ export function MailNotificationPermissionBanner({ className }: { className?: st
   return (
     <div
       className={cn(
-        "rounded-xl border p-4 shadow-xs transition-all duration-200",
+        "rounded-xl border p-3.5 sm:p-4 shadow-xs transition-all duration-200",
         isDenied
           ? "bg-amber-500/10 border-amber-500/25 text-amber-950 dark:text-amber-100"
           : "bg-primary/5 border-primary/20 text-foreground",
         className
       )}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
         {/* Left Side: Icon & Details */}
-        <div className="flex items-start gap-3.5">
+        <div className="flex items-start gap-3 sm:gap-3.5">
           <div
             className={cn(
-              "mt-0.5 h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+              "mt-0.5 h-8 w-8 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center shrink-0",
               isDenied
                 ? "bg-amber-500/20 text-amber-700 dark:text-amber-300"
                 : "bg-primary/15 text-primary"
@@ -113,14 +113,14 @@ export function MailNotificationPermissionBanner({ className }: { className?: st
             )}
           </div>
           <div className="space-y-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h4 className="font-semibold text-sm leading-tight">
                 {isDenied
                   ? "Email Notifications Blocked"
-                  : "Enable Desktop Email Notifications"}
+                  : "Enable Email Notifications"}
               </h4>
               {isDenied && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-500/15 px-1.5 py-0.2 rounded">
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded">
                   <AlertCircle className="h-3 w-3" />
                   Blocked in Browser
                 </span>
@@ -128,23 +128,24 @@ export function MailNotificationPermissionBanner({ className }: { className?: st
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
               {isDenied
-                ? "Your browser has notifications disabled for this website. To get desktop alerts for incoming emails, click the lock icon in your browser address bar and set Notifications to 'Allow'."
-                : "You currently don't have browser notifications enabled. Activate notifications so you never miss an email received through the website, even when working in another tab or app."}
+                ? "Your browser has notifications disabled for this website. To get alerts for incoming emails, click the lock/settings icon in your browser address bar and set Notifications to 'Allow'."
+                : "You currently don't have browser notifications enabled. Activate notifications so you never miss an email received through the website."}
             </p>
           </div>
         </div>
 
         {/* Right Side: Action Buttons */}
-        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+        <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t border-border/30 sm:border-0 justify-end sm:justify-start">
           {!isDenied && (
             <Button
               size="sm"
               onClick={handleActivate}
               disabled={isRequesting}
-              className="h-8 text-xs gap-1.5 font-semibold shadow-xs"
+              className="flex-1 sm:flex-initial h-9 sm:h-8 text-xs gap-1.5 font-semibold shadow-xs transition-all active:scale-[0.98] justify-center"
             >
-              <Bell className="h-3.5 w-3.5" />
-              <span>{isRequesting ? "Activating..." : "Activate"}</span>
+              <Bell className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden">{isRequesting ? "Activating..." : "Activate Notifications"}</span>
+              <span className="hidden sm:inline">{isRequesting ? "Activating..." : "Activate"}</span>
             </Button>
           )}
 
@@ -152,9 +153,9 @@ export function MailNotificationPermissionBanner({ className }: { className?: st
             variant="ghost"
             size="sm"
             onClick={handleIgnore}
-            className="h-8 text-xs text-muted-foreground hover:text-foreground"
+            className="h-9 sm:h-8 px-3 text-xs text-muted-foreground hover:text-foreground shrink-0 justify-center"
           >
-            <X className="h-3.5 w-3.5 mr-1 sm:hidden" />
+            <X className="h-3.5 w-3.5 mr-1" />
             <span>Ignore</span>
           </Button>
         </div>

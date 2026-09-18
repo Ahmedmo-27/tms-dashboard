@@ -273,24 +273,26 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
                 )}
               </Button>
 
-              {/* Desktop Alerts Status */}
+              {/* Alerts Status */}
               <div className="pt-2.5 border-t flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Bell className="h-3.5 w-3.5" />
-                  <span>Desktop Alerts</span>
+                  <span>Email Alerts</span>
                 </div>
                 {browserPermission === "granted" ? (
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
                     Active
                   </Badge>
                 ) : (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={handleEnableAlerts}
-                    className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
+                    className="h-6 px-2.5 text-[11px] font-medium text-primary hover:text-primary hover:bg-primary/10 border-primary/30 rounded-md cursor-pointer"
                   >
                     Activate
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
