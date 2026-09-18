@@ -9,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Building2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/lib/hooks";
 import { isManagementRole } from "@/lib/config/roles";
 import type { Location } from "@/lib/data/locations";
@@ -56,15 +58,21 @@ export function BranchLocationFilter({
   return (
     <Select value={current} onValueChange={onChange} disabled={isPending}>
       <SelectTrigger
-        className={className ?? "w-[220px]"}
+        className={cn(
+          "h-8 text-xs font-medium rounded-lg transition-colors",
+          className ?? "w-[105px] sm:w-[135px] md:w-[165px]"
+        )}
         loading={isPending}
         aria-busy={isPending}
       >
-        <SelectValue placeholder="All" />
+        <span className="flex items-center gap-1.5 min-w-0 truncate">
+          <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <SelectValue placeholder="All Branches" />
+        </span>
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent align="end">
         {!requireSelection && (
-          <SelectItem value="all">All</SelectItem>
+          <SelectItem value="all">All Branches</SelectItem>
         )}
         {locations.map((location) => (
           <SelectItem key={location._id} value={location._id}>
