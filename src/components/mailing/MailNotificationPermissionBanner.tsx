@@ -73,10 +73,21 @@ export function MailNotificationPermissionBanner({ className }: { className?: st
         toast.success("Notifications activated! You'll be alerted when new emails arrive.");
 
         try {
-          new Notification("The Mind Space", {
-            body: "Email notifications are now enabled!",
-            icon: "/Logo.ico",
-          });
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.ready.then((reg) => {
+              if (reg && "showNotification" in reg) {
+                reg.showNotification("The Mind Space", {
+                  body: "Email notifications are now enabled!",
+                  icon: "/Logo.jpg",
+                });
+              }
+            }).catch(() => {});
+          } else {
+            new Notification("The Mind Space", {
+              body: "Email notifications are now enabled!",
+              icon: "/Logo.jpg",
+            });
+          }
         } catch {
           // ignore notification constructor failure
         }

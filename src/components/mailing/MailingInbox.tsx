@@ -633,42 +633,42 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
 
       {/* Message Reader Dialog */}
       <Dialog open={!!selectedEmail} onOpenChange={(open) => !open && setSelectedEmail(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+        <DialogContent className="w-[95vw] sm:w-full max-w-3xl h-[88vh] sm:h-auto sm:max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl sm:rounded-xl">
           {selectedEmail && (
             <>
               {/* Reader Header */}
-              <DialogHeader className="p-5 sm:p-6 pb-4 border-b bg-muted/20">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2 overflow-hidden flex-1">
-                    <DialogTitle className="text-lg sm:text-xl font-bold leading-tight">
+              <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 border-b bg-muted/20 text-left">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2 overflow-hidden flex-1 min-w-0 pr-6 sm:pr-0">
+                    <DialogTitle className="text-base sm:text-xl font-bold leading-snug break-words">
                       {selectedEmail.subject || "(No Subject)"}
                     </DialogTitle>
 
                     {/* Sender Details Header Card */}
-                    <div className="flex items-center gap-3 pt-1">
+                    <div className="flex items-center gap-2.5 sm:gap-3 pt-0.5 sm:pt-1 min-w-0">
                       <div
                         className={cn(
-                          "h-10 w-10 rounded-full border flex items-center justify-center font-bold text-sm shrink-0",
+                          "h-8 w-8 sm:h-10 sm:w-10 rounded-full border flex items-center justify-center font-bold text-xs sm:text-sm shrink-0",
                           getAvatarColor(selectedEmail.from)
                         )}
                       >
                         {getInitials(parseSender(selectedEmail.from).name)}
                       </div>
                       <div className="min-w-0 flex-1 space-y-0.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm text-foreground">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+                          <span className="font-semibold text-xs sm:text-sm text-foreground truncate max-w-[140px] sm:max-w-none">
                             {parseSender(selectedEmail.from).name}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-[11px] sm:text-xs text-muted-foreground truncate max-w-[160px] sm:max-w-none">
                             &lt;{parseSender(selectedEmail.from).email}&gt;
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                          <span>
+                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground flex-wrap">
+                          <span className="truncate max-w-[180px] sm:max-w-none">
                             <strong>To:</strong> {selectedEmail.to || selectedEmail.recipientEmail || mailboxEmail || "You"}
                           </span>
                           <span>•</span>
-                          <span>
+                          <span className="shrink-0">
                             {selectedEmail.date
                               ? (() => {
                                   const date = new Date(selectedEmail.date);
@@ -684,54 +684,61 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
               </DialogHeader>
 
               {/* Email Content Body */}
-              <ScrollArea className="flex-1 p-5 sm:p-6 overflow-y-auto max-h-[52vh] bg-background">
+              <ScrollArea className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto bg-background">
                 {selectedEmail.html ? (
                   <div
-                    className="prose dark:prose-invert max-w-none text-sm leading-relaxed"
+                    className="prose dark:prose-invert max-w-none text-xs sm:text-sm leading-relaxed overflow-x-auto break-words [&_table]:max-w-full [&_table]:overflow-x-auto [&_img]:max-w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:max-w-full"
                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedEmail.html) }}
                   />
                 ) : (
-                  <div className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
+                  <div className="whitespace-pre-wrap font-sans text-xs sm:text-sm leading-relaxed text-foreground break-words">
                     {selectedEmail.text || "(No message content)"}
                   </div>
                 )}
               </ScrollArea>
 
               {/* Reader Actions Footer */}
-              <DialogFooter className="p-4 bg-muted/20 border-t flex flex-row sm:justify-between items-center gap-2">
-                <div className="flex items-center gap-2">
+              <DialogFooter className="p-3 sm:p-4 bg-muted/20 border-t flex flex-row items-center justify-between gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
                   <Button
                     variant="default"
                     onClick={() => {
                       handleReply(selectedEmail);
                       setSelectedEmail(null);
                     }}
-                    className="gap-2 text-xs h-8"
+                    className="flex-1 sm:flex-initial gap-1.5 text-xs h-8 px-2.5 sm:px-3 font-semibold shadow-xs"
                   >
-                    <Reply className="h-3.5 w-3.5" />
-                    Reply
+                    <Reply className="h-3.5 w-3.5 shrink-0" />
+                    <span>Reply</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleToggleRead(selectedEmail)}
-                    className="gap-1.5 text-xs h-8"
+                    className="gap-1.5 text-xs h-8 px-2 sm:px-3 shrink-0"
                   >
-                    {selectedEmail.isRead ? <Mail className="h-3.5 w-3.5" /> : <MailOpen className="h-3.5 w-3.5" />}
-                    <span>{selectedEmail.isRead ? "Mark as Unread" : "Mark as Read"}</span>
+                    {selectedEmail.isRead ? <Mail className="h-3.5 w-3.5 shrink-0" /> : <MailOpen className="h-3.5 w-3.5 shrink-0" />}
+                    <span className="hidden sm:inline">{selectedEmail.isRead ? "Mark as Unread" : "Mark as Read"}</span>
+                    <span className="sm:hidden">{selectedEmail.isRead ? "Unread" : "Read"}</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleCopyBody(selectedEmail.text || selectedEmail.html)}
-                    className="gap-1.5 text-xs h-8"
+                    className="gap-1 text-xs h-8 px-2 sm:px-3 shrink-0"
+                    title="Copy message body"
                   >
-                    {copiedBody ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                    <span>{copiedBody ? "Copied" : "Copy Body"}</span>
+                    {copiedBody ? <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
+                    <span className="hidden sm:inline">{copiedBody ? "Copied" : "Copy Body"}</span>
                   </Button>
                 </div>
 
-                <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)} className="text-xs h-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedEmail(null)}
+                  className="text-xs h-8 px-2.5 sm:px-3 shrink-0"
+                >
                   Close
                 </Button>
               </DialogFooter>
