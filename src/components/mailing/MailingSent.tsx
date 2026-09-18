@@ -455,18 +455,18 @@ export function MailingSent() {
 
       {/* Message Preview Dialog */}
       <Dialog open={!!selectedMail} onOpenChange={(open) => !open && setSelectedMail(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+        <DialogContent className="w-[95vw] sm:w-full max-w-3xl h-[88vh] sm:h-auto sm:max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl sm:rounded-xl">
           {selectedMail && (
             <>
               {/* Dialog Header */}
-              <DialogHeader className="p-5 sm:p-6 pb-4 border-b bg-muted/20 space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <DialogTitle className="text-lg sm:text-xl font-bold leading-tight">
+              <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 border-b bg-muted/20 space-y-2 sm:space-y-3 text-left">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1 flex-1 min-w-0 pr-6 sm:pr-0">
+                    <DialogTitle className="text-base sm:text-xl font-bold leading-snug break-words">
                       {selectedMail.subject}
                     </DialogTitle>
                     {selectedMail.sender_email && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
                         <strong>Dispatched by:</strong>{" "}
                         {selectedMail.sender_name
                           ? `${selectedMail.sender_name} <${selectedMail.sender_email}>`
@@ -477,7 +477,7 @@ export function MailingSent() {
                   <Badge
                     variant={selectedMail.status === "sent" ? "outline" : "destructive"}
                     className={cn(
-                      "text-xs capitalize font-medium",
+                      "text-xs capitalize font-medium shrink-0",
                       selectedMail.status === "sent" &&
                         "text-emerald-600 bg-emerald-500/10 border-emerald-500/20"
                     )}
@@ -487,20 +487,20 @@ export function MailingSent() {
                 </div>
 
                 {/* Dispatch Details Strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-xs">
-                  <div className="bg-background border rounded-lg p-2">
-                    <span className="text-muted-foreground block text-[11px]">Audience</span>
-                    <span className="font-semibold capitalize text-foreground">{selectedMail.mode}</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 pt-0.5 sm:pt-1 text-xs">
+                  <div className="bg-background border rounded-lg p-1.5 sm:p-2 min-w-0">
+                    <span className="text-muted-foreground block text-[10px] sm:text-[11px]">Audience</span>
+                    <span className="font-semibold capitalize text-foreground truncate block text-xs sm:text-sm">{selectedMail.mode}</span>
                   </div>
-                  <div className="bg-background border rounded-lg p-2">
-                    <span className="text-muted-foreground block text-[11px]">Recipients</span>
-                    <span className="font-semibold text-foreground">
+                  <div className="bg-background border rounded-lg p-1.5 sm:p-2 min-w-0">
+                    <span className="text-muted-foreground block text-[10px] sm:text-[11px]">Recipients</span>
+                    <span className="font-semibold text-foreground truncate block text-xs sm:text-sm">
                       {getRecipientCount(selectedMail.recipients)} recipient{getRecipientCount(selectedMail.recipients) === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <div className="bg-background border rounded-lg p-2 col-span-2 sm:col-span-1">
-                    <span className="text-muted-foreground block text-[11px]">Sent Date</span>
-                    <span className="font-semibold text-foreground">
+                  <div className="bg-background border rounded-lg p-1.5 sm:p-2 col-span-2 sm:col-span-1 min-w-0">
+                    <span className="text-muted-foreground block text-[10px] sm:text-[11px]">Sent Date</span>
+                    <span className="font-semibold text-foreground truncate block text-xs sm:text-sm">
                       {selectedMail.sent_at ? format(new Date(selectedMail.sent_at), "PPP p") : "-"}
                     </span>
                   </div>
@@ -509,35 +509,35 @@ export function MailingSent() {
 
               {/* Error Callout if Failed */}
               {selectedMail.error_msg && (
-                <div className="p-3.5 bg-destructive/10 border-b text-xs text-destructive flex items-center gap-2">
+                <div className="p-3 bg-destructive/10 border-b text-xs text-destructive flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
-                  <div>
+                  <div className="break-words">
                     <strong>Delivery Error:</strong> {selectedMail.error_msg}
                   </div>
                 </div>
               )}
 
               {/* Body Content */}
-              <ScrollArea className="flex-1 p-5 sm:p-6 overflow-y-auto max-h-[48vh] bg-background">
+              <ScrollArea className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto bg-background">
                 <div
-                  className="prose dark:prose-invert max-w-none text-sm leading-relaxed"
+                  className="prose dark:prose-invert max-w-none text-xs sm:text-sm leading-relaxed overflow-x-auto break-words [&_table]:max-w-full [&_table]:overflow-x-auto [&_img]:max-w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:max-w-full"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedMail.body) }}
                 />
               </ScrollArea>
 
               {/* Dialog Footer */}
-              <DialogFooter className="p-4 bg-muted/20 border-t flex flex-row sm:justify-between items-center gap-2">
+              <DialogFooter className="p-3 sm:p-4 bg-muted/20 border-t flex flex-row items-center justify-between gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleCopyBody(selectedMail.body)}
-                  className="gap-1.5 text-xs h-8"
+                  className="gap-1.5 text-xs h-8 px-3"
                 >
                   {copiedBody ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
                   <span>{copiedBody ? "Copied" : "Copy Content"}</span>
                 </Button>
 
-                <Button variant="outline" size="sm" onClick={() => setSelectedMail(null)} className="text-xs h-8">
+                <Button variant="outline" size="sm" onClick={() => setSelectedMail(null)} className="text-xs h-8 px-3">
                   Close
                 </Button>
               </DialogFooter>

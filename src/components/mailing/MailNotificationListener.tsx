@@ -70,6 +70,13 @@ export function MailNotificationListener() {
         console.debug("Failed to fetch initial mail notifications:", err);
       });
 
+    // Register service worker for mobile and background notifications
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch((err) => {
+        console.debug("ServiceWorker registration failed:", err);
+      });
+    }
+
     // Connect to socket and join mail room
     const initSocket = async () => {
       try {
@@ -83,7 +90,7 @@ export function MailNotificationListener() {
           socket.emit("mail:joinRoom", { token });
         });
 
-        socket.on("mail:newEmail", (payload: any) => {
+        socket.on("mail:newEmail", async (payload: any) => {
           if (!mounted) return;
 
           const emailId = payload.id || payload._id || "";
@@ -137,25 +144,44 @@ export function MailNotificationListener() {
             }
           );
 
-          // Trigger native browser notification if allowed
+          // Trigger native browser notification if allowed (supports mobile Android Chrome + Desktop)
           if (
             typeof window !== "undefined" &&
             "Notification" in window &&
             Notification.permission === "granted"
           ) {
-            try {
-              const desktopNotif = new Notification(`New email from ${fromName}`, {
-                body: payload.subject || payload.snippet || "New incoming message",
-                icon: "/Logo.ico",
-                tag: emailId || undefined,
-              });
-              desktopNotif.onclick = () => {
-                window.focus();
-                router.push(targetInboxUrl);
-                desktopNotif.close();
-              };
-            } catch (err) {
-              console.debug("Failed to create desktop notification:", err);
+            const notifTitle = `New email from ${fromName}`;
+            const notifOptions: NotificationOptions = {
+              body: payload.subject || payload.snippet || "New incoming message",
+              icon: "/Logo.jpg",
+              tag: emailId || undefined,
+              data: { url: targetInboxUrl },
+            };
+
+            let swTriggered = false;
+            if ("serviceWorker" in navigator) {
+              try {
+                const reg = await navigator.serviceWorker.ready;
+                if (reg && "showNotification" in reg) {
+                  await reg.showNotification(notifTitle, notifOptions);
+                  swTriggered = true;
+                }
+              } catch (swErr) {
+                console.debug("ServiceWorker showNotification failed:", swErr);
+              }
+            }
+
+            if (!swTriggered) {
+              try {
+                const desktopNotif = new Notification(notifTitle, notifOptions);
+                desktopNotif.onclick = () => {
+                  window.focus();
+                  router.push(targetInboxUrl);
+                  desktopNotif.close();
+                };
+              } catch (err) {
+                console.debug("Failed to create desktop notification:", err);
+              }
             }
           }
         });
