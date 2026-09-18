@@ -11,7 +11,7 @@ export function BranchActionBanner() {
   }
 
   return (
-    <p className="text-xs text-muted-foreground">
+    <p className="hidden xl:inline text-xs text-muted-foreground whitespace-nowrap">
       Showing data from all branches.
     </p>
   );

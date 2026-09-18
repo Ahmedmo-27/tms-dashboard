@@ -350,15 +350,15 @@ export function CommandPalette() {
         type="button"
         variant="outline"
         data-walkthrough="command-palette-btn"
-        className="h-9 w-9 shrink-0 justify-center gap-2 px-0 text-muted-foreground sm:h-9 sm:w-[220px] sm:justify-start sm:px-3"
+        className="h-8 w-8 shrink-0 justify-center gap-2 px-0 text-muted-foreground hover:text-foreground md:h-8 md:w-[140px] md:justify-start md:px-2.5 lg:h-9 lg:w-[200px] xl:w-[220px]"
         onClick={() => setOpen(true)}
         aria-label="Search"
       >
-        <Search className="h-4 w-4 shrink-0" />
-        <span className="hidden flex-1 truncate text-left text-sm sm:inline">
+        <Search className="h-3.5 w-3.5 shrink-0" />
+        <span className="hidden flex-1 truncate text-left text-xs sm:text-sm md:inline">
           Search...
         </span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center rounded border bg-muted px-1.5 font-mono text-[10px] font-medium sm:inline-flex">
+        <kbd className="pointer-events-none hidden h-4.5 select-none items-center rounded border bg-muted px-1.5 font-mono text-[10px] font-medium lg:inline-flex">
           {isMac ? "⌘K" : "Ctrl+K"}
         </kbd>
       </Button>
