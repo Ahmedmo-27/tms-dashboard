@@ -93,6 +93,21 @@ export function MailNotificationListener() {
         socket.on("mail:newEmail", async (payload: any) => {
           if (!mounted) return;
 
+          // STRICT PRIVACY CHECK: Verify this incoming email was meant for this user
+          const currentUserId = String(authUser?._id || authUser?.id || coachUser?._id || coachUser?.id || "");
+          const myEmail = (authUser?.tmsEmail || authUser?.email || coachUser?.email || "").toLowerCase().trim();
+
+          if (payload.recipientUser && currentUserId && String(payload.recipientUser) !== currentUserId) {
+            return;
+          }
+          if (payload.recipientEmail && myEmail) {
+            const recStr = String(payload.recipientEmail).toLowerCase().trim();
+            const toStr = String(payload.to || "").toLowerCase();
+            if (recStr !== myEmail && !toStr.includes(myEmail)) {
+              return;
+            }
+          }
+
           const emailId = payload.id || payload._id || "";
           dispatch(incrementUnreadCount(1));
           dispatch(addMailNotification(mapEmailToNotificationItem({
