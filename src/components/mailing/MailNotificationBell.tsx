@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { RootState } from "@/lib/store/store";
 import {
   markMailNotificationRead,
   markAllMailNotificationsRead,
+  setMailNotifications,
+  setUnreadCount,
+  mapEmailToNotificationItem,
   MailNotificationItem,
 } from "@/lib/store/features/mailSlice";
 import { tms } from "@/lib/tms-api";
 import { formatDistanceToNow } from "date-fns";
-import { Bell, Mail, CheckCheck, ExternalLink, Inbox } from "lucide-react";
+import { Bell, Mail, CheckCheck, ExternalLink, Inbox, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,6 +47,7 @@ export function MailNotificationBell() {
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(false);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const authUser = useAppSelector((state: RootState) => state.auth.user);
   const coachUser = useAppSelector((state: RootState) => state.coach);
@@ -53,6 +57,44 @@ export function MailNotificationBell() {
   const hasMailingAccess = ["management", "admin", "managing_coach", "mailer"].includes(role);
   const isManagingCoach = role === "managing_coach";
   const inboxUrl = isManagingCoach ? "/coach/mailing/received" : "/dashboard/mailing/received";
+
+  useEffect(() => {
+    if (!open || !hasMailingAccess) return;
+    let mounted = true;
+
+    if (notifications.length === 0) {
+      setIsLoading(true);
+    }
+
+    tms.get("/admin/mail/inbox", { params: { limit: 15 } })
+      .then((res) => {
+        if (!mounted) return;
+        const data = res.data?.data || res.data;
+        const rawEmails = Array.isArray(data) ? data : (data?.emails || []);
+        if (Array.isArray(rawEmails)) {
+          const items = rawEmails.map(mapEmailToNotificationItem);
+          dispatch(setMailNotifications(items));
+        }
+      })
+      .catch((err) => {
+        console.debug("Failed to refresh mail notifications on popover open:", err);
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+
+    tms.get("/admin/mail/unread-count")
+      .then((res) => {
+        if (!mounted) return;
+        const count = res.data?.data?.unreadCount ?? res.data?.unreadCount ?? 0;
+        dispatch(setUnreadCount(count));
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, [open, hasMailingAccess, dispatch, notifications.length]);
 
   if (!hasMailingAccess) {
     return null;
@@ -90,7 +132,7 @@ export function MailNotificationBell() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative h-9 w-9"
+          className="relative h-8 w-8 sm:h-8.5 sm:w-8.5 lg:h-9 lg:w-9 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/60"
           aria-label="Mail Notifications"
           title="Mail Notifications"
         >
@@ -136,7 +178,12 @@ export function MailNotificationBell() {
 
         {/* Notifications List */}
         <ScrollArea className="max-h-[340px] overflow-y-auto divide-y">
-          {notifications.length === 0 ? (
+          {isLoading && notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-10 px-4 text-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Loading notifications...</p>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-10 px-4 text-center">
               <div className="h-10 w-10 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground">
                 <Inbox className="h-5 w-5" />
@@ -160,7 +207,7 @@ export function MailNotificationBell() {
 
               return (
                 <div
-                  key={item.id}
+                  key={item.id || item._id}
                   onClick={() => handleOpenEmail(item)}
                   className={cn(
                     "flex items-start gap-3 p-3 transition-colors cursor-pointer hover:bg-muted/50 text-left",

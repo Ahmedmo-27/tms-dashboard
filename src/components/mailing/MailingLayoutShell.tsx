@@ -12,13 +12,15 @@ import {
   Copy, 
   Check, 
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tms } from "@/lib/tms-api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
+import { MailNotificationPermissionBanner } from "./MailNotificationPermissionBanner";
 
 interface MailingLayoutShellProps {
   basePath: string;
@@ -29,6 +31,7 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
   const pathname = usePathname();
   const [profile, setProfile] = useState<{ email: string; name: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
 
   useEffect(() => {
     tms.get("/admin/mail/profile")
@@ -39,6 +42,10 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
         }
       })
       .catch(() => {});
+
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setBrowserPermission(Notification.permission);
+    }
   }, []);
 
   const handleCopyEmail = () => {
@@ -47,6 +54,31 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
       setCopied(true);
       toast.success("Mailbox address copied!");
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleEnableAlerts = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission === "denied") {
+      toast.error("Notifications are blocked in your browser. Allow them in your address bar site settings.", { duration: 5000 });
+      return;
+    }
+    try {
+      const res = await Notification.requestPermission();
+      setBrowserPermission(res);
+      if (res === "granted") {
+        toast.success("Desktop email notifications activated!");
+        try {
+          new Notification("The Mind Space", {
+            body: "Email notifications are now enabled!",
+            icon: "/Logo.ico",
+          });
+        } catch {}
+      } else if (res === "denied") {
+        toast.error("Notifications permission was denied.");
+      }
+    } catch (e) {
+      console.error("Failed to request notification permission:", e);
     }
   };
 
@@ -240,12 +272,34 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
                   </>
                 )}
               </Button>
+
+              {/* Desktop Alerts Status */}
+              <div className="pt-2.5 border-t flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Bell className="h-3.5 w-3.5" />
+                  <span>Desktop Alerts</span>
+                </div>
+                {browserPermission === "granted" ? (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                    Active
+                  </Badge>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleEnableAlerts}
+                    className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
+                  >
+                    Activate
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </aside>
 
         {/* Main Content Area */}
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 space-y-4">
+          <MailNotificationPermissionBanner />
           {children}
         </main>
       </div>
