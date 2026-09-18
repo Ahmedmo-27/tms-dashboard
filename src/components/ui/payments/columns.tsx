@@ -1,6 +1,12 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "../badge";
 import { Avatar, AvatarFallback } from "../avatar";
+import { Button } from "../button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import {
@@ -10,10 +16,18 @@ import {
   Building2,
   Phone,
   MapPin,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { OutflowPurposeCell } from "./outflow-details-dialog";
+import {
+  isOutflowTransaction,
+  type RawPaymentRecord,
+} from "@/lib/utils/parsers/payments-parser";
 
 export type Payment = {
+  _id?: string;
+  id?: string;
   memberName: string;
   phone: string;
   purpose: string;
@@ -26,6 +40,9 @@ export type Payment = {
   isCashOut?: boolean;
   refundReason?: string;
   paymentLabel?: string | null;
+  note?: string;
+  locationId?: string;
+  rawPayment?: RawPaymentRecord;
 };
 
 const getPaymentMethodIcon = (method: string) => {
@@ -193,3 +210,77 @@ export const columns: ColumnDef<Payment>[] = [
     },
   },
 ];
+
+export function getPaymentColumns({
+  isManagement,
+  onEdit,
+  onDelete,
+}: {
+  isManagement?: boolean;
+  onEdit?: (payment: Payment) => void;
+  onDelete?: (payment: Payment) => void;
+} = {}): ColumnDef<Payment>[] {
+  const cols = [...columns];
+
+  if (isManagement && (onEdit || onDelete)) {
+    cols.push({
+      id: "actions",
+      header: () => <span className="sr-only">Actions</span>,
+      size: 90,
+      cell: ({ row }) => {
+        const payment = row.original;
+        const isMoneyOut = isOutflowTransaction(payment);
+        if (isMoneyOut) {
+          return null;
+        }
+
+        const isRefunded = Boolean(payment.isRefunded);
+
+        return (
+          <div className="flex items-center justify-end gap-1 shrink-0">
+            {onEdit && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:bg-muted text-muted-foreground hover:text-foreground"
+                    onClick={() => onEdit(payment)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">Edit payment</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit Payment</TooltipContent>
+              </Tooltip>
+            )}
+            {onDelete && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:bg-destructive/10 text-muted-foreground hover:text-destructive disabled:opacity-40"
+                    disabled={isRefunded}
+                    onClick={() => onDelete(payment)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete payment</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isRefunded
+                    ? "Refunded payments cannot be deleted"
+                    : "Delete Payment"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        );
+      },
+    });
+  }
+
+  return cols;
+}
+

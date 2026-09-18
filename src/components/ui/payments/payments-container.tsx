@@ -1,7 +1,11 @@
 "use client";
 
-import { Payment, columns } from "./columns";
+import { Payment, columns, getPaymentColumns } from "./columns";
 import { DataTable } from "./data-table";
+import { EditPaymentDialog } from "./edit-payment-dialog";
+import { DeletePaymentDialog } from "./delete-payment-dialog";
+import { useAppSelector } from "@/lib/hooks";
+import { isManagementRole } from "@/lib/config/roles";
 import { Card, CardHeader, CardTitle, CardContent } from "../card";
 import { Input } from "../input";
 import { Button } from "../button";
@@ -58,6 +62,35 @@ export default function PaymentsContainer({
 
   const isOutflow = (payment: Payment) => isOutflowTransaction(payment);
   const [exportOpen, setExportOpen] = useState(false);
+
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const isManagement = isManagementRole(currentUser?.role);
+
+  const [paymentToEdit, setPaymentToEdit] = useState<Payment | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const handleOpenEdit = (p: Payment) => {
+    setPaymentToEdit(p);
+    setEditDialogOpen(true);
+  };
+
+  const handleOpenDelete = (p: Payment) => {
+    setPaymentToDelete(p);
+    setDeleteDialogOpen(true);
+  };
+
+  const tableColumns = useMemo(
+    () =>
+      getPaymentColumns({
+        isManagement,
+        onEdit: handleOpenEdit,
+        onDelete: handleOpenDelete,
+      }),
+    [isManagement]
+  );
 
   const effectiveStart = initialStartDate || initialDate;
   const effectiveEnd = initialEndDate || initialStartDate || initialDate;
@@ -533,7 +566,13 @@ export default function PaymentsContainer({
                 </div>
               </div>
             ) : filteredPayments.length > 0 ? (
-              <DataTable columns={columns} data={filteredPayments} />
+              <DataTable
+                columns={tableColumns}
+                data={filteredPayments}
+                isManagement={isManagement}
+                onEdit={handleOpenEdit}
+                onDelete={handleOpenDelete}
+              />
             ) : payments.length > 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Search className="h-12 w-12 text-muted-foreground/50" />
@@ -568,6 +607,19 @@ export default function PaymentsContainer({
           </div>
         </CardContent>
       </Card>
+
+      <EditPaymentDialog
+        payment={paymentToEdit}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onPaymentUpdated={() => router.refresh()}
+      />
+      <DeletePaymentDialog
+        payment={paymentToDelete}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onPaymentDeleted={() => router.refresh()}
+      />
     </div>
   );
 }
