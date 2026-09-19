@@ -35,7 +35,9 @@ import {
   FileText, 
   Check, 
   Trash2,
-  HelpCircle
+  HelpCircle,
+  ChevronDown,
+  SlidersHorizontal
 } from "lucide-react";
 
 // UI Components
@@ -46,6 +48,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -72,9 +75,9 @@ type FormValues = z.infer<typeof formSchema>;
 const AUDIENCE_MODES = [
   {
     id: "manual",
-    title: "Direct / Specific",
+    title: "Dedicated / Direct",
     badge: "Default",
-    description: "Send to specific email addresses or members",
+    description: "Send to specific email addresses or dedicated recipients",
     icon: AtSign,
     color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
   },
@@ -163,11 +166,13 @@ function ComposeForm() {
   const replyTo = searchParams.get("replyTo");
   const initialSubject = searchParams.get("subject");
 
-  // Default is "manual" as requested
+  // Default is "manual" (dedicated) as requested, with sending options collapsed by default
   const [activeTab, setActiveTab] = useState("manual");
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"write" | "preview">("write");
   const [isLoading, setIsLoading] = useState(false);
   const [attachment, setAttachment] = useState<{ name: string; data: string; size?: number } | null>(null);
+  const [showAttachmentArea, setShowAttachmentArea] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [pendingData, setPendingData] = useState<any>(null);
   const [senderProfile, setSenderProfile] = useState<{ email: string; name: string } | null>(null);
@@ -187,6 +192,9 @@ function ComposeForm() {
   const subjectValue = watch("subject") || "";
   const bodyValue = watch("body") || "";
   const toValue = watch("to") || "";
+
+  const selectedMode = AUDIENCE_MODES.find((m) => m.id === activeTab) || AUDIENCE_MODES[0];
+  const SelectedIcon = selectedMode.icon;
 
   const { ref: bodyRef, ...bodyRest } = register("body");
 
@@ -239,6 +247,7 @@ function ComposeForm() {
 
   const removeAttachment = () => {
     setAttachment(null);
+    setShowAttachmentArea(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -331,6 +340,7 @@ function ComposeForm() {
       );
       reset({ subject: "", body: "", to: "" });
       setAttachment(null);
+      setShowAttachmentArea(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error: any) {
       toast.error(error?.response?.data?.message || error?.response?.data?.error || "Failed to send email");
@@ -373,65 +383,127 @@ function ComposeForm() {
         </CardHeader>
 
         <CardContent className="p-4 sm:p-6 space-y-6">
-          {/* 1. Audience Selector Cards */}
-          <div className="space-y-3" data-walkthrough="mail-send-mode">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-primary" />
-                Select Audience
-              </Label>
-              <span className="text-xs text-muted-foreground">Choose who receives this email</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {AUDIENCE_MODES.map((mode) => {
-                const isSelected = activeTab === mode.id;
-                const Icon = mode.icon;
-
-                return (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => handleAudienceChange(mode.id)}
-                    className={cn(
-                      "relative flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer select-none",
-                      isSelected
-                        ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs"
-                        : "border-border hover:border-muted-foreground/30 hover:bg-muted/30"
-                    )}
-                  >
-                    <div className="flex items-center justify-between w-full mb-2">
-                      <div className={cn("p-2 rounded-lg", mode.color)}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      {isSelected ? (
-                        <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px]">
-                          <Check className="h-3 w-3 stroke-[3]" />
-                        </div>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0">
-                          {mode.badge}
-                        </Badge>
+          {/* 1. Collapsible Audience / Sending Options Selector */}
+          <Collapsible
+            open={isOptionsOpen}
+            onOpenChange={setIsOptionsOpen}
+            className="rounded-xl border bg-card overflow-hidden shadow-2xs transition-all"
+            data-walkthrough="mail-send-mode"
+          >
+            {/* Header summary bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 gap-3 bg-muted/15">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={cn("p-2 rounded-lg shrink-0", selectedMode.color)}>
+                  <SelectedIcon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Sending Option:
+                    </span>
+                    <span className="font-semibold text-sm text-foreground">
+                      {selectedMode.title}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10px] font-medium px-1.5 py-0",
+                        selectedMode.id === "manual"
+                          ? "border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                          : ""
                       )}
-                    </div>
-                    <div className="font-semibold text-sm text-foreground">{mode.title}</div>
-                    <div className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                      {mode.description}
-                    </div>
-                  </button>
-                );
-              })}
+                    >
+                      {selectedMode.id === "manual" ? "Dedicated Recipient" : selectedMode.badge}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-xl">
+                    {selectedMode.description}
+                  </p>
+                </div>
+              </div>
+
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-xs gap-1.5 shrink-0 self-start sm:self-auto font-medium cursor-pointer"
+                >
+                  <SlidersHorizontal className="h-3 w-3 text-muted-foreground" />
+                  <span>{isOptionsOpen ? "Hide Sending Options" : "Change Sending Option"}</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 transition-transform duration-200 text-muted-foreground",
+                      isOptionsOpen && "rotate-180"
+                    )}
+                  />
+                </Button>
+              </CollapsibleTrigger>
             </div>
-          </div>
+
+            {/* Collapsible content with cards */}
+            <CollapsibleContent>
+              <div className="p-3.5 sm:p-4 space-y-3 bg-background/50 border-t border-border/60">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Choose who receives this email:
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Dedicated is the default option
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {AUDIENCE_MODES.map((mode) => {
+                    const isSelected = activeTab === mode.id;
+                    const Icon = mode.icon;
+
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => handleAudienceChange(mode.id)}
+                        className={cn(
+                          "relative flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer select-none",
+                          isSelected
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs"
+                            : "border-border hover:border-muted-foreground/30 hover:bg-muted/30"
+                        )}
+                      >
+                        <div className="flex items-center justify-between w-full mb-2">
+                          <div className={cn("p-2 rounded-lg", mode.color)}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          {isSelected ? (
+                            <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px]">
+                              <Check className="h-3 w-3 stroke-[3]" />
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0">
+                              {mode.badge}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="font-semibold text-sm text-foreground">{mode.title}</div>
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                          {mode.description}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* 2. Manual Recipients Input */}
-            {activeTab === "manual" && (
+            {/* 2. Dedicated Recipient Input or Group Dispatch Banner */}
+            {activeTab === "manual" ? (
               <div className="space-y-2.5 p-4 rounded-xl border bg-muted/20 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="to" className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                     <AtSign className="h-3.5 w-3.5 text-amber-500" />
-                    Recipient Email Addresses
+                    Dedicated Recipient Email Addresses
                   </Label>
                   {manualEmailsList.length > 0 && (
                     <Badge variant="secondary" className="text-xs font-normal">
@@ -464,7 +536,7 @@ function ComposeForm() {
                             const updated = manualEmailsList.filter((_, i) => i !== idx).join(", ");
                             setValue("to", updated, { shouldValidate: true });
                           }}
-                          className="hover:text-destructive text-muted-foreground ml-1"
+                          className="hover:text-destructive text-muted-foreground ml-1 cursor-pointer"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -478,6 +550,21 @@ function ComposeForm() {
                   Separate multiple addresses with commas.
                 </p>
                 {errors.to && <p className="text-xs text-destructive">{errors.to.message}</p>}
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 p-4 rounded-xl border bg-muted/20 text-xs animate-in fade-in duration-200">
+                <div className={cn("p-2 rounded-lg shrink-0", selectedMode.color)}>
+                  <SelectedIcon className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <div className="font-semibold text-foreground text-sm flex items-center gap-2">
+                    <span>Broadcasting to: {selectedMode.title}</span>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">Group Dispatch</Badge>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    This email will be dispatched automatically to all {selectedMode.description.toLowerCase()}. No individual recipient email addresses needed.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -705,7 +792,7 @@ function ComposeForm() {
                         {activeTab === "broadcast" && "All Active Users & Coaches (Broadcast)"}
                         {activeTab === "members" && "All Active Members"}
                         {activeTab === "coaches" && "All Coaches & Staff"}
-                        {activeTab === "manual" && (toValue || "Specific recipients")}
+                        {activeTab === "manual" && (toValue || "Dedicated recipients")}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -733,12 +820,7 @@ function ComposeForm() {
             </div>
 
             {/* 5. Attachment Section */}
-            <div className="space-y-2" data-walkthrough="mail-attachment">
-              <Label className="text-sm font-semibold flex items-center gap-1.5">
-                <Paperclip className="h-4 w-4 text-primary" />
-                Attachment (Optional)
-              </Label>
-
+            <div data-walkthrough="mail-attachment" className="pt-0.5">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -747,42 +829,94 @@ function ComposeForm() {
                 disabled={isLoading}
               />
 
-              {!attachment ? (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed rounded-xl p-4 sm:p-5 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-all text-center"
-                >
-                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                    <Paperclip className="h-4 w-4" />
+              {attachment ? (
+                <div className="space-y-1.5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Paperclip className="h-3.5 w-3.5 text-primary" />
+                      Attached File
+                    </Label>
                   </div>
-                  <div>
-                    <span className="text-sm font-semibold text-foreground">Click to upload an attachment</span>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      PDF, Images, or Documents up to 5MB
-                    </p>
+
+                  <div className="flex items-center justify-between p-2 sm:p-2.5 border rounded-lg bg-card shadow-2xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-xs truncate max-w-[200px] sm:max-w-xs md:max-w-md">
+                          {attachment.name}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {formatFileSize(attachment.size)}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={removeAttachment}
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0 cursor-pointer"
+                      title="Remove attachment"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ) : showAttachmentArea ? (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Paperclip className="h-3.5 w-3.5 text-primary" />
+                      Attachment (Optional)
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAttachmentArea(false)}
+                      className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Close
+                    </Button>
+                  </div>
+
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border border-dashed rounded-lg p-2.5 sm:p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-all bg-muted/10 text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <Paperclip className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-foreground">Click to upload file</div>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          PDF, Images, or Documents up to 5MB
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] shrink-0 font-normal">
+                      Browse
+                    </Badge>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-3 border rounded-xl bg-card shadow-2xs">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <FileText className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-sm truncate">{attachment.name}</div>
-                      <div className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</div>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2">
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={removeAttachment}
-                    className="text-muted-foreground hover:text-destructive shrink-0"
-                    title="Remove attachment"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAttachmentArea(true)}
+                    className="h-8 px-2.5 text-xs gap-1.5 font-medium text-muted-foreground hover:text-foreground cursor-pointer rounded-lg border-dashed"
+                    title="Add an attachment"
                   >
-                    <X className="h-4 w-4" />
+                    <Paperclip className="h-3.5 w-3.5 text-primary" />
+                    <span>Attach File</span>
                   </Button>
+                  <span className="text-[11px] text-muted-foreground">Optional (PDF, Images, Docs up to 5MB)</span>
                 </div>
               )}
             </div>
@@ -795,6 +929,7 @@ function ComposeForm() {
                 onClick={() => {
                   reset({ subject: "", body: "", to: "" });
                   setAttachment(null);
+                  setShowAttachmentArea(false);
                 }}
                 disabled={isLoading}
                 className="w-full sm:w-auto text-xs text-muted-foreground hover:text-foreground"
@@ -809,7 +944,7 @@ function ComposeForm() {
                   className="w-full sm:w-auto gap-2 shadow-xs"
                 >
                   <Send className="h-4 w-4" />
-                  {isLoading ? "Dispatching..." : activeTab === "manual" ? "Send Direct Email" : `Broadcast to ${activeTab}`}
+                  {isLoading ? "Dispatching..." : activeTab === "manual" ? "Send Dedicated Email" : `Broadcast to ${selectedMode.title}`}
                 </Button>
               </div>
             </div>

@@ -421,7 +421,7 @@ export const walkthroughScenarios: Record<string, WalkthroughStep[]> = {
       route: "/dashboard/mailing",
       title: "Audience Targeting",
       description:
-        "Choose who receives your email: Direct (specific addresses), Broadcast All (all active members & staff), Active Members, or Coaches.",
+        "Choose who receives your email: Dedicated (specific addresses), Broadcast All (all active members & staff), Active Members, or Coaches.",
       placement: "bottom",
       fallbackSelector: "main",
     },
