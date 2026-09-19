@@ -69,7 +69,7 @@ const MODE_CONFIG: Record<string, { label: string; icon: any; color: string }> =
     color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
   },
   manual: {
-    label: "Direct / Manual",
+    label: "Dedicated / Direct",
     icon: AtSign,
     color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
   },
@@ -295,7 +295,7 @@ export function MailingSent() {
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {aud === "all" ? "All Targets" : aud}
+                      {aud === "all" ? "All Targets" : aud === "manual" ? "Dedicated" : aud}
                     </button>
                   ))}
                 </div>
