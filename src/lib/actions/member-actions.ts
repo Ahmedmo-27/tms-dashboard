@@ -12,11 +12,6 @@ import { parseStateError } from "../utils/state-errors";
 import { bookClass, bookDropIn, cancelBooking } from "../data/bookings";
 import { nonUserDataSchema } from "../schemas/newUserSchema";
 import { bookClassSchema } from "../schemas/bookClassSchema";
-import { getMembers } from "../data/member";
-import { getPackages } from "../data/package";
-import { getNextScheduledClasses, getScheduledClasses } from "../data/schedule";
-import { getBookingEligibility } from "../utils/booking-eligibility";
-import { ApiError } from "@/core/api-error";
 import { getAuthenticatedUser } from "../data/auth";
 import { canOverrideBookingTimeRestrictions } from "../config/roles";
 
@@ -213,68 +208,15 @@ export const bookClassAction = async (_prevState: any, formData: FormData) => {
     const overrideTimeRestrictions =
       formData.get("overrideTimeRestrictions") === "true";
 
-    bookClassSchema.parse({ uid, clsId, overrideTimeRestrictions: String(overrideTimeRestrictions) });
+    bookClassSchema.parse({
+      uid,
+      clsId,
+      overrideTimeRestrictions: String(overrideTimeRestrictions),
+    });
 
     const authUser = await getAuthenticatedUser();
     const canOverride = canOverrideBookingTimeRestrictions(authUser?.role);
-
-    const [memberData, catalogPackages, fullSchedule, upcomingSchedule] =
-      await Promise.all([
-        getMembers(null, 1, 1, uid),
-        getPackages(),
-        getScheduledClasses(),
-        getNextScheduledClasses(),
-      ]);
-
-    const scheduledClasses = [
-      ...fullSchedule,
-      ...upcomingSchedule.filter(
-        (cls) => !fullSchedule.some((existing) => existing._id === cls._id)
-      ),
-    ];
-
-    const member = memberData.data[0];
-    if (!member) {
-      return {
-        success: false,
-        errors: { message: "Member not found" },
-        data: null,
-      };
-    }
-
-    const scheduledClass = scheduledClasses.find((cls) => cls._id === clsId);
-    if (!scheduledClass) {
-      return {
-        success: false,
-        errors: { message: "Scheduled class not found" },
-        data: null,
-      };
-    }
-
-    const eligibility = getBookingEligibility(
-      member,
-      scheduledClass,
-      catalogPackages,
-      scheduledClasses,
-      {
-        overrideTimeRestrictions:
-          overrideTimeRestrictions && canOverride,
-        allowOverbooking: true,
-      }
-    );
-
-    if (!eligibility.eligible) {
-      return {
-        success: false,
-        errors: {
-          message: eligibility.reason ?? "Member cannot book this class",
-        },
-        data: null,
-      };
-    }
-
-    const shouldOverrideTime =
-      overrideTimeRestrictions && canOverride;
+    const shouldOverrideTime = overrideTimeRestrictions && canOverride;
 
     const response = await bookClass(uid, clsId, {
       overrideTimeRestrictions: shouldOverrideTime,
