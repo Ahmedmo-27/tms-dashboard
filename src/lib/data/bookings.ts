@@ -11,8 +11,8 @@ export const bookClass = async (
     const response = await tms.post("/admin/book", {
       uid,
       scid: clsId,
-      ...(options?.overrideTimeRestrictions
-        ? { overrideTimeRestrictions: true }
+      ...(options?.overrideTimeRestrictions !== undefined
+        ? { overrideTimeRestrictions: options.overrideTimeRestrictions }
         : {}),
     });
     return response.data;

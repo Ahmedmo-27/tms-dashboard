@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { useCallback, useMemo, useState } from "react";
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { isSameDay } from "date-fns";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import {
@@ -53,6 +55,7 @@ export default function BookClass({
   member: Member;
   catalogPackages: Package[];
 }) {
+  const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
   const canOverrideTime = canOverrideBookingTimeRestrictions(
     user?.role as string | undefined
@@ -141,7 +144,12 @@ export default function BookClass({
       const result = await bookClassAction(currentState, formData);
 
       if (result.success) {
+        toast.success("Class booked successfully");
         setOpen(false);
+        setCls(null);
+        setSelectedDate("");
+        setOverrideTimeRestrictions(false);
+        router.refresh();
         return initialState;
       }
       return {
@@ -306,7 +314,7 @@ export default function BookClass({
                 className="cursor-pointer"
                 disabled={!canSubmit}
               >
-                Save changes
+                {pending ? "Saving…" : "Save changes"}
               </Button>
             </div>
           </form>
