@@ -96,10 +96,17 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       toast.error("Personal Training is not enabled for your account");
       router.replace("/coach/today");
     } else if (
-      (pathname.startsWith("/coach/schedule") || pathname.startsWith("/coach/scans")) &&
+      pathname.startsWith("/coach/schedule") &&
       !hasScheduledClasses
     ) {
       toast.error("Scheduled Classes are not enabled for your account");
+      router.replace("/coach/today");
+    } else if (
+      pathname.startsWith("/coach/scans") &&
+      !hasScheduledClasses &&
+      !hasPtSessions
+    ) {
+      toast.error("Scans monitor is not enabled for your account");
       router.replace("/coach/today");
     } else if (pathname.startsWith("/coach/mailing") && role !== "managing_coach") {
       toast.error("Mailing dashboard is not enabled for your account");
@@ -197,7 +204,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   ];
 
   const moreItems: NavItem[] = [
-    ...(hasScheduledClasses
+    ...(hasScheduledClasses || hasPtSessions
       ? [
           {
             href: "/coach/scans",

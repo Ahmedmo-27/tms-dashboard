@@ -51,6 +51,8 @@ import {
   type FailedScanPayload,
 } from "@/lib/socket";
 import { CoachScansSkeleton } from "@/components/ui/loading/coach-skeletons";
+import { AttendanceContainer } from "@/components/ui/scans/attendance-container";
+import { mapPtMethodToSheetLabel } from "@/lib/utils/copy-class-for-sheet";
 import {
   ConfirmAttendanceDialog,
   AttendanceConfirmationData,
@@ -65,6 +67,9 @@ interface CoachScan {
   time: string;
   method: string;
   status: "SUCCESS" | "FAILED" | "WILL_PAY";
+  statusDetail?: string;
+  bookingId?: string;
+  branchLabel?: string;
 }
 
 interface CoachClassScanData {
@@ -134,86 +139,6 @@ function statusColor(status: CoachScan["status"]) {
     default:
       return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
   }
-}
-
-// ─── PT Attendance Card ───────────────────────────────────────────────────────
-
-function PtAttendanceCard({
-  scans,
-  onSelect,
-}: {
-  scans: CoachScan[];
-  onSelect: (scan: CoachScan) => void;
-}) {
-  const successCount = scans.filter((s) => s.status === "SUCCESS").length;
-
-  return (
-    <Card data-walkthrough="coach-scans-pt" className="w-full col-span-full">
-      <CardHeader className="p-4">
-        <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            <span>{scans.length} scanned</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <UserCheck className="h-4 w-4" />
-            <span>{successCount} checked in</span>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-0">
-        <ScrollArea className="h-[250px] rounded-md border">
-          <div className="p-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Check-in Time</TableHead>
-                  <TableHead className="text-right">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {scans.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      No PT check-ins yet
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  scans.map((scan, i) => (
-                    <TableRow
-                      key={i}
-                      data-walkthrough="coach-scans-row"
-                      className="cursor-pointer"
-                      onClick={() => onSelect(scan)}
-                    >
-                      <TableCell className="font-medium">{scan.member}</TableCell>
-                      <TableCell>{scan.phone}</TableCell>
-                      <TableCell>
-                        {format(new Date(scan.time), "hh:mm a")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge className={cn("font-normal", statusColor(scan.status))}>
-                          {statusLabel(scan.status)}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          <ScrollBar orientation="horizontal" />
-          <ScrollBar orientation="vertical" />
-        </ScrollArea>
-      </CardContent>
-    </Card>
-  );
 }
 
 // ─── Class Scan Card ──────────────────────────────────────────────────────────
@@ -386,6 +311,7 @@ function ClassScanCard({
 export function CoachScansMonitor() {
   const coachApi = useCoachApi();
   const hasPtSessions = useAppSelector((state: RootState) => state.coach.hasPtSessions);
+  const hasScheduledClasses = useAppSelector((state: RootState) => state.coach.hasScheduledClasses);
   const token = useAppSelector((state: RootState) => state.coach.token);
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -463,7 +389,7 @@ export function CoachScansMonitor() {
     if (date) setSelectedDate(date);
   };
 
-  const isEmpty = classes.length === 0 && ptScans.length === 0;
+  const isEmpty = !hasPtSessions && classes.length === 0;
 
   // ── Render ──────────────────────────────────────────────────────────────
 
@@ -522,31 +448,41 @@ export function CoachScansMonitor() {
         <div className="space-y-6">
           {hasPtSessions && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-                Personal Training
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                <PtAttendanceCard scans={ptScans} onSelect={setPeek} />
-              </div>
+              <AttendanceContainer
+                title="Today's Clients"
+                classScans={ptScans}
+                emptyMessage="No PT check-ins yet for this date."
+                memberHrefBuilder={(memberId) => `/coach/clients/${memberId}`}
+                onSelect={setPeek}
+                dataWalkthrough="coach-scans-pt"
+                rowWalkthrough="coach-scans-row"
+                sheetCopy={{ mapMethod: mapPtMethodToSheetLabel }}
+              />
             </div>
           )}
 
-          {classes.length > 0 && (
+          {hasScheduledClasses && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 Scheduled Classes
               </h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {classes.map((cls) => (
-                  <ClassScanCard
-                    key={cls.scheduledClassId}
-                    data={cls}
-                    currentTime={currentTime}
-                    onSelect={setPeek}
-                    onConfirmAttendance={setConfirmingSession}
-                  />
-                ))}
-              </div>
+              {classes.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                  No scheduled classes for this date.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {classes.map((cls) => (
+                    <ClassScanCard
+                      key={cls.scheduledClassId}
+                      data={cls}
+                      currentTime={currentTime}
+                      onSelect={setPeek}
+                      onConfirmAttendance={setConfirmingSession}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
