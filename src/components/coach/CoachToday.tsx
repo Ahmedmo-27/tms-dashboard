@@ -246,7 +246,7 @@ export function CoachToday() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <ScanLine className="h-4 w-4" />
-                Scans
+                Scans Monitor
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -268,7 +268,7 @@ export function CoachToday() {
                 </div>
               )}
               <Button asChild variant="outline" size="sm" className="mt-3">
-                <Link href="/coach/scans">Open scans</Link>
+                <Link href="/coach/scans">Open scans monitor</Link>
               </Button>
             </CardContent>
           </Card>

@@ -70,7 +70,7 @@ function titleForPath(pathname: string, items: NavItem[]): string {
   if (hit) return hit.label;
   if (pathname.startsWith("/coach/clients/")) return "Client";
   if (pathname.startsWith("/coach/settings")) return "Settings";
-  if (pathname.startsWith("/coach/scans")) return "Scans";
+  if (pathname.startsWith("/coach/scans")) return "Scans Monitor";
   if (pathname.startsWith("/coach/mailing")) return "Mailing";
   return "Coach Portal";
 }
@@ -190,6 +190,17 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
           },
         ]
       : []),
+    ...(hasPtSessions || hasScheduledClasses
+      ? [
+          {
+            href: "/coach/scans",
+            label: "Scans Monitor",
+            icon: ScanLine,
+            match: (p: string) => p.startsWith("/coach/scans"),
+            dataWalkthrough: "coach-nav-scans",
+          },
+        ]
+      : []),
     ...(hasScheduledClasses
       ? [
           {
@@ -204,17 +215,6 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   ];
 
   const moreItems: NavItem[] = [
-    ...(hasScheduledClasses || hasPtSessions
-      ? [
-          {
-            href: "/coach/scans",
-            label: "Scans",
-            icon: ScanLine,
-            match: (p: string) => p.startsWith("/coach/scans"),
-            dataWalkthrough: "coach-nav-scans",
-          },
-        ]
-      : []),
     ...(role === "managing_coach"
       ? [
           {
