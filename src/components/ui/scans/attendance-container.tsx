@@ -27,6 +27,11 @@ export interface AttendanceContainerProps {
     mapMethod: (method: string) => MethodSheetMapping;
     classPrice?: string;
   };
+  emptyMessage?: string;
+  memberHrefBuilder?: (memberId: string) => string;
+  onSelect?: (scan: ClassScan) => void;
+  dataWalkthrough?: string;
+  rowWalkthrough?: string;
 }
 
 export const AttendanceContainer = ({
@@ -35,6 +40,11 @@ export const AttendanceContainer = ({
   headerActions,
   sheetCopy,
   showBranch = false,
+  emptyMessage,
+  memberHrefBuilder,
+  onSelect,
+  dataWalkthrough,
+  rowWalkthrough,
 }: AttendanceContainerProps & { showBranch?: boolean }) => {
   const getStatusColor = (status: ClassScan["status"]) => {
     switch (status) {
@@ -49,7 +59,7 @@ export const AttendanceContainer = ({
     }
   };
   return (
-    <Card className="w-full">
+    <Card data-walkthrough={dataWalkthrough} className="w-full">
       <CardHeader className="space-y-3 p-4">
         {/* Name */}
         <div className="flex items-center gap-2">
@@ -103,14 +113,23 @@ export const AttendanceContainer = ({
                       colSpan={showBranch ? 6 : 5}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No check-ins yet. Use Quick actions or a member QR to record one.
+                      {emptyMessage ?? "No check-ins yet. Use Quick actions or a member QR to record one."}
                     </TableCell>
                   </TableRow>
                 ) : (
                   classScans.map((scan, index) => (
-                    <TableRow key={index}>
+                    <TableRow
+                      key={index}
+                      data-walkthrough={rowWalkthrough}
+                      className={cn(onSelect && "cursor-pointer")}
+                      onClick={() => onSelect?.(scan)}
+                    >
                       <TableCell>
-                        <ScanMemberLink name={scan.member} memberId={scan.memberId} />
+                        <ScanMemberLink
+                          name={scan.member}
+                          memberId={scan.memberId}
+                          href={memberHrefBuilder && scan.memberId ? memberHrefBuilder(scan.memberId) : undefined}
+                        />
                       </TableCell>
                       <TableCell>{scan.phone}</TableCell>
                       <TableCell>{scan.method}</TableCell>
