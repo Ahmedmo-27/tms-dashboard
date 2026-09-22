@@ -150,12 +150,12 @@ export function ConfirmAttendanceDialog({
           {/* Summary metrics */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg border bg-muted/30 p-2.5">
-              <span className="text-xs text-muted-foreground">Booked</span>
-              <p className="text-base font-semibold">{session.bookedCount}</p>
+              <span className="text-xs text-muted-foreground">Scanned</span>
+              <p className="text-base font-semibold">{successCount}</p>
             </div>
             <div className="rounded-lg border bg-muted/30 p-2.5">
-              <span className="text-xs text-muted-foreground">Checked In</span>
-              <p className="text-base font-semibold">{successCount}</p>
+              <span className="text-xs text-muted-foreground">Booked</span>
+              <p className="text-base font-semibold">{session.bookedCount}</p>
             </div>
             <div className="rounded-lg border bg-muted/30 p-2.5">
               <span className="text-xs text-muted-foreground">Capacity</span>
