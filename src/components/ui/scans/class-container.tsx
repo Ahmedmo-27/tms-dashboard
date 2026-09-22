@@ -160,6 +160,9 @@ export const ClassContainer = ({
       : 0;
   const isPastHalfway = halfwayMs > 0 && Date.now() >= halfwayMs;
   const attendanceConfirmation = classData.attendanceConfirmation;
+  const successScanCount = classScans.filter(
+    (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
+  ).length;
 
   return (
     <Card className="w-full">
@@ -185,7 +188,7 @@ export const ClassContainer = ({
                       className="gap-1 border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:border-amber-500/60 dark:text-amber-400 dark:bg-amber-950/40 font-medium"
                     >
                       <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                      Missing Place ({attendanceConfirmation.confirmedCount}/{classData.bookedMembers.length})
+                      Missing Place ({attendanceConfirmation.confirmedCount}/{successScanCount})
                     </Badge>
                   </button>
                 </PopoverTrigger>
@@ -200,9 +203,9 @@ export const ClassContainer = ({
                     </span>
                   </p>
                   <p className="text-muted-foreground">
-                    Booked Members:{" "}
+                    Scanned In:{" "}
                     <span className="font-medium text-foreground">
-                      {classData.bookedMembers.length}
+                      {successScanCount}
                     </span>
                   </p>
                   {attendanceConfirmation.confirmedAt ? (
