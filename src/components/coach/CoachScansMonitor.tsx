@@ -52,7 +52,6 @@ import {
 } from "@/lib/socket";
 import { CoachScansSkeleton } from "@/components/ui/loading/coach-skeletons";
 import { AttendanceContainer } from "@/components/ui/scans/attendance-container";
-import { mapPtMethodToSheetLabel } from "@/lib/utils/copy-class-for-sheet";
 import {
   ConfirmAttendanceDialog,
   AttendanceConfirmationData,
@@ -456,12 +455,11 @@ export function CoachScansMonitor() {
                 onSelect={setPeek}
                 dataWalkthrough="coach-scans-pt"
                 rowWalkthrough="coach-scans-row"
-                sheetCopy={{ mapMethod: mapPtMethodToSheetLabel }}
               />
             </div>
           )}
 
-          {hasScheduledClasses && (
+          {(hasScheduledClasses || classes.length > 0) && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 Scheduled Classes
