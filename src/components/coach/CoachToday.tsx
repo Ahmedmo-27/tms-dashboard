@@ -160,6 +160,9 @@ export function CoachToday() {
                 <p className="text-sm text-muted-foreground">
                   {next.date} · {formatTime12h(next.startTime)} –{" "}
                   {formatTime12h(next.endTime)}
+                  {(next.coachName || next.coachNames) && (
+                    <span> · {next.coachName || next.coachNames}</span>
+                  )}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {next.bookedCount} / {next.capacity} booked
@@ -225,6 +228,9 @@ export function CoachToday() {
                     <p className="text-xs text-muted-foreground">
                       <Clock className="mr-1 inline h-3 w-3" />
                       {formatTime12h(s.startTime)} – {formatTime12h(s.endTime)}
+                      {(s.coachName || s.coachNames) && (
+                        <span> · {s.coachName || s.coachNames}</span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
