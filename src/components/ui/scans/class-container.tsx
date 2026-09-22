@@ -163,6 +163,11 @@ export const ClassContainer = ({
   const successScanCount = classScans.filter(
     (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
   ).length;
+  // Recompute the actual discrepancy live (headcount vs scans) so stale DB
+  // records from the old booking-based logic don't produce false alarms.
+  const isActuallyMissing =
+    attendanceConfirmation?.confirmed === true &&
+    (attendanceConfirmation.confirmedCount < successScanCount);
 
   return (
     <Card className="w-full">
@@ -179,7 +184,7 @@ export const ClassContainer = ({
 
           {/* Attendance Confirmation Mark for Management & Branch Admin */}
           {attendanceConfirmation?.confirmed ? (
-            attendanceConfirmation.hasMissingPlace ? (
+            isActuallyMissing ? (
               <Popover>
                 <PopoverTrigger asChild>
                   <button type="button" className="cursor-pointer">
@@ -272,8 +277,18 @@ export const ClassContainer = ({
 
         {/* Buttons */}
         <div className="flex flex-wrap items-center gap-2">
-          <CheckInsSelector members={classData.bookedMembers} classData={classData} />
-          <AddWalkIn scid={String(classData._id)} compact />
+          <CheckInsSelector
+            members={classData.bookedMembers}
+            classData={classData}
+            onRefresh={onRefresh}
+          />
+          <AddWalkIn
+            scid={String(classData._id)}
+            compact
+            classTitle={classData.className}
+            startTime={classData.startTime}
+            onSuccess={onRefresh}
+          />
           <CopyAttendanceForSheetButton
             scans={classScans}
             mapMethod={mapMethodToSheetLabel}
@@ -346,7 +361,10 @@ export const ClassContainer = ({
                       </TableCell>
                       <TableCell className="text-right">
                         {(scan.status === "WILL_PAY" && scan.bookingId) ? (
-                          <PaymentSelectorDialog bookingId={scan.bookingId} />
+                          <PaymentSelectorDialog
+                            bookingId={scan.bookingId}
+                            onSuccess={onRefresh}
+                          />
                         ) : (
                           <div className="flex flex-col items-end gap-1">
                             <div className="flex items-center gap-1">

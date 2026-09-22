@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Users, Search, UserX, UserCheck, Copy, Check, MessageCircle, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MemberListEntry } from "../../schedule/show-booked-members";
 import {
   Dialog,
@@ -22,12 +22,15 @@ import { whatsAppHref } from "@/lib/utils/phone";
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 
 export function CheckInsSelector({
-  members,
+  members: initialMembers,
   classData,
+  onRefresh,
 }: {
   members: MemberListEntry[];
   classData: any;
+  onRefresh?: () => void;
 }) {
+  const [members, setMembers] = useState<MemberListEntry[]>(initialMembers);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -35,6 +38,11 @@ export function CheckInsSelector({
   const filteredMembers = members.filter((member) =>
     (member.name || "Unknown").toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Keep local members in sync if the parent passes fresh props (e.g. after socket refresh)
+  useEffect(() => {
+    setMembers(initialMembers);
+  }, [initialMembers]);
 
   const handleCopy = (phone: string, index: number) => {
     navigator.clipboard.writeText(phone).catch(() => {});
@@ -46,7 +54,14 @@ export function CheckInsSelector({
     try {
       setIsLoading(true);
       await attendNonUserBooking(bookingId);
+      // Optimistically mark the guest as attended in local state
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.bookingId === bookingId ? { ...m, attended: true } : m
+        )
+      );
       toast.success("Guest checked in");
+      onRefresh?.();
     } catch (err) {
       setError(err as Error);
       toast.error(getApiErrorMessage(err));
@@ -59,7 +74,10 @@ export function CheckInsSelector({
     try {
       setIsLoading(true);
       await cancelNonUserBooking(bookingId);
+      // Remove the guest from local state
+      setMembers((prev) => prev.filter((m) => m.bookingId !== bookingId));
       toast.success("Booking cancelled successfully");
+      onRefresh?.();
     } catch (err) {
       setError(err as Error);
       toast.error(getApiErrorMessage(err));
@@ -74,7 +92,12 @@ export function CheckInsSelector({
     try {
       setIsLoading(true);
       await recordManualAttendance(uid, scid);
+      // Optimistically mark the member as attended in local state
+      setMembers((prev) =>
+        prev.map((m) => (m.uid === uid ? { ...m, attended: true } : m))
+      );
       toast.success("Attendance recorded");
+      onRefresh?.();
     } catch (err) {
       setError(err as Error);
       toast.error(getApiErrorMessage(err));
@@ -89,7 +112,12 @@ export function CheckInsSelector({
     try {
       setIsLoading(true);
       await removeManualAttendance(uid, scid);
+      // Optimistically mark the member as not attended in local state
+      setMembers((prev) =>
+        prev.map((m) => (m.uid === uid ? { ...m, attended: false } : m))
+      );
       toast.success("Attendance removed");
+      onRefresh?.();
     } catch (err) {
       setError(err as Error);
       toast.error(getApiErrorMessage(err));
@@ -97,6 +125,9 @@ export function CheckInsSelector({
       setIsLoading(false);
     }
   };
+
+  const classTitle: string | undefined = classData?.className;
+  const startTime: string | undefined = classData?.startTime;
 
   return (
     <Dialog>
@@ -106,7 +137,9 @@ export function CheckInsSelector({
         </Button>
       </DialogTrigger>
       <DialogContent className="pt-10 pb-5 px-5">
-        <DialogTitle>Check in guests</DialogTitle>
+        <DialogTitle>
+          {classTitle ? `Check in guests — ${classTitle}` : "Check in guests"}
+        </DialogTitle>
         <DialogDescription className="sr-only">
           Check in guests for this class
         </DialogDescription>
@@ -269,7 +302,12 @@ export function CheckInsSelector({
                 </div>
               )}
               <div className="mt-2">
-                <AddWalkIn scid={(classData._id as any).toString()} />
+                <AddWalkIn
+                  scid={(classData._id as any).toString()}
+                  classTitle={classTitle}
+                  startTime={startTime}
+                  onSuccess={onRefresh}
+                />
               </div>
             </ScrollArea>
           </CardContent>

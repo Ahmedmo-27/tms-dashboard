@@ -69,7 +69,9 @@ export function ConfirmAttendanceDialog({
   const [notes, setNotes] = useState("");
 
   const successCount =
-    session?.scans?.filter((s) => s.status === "SUCCESS").length ?? 0;
+    session?.scans?.filter(
+      (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
+    ).length ?? 0;
 
   useEffect(() => {
     if (!session || !open) return;

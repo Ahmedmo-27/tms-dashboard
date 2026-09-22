@@ -153,9 +153,15 @@ function ClassScanCard({
   onSelect: (scan: CoachScan) => void;
   onConfirmAttendance: (session: CoachClassScanData) => void;
 }) {
-  const successCount = data.scans.filter((s) => s.status === "SUCCESS").length;
+  const successCount = data.scans.filter(
+    (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
+  ).length;
   const isHalfway = isSessionPastHalfway(data, currentTime);
   const isConfirmed = Boolean(data.attendanceConfirmation?.confirmed);
+  // Recompute live so stale DB hasMissingPlace values don't produce false alerts
+  const isActuallyMissing =
+    isConfirmed &&
+    (data.attendanceConfirmation!.confirmedCount < successCount);
 
   return (
     <Card data-walkthrough="coach-class-scan-card" className="w-full">
@@ -165,11 +171,11 @@ function ClassScanCard({
             <div className="flex items-center gap-2">
               <h3 className="text-base font-semibold">{data.classTitle}</h3>
               {isConfirmed ? (
-                data.attendanceConfirmation?.hasMissingPlace ? (
+                isActuallyMissing ? (
                   <Badge
                     variant="outline"
                     className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 gap-1 text-xs font-normal"
-                    title={`Attendance confirmed with missing place (${data.attendanceConfirmation.confirmedCount} present)`}
+                    title={`Attendance confirmed with missing place (${data.attendanceConfirmation?.confirmedCount} present)`}
                   >
                     <AlertTriangle className="h-3 w-3" />
                     Missing Place
@@ -221,14 +227,14 @@ function ClassScanCard({
                   data-walkthrough="coach-confirm-attendance-btn"
                   className={cn(
                     "h-7 text-xs font-medium gap-1.5 cursor-pointer",
-                    data.attendanceConfirmation?.hasMissingPlace
+                    isActuallyMissing
                       ? "border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400"
                       : "border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
                   )}
                   onClick={() => onConfirmAttendance(data)}
                   title="Click to view or edit attendance headcount"
                 >
-                  {data.attendanceConfirmation?.hasMissingPlace ? (
+                  {isActuallyMissing ? (
                     <AlertTriangle className="h-3.5 w-3.5" />
                   ) : (
                     <CheckCircle2 className="h-3.5 w-3.5" />

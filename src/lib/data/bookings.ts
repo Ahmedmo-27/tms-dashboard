@@ -119,6 +119,7 @@ export const attendNonUserBooking = async (bookingId: string) => {
       bookingId,
     });
     revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/scans-monitor");
     return response.data;
   } catch (error) {
     console.log(error);
@@ -144,6 +145,7 @@ export const saveNonUserBookingPayment = async (
       ...(locationId ? { locationId } : {}),
     });
     revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/scans-monitor");
     return response.data;
   } catch (error) {
     console.log(error);
@@ -157,6 +159,7 @@ export const cancelNonUserBooking = async (bookingId: string) => {
       `/admin/nonUserBooking/cancel/${bookingId}`
     );
     revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/scans-monitor");
     return response.data;
   } catch (error) {
     console.log(error);
@@ -171,6 +174,7 @@ export const recordManualAttendance = async (uid: string, scid: string) => {
       scid,
     });
     revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/scans-monitor");
     return response.data;
   } catch (error) {
     console.log(error);
@@ -197,6 +201,7 @@ export const removeManualAttendance = async (uid: string, scid: string) => {
       data: { uid, scid },
     });
     revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/scans-monitor");
     return response.data;
   } catch (error) {
     console.log(error);
