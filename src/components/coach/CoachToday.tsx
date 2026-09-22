@@ -182,7 +182,7 @@ export function CoachToday() {
         </CardContent>
       </Card>
 
-      {hasScheduledClasses && (
+      {(hasScheduledClasses || (data.todaySessions && data.todaySessions.length > 0)) && (
         <Card data-walkthrough="coach-today-classes">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
