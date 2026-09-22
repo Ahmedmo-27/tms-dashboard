@@ -121,6 +121,7 @@ export function DeductionModal({
     try {
       const body = {
         memberId,
+        pkgId,
         memberPackageStartDate,
         reason,
         sessionDate: toStoredIso(values.sessionDate),
