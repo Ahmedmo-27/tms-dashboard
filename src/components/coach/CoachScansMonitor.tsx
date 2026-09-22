@@ -82,6 +82,10 @@ interface CoachClassScanData {
   capacity: number;
   bookedCount: number;
   location: string | null;
+  coachName?: string;
+  coachNames?: string;
+  allCoachNames?: string;
+  coaches?: { id: string; name: string }[];
   scans: CoachScan[];
   attendanceConfirmation?: AttendanceConfirmationData | null;
 }
@@ -153,6 +157,8 @@ function ClassScanCard({
   onSelect: (scan: CoachScan) => void;
   onConfirmAttendance: (session: CoachClassScanData) => void;
 }) {
+  const currentCoachName = useAppSelector((state: RootState) => state.coach.name);
+  const displayCoach = data.coachName || data.coachNames || currentCoachName;
   const successCount = data.scans.filter(
     (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
   ).length;
@@ -192,9 +198,16 @@ function ClassScanCard({
                 )
               ) : null}
             </div>
-            <Badge variant="outline" className="mt-1 font-normal text-xs">
-              {data.category}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+              <Badge variant="outline" className="font-normal text-xs">
+                {data.category}
+              </Badge>
+              {displayCoach && (
+                <Badge variant="secondary" className="font-normal text-xs">
+                  {displayCoach}
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
