@@ -15,6 +15,20 @@ import { useActionState } from "react";
 import { adjustClassesAction } from "@/lib/actions/member-actions";
 import toast from "react-hot-toast";
 
+const DEDUCT_REASON_CHIPS = [
+  "Completed session",
+  "No-show",
+  "Makeup",
+  "Administrative",
+] as const;
+
+function toLocalInputValue(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default function AddClasses({
   pkg,
   uid,
@@ -50,6 +64,15 @@ export default function AddClasses({
   const [type, setType] = useState<"ADD" | "DEDUCT">("ADD");
   const [reasonError, setReasonError] = useState("");
 
+  // Deduct reason chips & session date (matching coach dashboard deduction modal)
+  const [deductChip, setDeductChip] = useState<string>(DEDUCT_REASON_CHIPS[0]);
+  const [deductNotes, setDeductNotes] = useState<string>("");
+  const [sessionDate, setSessionDate] = useState<string>(toLocalInputValue(new Date()));
+
+  const composedDeductReason = deductNotes.trim()
+    ? `${deductChip}. ${deductNotes.trim()}`
+    : deductChip;
+
   const initialState = { success: false, errors: null, data: null };
 
   const [state, formAction] = useActionState(
@@ -68,6 +91,9 @@ export default function AddClasses({
         setOpen(false);
         setAmount(1);
         setType("ADD");
+        setDeductChip(DEDUCT_REASON_CHIPS[0]);
+        setDeductNotes("");
+        setSessionDate(toLocalInputValue(new Date()));
         return initialState;
       }
       const message =
@@ -95,7 +121,7 @@ export default function AddClasses({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent onClick={(e) => e.stopPropagation()}>
+        <DialogContent onClick={(e) => e.stopPropagation()} className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Adjust classes for {pkg.name}</DialogTitle>
             <DialogDescription>
@@ -160,26 +186,71 @@ export default function AddClasses({
               </Button>
             </div>
 
-            {/* Reason */}
-            <div className="space-y-1">
-              <Textarea
-                name="reason"
-                placeholder="Reason for adjustment (required)"
-                rows={3}
-                onChange={() => setReasonError("")}
-                required
-              />
-              {reasonError && (
-                <p className="text-sm text-destructive">{reasonError}</p>
-              )}
-              {state.errors && (
-                <p className="text-sm text-destructive">
-                  {(state.errors as any)?.message ?? "Something went wrong"}
-                </p>
-              )}
-            </div>
+            {/* Reason & Date Controls */}
+            {type === "DEDUCT" ? (
+              <div className="space-y-4">
+                <input type="hidden" name="reason" value={composedDeductReason} />
+                <input type="hidden" name="sessionDate" value={sessionDate} />
 
-            <div className="flex justify-end gap-2">
+                {/* Reason Chips */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Reason</label>
+                  <div className="flex flex-wrap gap-2">
+                    {DEDUCT_REASON_CHIPS.map((chip) => (
+                      <Button
+                        key={chip}
+                        type="button"
+                        size="sm"
+                        variant={deductChip === chip ? "default" : "outline"}
+                        className="h-8 text-xs cursor-pointer"
+                        onClick={() => setDeductChip(chip)}
+                      >
+                        {chip}
+                      </Button>
+                    ))}
+                  </div>
+                  <Input
+                    placeholder="Optional notes"
+                    value={deductNotes}
+                    onChange={(e) => setDeductNotes(e.target.value)}
+                  />
+                </div>
+
+                {/* Session Date */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Session Date</label>
+                  <Input
+                    type="date"
+                    value={sessionDate}
+                    max={toLocalInputValue(new Date())}
+                    onChange={(e) => setSessionDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            ) : (
+              /* ADD Reason textarea */
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Reason for addition</label>
+                <Textarea
+                  name="reason"
+                  placeholder="Reason for adjustment (required)"
+                  rows={3}
+                  onChange={() => setReasonError("")}
+                  required
+                />
+              </div>
+            )}
+
+            {reasonError && (
+              <p className="text-sm text-destructive">{reasonError}</p>
+            )}
+            {state.errors && (
+              <p className="text-sm text-destructive">
+                {(state.errors as any)?.message ?? "Something went wrong"}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-1">
               <Button
                 type="button"
                 variant="outline"

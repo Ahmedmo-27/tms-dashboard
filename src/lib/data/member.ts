@@ -75,10 +75,11 @@ export const adjustMemberPackage = async (
   pkgStartDate: string,
   amount: number,
   type: "ADD" | "DEDUCT",
-  reason: string
+  reason: string,
+  sessionDate?: string
 ) => {
   try {
-    const requestBody = { uid, pkgId, pkgStartDate, amount, type, reason };
+    const requestBody = { uid, pkgId, pkgStartDate, amount, type, reason, sessionDate };
     const response = await tms.patch("admin/member-packages/adjust", requestBody);
     return response.data;
   } catch (error) {
