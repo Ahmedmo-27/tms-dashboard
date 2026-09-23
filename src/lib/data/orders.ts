@@ -9,10 +9,14 @@ interface CartInfo {
   quantity: number;
 }
 
-export const getOrders = async (locationId?: string) => {
+export const getOrders = async (locationId?: string, date?: string) => {
   try {
-    const params = locationId ? { locationId } : undefined;
-    const response = await tms.get("/admin/orders", { params });
+    const params: Record<string, string> = {};
+    if (locationId) params.locationId = locationId;
+    if (date) params.date = date;
+    const response = await tms.get("/admin/orders", {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
     const orders = parseOrders(response.data.data);
     return orders;
   } catch (e) {

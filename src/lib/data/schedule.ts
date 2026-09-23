@@ -46,9 +46,19 @@ export const getScheduledClasses = async (
 
 export const getNextScheduledClasses = async (): Promise<ScheduledClass[]> => {
   try {
-    const response = await tms.get("/admin/next-schedule");
-    const nonUserBookingsResponse = await tms.get("/admin/nonUserBooking");
-    const scheduledClasses = parseSchedule(response.data.data, nonUserBookingsResponse.data.data);
+    const todayStr = formatInTimeZone(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+    const [response, nonUserBookingsResponse] = await Promise.all([
+      tms.get("/admin/next-schedule"),
+      tms.get("/admin/nonUserBooking", {
+        params: {
+          startDate: todayStr,
+        },
+      }),
+    ]);
+    const scheduledClasses = parseSchedule(
+      response.data.data,
+      nonUserBookingsResponse.data?.data || []
+    );
     return scheduledClasses;
   } catch (error) {
     if (error instanceof NotFoundError) {
