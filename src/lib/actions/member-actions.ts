@@ -47,12 +47,13 @@ export const adjustClassesAction = async (_prevState: any, formData: FormData) =
     const amount = Number(formData.get("amount"));
     const type = formData.get("type") as "ADD" | "DEDUCT";
     const reason = (formData.get("reason") as string)?.trim();
+    const sessionDate = (formData.get("sessionDate") as string)?.trim() || undefined;
 
     if (!reason) {
       return { success: false, errors: { message: "A reason is required" }, data: null };
     }
 
-    const response = await adjustMemberPackage(uid, pkgId, pkgStartDate, amount, type, reason);
+    const response = await adjustMemberPackage(uid, pkgId, pkgStartDate, amount, type, reason, sessionDate);
 
     revalidatePath(`/dashboard/our-members/${uid}`);
     revalidatePath("/dashboard/our-members");
