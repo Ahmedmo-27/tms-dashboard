@@ -64,7 +64,7 @@ export function MobileScheduledClassCard({
                   variant={scheduledClass.availableSlots > 0 ? "default" : "destructive"} 
                   className="text-xs"
                 >
-                  {scheduledClass.availableSlots} slots
+                  {Math.max(0, scheduledClass.availableSlots ?? 0)} slots
                 </Badge>
               </div>
             </div>
@@ -149,13 +149,13 @@ export function MobileScheduledClassCard({
           <div className="pt-2 border-t">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
-                {scheduledClass.bookedMembers.length} / {scheduledClass.availableSlots + scheduledClass.bookedMembers.length} booked
+                {scheduledClass.bookedMembers.length} / {Math.max(scheduledClass.bookedMembers.length, (scheduledClass.availableSlots ?? 0) + scheduledClass.bookedMembers.length)} booked
               </span>
               <div className="w-full max-w-[100px] bg-muted rounded-full h-2 ml-3">
                 <div 
                   className="bg-primary h-2 rounded-full transition-all duration-300"
                   style={{ 
-                    width: `${Math.min(100, (scheduledClass.bookedMembers.length / (scheduledClass.availableSlots + scheduledClass.bookedMembers.length)) * 100)}%` 
+                    width: `${Math.min(100, (scheduledClass.bookedMembers.length / Math.max(1, Math.max(scheduledClass.bookedMembers.length, (scheduledClass.availableSlots ?? 0) + scheduledClass.bookedMembers.length))) * 100)}%` 
                   }}
                 />
               </div>
