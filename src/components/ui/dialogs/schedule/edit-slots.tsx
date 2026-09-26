@@ -38,11 +38,11 @@ export default function EditSlotsDialog({
   };
 
   const [currentSlots, setCurrentSlots] = useState(
-    scheduledClass.availableSlots
+    Math.max(0, scheduledClass.availableSlots ?? 0)
   );
 
   useEffect(() => {
-    setCurrentSlots(scheduledClass.availableSlots);
+    setCurrentSlots(Math.max(0, scheduledClass.availableSlots ?? 0));
   }, [scheduledClass]);
 
   const initialState = {

@@ -418,7 +418,7 @@ export function BookMemberClassDialog({
                             minute: "2-digit",
                           })}
                           {" · "}
-                          {cls.availableSlots} slots
+                          {Math.max(0, cls.availableSlots ?? 0)} slots
                         </span>
                       </div>
                     </SelectItem>
