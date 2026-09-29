@@ -9,6 +9,7 @@ export interface UpdatePackagePayload {
   expiryPeriod?: string;
   price?: string;
   category?: string;
+  notes?: string;
   coachId?: string | null;
   hidden?: boolean;
   opensClasses?: string[];
@@ -43,6 +44,7 @@ export const addPackage = async (pkg: Package, locationId?: string) => {
       category: pkg.category,
       price: pkg.price,
       expiryPeriod: pkg.expiryPeriod,
+      ...(pkg.notes !== undefined ? { notes: pkg.notes } : {}),
       ...(coachId ? { coachId } : {}),
       opensClasses: pkg.opensClasses,
       classRestrictions: pkg.classRestrictions,
