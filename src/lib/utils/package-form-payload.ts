@@ -22,6 +22,7 @@ export function buildPackagePayloadFromFormData(formData: FormData): Record<stri
     typeof coachIdRaw === "string" && coachIdRaw.trim() !== ""
       ? coachIdRaw.trim()
       : undefined;
+  const notesRaw = formData.get("notes");
 
   const pkg: Record<string, unknown> = {};
 
@@ -30,6 +31,10 @@ export function buildPackagePayloadFromFormData(formData: FormData): Record<stri
       pkg[key] = value;
     }
   });
+
+  if (typeof notesRaw === "string") {
+    pkg.notes = notesRaw.trim();
+  }
 
   pkg.opensClasses = opensClasses;
   if (coachId) {

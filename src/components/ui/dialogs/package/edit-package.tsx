@@ -27,7 +27,11 @@ import { Class } from "../../classes/columns";
 import { Coach } from "../../coaches/columns";
 import { CoachSearchSelect } from "@/components/ui/coach-search-select";
 import { getCoaches } from "@/lib/data/coaches";
-import { formatCategory, PACKAGE_CATEGORIES } from "@/lib/utils/catalog";
+import {
+  formatCategory,
+  getEffectivePackageNote,
+  PACKAGE_CATEGORIES,
+} from "@/lib/utils/catalog";
 import { ClassRestrictionsEditor } from "../../packages/class-restrictions-editor";
 import {
   Tooltip,
@@ -111,6 +115,8 @@ export default function EditPackageDialog({
     setClassRestrictions(pkg.classRestrictions ?? []);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const effectiveNote = getEffectivePackageNote(pkg);
+
   const initialState: ActionState = {
     success: false,
     errors: null,
@@ -120,6 +126,7 @@ export default function EditPackageDialog({
       numberOfSessions: pkg.numberOfSessions,
       expiryPeriod: pkg.expiryPeriod,
       price: String(pkg.price ?? ""),
+      notes: effectiveNote,
       category: pkg.category,
       coachId: initialCoachId,
     },
@@ -133,6 +140,7 @@ export default function EditPackageDialog({
         numberOfSessions: formData.get("numberOfSessions") as string,
         expiryPeriod: formData.get("expiryPeriod") as string,
         price: formData.get("price") as string,
+        notes: (formData.get("notes") as string) ?? "",
         category: formData.get("category") as string,
         coachId: formData.get("coachId") as string,
       };
@@ -266,6 +274,22 @@ export default function EditPackageDialog({
                 />
                 {fieldError("price") && (
                   <div className="text-destructive text-sm">{fieldError("price")}</div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-sm font-medium">
+                  Notes (optional)
+                </Label>
+                <Input
+                  id="notes"
+                  name="notes"
+                  type="text"
+                  placeholder="e.g. Can’t book Reformer Pilates classes"
+                  defaultValue={effectiveNote}
+                />
+                {fieldError("notes") && (
+                  <div className="text-destructive text-sm">{fieldError("notes")}</div>
                 )}
               </div>
 
