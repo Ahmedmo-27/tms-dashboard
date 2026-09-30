@@ -158,16 +158,19 @@ function ClassScanCard({
   onConfirmAttendance: (session: CoachClassScanData) => void;
 }) {
   const currentCoachName = useAppSelector((state: RootState) => state.coach.name);
-  const displayCoach = data.coachName || data.coachNames || currentCoachName;
+  const displayCoach = data.allCoachNames || data.coachNames || data.coachName || currentCoachName;
   const successCount = data.scans.filter(
     (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
   ).length;
   const isHalfway = isSessionPastHalfway(data, currentTime);
   const isConfirmed = Boolean(data.attendanceConfirmation?.confirmed);
-  // Recompute live so stale DB hasMissingPlace values don't produce false alerts
+  // Recompute live so stale DB hasMissingPlace values don't produce false alerts,
+  // while honoring manual discrepancy flags when headcount differs from scans.
   const isActuallyMissing =
     isConfirmed &&
-    (data.attendanceConfirmation!.confirmedCount < successCount);
+    (data.attendanceConfirmation!.confirmedCount < successCount ||
+      (Boolean(data.attendanceConfirmation!.hasMissingPlace) &&
+        data.attendanceConfirmation!.confirmedCount !== successCount));
 
   return (
     <Card data-walkthrough="coach-class-scan-card" className="w-full">
