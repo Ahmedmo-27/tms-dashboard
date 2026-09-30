@@ -164,10 +164,13 @@ export const ClassContainer = ({
     (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
   ).length;
   // Recompute the actual discrepancy live (headcount vs scans) so stale DB
-  // records from the old booking-based logic don't produce false alarms.
+  // records from the old booking-based logic don't produce false alarms,
+  // while honoring manual discrepancy flags when headcount differs from scans.
   const isActuallyMissing =
     attendanceConfirmation?.confirmed === true &&
-    (attendanceConfirmation.confirmedCount < successScanCount);
+    (attendanceConfirmation.confirmedCount < successScanCount ||
+      (Boolean(attendanceConfirmation.hasMissingPlace) &&
+        attendanceConfirmation.confirmedCount !== successScanCount));
 
   return (
     <Card className="w-full">
