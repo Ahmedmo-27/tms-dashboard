@@ -132,7 +132,18 @@ export const AttendanceContainer = ({
                         />
                       </TableCell>
                       <TableCell>{scan.phone}</TableCell>
-                      <TableCell>{scan.method}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-0.5">
+                          <span>{scan.method}</span>
+                          {scan.remainingClasses !== undefined && scan.remainingClasses !== null && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {scan.totalClasses
+                                ? `${scan.remainingClasses} out of ${scan.totalClasses} remaining`
+                                : `${scan.remainingClasses} remaining`}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       {showBranch ? (
                         <TableCell>
                           {scan.branchLabel ? (

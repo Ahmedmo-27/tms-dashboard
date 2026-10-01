@@ -39,6 +39,8 @@ export interface ClassScan {
   statusDetail?: string;
   bookingId?: string;
   branchLabel?: string;
+  remainingClasses?: number | null;
+  totalClasses?: number | null;
 }
 
 export interface ClassContainerProps {

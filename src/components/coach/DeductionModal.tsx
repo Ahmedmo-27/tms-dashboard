@@ -53,6 +53,7 @@ interface DeductionModalProps {
   memberId: string;
   memberName?: string;
   remainingClasses?: number;
+  totalClasses?: number;
   memberPackageStartDate: string;
   pkgId: string;
   pkgName?: string;
@@ -73,6 +74,7 @@ export function DeductionModal({
   memberId,
   memberName,
   remainingClasses,
+  totalClasses,
   memberPackageStartDate,
   pkgId,
   pkgName,
@@ -185,7 +187,9 @@ export function DeductionModal({
               {remainingClasses !== undefined && (
                 <p>
                   <span className="text-muted-foreground">Remaining after · </span>
-                  {Math.max(0, remainingClasses - 1)}
+                  {totalClasses
+                    ? `${Math.max(0, remainingClasses - 1)} out of ${totalClasses} remaining`
+                    : `${Math.max(0, remainingClasses - 1)} remaining`}
                 </p>
               )}
               <p>

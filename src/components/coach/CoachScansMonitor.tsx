@@ -69,6 +69,8 @@ interface CoachScan {
   statusDetail?: string;
   bookingId?: string;
   branchLabel?: string;
+  remainingClasses?: number | null;
+  totalClasses?: number | null;
 }
 
 interface CoachClassScanData {
@@ -91,6 +93,17 @@ interface CoachClassScanData {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatRemainingSessions(
+  scan: Pick<CoachScan, "remainingClasses" | "totalClasses">
+): string | null {
+  if (scan.remainingClasses === undefined || scan.remainingClasses === null) {
+    return null;
+  }
+  return scan.totalClasses
+    ? `${scan.remainingClasses} out of ${scan.totalClasses} remaining`
+    : `${scan.remainingClasses} remaining`;
+}
 
 function formatTime12h(time: string): string {
   const [hourStr, minuteStr] = time.split(":");
@@ -533,7 +546,20 @@ export function CoachScansMonitor() {
               ) : (
                 <p className="text-muted-foreground">{peek.phone}</p>
               )}
-              {peek.memberId && hasPtSessions && (
+              {peek.method && (
+                <p className="text-muted-foreground">
+                  Package: <span className="font-medium text-foreground">{peek.method}</span>
+                </p>
+              )}
+              {formatRemainingSessions(peek) && (
+                <p className="text-muted-foreground">
+                  Sessions:{" "}
+                  <span className="font-medium text-foreground">
+                    {formatRemainingSessions(peek)}
+                  </span>
+                </p>
+              )}
+              {peek.memberId && (hasPtSessions || hasScheduledClasses) && (
                 <Button asChild size="sm">
                   <Link
                     href={`/coach/clients/${peek.memberId}`}

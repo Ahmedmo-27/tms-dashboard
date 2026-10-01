@@ -326,8 +326,11 @@ export function CoachToday() {
                     <div>
                       <p className="text-sm font-medium">{alert.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {alert.packageName} · {alert.remainingClasses} left ·{" "}
-                        {alert.daysUntilExpiry}d
+                        {alert.packageName} ·{" "}
+                        {alert.totalClasses
+                          ? `${alert.remainingClasses} out of ${alert.totalClasses} remaining`
+                          : `${alert.remainingClasses} remaining`}{" "}
+                        · {alert.daysUntilExpiry}d
                       </p>
                     </div>
                     <Users className="h-4 w-4 text-muted-foreground" />
