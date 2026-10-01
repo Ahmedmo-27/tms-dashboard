@@ -17,12 +17,17 @@ export type AdjustmentRecord = {
   reason?: string;
   attendanceDate?: string;
   className?: string;
+  packageName?: string;
+  pkgId?: string;
   amount: number;
   type: "ADD" | "DEDUCT";
   source:
     | "BOOKING"
     | "PT_ATTENDANCE"
+    | "SPACE_WALK"
     | "ADMIN"
+    | "COACH"
+    | "ATTENDANCE"
     | "MEMBER_CANCELLATION"
     | "FRONTDESK_CANCELLATION";
 };
@@ -76,6 +81,7 @@ export type Member = {
   packages: MemberPackage[];
   bookings: Booking[];
   ptAttendance: any[];
+  deductions?: AdjustmentRecord[];
 };
 
 function soonestActiveExpiry(packages: MemberPackage[]): Date | null {

@@ -92,8 +92,15 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!capabilitiesLoaded) return;
 
-    if (pathname.startsWith("/coach/clients") && !hasPtSessions) {
+    if (pathname === "/coach/clients" && !hasPtSessions) {
       toast.error("Personal Training is not enabled for your account");
+      router.replace("/coach/today");
+    } else if (
+      pathname.startsWith("/coach/clients/") &&
+      !hasPtSessions &&
+      !hasScheduledClasses
+    ) {
+      toast.error("Client profiles are not enabled for your account");
       router.replace("/coach/today");
     } else if (
       pathname.startsWith("/coach/schedule") &&

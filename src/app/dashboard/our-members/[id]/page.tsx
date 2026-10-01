@@ -54,6 +54,7 @@ export default async function Page({
       packages: memberData.packages,
       bookings: memberData.bookings,
       ptAttendance: memberData.ptAttendance,
+      deductions: memberData.deductions,
     };
     return (
       <MemberPage

@@ -60,7 +60,11 @@ function expiryLabel(iso: string | null): string | null {
 function rowMeta(client: ClientDto): string {
   const parts: string[] = [];
   if (client.remainingClasses !== null) {
-    parts.push(`${client.remainingClasses} left`);
+    parts.push(
+      client.totalClasses
+        ? `${client.remainingClasses} out of ${client.totalClasses} remaining`
+        : `${client.remainingClasses} remaining`
+    );
   } else {
     parts.push("No active PT");
   }

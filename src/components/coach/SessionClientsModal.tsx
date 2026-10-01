@@ -10,8 +10,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SessionDto, CalendarClientDto } from "@/types/coach.types";
-import { Users } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
 import { telHref } from "@/lib/utils/phone";
+import Link from "next/link";
 
 interface SessionClientsModalProps {
   session: SessionDto | null;
@@ -70,27 +71,40 @@ export function SessionClientsModal({
                 <p className="text-sm">No bookings yet</p>
               </div>
             ) : (
-              clients.map((client: CalendarClientDto) => {
+              clients.map((client: CalendarClientDto, idx: number) => {
                 const tel = telHref(client.phoneNumber);
                 return (
                   <div
-                    key={client.memberId}
+                    key={client.memberId || `${client.name}-${idx}`}
                     className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
                       {client.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{client.name}</p>
-                      {tel ? (
-                        <a href={tel} className="text-xs text-muted-foreground hover:underline">
-                          {client.phoneNumber}
-                        </a>
+                      {client.memberId ? (
+                        <Link
+                          href={`/coach/clients/${client.memberId}`}
+                          onClick={onClose}
+                          className="inline-flex items-center gap-1 truncate text-sm font-medium hover:underline"
+                        >
+                          <span className="truncate">{client.name}</span>
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        </Link>
                       ) : (
-                        <p className="truncate text-xs text-muted-foreground">
-                          {client.phoneNumber}
-                        </p>
+                        <p className="truncate text-sm font-medium">{client.name}</p>
                       )}
+                      <div>
+                        {tel ? (
+                          <a href={tel} className="text-xs text-muted-foreground hover:underline">
+                            {client.phoneNumber}
+                          </a>
+                        ) : (
+                          <p className="truncate text-xs text-muted-foreground">
+                            {client.phoneNumber}
+                          </p>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {client.bookingMethod}
                         {client.activePackage
