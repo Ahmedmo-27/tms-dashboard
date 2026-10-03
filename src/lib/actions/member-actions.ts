@@ -47,7 +47,20 @@ export const adjustClassesAction = async (_prevState: any, formData: FormData) =
     const amount = Number(formData.get("amount"));
     const type = formData.get("type") as "ADD" | "DEDUCT";
     const reason = (formData.get("reason") as string)?.trim();
-    const sessionDate = (formData.get("sessionDate") as string)?.trim() || undefined;
+    let sessionDate = (formData.get("sessionDate") as string)?.trim() || undefined;
+    if (sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+      const [y, m, d] = sessionDate.split("-").map(Number);
+      const now = new Date();
+      sessionDate = new Date(
+        y,
+        m - 1,
+        d,
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      ).toISOString();
+    }
 
     if (!reason) {
       return { success: false, errors: { message: "A reason is required" }, data: null };

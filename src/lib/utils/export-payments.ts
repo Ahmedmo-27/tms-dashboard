@@ -3,6 +3,7 @@ import { Payment } from "@/components/ui/payments/columns";
 import {
   getOutflowBadgeLabel,
   isOutflowTransaction,
+  isDeductedTransaction,
 } from "@/lib/utils/parsers/payments-parser";
 
 const TIME_ZONE = "Africa/Cairo";
@@ -30,6 +31,7 @@ function formatClassTime(classTime: string): string {
 
 function paymentToRow(payment: Payment): string[] {
   const isOutflow = isOutflowTransaction(payment);
+  const isDeducted = isDeductedTransaction(payment);
   const amount = parseAmount(payment.amount);
 
   return [
@@ -42,7 +44,7 @@ function paymentToRow(payment: Payment): string[] {
     payment.paymentMethod ?? "",
     payment.location ?? "",
     formatClassTime(payment.classTime),
-    isOutflow ? getOutflowBadgeLabel(payment) : "Payment",
+    isOutflow ? getOutflowBadgeLabel(payment) : isDeducted ? "Package Deduction" : "Payment",
     payment.refundReason ?? "",
   ];
 }
