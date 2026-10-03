@@ -328,6 +328,11 @@ export function isOutflowTransaction(payment: Payment): boolean {
   return !!(payment.isRefunded || payment.isCashOut);
 }
 
+export function isDeductedTransaction(payment: Payment | RawPaymentRecord): boolean {
+  return payment.paymentMethod === "DEDUCTED";
+}
+
 export function getOutflowBadgeLabel(payment: Payment): string {
   return payment.isCashOut ? "Cash Out" : "Refunded";
 }
+

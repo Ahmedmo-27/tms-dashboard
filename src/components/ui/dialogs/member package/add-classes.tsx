@@ -29,6 +29,21 @@ function toLocalInputValue(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function toStoredSessionDateIso(dateStr: string): string {
+  const now = new Date();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!match) return now.toISOString();
+  return new Date(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+    now.getMilliseconds()
+  ).toISOString();
+}
+
 export default function AddClasses({
   pkg,
   uid,
@@ -190,7 +205,7 @@ export default function AddClasses({
             {type === "DEDUCT" ? (
               <div className="space-y-4">
                 <input type="hidden" name="reason" value={composedDeductReason} />
-                <input type="hidden" name="sessionDate" value={sessionDate} />
+                <input type="hidden" name="sessionDate" value={toStoredSessionDateIso(sessionDate)} />
 
                 {/* Reason Chips */}
                 <div className="space-y-2">

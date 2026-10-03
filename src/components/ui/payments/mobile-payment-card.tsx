@@ -12,10 +12,14 @@ import {
   MapPin,
   Pencil,
   Trash2,
+  Package,
 } from "lucide-react";
 import { Payment } from "./columns";
 import { OutflowPurposeCell } from "./outflow-details-dialog";
-import { isOutflowTransaction } from "@/lib/utils/parsers/payments-parser";
+import {
+  isOutflowTransaction,
+  isDeductedTransaction,
+} from "@/lib/utils/parsers/payments-parser";
 
 const getPaymentMethodIcon = (method: string) => {
   switch ((method ?? "").toLowerCase()) {
@@ -26,6 +30,8 @@ const getPaymentMethodIcon = (method: string) => {
       return <Smartphone className="h-4 w-4" />;
     case "valu":
       return <Building2 className="h-4 w-4" />;
+    case "deducted":
+      return <Package className="h-4 w-4" />;
     default:
       return <CreditCard className="h-4 w-4" />;
   }
@@ -40,6 +46,8 @@ const getPaymentMethodColor = (method: string) => {
       return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
     case "valu":
       return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
+    case "deducted":
+      return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700";
     default:
       return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
   }
@@ -69,6 +77,7 @@ export function MobilePaymentCard({
     ? parseFloat(payment.amount.replace(/[^0-9.-]+/g, ""))
     : parseFloat(String(payment.amount));
   const isOutflow = isOutflowTransaction(payment);
+  const isDeducted = isDeductedTransaction(payment);
 
   return (
     <Card className="w-full hover:shadow-md transition-shadow touch-manipulation" role="article" aria-label={`Payment from ${memberName}`}>
@@ -93,9 +102,20 @@ export function MobilePaymentCard({
               </div>
             </div>
             <div className="text-right flex-shrink-0">
-              <div className={`font-mono font-bold text-lg ${isOutflow ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                {isOutflow ? "-" : ""}EGP {Math.abs(numericAmount).toLocaleString()}
-              </div>
+              {isDeducted ? (
+                <div className="flex flex-col items-end">
+                  <span className="font-mono font-medium text-base text-muted-foreground">
+                    EGP {Math.abs(numericAmount).toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Package credit
+                  </span>
+                </div>
+              ) : (
+                <div className={`font-mono font-bold text-lg ${isOutflow ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                  {isOutflow ? "-" : ""}EGP {Math.abs(numericAmount).toLocaleString()}
+                </div>
+              )}
             </div>
           </div>
 

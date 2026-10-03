@@ -38,13 +38,15 @@ function toLocalInputValue(date: Date): string {
 }
 
 function toStoredIso(date: Date): string {
+  const now = new Date();
   return new Date(
     date.getFullYear(),
     date.getMonth(),
     date.getDate(),
-    12,
-    0,
-    0
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+    now.getMilliseconds()
   ).toISOString();
 }
 

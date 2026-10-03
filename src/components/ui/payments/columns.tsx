@@ -18,10 +18,12 @@ import {
   MapPin,
   Pencil,
   Trash2,
+  Package,
 } from "lucide-react";
 import { OutflowPurposeCell } from "./outflow-details-dialog";
 import {
   isOutflowTransaction,
+  isDeductedTransaction,
   type RawPaymentRecord,
 } from "@/lib/utils/parsers/payments-parser";
 
@@ -46,28 +48,32 @@ export type Payment = {
 };
 
 const getPaymentMethodIcon = (method: string) => {
-  switch (method.toLowerCase()) {
-    case "CASH":
+  switch ((method ?? "").toLowerCase()) {
+    case "cash":
       return <Banknote className="h-4 w-4" />;
-    case "INSTAPAY":
-    case "APP":
+    case "instapay":
+    case "app":
       return <Smartphone className="h-4 w-4" />;
-    case "VALU":
+    case "valu":
       return <Building2 className="h-4 w-4" />;
+    case "deducted":
+      return <Package className="h-4 w-4" />;
     default:
       return <CreditCard className="h-4 w-4" />;
   }
 };
 
 const getPaymentMethodColor = (method: string) => {
-  switch (method.toLowerCase()) {
-    case "CASH":
+  switch ((method ?? "").toLowerCase()) {
+    case "cash":
       return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "INSTAPAY":
-    case "APP":
+    case "instapay":
+    case "app":
       return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-    case "VALU":
+    case "valu":
       return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
+    case "deducted":
+      return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700";
     default:
       return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
   }
@@ -143,11 +149,25 @@ export const columns: ColumnDef<Payment>[] = [
     enableSorting: true,
     cell: ({ row }) => {
       const amount = row.getValue("amount");
-      const isOutflow = row.original.isRefunded || row.original.isCashOut;
+      const isOutflow = isOutflowTransaction(row.original);
+      const isDeducted = isDeductedTransaction(row.original);
 
       const numericAmount = typeof amount === 'string'
         ? parseFloat(amount.replace(/[^0-9.-]+/g, ""))
         : parseFloat(String(amount));
+
+      if (isDeducted) {
+        return (
+          <div className="flex flex-col items-end min-w-[80px] max-w-[120px]">
+            <span className="font-mono font-medium text-muted-foreground">
+              EGP {Math.abs(numericAmount).toLocaleString()}
+            </span>
+            <span className="text-[10px] text-muted-foreground font-normal">
+              Package credit
+            </span>
+          </div>
+        );
+      }
 
       return (
         <div className={`font-mono font-semibold min-w-[80px] max-w-[120px] text-right ${isOutflow ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
