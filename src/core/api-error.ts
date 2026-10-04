@@ -29,6 +29,11 @@ export class ApiError extends Error {
           return new UnauthorizedError(message || "Forbidden", context);
         case 409:
           return new ConflictError(message || "Conflict Error", context);
+        case 429:
+          return new RateLimitError(
+            message || "Too many requests. Please wait a moment before trying again.",
+            context
+          );
         default:
           return new InternalError(
             message || "Internal Server Error",
@@ -81,5 +86,11 @@ export class ConflictError extends ApiError {
 export class UnauthorizedError extends ApiError {
   constructor(message = "Unauthorized", context = {}) {
     super(message, context, ErrorType.UNAUTHORIZED);
+  }
+}
+
+export class RateLimitError extends ApiError {
+  constructor(message = "Too many requests. Please wait a moment before trying again.", context = {}) {
+    super(message, context, ErrorType.RATE_LIMITED);
   }
 }
