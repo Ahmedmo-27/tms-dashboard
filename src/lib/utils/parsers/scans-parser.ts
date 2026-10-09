@@ -2,6 +2,7 @@ import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { ClassScan } from "@/components/ui/scans/class-container";
 import { ClassContainerProps } from "@/components/ui/scans/class-container";
 import { getBranchLabel } from "@/lib/utils/location-label";
+import { formatInTimeZone } from "date-fns-tz";
 
 function parseScanStatus(
   status: boolean | string | undefined
@@ -30,8 +31,20 @@ function getFailedStatusDetail(
   return undefined;
 }
 
-export const parseScans = (scheduledClasses: ScheduledClass[], date: Date) => {
+export const parseScans = (
+  scheduledClasses: ScheduledClass[],
+  date?: Date | string
+) => {
   const output: ClassContainerProps[] = [];
+  const targetDateStr = date
+    ? typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date.trim())
+      ? date.trim()
+      : formatInTimeZone(
+          typeof date === "string" ? new Date(date) : date,
+          "Africa/Cairo",
+          "yyyy-MM-dd"
+        )
+    : undefined;
 
   scheduledClasses.forEach((cls) => {
     const parsedScans: ClassScan[] = [];
@@ -49,9 +62,14 @@ export const parseScans = (scheduledClasses: ScheduledClass[], date: Date) => {
       };
       parsedScans.push(parsedScan);
     });
-    if (
-      new Date(cls.startTime).toDateString() === new Date(date).toDateString()
-    ) {
+
+    const classDateStr = formatInTimeZone(
+      new Date(cls.startTime),
+      "Africa/Cairo",
+      "yyyy-MM-dd"
+    );
+
+    if (!targetDateStr || classDateStr === targetDateStr) {
       output.push({
         classData: cls,
         classScans: parsedScans,

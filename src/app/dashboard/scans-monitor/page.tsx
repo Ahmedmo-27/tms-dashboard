@@ -13,6 +13,7 @@ import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
 import { getPackages } from "@/lib/data/package";
 import { getClasses } from "@/lib/data/class";
 import { Class } from "@/components/ui/classes/columns";
+import { formatInTimeZone } from "date-fns-tz";
 
 export default async function Page({
   searchParams,
@@ -26,10 +27,9 @@ export default async function Page({
 
   const params = await searchParams;
   const locationId = params.locationId;
-  const dateParam = params.date ? new Date(params.date) : new Date();
-  const checkInsDateParam = params.checkInsDate
-    ? new Date(params.checkInsDate)
-    : new Date();
+  const todayCairo = formatInTimeZone(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+  const dateParam = params.date || todayCairo;
+  const checkInsDateParam = params.checkInsDate || todayCairo;
   try {
     const [scheduledClasses, packagesData, classesData] = await Promise.all([
       getScheduledClasses(locationId, dateParam),
@@ -44,7 +44,7 @@ export default async function Page({
       scans = [];
     }
     const dailyAttendance = await getDailyAttendance(checkInsDateParam, locationId);
-    if (dailyAttendance.length > 0) {
+    if (dailyAttendance && dailyAttendance.length > 0) {
       checkIns = parseDailyAttendance(dailyAttendance);
     } else {
       checkIns = { pt: [], openGym: [] };
@@ -56,6 +56,7 @@ export default async function Page({
           dailyAttendance={checkIns}
           packages={packages}
           classes={classes}
+          initialDate={dateParam}
         />
       </div>
     );
