@@ -52,7 +52,7 @@ export const parseMembers = (members: any): Member[] => {
         : [];
 
       const ptForPackage = (member.ptAttendance ?? []).filter((rec: any) => {
-        if (!rec) return false;
+        if (!rec || rec.type === "CLASS") return false;
         const recPkgId =
           rec.pkgId?._id?.toString() ?? rec.pkgId?.toString();
         return recPkgId === pkgIdStr;
@@ -71,7 +71,8 @@ export const parseMembers = (members: any): Member[] => {
             (adj.source === "PT_ATTENDANCE" ||
               adj.source === "COACH" ||
               adj.source === "ADMIN" ||
-              adj.source === "ATTENDANCE")
+              adj.source === "ATTENDANCE" ||
+              adj.source === "BOOKING")
           );
         });
         if (!alreadyInAdjustments) {
@@ -168,13 +169,19 @@ export const parseMembers = (members: any): Member[] => {
           new Date(a.attendanceDate).getTime()
       );
 
-      bundledAttendance.forEach((att) => {
-        const displayLabel =
-          att.className && att.className !== pkgName
-            ? `${att.className} — ${pkgName}`
-            : pkgName;
-        pushMemberAttendance(displayLabel, att.attendanceDate);
-      });
+      const isPtEligible =
+        pkg.pkgId?.category === "PERSONAL_TRAINING" ||
+        /personal\s*training|\bpt\b/i.test(pkgName);
+
+      if (isPtEligible) {
+        bundledAttendance.forEach((att) => {
+          const displayLabel =
+            att.className && att.className !== pkgName
+              ? `${att.className} — ${pkgName}`
+              : pkgName;
+          pushMemberAttendance(displayLabel, att.attendanceDate);
+        });
+      }
 
       const rawStatus = (pkg.status ?? "").toUpperCase();
       const isFrozen = rawStatus === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
@@ -246,18 +253,11 @@ export const parseMembers = (members: any): Member[] => {
     });
 
     (member.ptAttendance || []).forEach((record: any) => {
-      if (!record) return;
+      if (!record || record.type === "CLASS") return;
       pushMemberAttendance(
         record.pkgId?.name ?? record.packageName ?? record.className ?? "PT Attendance",
         record.attendanceTime ?? record.date
       );
-    });
-
-    (member.attendance || []).forEach((att: any) => {
-      const sc = att?.scid;
-      if (!sc || typeof sc !== "object") return;
-      const title = sc.cid?.title ?? sc.className ?? "Scheduled Class";
-      pushMemberAttendance(title, sc.startTime);
     });
 
     parsedPtAttendance.sort(
