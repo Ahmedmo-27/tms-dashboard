@@ -18,12 +18,15 @@ import { BranchPill } from "../branch-pill";
 import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import { ScanMemberLink } from "./scan-member-link";
 import { EditScanRow } from "../dialogs/scans/edit-scan-row";
+import { MoveScanClassDialog } from "../dialogs/scans/move-scan-class-dialog";
 import { DeleteScanRow } from "../dialogs/scans/delete-scan-row";
 import type { MethodSheetMapping } from "@/lib/utils/copy-class-for-sheet";
+import type { ScheduledClass } from "@/components/ui/schedule/columns";
 
 export interface AttendanceContainerProps {
   title: string;
   classScans: ClassScan[];
+  availableClasses?: ScheduledClass[];
   headerActions?: ReactNode;
   sheetCopy?: {
     mapMethod: (method: string) => MethodSheetMapping;
@@ -39,6 +42,7 @@ export interface AttendanceContainerProps {
 export const AttendanceContainer = ({
   title,
   classScans,
+  availableClasses,
   headerActions,
   sheetCopy,
   showBranch = false,
@@ -188,7 +192,16 @@ export const AttendanceContainer = ({
                             // must not also trigger its onSelect.
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <EditScanRow scan={scan} onSaved={onRefresh} />
+                            <MoveScanClassDialog
+                              scan={scan}
+                              availableClasses={availableClasses}
+                              onMoved={onRefresh}
+                            />
+                            <EditScanRow
+                              scan={scan}
+                              availableClasses={availableClasses}
+                              onSaved={onRefresh}
+                            />
                             <DeleteScanRow scan={scan} onDeleted={onRefresh} />
                           </div>
                         ) : null}

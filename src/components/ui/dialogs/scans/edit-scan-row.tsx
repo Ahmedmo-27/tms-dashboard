@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
-import { Loader2, Pencil, Search, User } from "lucide-react";
+import { CheckCircle2, Loader2, Pencil, Search, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,10 +26,15 @@ import {
 } from "@/components/ui/select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { getMembers } from "@/lib/data/member";
+import { getPackages } from "@/lib/data/package";
+import { getScheduledClasses } from "@/lib/data/schedule";
 import { updateScanRow, type ScanRowChanges } from "@/lib/data/scan-rows";
+import { packageOpensClass } from "@/lib/utils/package-eligibility";
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 import type { Member, MemberPackage } from "@/components/ui/members/columns";
 import type { ClassScan } from "@/components/ui/scans/class-container";
+import type { ScheduledClass } from "@/components/ui/schedule/columns";
+import type { Package } from "@/components/ui/packages/columns";
 
 /** Datetime-local wants the wall clock, not an ISO instant. */
 function toLocalInput(value: string): string {
@@ -40,35 +45,55 @@ function toLocalInput(value: string): string {
 export function EditScanRow({
   scan,
   onSaved,
+  availableClasses,
 }: {
   scan: ClassScan;
   onSaved?: () => void;
+  availableClasses?: ScheduledClass[];
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(false);
 
-  // Member reassignment
+  // Member
+  const [currentMember, setCurrentMember] = useState<Member | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [searchResults, setSearchResults] = useState<Member[]>([]);
   const [searching, setSearching] = useState(false);
   const [newMember, setNewMember] = useState<Member | null>(null);
 
+  // Class
+  const [classes, setClasses] = useState<ScheduledClass[]>([]);
+  const [selectedScid, setSelectedScid] = useState<string>(
+    scan.source === "class" && scan.parentId ? scan.parentId : "none"
+  );
+
+  // Catalog packages
+  const [catalogPackages, setCatalogPackages] = useState<Package[]>([]);
+
+  // Package
   const [pkgId, setPkgId] = useState<string>(scan.pkgId ?? "");
+
+  // Time & Status
   const [time, setTime] = useState<string>(toLocalInput(scan.time));
   const [status, setStatus] = useState<"SUCCESS" | "FAILED">(
     scan.status === "FAILED" ? "FAILED" : "SUCCESS",
   );
+
+  // Guest
   const [guestName, setGuestName] = useState(scan.isGuest ? scan.member : "");
   const [guestPhone, setGuestPhone] = useState(scan.isGuest ? scan.phone : "");
 
-  const isClassRow = scan.source === "class";
-  const canEditGuest = scan.source === "open-gym" && scan.isGuest;
+  const canEditGuest = scan.source === "open-gym" && scan.isGuest && !newMember;
 
   const reset = useCallback(() => {
     setSearchQuery("");
     setSearchResults([]);
     setNewMember(null);
+    setSelectedScid(
+      scan.source === "class" && scan.parentId ? scan.parentId : "none"
+    );
     setPkgId(scan.pkgId ?? "");
     setTime(toLocalInput(scan.time));
     setStatus(scan.status === "FAILED" ? "FAILED" : "SUCCESS");
@@ -76,6 +101,54 @@ export function EditScanRow({
     setGuestPhone(scan.isGuest ? scan.phone : "");
   }, [scan]);
 
+  // Load initial catalog packages, day's classes, and current member
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    const loadInitialData = async () => {
+      try {
+        setLoadingInitial(true);
+
+        const promises: Promise<any>[] = [
+          getPackages(),
+          availableClasses && availableClasses.length > 0
+            ? Promise.resolve(availableClasses)
+            : getScheduledClasses(undefined, scan.time),
+        ];
+
+        if (scan.memberId) {
+          promises.push(getMembers("", 1, 1, scan.memberId));
+        }
+
+        const [pkgsRes, classesRes, memberRes] = await Promise.all(promises);
+
+        if (!cancelled) {
+          if (Array.isArray(pkgsRes)) {
+            setCatalogPackages(pkgsRes);
+          }
+          if (Array.isArray(classesRes)) {
+            setClasses(classesRes);
+          }
+          if (memberRes?.data && memberRes.data.length > 0) {
+            setCurrentMember(memberRes.data[0]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load initial data for edit scan dialog", err);
+      } finally {
+        if (!cancelled) setLoadingInitial(false);
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, availableClasses, scan.time, scan.memberId]);
+
+  // Member search
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
@@ -100,20 +173,73 @@ export function EditScanRow({
     };
   }, [debouncedSearch]);
 
-  // Once a different member is picked, the package must come from their own
-  // holdings — the previous member's package id means nothing to them.
-  const packageOptions: MemberPackage[] = useMemo(
-    () => newMember?.packages?.filter((p) => p.status !== "DELETED") ?? [],
-    [newMember],
-  );
+  const activeMember = newMember ?? currentMember;
 
   const handlePickMember = (member: Member) => {
     setNewMember(member);
     setSearchResults([]);
     setSearchQuery("");
-    const firstActive = member.packages?.find((p) => p.status === "ACTIVE");
-    setPkgId(firstActive?._id ?? "");
   };
+
+  // Determine currently selected class
+  const selectedClass = useMemo(() => {
+    if (!selectedScid || selectedScid === "none") return null;
+    return classes.find((c) => c._id === selectedScid) ?? null;
+  }, [classes, selectedScid]);
+
+  const targetCid = selectedClass?.cid;
+
+  // Check if active member is already booked in selected class
+  const isAlreadyBooked = useMemo(() => {
+    if (!activeMember?.id || !selectedClass) return false;
+    return Boolean(
+      selectedClass.bookedMembers?.some(
+        (b: any) =>
+          (b.uid?.toString() || b._id?.toString() || b.id) === activeMember.id
+      )
+    );
+  }, [activeMember, selectedClass]);
+
+  // Filter packages available for this newly chosen class and in member's holdings
+  const eligiblePackages: MemberPackage[] = useMemo(() => {
+    if (!activeMember?.packages) return [];
+    const nonDeleted = activeMember.packages.filter(
+      (p) => p.status !== "DELETED"
+    );
+
+    // If a class is chosen, filter by catalog packages that open this class
+    if (targetCid && catalogPackages.length > 0) {
+      const validCatalogIds = new Set(
+        catalogPackages
+          .filter((cp) => packageOpensClass(cp, targetCid))
+          .map((cp) => cp._id)
+      );
+      return nonDeleted.filter((p) => validCatalogIds.has(p._id));
+    }
+
+    return nonDeleted;
+  }, [activeMember, targetCid, catalogPackages]);
+
+  // If a class is chosen that the previously chosen package isn't available for,
+  // show and auto-select other packages that ARE available for this newly chosen class.
+  useEffect(() => {
+    if (!activeMember || loadingInitial) return;
+    if (isAlreadyBooked) return;
+
+    if (eligiblePackages.length === 0) {
+      if (pkgId) setPkgId("");
+      return;
+    }
+
+    const isCurrentPkgValid = eligiblePackages.some((p) => p._id === pkgId);
+    if (!isCurrentPkgValid) {
+      const candidate =
+        eligiblePackages.find(
+          (p) => p.status === "ACTIVE" && p.remainingClasses > 0
+        ) || eligiblePackages[0];
+      setPkgId(candidate?._id ?? "");
+    }
+  }, [eligiblePackages, activeMember, loadingInitial, isAlreadyBooked, pkgId]);
 
   const handleSave = async () => {
     if (!scan.source || !scan.parentId || !scan.rowId) {
@@ -123,30 +249,50 @@ export function EditScanRow({
 
     const changes: ScanRowChanges = {};
 
+    // Member reassignment
     if (newMember) {
       changes.uid = newMember.id;
-      // Non-class rows charge at scan time, so the API needs the target package.
-      if (!isClassRow) {
-        if (!pkgId) {
+    }
+
+    // Class reassignment
+    const isMovingClass =
+      selectedScid &&
+      selectedScid !== "none" &&
+      selectedScid !== scan.parentId;
+    if (isMovingClass) {
+      changes.targetScid = selectedScid;
+    }
+
+    // Package to charge
+    if (activeMember) {
+      if (!isAlreadyBooked && (isMovingClass || newMember || selectedScid !== "none")) {
+        if (eligiblePackages.length === 0 && !isAlreadyBooked) {
+          toast.error("No eligible package found for this class");
+          return;
+        }
+        if (eligiblePackages.length > 0 && !pkgId) {
           toast.error("Choose which package to charge");
           return;
         }
-        changes.pkgId = pkgId;
-      } else if (pkgId) {
+      }
+      if (pkgId && (pkgId !== scan.pkgId || newMember || isMovingClass)) {
         changes.pkgId = pkgId;
       }
-    } else if (pkgId && pkgId !== scan.pkgId) {
-      changes.pkgId = pkgId;
     }
 
+    // Check-in Time
     const originalTime = toLocalInput(scan.time);
     if (time && time !== originalTime) {
       changes.time = new Date(time).toISOString();
     }
 
+    // Status
     const originalStatus = scan.status === "FAILED" ? "FAILED" : "SUCCESS";
-    if (status !== originalStatus) changes.status = status;
+    if (status !== originalStatus) {
+      changes.status = status;
+    }
 
+    // Guest details
     if (canEditGuest) {
       if (guestName !== scan.member) changes.guestName = guestName;
       if (guestPhone !== scan.phone) changes.guestPhone = guestPhone;
@@ -164,7 +310,7 @@ export function EditScanRow({
         { source: scan.source, parentId: scan.parentId, rowId: scan.rowId },
         changes,
       );
-      toast.success("Check-in updated");
+      toast.success(isMovingClass ? "Check-in moved to class" : "Check-in updated");
       setOpen(false);
       onSaved?.();
     } catch (err) {
@@ -178,9 +324,6 @@ export function EditScanRow({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        // Reset on open, not on close: saving closes the dialog programmatically,
-        // which never fires onOpenChange, so a close-time reset would leave the
-        // previous edit staged the next time this row is opened.
         if (next) reset();
         setOpen(next);
       }}
@@ -201,40 +344,27 @@ export function EditScanRow({
         <DialogHeader>
           <DialogTitle>Edit check-in</DialogTitle>
           <DialogDescription>
-            Correct a mis-scan. Moving the check-in to another member returns the
-            session to the original member and charges the new one.
+            Correct a mis-scan. You can edit the member, class, package, time, or status.
+            Moving the check-in to another member or class will adjust credits accordingly.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="rounded-lg border bg-muted/40 p-3 text-sm">
-            <p className="font-medium">{scan.member}</p>
+          {/* Current scan summary */}
+          <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold">{scan.member}</p>
+              <span className="text-xs text-muted-foreground">
+                {scan.phone || "No phone"}
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground">
-              {scan.phone} · {scan.method}
+              Current: <span className="font-medium text-foreground">{scan.method}</span> ·{" "}
+              {format(new Date(scan.time), "hh:mm a")}
             </p>
           </div>
 
-          {canEditGuest ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="guest-name">Guest name</Label>
-                <Input
-                  id="guest-name"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="guest-phone">Guest phone</Label>
-                <Input
-                  id="guest-phone"
-                  value={guestPhone}
-                  onChange={(e) => setGuestPhone(e.target.value)}
-                />
-              </div>
-            </div>
-          ) : null}
-
+          {/* Member section */}
           <div className="space-y-2">
             <Label>Member</Label>
             {newMember ? (
@@ -244,7 +374,7 @@ export function EditScanRow({
                   <div>
                     <p className="text-sm font-semibold">{newMember.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {newMember.phone}
+                      {newMember.phone || newMember.email}
                     </p>
                   </div>
                 </div>
@@ -302,30 +432,122 @@ export function EditScanRow({
             )}
           </div>
 
-          {newMember ? (
-            <div className="space-y-1.5">
-              <Label>Package to charge</Label>
-              {packageOptions.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {newMember.name} has no packages to charge.
-                </p>
-              ) : (
+          {/* Guest fields if open gym guest */}
+          {canEditGuest ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="guest-name">Guest name</Label>
+                <Input
+                  id="guest-name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="guest-phone">Guest phone</Label>
+                <Input
+                  id="guest-phone"
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {/* Class selection */}
+          <div className="space-y-1.5">
+            <Label>Class</Label>
+            {loadingInitial ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading classes...
+              </div>
+            ) : (
+              <Select value={selectedScid} onValueChange={setSelectedScid}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {scan.source !== "class" && (
+                    <SelectItem value="none">
+                      {scan.source === "pt"
+                        ? "Personal Training (No class)"
+                        : "Open Gym (No class)"}
+                    </SelectItem>
+                  )}
+                  {classes.map((cls) => {
+                    const timeStr = cls.startTime
+                      ? format(new Date(cls.startTime), "hh:mm a")
+                      : "";
+                    const name = cls.className || "Class";
+                    const coach = cls.coachName ? ` (${cls.coachName})` : "";
+                    const isCurrent = cls._id === scan.parentId;
+                    return (
+                      <SelectItem key={cls._id} value={cls._id!}>
+                        {name} — {timeStr}
+                        {coach} {isCurrent ? "(Current)" : ""}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          {/* Package selection & booking status */}
+          {activeMember && selectedScid !== "none" ? (
+            isAlreadyBooked ? (
+              <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-2.5 text-xs text-green-800 dark:border-green-800/40 dark:bg-green-950/30 dark:text-green-300">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                <span>
+                  {activeMember.name} is already booked in this class. Attendance will be recorded using their existing booking with no extra session charged.
+                </span>
+              </div>
+            ) : eligiblePackages.length === 0 ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-300">
+                No packages available for this class in {activeMember.name}&apos;s account.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label>Package to charge</Label>
                 <Select value={pkgId} onValueChange={setPkgId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a package" />
                   </SelectTrigger>
                   <SelectContent>
-                    {packageOptions.map((p) => (
+                    {eligiblePackages.map((p) => (
                       <SelectItem key={p._id} value={p._id}>
                         {p.name} — {p.remainingClasses} left ({p.status})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
+                {selectedScid !== scan.parentId && (
+                  <p className="text-xs text-muted-foreground">
+                    1 session will be returned from the previous class and 1 session will be charged on this package.
+                  </p>
+                )}
+              </div>
+            )
+          ) : activeMember && selectedScid === "none" && eligiblePackages.length > 0 ? (
+            <div className="space-y-1.5">
+              <Label>Package to charge</Label>
+              <Select value={pkgId} onValueChange={setPkgId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a package" />
+                </SelectTrigger>
+                <SelectContent>
+                  {eligiblePackages.map((p) => (
+                    <SelectItem key={p._id} value={p._id}>
+                      {p.name} — {p.remainingClasses} left ({p.status})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ) : null}
 
+          {/* Check-in time & Status */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="scan-time">Check-in time</Label>
@@ -355,7 +577,7 @@ export function EditScanRow({
 
           {status === "FAILED" && scan.status !== "FAILED" ? (
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              Marking this failed returns the session to {scan.member}.
+              Marking this failed returns the session to {activeMember?.name || scan.member}.
             </p>
           ) : null}
         </div>
