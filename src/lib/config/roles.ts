@@ -178,7 +178,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/mailing/sent": ["management", "mailer", "accountant"],
   "/dashboard/mailing/received": ["management", "mailer", "accountant"],
   "/dashboard/accounts": ["management", "branch_admin"],
-  "/dashboard/finance": ["management", "accountant"],
+  "/dashboard/finance": ["accountant"],
 };
 
 export function canAccessPage(

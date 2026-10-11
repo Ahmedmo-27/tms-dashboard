@@ -40,7 +40,7 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-const FINANCE_ROLES: readonly PermissionRole[] = ["management", "accountant"];
+const FINANCE_ROLES: readonly PermissionRole[] = ["accountant"];
 
 export const pagesMetadata: { navMain: NavGroup[] } = {
   navMain: [
