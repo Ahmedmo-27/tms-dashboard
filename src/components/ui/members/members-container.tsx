@@ -12,11 +12,11 @@ import Loading from "../loading/members-table";
 import { Input } from "../input";
 import { Button } from "../button";
 import { Card, CardContent, CardHeader, CardTitle } from "../card";
-import { Search, RefreshCw, Users } from "lucide-react";
+import { Search, RefreshCw, Users, AlertCircle } from "lucide-react";
 import { Badge } from "../badge";
 import { cn } from "@/lib/utils";
 import NetworkErrorPage from "../error-pages/network-error";
-import { NetworkError, NotFoundError, UnauthorizedError } from "@/core/api-error";
+import { NetworkError, NotFoundError, UnauthorizedError, RateLimitError } from "@/core/api-error";
 import NotFoundErrorPage from "../error-pages/not-found-error";
 import UnauthorizedPage from "../error-pages/UnauthorizedPage";
 import { RegisterMember } from "@/components/ui/dialogs/members/register-member";
@@ -39,8 +39,10 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
   const page = Number(searchParams.get("page")) || 1;
   const debouncedTerm = useDebounce(searchTerm, 500);
   const searchParamsRef = useRef(searchParams);
+  const activeRequestRef = useRef<number>(0);
 
   const fetchData = useCallback(async () => {
+    const requestId = ++activeRequestRef.current;
     setIsLoading(true);
     setError(null);
     try {
@@ -51,17 +53,23 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
         undefined,
         pkgId
       );
-      setData(response.data || []);
-      setTotalMembers(response.total ?? 0);
+      if (requestId === activeRequestRef.current) {
+        setData(response.data || []);
+        setTotalMembers(response.total ?? 0);
+      }
     } catch (err) {
-      if (err instanceof NotFoundError) {
-        setData([]);
-        setTotalMembers(0);
-      } else if (err instanceof Error) {
-        setError(err);
+      if (requestId === activeRequestRef.current) {
+        if (err instanceof NotFoundError) {
+          setData([]);
+          setTotalMembers(0);
+        } else if (err instanceof Error) {
+          setError(err);
+        }
       }
     } finally {
-      setIsLoading(false);
+      if (requestId === activeRequestRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [page, debouncedTerm, pkgId]);
 
@@ -156,6 +164,24 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
           </div>
         </div>
 
+        {error && !(error instanceof NotFoundError) && (
+          <div className="mt-4 p-3 sm:p-4 rounded-md border border-destructive/30 bg-destructive/10 text-destructive flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{error.message || "Failed to load members. Please try again."}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="border-destructive/30 hover:bg-destructive/20 text-destructive hover:text-destructive flex-shrink-0 h-8 text-xs"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
         <div className="mt-4 sm:mt-6 rounded-md border overflow-hidden" data-walkthrough="members-table">
           {isLoading ? (
             <Loading />
@@ -164,7 +190,7 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
           ) : (
             <div className="relative">
               <DataTable columns={tableColumns} data={data} pkgId={pkgId} />
-              {data.length === 0 && !isLoading && (
+              {data.length === 0 && !isLoading && !error && (
                 <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center px-4">
                   <Users className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/50" />
                   <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold">

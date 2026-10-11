@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDate, isToday, isPast, startOfDay } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { PaymentDatePicker } from "../payments/date-picker";
 import { AttendanceContainer } from "./attendance-container";
 import AddGuestPackage from "../dialogs/package/add-guest-package";
@@ -37,8 +38,12 @@ import {
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 
-function parseDateParam(value: string | null): Date {
-  return value ? new Date(value) : new Date();
+function parseDateParam(value: string | null | undefined): Date {
+  if (!value) return new Date();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    return new Date(`${value.trim()}T00:00:00`);
+  }
+  return new Date(value);
 }
 
 const failedScanToastStyle = {
@@ -61,11 +66,13 @@ export function ScanContainer({
   dailyAttendance: initialDailyAttendance,
   packages,
   classes: _classes = [],
+  initialDate,
 }: {
   scans: ClassContainerProps[];
   dailyAttendance: { pt: ClassScan[]; openGym: ClassScan[] };
   packages: any;
   classes?: Class[];
+  initialDate?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -75,7 +82,7 @@ export function ScanContainer({
   const [dailyAttendance, setDailyAttendance] = useState(initialDailyAttendance);
   const [socketConnected, setSocketConnected] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(() =>
-    parseDateParam(searchParams.get("date") ?? searchParams.get("checkInsDate"))
+    parseDateParam(searchParams.get("date") ?? searchParams.get("checkInsDate") ?? initialDate)
   );
   const [action, setAction] = useState<ScanAction>(
     () => (searchParams.get("action") as ScanAction) ?? null
@@ -116,8 +123,9 @@ export function ScanContainer({
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return;
     setSelectedDate(date);
+    const dateStr = formatInTimeZone(date, "Africa/Cairo", "yyyy-MM-dd");
     const params = new URLSearchParams(searchParams.toString());
-    params.set("date", formatDate(date, "yyyy-MM-dd"));
+    params.set("date", dateStr);
     params.delete("checkInsDate");
     window.history.replaceState(
       null,

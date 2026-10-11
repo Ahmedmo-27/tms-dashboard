@@ -1,5 +1,5 @@
 import { tms } from "@/lib/tms-api";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { getScheduledClasses } from "./schedule";
 import {
   parseScans,
@@ -10,10 +10,18 @@ import type {
   ClassScan,
 } from "@/components/ui/scans/class-container";
 
-export const getScans = async (date: Date, locationId?: string) => {
+const toCairoDateString = (date: Date | string): string => {
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date.trim())) {
+    return date.trim();
+  }
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+  return formatInTimeZone(dateObj, "Africa/Cairo", "yyyy-MM-dd");
+};
+
+export const getScans = async (date: Date | string, locationId?: string) => {
   try {
     const params: Record<string, string> = {
-      date: format(date, "yyyy-MM-dd"),
+      date: toCairoDateString(date),
     };
     if (locationId) params.locationId = locationId;
     const response = await tms.get("/admin/schedule", { params });
@@ -24,10 +32,10 @@ export const getScans = async (date: Date, locationId?: string) => {
   }
 };
 
-export const getDailyAttendance = async (date: Date, locationId?: string) => {
+export const getDailyAttendance = async (date: Date | string, locationId?: string) => {
   try {
     const params: Record<string, string> = {
-      date: format(date, "yyyy-MM-dd"),
+      date: toCairoDateString(date),
     };
     if (locationId) params.locationId = locationId;
     const response = await tms.get("/admin/daily-attendance", { params });
@@ -39,8 +47,8 @@ export const getDailyAttendance = async (date: Date, locationId?: string) => {
 };
 
 export async function fetchScansMonitorData(
-  classDate: Date,
-  checkInsDate: Date,
+  classDate: Date | string,
+  checkInsDate: Date | string,
   locationId?: string
 ): Promise<{
   scans: ClassContainerProps[];
@@ -55,7 +63,7 @@ export async function fetchScansMonitorData(
     scheduledClasses.length > 0 ? parseScans(scheduledClasses, classDate) : [];
 
   const dailyAttendance =
-    dailyAttendanceRaw.length > 0
+    dailyAttendanceRaw && dailyAttendanceRaw.length > 0
       ? parseDailyAttendance(dailyAttendanceRaw)
       : { pt: [], openGym: [] };
 
