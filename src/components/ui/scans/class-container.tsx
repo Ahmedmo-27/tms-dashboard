@@ -24,8 +24,6 @@ import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button
 import { ScanMemberLink } from "./scan-member-link";
 import { AddWalkIn } from "../dialogs/scans/add-walk-in";
 import { EditScanRow } from "../dialogs/scans/edit-scan-row";
-import { MoveScanClassDialog } from "../dialogs/scans/move-scan-class-dialog";
-import { DeleteScanRow } from "../dialogs/scans/delete-scan-row";
 import { removeFailedScan, updateNonUserBookingPhone, updateNonUserBookingName } from "@/lib/data/bookings";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -508,18 +506,12 @@ export const ClassContainer = ({
                       </TableCell>
                       <TableCell className="text-right">
                         {scan.rowId && scan.parentId ? (
-                          <div className="flex items-center justify-end gap-0.5">
-                            <MoveScanClassDialog
-                              scan={scan}
-                              availableClasses={availableClasses}
-                              onMoved={onRefresh}
-                            />
+                          <div className="flex items-center justify-end">
                             <EditScanRow
                               scan={scan}
                               availableClasses={availableClasses}
                               onSaved={onRefresh}
                             />
-                            <DeleteScanRow scan={scan} onDeleted={onRefresh} />
                           </div>
                         ) : null}
                       </TableCell>
