@@ -263,6 +263,7 @@ export function ScanContainer({
             classScans={dailyAttendance.pt}
             showBranch={isViewingAllBranches}
             sheetCopy={{ mapMethod: mapPtMethodToSheetLabel }}
+            onRefresh={() => fetchAll(selectedDate, true)}
             headerActions={
               <div className="flex items-center gap-1.5">
                 <PtPricingDialog
@@ -286,6 +287,7 @@ export function ScanContainer({
             classScans={dailyAttendance.openGym}
             showBranch={isViewingAllBranches}
             sheetCopy={{ mapMethod: mapOpenGymMethodToSheetLabel }}
+            onRefresh={() => fetchAll(selectedDate, true)}
             headerActions={
               <OpenGymDropInDialog
                 triggerLabel="Add drop-in"

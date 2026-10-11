@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { getAccounts } from "@/lib/data/accounts";
 import type { UserAccount, AccountRole } from "@/types/accounts";
+import { useAppSelector } from "@/lib/hooks";
+import { isBranchScopedRole } from "@/lib/config/roles";
 import { CreateAccountDialog } from "./create-account-dialog";
 import { EditAccountDialog } from "./edit-account-dialog";
 import { DeleteAccountDialog } from "./delete-account-dialog";
@@ -82,6 +84,10 @@ const ROLE_CONFIG: Record<
     label: "Mailer",
     badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-800",
   },
+  accountant: {
+    label: "Accountant",
+    badgeClass: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+  },
   member: {
     label: "Member",
     badgeClass: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-200 dark:border-sky-800",
@@ -99,6 +105,7 @@ const ROLE_TABS = [
   { key: "coach", label: "Coaches" },
   { key: "managing_coach", label: "Managing Coaches" },
   { key: "mailer", label: "Mailers" },
+  { key: "accountant", label: "Accountants" },
   { key: "member", label: "Members" },
   { key: "user", label: "App Users" },
 ];
@@ -107,6 +114,9 @@ export function AccountsContainer() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const isBranchAdmin = isBranchScopedRole(currentUser?.role);
 
   const [accounts, setAccounts] = useState<UserAccount[]>([]);
   const [total, setTotal] = useState(0);
@@ -397,7 +407,7 @@ export function AccountsContainer() {
 
                     {/* Associated details */}
                     <TableCell className="text-xs text-muted-foreground">
-                      {acc.role === "mailer" && acc.tmsEmail ? (
+                      {(acc.role === "mailer" || acc.role === "accountant") && acc.tmsEmail ? (
                         <div className="flex items-center gap-1 text-xs">
                           <Mail className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                           <span className="truncate max-w-[160px]" title={acc.tmsEmail}>
@@ -421,28 +431,37 @@ export function AccountsContainer() {
 
                     {/* Actions dropdown */}
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingAccount(acc)}>
-                            <UserCog className="mr-2 h-4 w-4 text-primary" />
-                            <span>Edit Account & Role</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setDeletingAccount(acc)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete Account</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {isBranchAdmin && (acc.role === "management" || acc.role === "admin") ? (
+                        <span
+                          className="text-xs text-muted-foreground/50 italic px-2"
+                          title="Management accounts cannot be modified by branch admins"
+                        >
+                          Protected
+                        </span>
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditingAccount(acc)}>
+                              <UserCog className="mr-2 h-4 w-4 text-primary" />
+                              <span>Edit Account & Role</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setDeletingAccount(acc)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete Account</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

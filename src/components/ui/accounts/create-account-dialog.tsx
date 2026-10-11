@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { useLocations } from "@/lib/hooks/use-locations";
 import { createAccount } from "@/lib/data/accounts";
+import { useAppSelector } from "@/lib/hooks";
+import { isBranchScopedRole } from "@/lib/config/roles";
 import { type AccountRole, isEmailEligibleRole } from "@/types/accounts";
 import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +51,10 @@ const PASSWORD_RULES = [
 ];
 
 export function CreateAccountDialog({ onAccountCreated }: CreateAccountDialogProps) {
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const isBranchAdmin = isBranchScopedRole(currentUser?.role);
+  const userBranchId = typeof currentUser?.locationId === "string" ? currentUser.locationId : "";
+
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -58,8 +64,8 @@ export function CreateAccountDialog({ onAccountCreated }: CreateAccountDialogPro
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<AccountRole>("management");
-  const [locationId, setLocationId] = useState<string>("");
+  const [role, setRole] = useState<AccountRole>(() => (isBranchAdmin ? "branch_admin" : "management"));
+  const [locationId, setLocationId] = useState<string>(() => (isBranchAdmin ? userBranchId : ""));
   const [tmsEmail, setTmsEmail] = useState("");
   const [sendAsName, setSendAsName] = useState("");
   const [copied, setCopied] = useState(false);
@@ -98,14 +104,19 @@ export function CreateAccountDialog({ onAccountCreated }: CreateAccountDialogPro
     setPhoneNumber("");
     setEmail("");
     setPassword("");
-    setRole("management");
-    setLocationId("");
+    setRole(isBranchAdmin ? "branch_admin" : "management");
+    setLocationId(isBranchAdmin ? userBranchId : "");
     setTmsEmail("");
     setSendAsName("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isBranchAdmin && (role === "management" || role === "admin")) {
+      toast.error("Branch admins cannot create management accounts");
+      return;
+    }
 
     if (!name.trim()) {
       toast.error("Please enter a name");
@@ -234,15 +245,18 @@ export function CreateAccountDialog({ onAccountCreated }: CreateAccountDialogPro
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="management">
-                  Management (Global Operations & Full Access)
-                </SelectItem>
+                {!isBranchAdmin && (
+                  <SelectItem value="management">
+                    Management (Global Operations & Full Access)
+                  </SelectItem>
+                )}
                 <SelectItem value="branch_admin">
                   Branch Admin (Locked to Assigned Branch)
                 </SelectItem>
                 <SelectItem value="coach">Coach (Trainer / Coach Portal)</SelectItem>
                 <SelectItem value="managing_coach">Managing Coach (Head Trainer)</SelectItem>
                 <SelectItem value="mailer">Mailer (Brevo Marketing & Inbox)</SelectItem>
+                <SelectItem value="accountant">Accountant (Read-only Finance & Inbox)</SelectItem>
                 <SelectItem value="member">Member (Gym Trainee Account)</SelectItem>
                 <SelectItem value="user">User (Mobile App Client Account)</SelectItem>
               </SelectContent>

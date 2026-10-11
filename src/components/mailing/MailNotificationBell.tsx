@@ -54,7 +54,9 @@ export function MailNotificationBell() {
   const { unreadCount, notifications } = useAppSelector((state: RootState) => state.mail);
 
   const role = (authUser?.role as string) || coachUser?.role || "";
-  const hasMailingAccess = ["management", "admin", "managing_coach", "mailer"].includes(role);
+  const hasMailingAccess = ["management", "admin", "managing_coach", "mailer", "accountant"].includes(role);
+  // Accountants can read mail but never change its read state.
+  const readOnly = role === "accountant";
   const isManagingCoach = role === "managing_coach";
   const inboxUrl = isManagingCoach ? "/coach/mailing/received" : "/dashboard/mailing/received";
 
@@ -102,7 +104,7 @@ export function MailNotificationBell() {
 
   const handleOpenEmail = async (item: MailNotificationItem) => {
     const emailId = item.id || item._id;
-    if (!item.isRead && emailId) {
+    if (!readOnly && !item.isRead && emailId) {
       dispatch(markMailNotificationRead(emailId));
       try {
         await tms.patch(`/admin/mail/${emailId}/read`);
@@ -162,7 +164,7 @@ export function MailNotificationBell() {
               </Badge>
             )}
           </div>
-          {unreadCount > 0 && (
+          {unreadCount > 0 && !readOnly && (
             <Button
               variant="ghost"
               size="sm"

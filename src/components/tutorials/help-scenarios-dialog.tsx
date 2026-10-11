@@ -83,6 +83,10 @@ export function HelpScenariosDialog() {
               if (staffRole === "mailer" && !scenario.roles.includes("mailer")) {
                 return false;
               }
+              // Accountants are read-only; front-desk and compose guides don't apply
+              if (staffRole === "accountant" && !scenario.roles.includes("accountant")) {
+                return false;
+              }
             }
 
             // Specific tab role filter

@@ -4,6 +4,8 @@
  * - management: same branch abilities as branch_admin when a branch is selected
  *   (?locationId= in URL / locationId in request body); plus global-only actions
  *   (location CRUD, ticket category CRUD). Our Members is shared across branches.
+ * - accountant: strictly read-only. Sees finance analytics and payments across all
+ *   branches, and can read (never send) mail. Never listed in ACTION_ROLES.
  */
 
 export const STAFF_ROLES = [
@@ -11,11 +13,16 @@ export const STAFF_ROLES = [
   "branch_admin",
   "admin",
   "mailer",
+  "accountant",
 ] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
-export type PermissionRole = "management" | "branch_admin" | "mailer";
+export type PermissionRole =
+  | "management"
+  | "branch_admin"
+  | "mailer"
+  | "accountant";
 
 export function toPermissionRole(
   role: string | null | undefined
@@ -24,6 +31,7 @@ export function toPermissionRole(
   if (role === "admin" || role === "management") return "management";
   if (role === "branch_admin") return role;
   if (role === "mailer") return "mailer";
+  if (role === "accountant") return "accountant";
   return null;
 }
 
@@ -43,6 +51,22 @@ export function isMailerRole(role: string | null | undefined): boolean {
   return toPermissionRole(role) === "mailer";
 }
 
+export function isAccountantRole(role: string | null | undefined): boolean {
+  return toPermissionRole(role) === "accountant";
+}
+
+/** Roles that can switch between branches to view data (accountant is view-only). */
+export function canViewAllBranches(role: string | null | undefined): boolean {
+  const permissionRole = toPermissionRole(role);
+  return permissionRole === "management" || permissionRole === "accountant";
+}
+
+/** Roles that may send mail, sync the mailbox or change read state. */
+export function canWriteMail(role: string | null | undefined): boolean {
+  const permissionRole = toPermissionRole(role);
+  return permissionRole === "management" || permissionRole === "mailer";
+}
+
 export function isBranchScopedRole(role: string | null | undefined): boolean {
   return toPermissionRole(role) === "branch_admin";
 }
@@ -54,6 +78,7 @@ export function isManagementRole(role: string | null | undefined): boolean {
 export const STAFF_DASHBOARD_HOME = "/dashboard/scans-monitor";
 export const COACH_DASHBOARD_HOME = "/coach/today";
 export const MAILER_DASHBOARD_HOME = "/dashboard/mailing";
+export const ACCOUNTANT_DASHBOARD_HOME = "/dashboard/finance";
 
 /**
  * Resolves the primary dashboard landing route for an authorized role.
@@ -68,6 +93,9 @@ export function getDashboardRouteForRole(
   }
   if (isMailerRole(role)) {
     return MAILER_DASHBOARD_HOME;
+  }
+  if (isAccountantRole(role)) {
+    return ACCOUNTANT_DASHBOARD_HOME;
   }
   if (isStaffRole(role)) {
     return STAFF_DASHBOARD_HOME;
@@ -95,6 +123,7 @@ export const BRANCH_SCOPED_PAGES = [
   "/dashboard/checkout",
   "/dashboard/orders",
   "/dashboard/products",
+  "/dashboard/finance",
 ] as const;
 
 export function isSharedGlobalPage(path: string): boolean {
@@ -127,7 +156,7 @@ export function canActAsBranchAdmin(
 }
 
 export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
-  "/dashboard": ["management", "branch_admin", "mailer"],
+  "/dashboard": ["management", "branch_admin", "mailer", "accountant"],
   "/dashboard/scans-monitor": ["management", "branch_admin"],
   "/dashboard/qr-codes": ["management", "branch_admin"],
   "/dashboard/sheet": ["management", "branch_admin"],
@@ -139,15 +168,17 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/packages": ["management", "branch_admin"],
   "/dashboard/classes": ["management", "branch_admin"],
   "/dashboard/tickets": ["management", "branch_admin"],
-  "/dashboard/payments": ["management", "branch_admin"],
+  "/dashboard/payments": ["management", "branch_admin", "accountant"],
   "/dashboard/refunds": ["management", "branch_admin"],
   "/dashboard/checkout": ["management", "branch_admin"],
   "/dashboard/orders": ["management", "branch_admin"],
   "/dashboard/products": ["management", "branch_admin"],
+  // Compose is write-only, so the accountant only gets the inbox and sent history.
   "/dashboard/mailing": ["management", "mailer"],
-  "/dashboard/mailing/sent": ["management", "mailer"],
-  "/dashboard/mailing/received": ["management", "mailer"],
-  "/dashboard/accounts": ["management"],
+  "/dashboard/mailing/sent": ["management", "mailer", "accountant"],
+  "/dashboard/mailing/received": ["management", "mailer", "accountant"],
+  "/dashboard/accounts": ["management", "branch_admin"],
+  "/dashboard/finance": ["management", "accountant"],
 };
 
 export function canAccessPage(
@@ -177,7 +208,9 @@ export const MANAGEMENT_ONLY_ACTIONS = {
   locationCrud: ["management"] as const,
   ticketCategoryCrud: ["management"] as const,
   mail: ["management", "mailer"] as const,
-  accountCrud: ["management"] as const,
+  accountCrud: ["management", "branch_admin"] as const,
+  paymentEdit: ["management", "branch_admin"] as const,
+  paymentDelete: ["management"] as const,
   paymentEditDelete: ["management"] as const,
 } as const;
 

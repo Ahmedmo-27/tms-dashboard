@@ -22,6 +22,12 @@ function getMemberId(uid: { _id?: string } | string | undefined): string | undef
   return uid._id;
 }
 
+function getId(value: { _id?: string } | string | undefined): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === "string") return value;
+  return value._id ? String(value._id) : undefined;
+}
+
 function getFailedStatusDetail(
   status: ClassScan["status"],
   method?: string
@@ -59,6 +65,10 @@ export const parseScans = (
         status,
         statusDetail: getFailedStatusDetail(status, scan.method),
         bookingId: scan.bookingId,
+        source: "class",
+        parentId: cls._id,
+        rowId: getId(scan._id),
+        pkgId: getId(scan.pkgId),
       };
       parsedScans.push(parsedScan);
     });
@@ -95,6 +105,8 @@ export const parseDailyAttendance = (scans: any) => {
     return output;
   }
 
+  const dayId = getId(record._id);
+
   (record.ptAttendance ?? []).forEach((scan: any) => {
     const status = parseScanStatus(scan.status);
     let method = scan.method || "";
@@ -110,6 +122,10 @@ export const parseDailyAttendance = (scans: any) => {
       status,
       statusDetail: getFailedStatusDetail(status, method),
       branchLabel: getBranchLabel(scan.locationId) ?? undefined,
+      source: "pt",
+      parentId: dayId,
+      rowId: getId(scan._id),
+      pkgId: getId(scan.pkgId),
     };
     output.pt.push(parsedScan);
   });
@@ -125,6 +141,11 @@ export const parseDailyAttendance = (scans: any) => {
       status,
       statusDetail: getFailedStatusDetail(status, scan.method),
       branchLabel: getBranchLabel(scan.locationId) ?? undefined,
+      source: "open-gym",
+      parentId: dayId,
+      rowId: getId(scan._id),
+      pkgId: getId(scan.pkgId),
+      isGuest: !scan.uid && Boolean(scan.guestName || scan.guestPhone),
     };
     output.openGym.push(parsedScan);
   });

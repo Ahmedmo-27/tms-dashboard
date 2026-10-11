@@ -56,6 +56,8 @@ const getPaymentMethodColor = (method: string) => {
 interface MobilePaymentCardProps {
   payment: Payment;
   isManagement?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
   onEdit?: (payment: Payment) => void;
   onDelete?: (payment: Payment) => void;
 }
@@ -63,9 +65,13 @@ interface MobilePaymentCardProps {
 export function MobilePaymentCard({
   payment,
   isManagement,
+  canEdit,
+  canDelete,
   onEdit,
   onDelete,
 }: MobilePaymentCardProps) {
+  const allowEdit = canEdit ?? isManagement;
+  const allowDelete = canDelete ?? isManagement;
   const memberName = payment.memberName ?? "—";
   const initials = memberName
     .split(" ")
@@ -181,10 +187,10 @@ export function MobilePaymentCard({
             </div>
           )}
 
-          {/* Actions for Management */}
-          {isManagement && !isOutflow && (onEdit || onDelete) && (
+          {/* Actions */}
+          {!isOutflow && ((allowEdit && onEdit) || (allowDelete && onDelete)) && (
             <div className="pt-2 border-t flex items-center justify-end gap-2">
-              {onEdit && (
+              {allowEdit && onEdit && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -195,7 +201,7 @@ export function MobilePaymentCard({
                   Edit
                 </Button>
               )}
-              {onDelete && (
+              {allowDelete && onDelete && (
                 <Button
                   variant="outline"
                   size="sm"

@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { useLocations } from "@/lib/hooks/use-locations";
 import { updatePayment } from "@/lib/data/payments";
+import { useAppSelector } from "@/lib/hooks";
+import { isBranchScopedRole } from "@/lib/config/roles";
 import { Payment } from "./columns";
 import { toast } from "react-hot-toast";
 import { CreditCard, Loader2, AlertCircle } from "lucide-react";
@@ -60,6 +62,8 @@ export function EditPaymentDialog({
 }: EditPaymentDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { locations, isLoading: locationsLoading } = useLocations(true);
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const isBranchAdmin = isBranchScopedRole(currentUser?.role);
 
   // Form states
   const [amount, setAmount] = useState<string>("");
@@ -184,7 +188,7 @@ export function EditPaymentDialog({
             Edit Payment Record
           </DialogTitle>
           <DialogDescription>
-            Modify payment amount, method, branch, or notes. Restricted to management roles.
+            Modify payment amount, method, branch, or notes.
           </DialogDescription>
         </DialogHeader>
 
@@ -272,7 +276,7 @@ export function EditPaymentDialog({
           {/* Location / Branch */}
           <div className="space-y-1.5">
             <Label htmlFor="edit-location">Branch Location</Label>
-            <Select value={locationId} onValueChange={setLocationId}>
+            <Select value={locationId} onValueChange={setLocationId} disabled={isBranchAdmin}>
               <SelectTrigger id="edit-location">
                 <SelectValue placeholder="Select branch..." />
               </SelectTrigger>
@@ -294,6 +298,11 @@ export function EditPaymentDialog({
                 )}
               </SelectContent>
             </Select>
+            {isBranchAdmin && (
+              <p className="text-xs text-muted-foreground">
+                Branch location is locked to your assigned branch.
+              </p>
+            )}
           </div>
 
           {/* Optional Walk-in / Non-member details */}
