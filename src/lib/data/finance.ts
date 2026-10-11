@@ -1,6 +1,6 @@
 import { tms } from "@/lib/tms-api";
 
-/** Read-only finance analytics (management + accountant). */
+/** Read-only finance analytics (accountant). */
 
 export type FinanceParams = {
   startDate?: string;
