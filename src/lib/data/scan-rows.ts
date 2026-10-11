@@ -15,8 +15,8 @@ export interface ScanRowChanges {
   /** Charge the visit to this package instead. */
   pkgId?: string;
   time?: string;
-  status?: "SUCCESS" | "FAILED";
-  /** Open gym guest rows only. */
+  status?: "SUCCESS" | "FAILED" | "WILL_PAY";
+  /** Guest rows (open gym or class walk-in). */
   guestName?: string;
   guestPhone?: string;
   /** Move this scan to a new scheduled class. */
@@ -51,7 +51,7 @@ export const moveScanToClass = async (
     uid?: string;
     pkgId?: string;
     time?: string;
-    status?: "SUCCESS" | "FAILED";
+    status?: "SUCCESS" | "FAILED" | "WILL_PAY";
   },
 ) => {
   try {

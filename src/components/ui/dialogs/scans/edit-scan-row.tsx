@@ -77,15 +77,16 @@ export function EditScanRow({
 
   // Time & Status
   const [time, setTime] = useState<string>(toLocalInput(scan.time));
-  const [status, setStatus] = useState<"SUCCESS" | "FAILED">(
-    scan.status === "FAILED" ? "FAILED" : "SUCCESS",
+  const [status, setStatus] = useState<"SUCCESS" | "FAILED" | "WILL_PAY">(
+    scan.status ?? "SUCCESS",
   );
 
   // Guest
-  const [guestName, setGuestName] = useState(scan.isGuest ? scan.member : "");
-  const [guestPhone, setGuestPhone] = useState(scan.isGuest ? scan.phone : "");
+  const isGuestRow = Boolean(scan.isGuest || !scan.memberId);
+  const [guestName, setGuestName] = useState(isGuestRow ? scan.member : "");
+  const [guestPhone, setGuestPhone] = useState(isGuestRow ? scan.phone : "");
 
-  const canEditGuest = scan.source === "open-gym" && scan.isGuest && !newMember;
+  const canEditGuest = isGuestRow && !newMember && scan.source !== "pt";
 
   const reset = useCallback(() => {
     setSearchQuery("");
@@ -96,10 +97,10 @@ export function EditScanRow({
     );
     setPkgId(scan.pkgId ?? "");
     setTime(toLocalInput(scan.time));
-    setStatus(scan.status === "FAILED" ? "FAILED" : "SUCCESS");
-    setGuestName(scan.isGuest ? scan.member : "");
-    setGuestPhone(scan.isGuest ? scan.phone : "");
-  }, [scan]);
+    setStatus(scan.status ?? "SUCCESS");
+    setGuestName(isGuestRow ? scan.member : "");
+    setGuestPhone(isGuestRow ? scan.phone : "");
+  }, [scan, isGuestRow]);
 
   // Load initial catalog packages, day's classes, and current member
   useEffect(() => {
@@ -287,8 +288,7 @@ export function EditScanRow({
     }
 
     // Status
-    const originalStatus = scan.status === "FAILED" ? "FAILED" : "SUCCESS";
-    if (status !== originalStatus) {
+    if (status !== scan.status) {
       changes.status = status;
     }
 
@@ -562,13 +562,16 @@ export function EditScanRow({
               <Label>Status</Label>
               <Select
                 value={status}
-                onValueChange={(v) => setStatus(v as "SUCCESS" | "FAILED")}
+                onValueChange={(v) =>
+                  setStatus(v as "SUCCESS" | "FAILED" | "WILL_PAY")
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="SUCCESS">SUCCESS</SelectItem>
+                  <SelectItem value="WILL_PAY">WILL_PAY</SelectItem>
                   <SelectItem value="FAILED">FAILED</SelectItem>
                 </SelectContent>
               </Select>
@@ -578,6 +581,10 @@ export function EditScanRow({
           {status === "FAILED" && scan.status !== "FAILED" ? (
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Marking this failed returns the session to {activeMember?.name || scan.member}.
+            </p>
+          ) : status === "WILL_PAY" && scan.status === "SUCCESS" ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Marking this WILL_PAY returns the session credit until payment is recorded.
             </p>
           ) : null}
         </div>

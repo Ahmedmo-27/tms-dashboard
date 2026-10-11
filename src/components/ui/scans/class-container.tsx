@@ -382,43 +382,42 @@ export const ClassContainer = ({
                         {format(new Date(scan.time), "hh:mm a")}
                       </TableCell>
                       <TableCell className="text-right">
-                        {(scan.status === "WILL_PAY" && scan.bookingId) ? (
-                          <PaymentSelectorDialog
-                            bookingId={scan.bookingId}
-                            onSuccess={onRefresh}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-center gap-1">
-                              <Badge
-                                className={cn(
-                                  "font-normal",
-                                  getStatusColor(scan.status)
-                                )}
-                              >
-                                {scan.status}
-                              </Badge>
-                              {scan.status === "FAILED" && scan.memberId && (
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-5 w-5 text-red-500 hover:bg-red-50 hover:text-red-700"
-                                  disabled={removingUid === scan.memberId}
-                                  onClick={() => handleRemoveFailedScan(scan.memberId!)}
-                                  aria-label="Remove failed scan"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </Button>
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <Badge
+                              className={cn(
+                                "font-normal",
+                                getStatusColor(scan.status)
                               )}
-                            </div>
-                            {scan.statusDetail ? (
-                              <span className="text-xs text-muted-foreground max-w-[160px] text-right">
-                                {scan.statusDetail}
-                              </span>
+                            >
+                              {scan.status}
+                            </Badge>
+                            {scan.status === "WILL_PAY" && scan.bookingId ? (
+                              <PaymentSelectorDialog
+                                bookingId={scan.bookingId}
+                                onSuccess={onRefresh}
+                              />
                             ) : null}
+                            {scan.status === "FAILED" && scan.memberId && (
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-5 w-5 text-red-500 hover:bg-red-50 hover:text-red-700"
+                                disabled={removingUid === scan.memberId}
+                                onClick={() => handleRemoveFailedScan(scan.memberId!)}
+                                aria-label="Remove failed scan"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                           </div>
-                        )}
+                          {scan.statusDetail ? (
+                            <span className="text-xs text-muted-foreground max-w-[160px] text-right">
+                              {scan.statusDetail}
+                            </span>
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         {scan.rowId && scan.parentId ? (
