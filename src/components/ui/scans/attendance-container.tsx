@@ -17,6 +17,8 @@ import { ClassScan } from "./class-container";
 import { BranchPill } from "../branch-pill";
 import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import { ScanMemberLink } from "./scan-member-link";
+import { EditScanRow } from "../dialogs/scans/edit-scan-row";
+import { DeleteScanRow } from "../dialogs/scans/delete-scan-row";
 import type { MethodSheetMapping } from "@/lib/utils/copy-class-for-sheet";
 
 export interface AttendanceContainerProps {
@@ -45,7 +47,11 @@ export const AttendanceContainer = ({
   onSelect,
   dataWalkthrough,
   rowWalkthrough,
-}: AttendanceContainerProps & { showBranch?: boolean }) => {
+  onRefresh,
+}: AttendanceContainerProps & {
+  showBranch?: boolean;
+  onRefresh?: () => void;
+}) => {
   const getStatusColor = (status: ClassScan["status"]) => {
     switch (status) {
       case "SUCCESS":
@@ -104,13 +110,14 @@ export const AttendanceContainer = ({
                   {showBranch ? <TableHead>Branch</TableHead> : null}
                   <TableHead>Check-in Time</TableHead>
                   <TableHead className="text-right">Status</TableHead>
+                  <TableHead className="w-[72px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {classScans.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={showBranch ? 6 : 5}
+                      colSpan={showBranch ? 7 : 6}
                       className="h-24 text-center text-muted-foreground"
                     >
                       {emptyMessage ?? "No check-ins yet. Use Quick actions or a member QR to record one."}
@@ -172,6 +179,19 @@ export const AttendanceContainer = ({
                             </span>
                           ) : null}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {scan.rowId && scan.parentId ? (
+                          <div
+                            className="flex items-center justify-end gap-0.5"
+                            // The row itself is clickable now; a correction
+                            // must not also trigger its onSelect.
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <EditScanRow scan={scan} onSaved={onRefresh} />
+                            <DeleteScanRow scan={scan} onDeleted={onRefresh} />
+                          </div>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   ))

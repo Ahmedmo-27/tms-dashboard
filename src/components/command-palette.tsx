@@ -71,6 +71,9 @@ export function CommandPalette() {
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
   const permissionRole = toPermissionRole(user?.role as string | undefined);
+  // Front-desk actions and member search are for operational staff only.
+  const hasFrontDesk =
+    permissionRole === "management" || permissionRole === "branch_admin";
   const { startTutorial, openHelpModal } = useWalkthrough();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -129,7 +132,7 @@ export function CommandPalette() {
   }, [packages.length]);
 
   const actions = useMemo<PaletteAction[]>(
-    () => [
+    () => !hasFrontDesk ? [] : [
       {
         id: "register-member",
         label: "Register member",
@@ -240,7 +243,7 @@ export function CommandPalette() {
         run: () => go("/dashboard/package-freezes"),
       },
     ],
-    [ensurePackages, go]
+    [ensurePackages, go, hasFrontDesk]
   );
 
   useEffect(() => {
@@ -262,12 +265,12 @@ export function CommandPalette() {
       setNonMemberPackages([]);
       return;
     }
-    ensurePackages();
-  }, [open, ensurePackages]);
+    if (hasFrontDesk) ensurePackages();
+  }, [open, ensurePackages, hasFrontDesk]);
 
   useEffect(() => {
     const term = debouncedQuery.trim();
-    if (!open || term.length < 2) {
+    if (!open || term.length < 2 || !hasFrontDesk) {
       setMembers([]);
       setNonMembers([]);
       setNonMemberPackages([]);
@@ -339,7 +342,7 @@ export function CommandPalette() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, open]);
+  }, [debouncedQuery, open, hasFrontDesk]);
 
   const memberRequestsHref = (term: string) =>
     `/dashboard/member-requests?searchString=${encodeURIComponent(term)}&page=1`;

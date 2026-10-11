@@ -258,6 +258,7 @@ export function EditAccountDialog({
                 <SelectItem value="coach">Coach (Trainer / Coach Portal)</SelectItem>
                 <SelectItem value="managing_coach">Managing Coach (Head Trainer)</SelectItem>
                 <SelectItem value="mailer">Mailer (Brevo Marketing & Inbox)</SelectItem>
+                <SelectItem value="accountant">Accountant (Read-only Finance & Inbox)</SelectItem>
                 <SelectItem value="member">Member (Gym Trainee Account)</SelectItem>
                 <SelectItem value="user">User (Mobile App Client Account)</SelectItem>
               </SelectContent>

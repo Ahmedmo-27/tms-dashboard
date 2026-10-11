@@ -76,6 +76,19 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Finance data-viz palette (validated categorical order; see finance charts) */
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-4: #eda100;
+  --viz-5: #e87ba4;
+  --viz-6: #008300;
+  --viz-7: #4a3aa7;
+  --viz-8: #e34948;
+  --viz-muted: #b4b2ab;
+  --viz-grid: #ecebe8;
+  --viz-good: #0e7f4f;
+  --viz-bad: #c2362f;
 }
 
 .dark {
@@ -110,6 +123,18 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-4: #c98500;
+  --viz-5: #d55181;
+  --viz-6: #008300;
+  --viz-7: #9085e9;
+  --viz-8: #e66767;
+  --viz-muted: #6b6a66;
+  --viz-grid: #2c2c2a;
+  --viz-good: #3fbf7f;
+  --viz-bad: #f07a72;
 }
 
 @layer base {
@@ -216,5 +241,24 @@
 
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Finance monthly report: print only the report sheet */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #finance-report,
+  #finance-report * {
+    visibility: visible;
+  }
+  #finance-report {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: none;
+    background: #fff;
+    color: #000;
   }
 }

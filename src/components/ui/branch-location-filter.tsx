@@ -12,7 +12,7 @@ import {
 import { Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/lib/hooks";
-import { isManagementRole } from "@/lib/config/roles";
+import { canViewAllBranches } from "@/lib/config/roles";
 import type { Location } from "@/lib/data/locations";
 
 type BranchLocationFilterProps = {
@@ -34,7 +34,7 @@ export function BranchLocationFilter({
   const role = user?.role as string | undefined;
   const [isPending, startTransition] = useTransition();
 
-  if (!isManagementRole(role) || locations.length <= 1) {
+  if (!canViewAllBranches(role) || locations.length <= 1) {
     return null;
   }
 

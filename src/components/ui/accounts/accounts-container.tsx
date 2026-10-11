@@ -82,6 +82,10 @@ const ROLE_CONFIG: Record<
     label: "Mailer",
     badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-800",
   },
+  accountant: {
+    label: "Accountant",
+    badgeClass: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+  },
   member: {
     label: "Member",
     badgeClass: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-200 dark:border-sky-800",
@@ -99,6 +103,7 @@ const ROLE_TABS = [
   { key: "coach", label: "Coaches" },
   { key: "managing_coach", label: "Managing Coaches" },
   { key: "mailer", label: "Mailers" },
+  { key: "accountant", label: "Accountants" },
   { key: "member", label: "Members" },
   { key: "user", label: "App Users" },
 ];
@@ -397,7 +402,7 @@ export function AccountsContainer() {
 
                     {/* Associated details */}
                     <TableCell className="text-xs text-muted-foreground">
-                      {acc.role === "mailer" && acc.tmsEmail ? (
+                      {(acc.role === "mailer" || acc.role === "accountant") && acc.tmsEmail ? (
                         <div className="flex items-center gap-1 text-xs">
                           <Mail className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                           <span className="truncate max-w-[160px]" title={acc.tmsEmail}>

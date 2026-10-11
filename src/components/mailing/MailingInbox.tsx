@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { useAppDispatch } from "@/lib/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { isAccountantRole } from "@/lib/config/roles";
 import { 
   markMailNotificationRead, 
   markMailNotificationUnread, 
@@ -115,6 +116,10 @@ function formatEmailDate(dateStr: string) {
 export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInboxProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  // Accountants read mail only: no reply, sync or read-state changes.
+  const readOnly = isAccountantRole(
+    useAppSelector((state) => state.auth.user?.role as string | undefined)
+  );
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -184,6 +189,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
 
     // Background IMAP sync check every 40 seconds
     const syncInterval = setInterval(() => {
+      if (readOnly) return;
       tms.post("/admin/mail/sync", { page, limit: pageSize })
         .then((res) => {
           const data = res.data?.data || res.data;
@@ -229,7 +235,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
       clearInterval(syncInterval);
       if (socket) socket.disconnect();
     };
-  }, [page, mailboxEmail]);
+  }, [page, mailboxEmail, readOnly]);
 
   useEffect(() => {
     setPage(1);
@@ -238,7 +244,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
 
   const handleSelectEmail = async (email: ReceivedEmail) => {
     setSelectedEmail(email);
-    if (!email.isRead) {
+    if (!readOnly && !email.isRead) {
       setEmails((prev) =>
         prev.map((e) => (e._id === email._id ? { ...e, isRead: true } : e))
       );
@@ -255,6 +261,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
 
   const handleToggleRead = async (email: ReceivedEmail, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (readOnly) return;
     const newReadState = !email.isRead;
 
     setEmails((prev) =>
@@ -282,6 +289,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
   };
 
   const handleMarkAllRead = async () => {
+    if (readOnly) return;
     if (unreadTotal === 0 && unreadCount === 0) return;
     setIsMarkingAll(true);
     try {
@@ -302,6 +310,10 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
   };
 
   const handleSync = async () => {
+    if (readOnly) {
+      await fetchEmails(false, page);
+      return;
+    }
     setIsSyncing(true);
     try {
       const response = await tms.post("/admin/mail/sync", { page, limit: pageSize });
@@ -392,7 +404,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
 
             {/* Sync & Refresh Button */}
             <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
+              {unreadCount > 0 && !readOnly && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -413,7 +425,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
                 className="gap-2 text-xs font-medium h-9"
               >
                 <RefreshCw className={cn("h-3.5 w-3.5", isSyncing && "animate-spin text-primary")} />
-                <span>{isSyncing ? "Syncing..." : "Sync Mailbox"}</span>
+                <span>{isSyncing ? "Syncing..." : readOnly ? "Refresh" : "Sync Mailbox"}</span>
               </Button>
             </div>
           </div>
@@ -579,6 +591,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
                         <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap pr-4 sm:pr-6 py-3.5">
                           <div className="flex items-center justify-end gap-2">
                             <span>{formatEmailDate(email.date)}</span>
+                            {!readOnly && (
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                               <Button
                                 type="button"
@@ -605,6 +618,7 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
                                 <span>Reply</span>
                               </Button>
                             </div>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -700,27 +714,31 @@ export function MailingInbox({ composeUrl = "/dashboard/mailing" }: MailingInbox
               {/* Reader Actions Footer */}
               <DialogFooter className="p-3 sm:p-4 bg-muted/20 border-t flex flex-row items-center justify-between gap-1.5 sm:gap-2">
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      handleReply(selectedEmail);
-                      setSelectedEmail(null);
-                    }}
-                    className="flex-1 sm:flex-initial gap-1.5 text-xs h-8 px-2.5 sm:px-3 font-semibold shadow-xs"
-                  >
-                    <Reply className="h-3.5 w-3.5 shrink-0" />
-                    <span>Reply</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleToggleRead(selectedEmail)}
-                    className="gap-1.5 text-xs h-8 px-2 sm:px-3 shrink-0"
-                  >
-                    {selectedEmail.isRead ? <Mail className="h-3.5 w-3.5 shrink-0" /> : <MailOpen className="h-3.5 w-3.5 shrink-0" />}
-                    <span className="hidden sm:inline">{selectedEmail.isRead ? "Mark as Unread" : "Mark as Read"}</span>
-                    <span className="sm:hidden">{selectedEmail.isRead ? "Unread" : "Read"}</span>
-                  </Button>
+                  {!readOnly && (
+                    <>
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          handleReply(selectedEmail);
+                          setSelectedEmail(null);
+                        }}
+                        className="flex-1 sm:flex-initial gap-1.5 text-xs h-8 px-2.5 sm:px-3 font-semibold shadow-xs"
+                      >
+                        <Reply className="h-3.5 w-3.5 shrink-0" />
+                        <span>Reply</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleRead(selectedEmail)}
+                        className="gap-1.5 text-xs h-8 px-2 sm:px-3 shrink-0"
+                      >
+                        {selectedEmail.isRead ? <Mail className="h-3.5 w-3.5 shrink-0" /> : <MailOpen className="h-3.5 w-3.5 shrink-0" />}
+                        <span className="hidden sm:inline">{selectedEmail.isRead ? "Mark as Unread" : "Mark as Read"}</span>
+                        <span className="sm:hidden">{selectedEmail.isRead ? "Unread" : "Read"}</span>
+                      </Button>
+                    </>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

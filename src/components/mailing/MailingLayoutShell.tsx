@@ -20,6 +20,8 @@ import { tms } from "@/lib/tms-api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
+import { useAppSelector } from "@/lib/hooks";
+import { isAccountantRole } from "@/lib/config/roles";
 import { MailNotificationPermissionBanner } from "./MailNotificationPermissionBanner";
 
 interface MailingLayoutShellProps {
@@ -31,6 +33,8 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
   const pathname = usePathname();
   const [profile, setProfile] = useState<{ email: string; name: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const role = useAppSelector((state) => state.auth.user?.role as string | undefined);
+  const readOnly = isAccountantRole(role);
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
     }
   };
 
-  const navItems = [
+  const allNavItems = [
     {
       title: "Compose",
       href: basePath,
@@ -103,6 +107,10 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
       description: "Delivery logs & history",
     },
   ];
+  // View-only mailboxes never see Compose.
+  const navItems = readOnly
+    ? allNavItems.filter((item) => item.title !== "Compose")
+    : allNavItems;
 
   const getInitials = (name?: string, email?: string) => {
     if (name) {
@@ -130,7 +138,9 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Mailing System</h1>
           <p className="text-sm text-muted-foreground">
-            Compose announcements, handle incoming messages, and monitor transactional delivery logs.
+            {readOnly
+              ? "Read incoming messages and delivery history. This mailbox is view-only."
+              : "Compose announcements, handle incoming messages, and monitor transactional delivery logs."}
           </p>
         </div>
 

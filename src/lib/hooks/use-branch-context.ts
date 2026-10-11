@@ -4,6 +4,7 @@ import { useSearchParams, usePathname } from "next/navigation";
 import { useAppSelector } from "@/lib/hooks";
 import {
   canActAsBranchAdmin,
+  canViewAllBranches,
   isBranchScopedPage,
   isManagementRole,
 } from "@/lib/config/roles";
@@ -17,6 +18,7 @@ export function useBranchContext() {
   const selectedLocationId = searchParams.get("locationId");
 
   const isManagement = isManagementRole(role);
+  const viewsAllBranches = canViewAllBranches(role);
   const branchScopedPage = isBranchScopedPage(pathname);
 
   return {
@@ -24,9 +26,10 @@ export function useBranchContext() {
     selectedLocationId,
     userLocationId,
     isManagement,
+    canViewAllBranches: viewsAllBranches,
     isBranchScopedPage: branchScopedPage,
     isViewingAllBranches:
-      isManagement && branchScopedPage && !selectedLocationId,
+      viewsAllBranches && branchScopedPage && !selectedLocationId,
     canActAsBranchAdmin: canActAsBranchAdmin(
       role,
       selectedLocationId,
