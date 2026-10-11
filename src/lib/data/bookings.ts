@@ -111,6 +111,19 @@ export const updateNonUserBookingPhone = async (
   return response.data;
 };
 
+export const updateNonUserBookingName = async (
+  bookingId: string,
+  name: string
+) => {
+  const response = await tms.patch(
+    `/admin/nonUserBooking/${bookingId}/name`,
+    { name }
+  );
+  revalidatePath("/dashboard/scans-monitor");
+  revalidatePath("/dashboard/schedule");
+  return response.data;
+};
+
 export const attendNonUserBooking = async (bookingId: string) => {
   try {
     const response = await tms.post(

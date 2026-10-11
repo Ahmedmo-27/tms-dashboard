@@ -292,10 +292,19 @@ export function EditScanRow({
       changes.status = status;
     }
 
-    // Guest details
+    // Guest / Walk-in details
     if (canEditGuest) {
-      if (guestName !== scan.member) changes.guestName = guestName;
-      if (guestPhone !== scan.phone) changes.guestPhone = guestPhone;
+      const trimmedName = guestName.trim();
+      if (trimmedName && trimmedName !== scan.member) {
+        changes.guestName = trimmedName;
+        changes.name = trimmedName;
+      }
+      const trimmedPhone = guestPhone.trim();
+      const originalPhone = scan.phone === "No Phone" ? "" : scan.phone;
+      if (trimmedPhone !== originalPhone) {
+        changes.guestPhone = trimmedPhone;
+        changes.phoneNumber = trimmedPhone;
+      }
     }
 
     if (Object.keys(changes).length === 0) {
@@ -364,9 +373,39 @@ export function EditScanRow({
             </p>
           </div>
 
+          {/* Guest / Walk-in fields */}
+          {canEditGuest ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="guest-name">
+                  {scan.source === "class" ? "Walk-in Name" : "Guest Name"}
+                </Label>
+                <Input
+                  id="guest-name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder="Enter name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="guest-phone">Phone Number</Label>
+                <Input
+                  id="guest-phone"
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                  placeholder="01xxxxxxxxx"
+                />
+              </div>
+            </div>
+          ) : null}
+
           {/* Member section */}
           <div className="space-y-2">
-            <Label>Member</Label>
+            <Label>
+              {isGuestRow
+                ? "Reassign to a registered member (optional)"
+                : "Member"}
+            </Label>
             {newMember ? (
               <div className="flex items-center justify-between rounded-lg border bg-muted/40 p-3">
                 <div className="flex items-center gap-2.5">
@@ -395,7 +434,11 @@ export function EditScanRow({
                 <div className="relative">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search a different member by name or phone..."
+                    placeholder={
+                      isGuestRow
+                        ? "Search a registered member by name or phone to reassign..."
+                        : "Search a different member by name or phone..."
+                    }
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -431,28 +474,6 @@ export function EditScanRow({
               </>
             )}
           </div>
-
-          {/* Guest fields if open gym guest */}
-          {canEditGuest ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="guest-name">Guest name</Label>
-                <Input
-                  id="guest-name"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="guest-phone">Guest phone</Label>
-                <Input
-                  id="guest-phone"
-                  value={guestPhone}
-                  onChange={(e) => setGuestPhone(e.target.value)}
-                />
-              </div>
-            </div>
-          ) : null}
 
           {/* Class selection */}
           <div className="space-y-1.5">

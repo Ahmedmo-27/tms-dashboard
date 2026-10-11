@@ -19,6 +19,8 @@ export interface ScanRowChanges {
   /** Guest rows (open gym or class walk-in). */
   guestName?: string;
   guestPhone?: string;
+  name?: string;
+  phoneNumber?: string;
   /** Move this scan to a new scheduled class. */
   targetScid?: string;
 }
