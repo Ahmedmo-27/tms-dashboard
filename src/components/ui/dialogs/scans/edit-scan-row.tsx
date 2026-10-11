@@ -3,11 +3,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
-import { AlertTriangle, CalendarIcon, CheckCircle2, Clock, Loader2, Pencil, Search, Trash2, User } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarIcon,
+  Check,
+  CheckCircle2,
+  ChevronsUpDown,
+  Clock,
+  Loader2,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -31,13 +49,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDebounce } from "@/hooks/useDebounce";
 import { getMembers } from "@/lib/data/member";
 import { getPackages } from "@/lib/data/package";
 import { getScheduledClasses } from "@/lib/data/schedule";
 import { updateScanRow, deleteScanRow, type ScanRowChanges } from "@/lib/data/scan-rows";
 import { packageOpensClass } from "@/lib/utils/package-eligibility";
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
+import { cn } from "@/lib/utils";
 import type { Member, MemberPackage } from "@/components/ui/members/columns";
 import type { ClassScan } from "@/components/ui/scans/class-container";
 import type { ScheduledClass } from "@/components/ui/schedule/columns";
@@ -58,17 +76,14 @@ export function EditScanRow({
 
   // Member
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearch = useDebounce(searchQuery, 300);
-  const [searchResults, setSearchResults] = useState<Member[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [newMember, setNewMember] = useState<Member | null>(null);
 
   // Class
   const [classes, setClasses] = useState<ScheduledClass[]>([]);
   const [selectedScid, setSelectedScid] = useState<string>(
     scan.source === "class" && scan.parentId ? scan.parentId : "none"
   );
+  const [classPopoverOpen, setClassPopoverOpen] = useState(false);
+  const [classSearch, setClassSearch] = useState("");
 
   // Catalog packages
   const [catalogPackages, setCatalogPackages] = useState<Package[]>([]);
@@ -91,7 +106,7 @@ export function EditScanRow({
   const [guestName, setGuestName] = useState(isGuestRow ? scan.member : "");
   const [guestPhone, setGuestPhone] = useState(isGuestRow ? scan.phone : "");
 
-  const canEditGuest = isGuestRow && !newMember && scan.source !== "pt";
+  const canEditGuest = isGuestRow && scan.source !== "pt";
 
   // Delete
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -101,12 +116,11 @@ export function EditScanRow({
   const wasSuccessful = scan.status !== "FAILED";
 
   const reset = useCallback(() => {
-    setSearchQuery("");
-    setSearchResults([]);
-    setNewMember(null);
     setSelectedScid(
       scan.source === "class" && scan.parentId ? scan.parentId : "none"
     );
+    setClassPopoverOpen(false);
+    setClassSearch("");
     setPkgId(scan.pkgId ?? "");
     const initialDate = new Date(scan.time);
     setSelectedDateTime(isNaN(initialDate.getTime()) ? new Date() : initialDate);
@@ -187,44 +201,79 @@ export function EditScanRow({
     };
   }, [open, availableClasses, scan.time, scan.memberId]);
 
-  // Member search
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      const query = debouncedSearch.trim();
-      if (query.length < 2) {
-        setSearchResults([]);
-        return;
-      }
-      try {
-        setSearching(true);
-        const res = await getMembers(query, 1, 10);
-        if (!cancelled) setSearchResults(res.data || []);
-      } catch {
-        if (!cancelled) setSearchResults([]);
-      } finally {
-        if (!cancelled) setSearching(false);
-      }
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedSearch]);
-
-  const activeMember = newMember ?? currentMember;
-
-  const handlePickMember = (member: Member) => {
-    setNewMember(member);
-    setSearchResults([]);
-    setSearchQuery("");
-  };
+  const activeMember = currentMember;
 
   // Determine currently selected class
   const selectedClass = useMemo(() => {
     if (!selectedScid || selectedScid === "none") return null;
     return classes.find((c) => c._id === selectedScid) ?? null;
   }, [classes, selectedScid]);
+
+  // Selected class display label
+  const selectedClassLabel = useMemo(() => {
+    if (selectedScid === "none") {
+      return scan.source === "pt"
+        ? "Personal Training (No class)"
+        : "Open Gym (No class)";
+    }
+    if (!selectedClass) return "Select class";
+    const timeStr = selectedClass.startTime
+      ? format(new Date(selectedClass.startTime), "hh:mm a")
+      : "";
+    const coach = selectedClass.coachName ? ` (${selectedClass.coachName})` : "";
+    const isCurrent = selectedClass._id === scan.parentId ? " (Current)" : "";
+    return `${selectedClass.className || "Class"} — ${timeStr}${coach}${isCurrent}`;
+  }, [selectedClass, selectedScid, scan.source, scan.parentId]);
+
+  const noClassLabel =
+    scan.source === "pt"
+      ? "Personal Training (No class)"
+      : "Open Gym (No class)";
+
+  // Sliced / filtered classes for the search dropdown: don't show all classes at once
+  const { visibleClasses, totalMatches, isSearching, matchesNoClass } = useMemo(() => {
+    const query = classSearch.trim().toLowerCase();
+    const canHaveNoClass = scan.source !== "class";
+
+    if (!query) {
+      // Don't show all classes at once: show currently selected class first, then up to 5 other classes
+      const selected = classes.find((c) => c._id === selectedScid);
+      const others = classes
+        .filter((c) => c._id !== selectedScid)
+        .slice(0, selected ? 5 : 6);
+      const list = selected ? [selected, ...others] : others;
+
+      return {
+        visibleClasses: list,
+        totalMatches: classes.length,
+        isSearching: false,
+        matchesNoClass: canHaveNoClass,
+      };
+    }
+
+    const matches = classes.filter((cls) => {
+      const name = (cls.className || "").toLowerCase();
+      const coach = (cls.coachName || "").toLowerCase();
+      const timeStr = cls.startTime
+        ? format(new Date(cls.startTime), "hh:mm a").toLowerCase()
+        : "";
+      return (
+        name.includes(query) ||
+        coach.includes(query) ||
+        timeStr.includes(query)
+      );
+    });
+
+    const matchesNo =
+      canHaveNoClass && noClassLabel.toLowerCase().includes(query);
+
+    return {
+      visibleClasses: matches.slice(0, 8),
+      totalMatches: matches.length,
+      isSearching: true,
+      matchesNoClass: matchesNo,
+    };
+  }, [classes, selectedScid, classSearch, scan.source, noClassLabel]);
 
   const targetCid = selectedClass?.cid;
 
@@ -305,11 +354,6 @@ export function EditScanRow({
 
     const changes: ScanRowChanges = {};
 
-    // Member reassignment
-    if (newMember) {
-      changes.uid = newMember.id;
-    }
-
     // Class reassignment
     const isMovingClass =
       selectedScid &&
@@ -321,7 +365,7 @@ export function EditScanRow({
 
     // Package to charge
     if (activeMember) {
-      if (!isAlreadyBooked && (isMovingClass || newMember || selectedScid !== "none")) {
+      if (!isAlreadyBooked && (isMovingClass || selectedScid !== "none")) {
         if (eligiblePackages.length === 0 && !isAlreadyBooked) {
           toast.error("No eligible package found for this class");
           return;
@@ -331,7 +375,7 @@ export function EditScanRow({
           return;
         }
       }
-      if (pkgId && (pkgId !== scan.pkgId || newMember || isMovingClass)) {
+      if (pkgId && (pkgId !== scan.pkgId || isMovingClass)) {
         changes.pkgId = pkgId;
       }
     }
@@ -408,8 +452,8 @@ export function EditScanRow({
         <DialogHeader>
           <DialogTitle>Edit check-in</DialogTitle>
           <DialogDescription>
-            Correct a mis-scan. You can edit the member, class, package, time, or status.
-            Moving the check-in to another member or class will adjust credits accordingly.
+            Correct a mis-scan. You can edit the class, package, time, or status.
+            Moving the check-in to another class will adjust credits accordingly.
           </DialogDescription>
         </DialogHeader>
 
@@ -456,82 +500,6 @@ export function EditScanRow({
             </div>
           ) : null}
 
-          {/* Member section */}
-          <div className="space-y-2">
-            <Label>
-              {isGuestRow
-                ? "Reassign to a registered member (optional)"
-                : "Member"}
-            </Label>
-            {newMember ? (
-              <div className="flex items-center justify-between rounded-lg border bg-muted/40 p-3">
-                <div className="flex items-center gap-2.5">
-                  <User className="h-4 w-4 text-primary" />
-                  <div>
-                    <p className="text-sm font-semibold">{newMember.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {newMember.phone || newMember.email}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => {
-                    setNewMember(null);
-                    setPkgId(scan.pkgId ?? "");
-                  }}
-                >
-                  Clear
-                </Button>
-              </div>
-            ) : (
-              <>
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={
-                      isGuestRow
-                        ? "Search a registered member by name or phone to reassign..."
-                        : "Search a different member by name or phone..."
-                    }
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                  {searching ? (
-                    <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : null}
-                </div>
-                {searchResults.length > 0 ? (
-                  <div className="max-h-44 divide-y overflow-y-auto rounded-md border bg-popover shadow-md">
-                    {searchResults.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => handlePickMember(m)}
-                        className="flex w-full items-center justify-between p-2.5 text-left transition-colors hover:bg-muted/50"
-                      >
-                        <div>
-                          <p className="text-sm font-medium leading-none">
-                            {m.name}
-                          </p>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            {m.phone || m.email}
-                          </p>
-                        </div>
-                        <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                          {m.activePkgs} active
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
-
           {/* Class selection */}
           <div className="space-y-1.5 min-w-0">
             <Label>Class</Label>
@@ -541,38 +509,112 @@ export function EditScanRow({
                 Loading classes...
               </div>
             ) : (
-              <Select value={selectedScid} onValueChange={setSelectedScid}>
-                <SelectTrigger className="w-full min-w-0 h-auto min-h-9 py-2 text-left whitespace-normal leading-snug *:data-[slot=select-value]:line-clamp-2 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:text-left *:data-[slot=select-value]:break-words">
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
-                  {scan.source !== "class" && (
-                    <SelectItem value="none">
-                      <span className="line-clamp-2 break-words whitespace-normal text-left">
-                        {scan.source === "pt"
-                          ? "Personal Training (No class)"
-                          : "Open Gym (No class)"}
-                      </span>
-                    </SelectItem>
-                  )}
-                  {classes.map((cls) => {
-                    const timeStr = cls.startTime
-                      ? format(new Date(cls.startTime), "hh:mm a")
-                      : "";
-                    const name = cls.className || "Class";
-                    const coach = cls.coachName ? ` (${cls.coachName})` : "";
-                    const isCurrent = cls._id === scan.parentId;
-                    return (
-                      <SelectItem key={cls._id} value={cls._id!}>
-                        <span className="line-clamp-2 break-words whitespace-normal text-left">
-                          {name} — {timeStr}
-                          {coach} {isCurrent ? " (Current)" : ""}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <Popover open={classPopoverOpen} onOpenChange={setClassPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={classPopoverOpen}
+                    className="w-full min-w-0 h-auto min-h-9 py-2 px-3 text-left justify-between items-center whitespace-normal leading-snug font-normal hover:bg-muted/50 cursor-pointer"
+                  >
+                    <span className="line-clamp-2 break-words text-left flex-1 min-w-0 text-sm">
+                      {selectedClassLabel}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="z-[100] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] sm:max-w-[480px] p-0"
+                  align="start"
+                  sideOffset={4}
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                  onInteractOutside={(e) => {
+                    e.preventDefault();
+                    setClassPopoverOpen(false);
+                  }}
+                >
+                  <Command shouldFilter={false} className="h-auto">
+                    <CommandInput
+                      placeholder="Search class by name, coach, time..."
+                      value={classSearch}
+                      onValueChange={setClassSearch}
+                    />
+                    <CommandList style={{ maxHeight: "260px", overflowY: "auto" }}>
+                      {visibleClasses.length === 0 && !matchesNoClass ? (
+                        <CommandEmpty>
+                          No classes found matching &ldquo;{classSearch}&rdquo;
+                        </CommandEmpty>
+                      ) : null}
+                      <CommandGroup>
+                        {matchesNoClass && (
+                          <CommandItem
+                            value="none"
+                            onSelect={() => {
+                              setSelectedScid("none");
+                              setClassPopoverOpen(false);
+                              setClassSearch("");
+                            }}
+                            className="cursor-pointer py-2"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4 shrink-0",
+                                selectedScid === "none" ? "opacity-100 text-primary" : "opacity-0"
+                              )}
+                            />
+                            <span className="line-clamp-2 break-words whitespace-normal text-left text-sm">
+                              {noClassLabel}
+                            </span>
+                          </CommandItem>
+                        )}
+                        {visibleClasses.map((cls) => {
+                          const timeStr = cls.startTime
+                            ? format(new Date(cls.startTime), "hh:mm a")
+                            : "";
+                          const name = cls.className || "Class";
+                          const coach = cls.coachName ? ` (${cls.coachName})` : "";
+                          const isCurrent = cls._id === scan.parentId;
+                          const isSelected = cls._id === selectedScid;
+
+                          return (
+                            <CommandItem
+                              key={cls._id}
+                              value={cls._id!}
+                              onSelect={() => {
+                                setSelectedScid(cls._id!);
+                                setClassPopoverOpen(false);
+                                setClassSearch("");
+                              }}
+                              className="cursor-pointer py-2"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4 shrink-0",
+                                  isSelected ? "opacity-100 text-primary" : "opacity-0"
+                                )}
+                              />
+                              <span className="line-clamp-2 break-words whitespace-normal text-left text-sm font-normal">
+                                {name} — {timeStr}
+                                {coach} {isCurrent ? " (Current)" : ""}
+                              </span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                    {isSearching && totalMatches > visibleClasses.length ? (
+                      <div className="border-t bg-muted/20 px-3 py-1.5 text-center text-xs text-muted-foreground">
+                        Showing {visibleClasses.length} of {totalMatches} matches · Refine search to see more
+                      </div>
+                    ) : !isSearching && classes.length > visibleClasses.length ? (
+                      <div className="border-t bg-muted/20 px-3 py-1.5 text-center text-xs text-muted-foreground">
+                        Showing {visibleClasses.length} of {classes.length} classes · Type above to search all
+                      </div>
+                    ) : null}
+                  </Command>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
 
