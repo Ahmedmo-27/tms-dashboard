@@ -172,7 +172,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           title: "Accounts",
           url: "/dashboard/accounts",
           icon: UserCog,
-          roles: ["management"],
+          roles: ["management", "branch_admin"],
         },
       ],
     },

@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { useLocations } from "@/lib/hooks/use-locations";
 import { updateAccount } from "@/lib/data/accounts";
+import { useAppSelector } from "@/lib/hooks";
+import { isBranchScopedRole } from "@/lib/config/roles";
 import {
   type AccountRole,
   type UserAccount,
@@ -61,6 +63,9 @@ export function EditAccountDialog({
   onOpenChange,
   onAccountUpdated,
 }: EditAccountDialogProps) {
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const isBranchAdmin = isBranchScopedRole(currentUser?.role);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -145,6 +150,16 @@ export function EditAccountDialog({
 
     if (password && !passwordRulesMet) {
       toast.error("New password does not meet security requirements");
+      return;
+    }
+
+    if (isBranchAdmin && (role === "management" || role === "admin")) {
+      toast.error("Branch admins cannot update an account's status to management");
+      return;
+    }
+
+    if (isBranchAdmin && (account.role === "management" || account.role === "admin")) {
+      toast.error("Branch admins cannot modify management accounts");
       return;
     }
 
@@ -249,9 +264,11 @@ export function EditAccountDialog({
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="management">
-                  Management (Global Operations & Full Access)
-                </SelectItem>
+                {!isBranchAdmin && (
+                  <SelectItem value="management">
+                    Management (Global Operations & Full Access)
+                  </SelectItem>
+                )}
                 <SelectItem value="branch_admin">
                   Branch Admin (Locked to Assigned Branch)
                 </SelectItem>

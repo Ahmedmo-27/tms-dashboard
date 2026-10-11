@@ -233,16 +233,20 @@ export const columns: ColumnDef<Payment>[] = [
 
 export function getPaymentColumns({
   isManagement,
+  canEdit = isManagement,
+  canDelete = isManagement,
   onEdit,
   onDelete,
 }: {
   isManagement?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
   onEdit?: (payment: Payment) => void;
   onDelete?: (payment: Payment) => void;
 } = {}): ColumnDef<Payment>[] {
   const cols = [...columns];
 
-  if (isManagement && (onEdit || onDelete)) {
+  if ((canEdit && onEdit) || (canDelete && onDelete)) {
     cols.push({
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
@@ -258,7 +262,7 @@ export function getPaymentColumns({
 
         return (
           <div className="flex items-center justify-end gap-1 shrink-0">
-            {onEdit && (
+            {canEdit && onEdit && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -274,7 +278,7 @@ export function getPaymentColumns({
                 <TooltipContent>Edit Payment</TooltipContent>
               </Tooltip>
             )}
-            {onDelete && (
+            {canDelete && onDelete && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

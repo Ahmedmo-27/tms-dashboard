@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { getAccounts } from "@/lib/data/accounts";
 import type { UserAccount, AccountRole } from "@/types/accounts";
+import { useAppSelector } from "@/lib/hooks";
+import { isBranchScopedRole } from "@/lib/config/roles";
 import { CreateAccountDialog } from "./create-account-dialog";
 import { EditAccountDialog } from "./edit-account-dialog";
 import { DeleteAccountDialog } from "./delete-account-dialog";
@@ -107,6 +109,9 @@ export function AccountsContainer() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const isBranchAdmin = isBranchScopedRole(currentUser?.role);
 
   const [accounts, setAccounts] = useState<UserAccount[]>([]);
   const [total, setTotal] = useState(0);
@@ -421,28 +426,37 @@ export function AccountsContainer() {
 
                     {/* Actions dropdown */}
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingAccount(acc)}>
-                            <UserCog className="mr-2 h-4 w-4 text-primary" />
-                            <span>Edit Account & Role</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setDeletingAccount(acc)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete Account</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {isBranchAdmin && (acc.role === "management" || acc.role === "admin") ? (
+                        <span
+                          className="text-xs text-muted-foreground/50 italic px-2"
+                          title="Management accounts cannot be modified by branch admins"
+                        >
+                          Protected
+                        </span>
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditingAccount(acc)}>
+                              <UserCog className="mr-2 h-4 w-4 text-primary" />
+                              <span>Edit Account & Role</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setDeletingAccount(acc)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete Account</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

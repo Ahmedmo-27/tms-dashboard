@@ -29,6 +29,8 @@ export interface DataTableProps<TData, TValue> {
   data: TData[]
   pageSize?: number
   isManagement?: boolean
+  canEdit?: boolean
+  canDelete?: boolean
   onEdit?: (payment: Payment) => void
   onDelete?: (payment: Payment) => void
 }
@@ -38,6 +40,8 @@ export function DataTable<TData, TValue>({
   data,
   pageSize = CATALOG_PAGE_SIZE,
   isManagement,
+  canEdit,
+  canDelete,
   onEdit,
   onDelete,
 }: DataTableProps<TData, TValue>) {
@@ -78,6 +82,8 @@ export function DataTable<TData, TValue>({
               key={row.id}
               payment={row.original as Payment}
               isManagement={isManagement}
+              canEdit={canEdit}
+              canDelete={canDelete}
               onEdit={onEdit}
               onDelete={onDelete}
             />

@@ -5,7 +5,7 @@ import { DataTable } from "./data-table";
 import { EditPaymentDialog } from "./edit-payment-dialog";
 import { DeletePaymentDialog } from "./delete-payment-dialog";
 import { useAppSelector } from "@/lib/hooks";
-import { isManagementRole } from "@/lib/config/roles";
+import { isManagementRole, isBranchScopedRole } from "@/lib/config/roles";
 import { Card, CardHeader, CardTitle, CardContent } from "../card";
 import { Input } from "../input";
 import { Button } from "../button";
@@ -71,6 +71,9 @@ export default function PaymentsContainer({
 
   const currentUser = useAppSelector((state) => state.auth.user);
   const isManagement = isManagementRole(currentUser?.role);
+  const isBranchAdmin = isBranchScopedRole(currentUser?.role);
+  const canEdit = isManagement || isBranchAdmin;
+  const canDelete = isManagement;
 
   const [paymentToEdit, setPaymentToEdit] = useState<Payment | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -92,10 +95,12 @@ export default function PaymentsContainer({
     () =>
       getPaymentColumns({
         isManagement,
+        canEdit,
+        canDelete,
         onEdit: handleOpenEdit,
         onDelete: handleOpenDelete,
       }),
-    [isManagement]
+    [isManagement, canEdit, canDelete]
   );
 
   const effectiveStart = initialStartDate || initialDate;
@@ -592,6 +597,8 @@ export default function PaymentsContainer({
                 columns={tableColumns}
                 data={filteredPayments}
                 isManagement={isManagement}
+                canEdit={canEdit}
+                canDelete={canDelete}
                 onEdit={handleOpenEdit}
                 onDelete={handleOpenDelete}
               />

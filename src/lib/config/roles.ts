@@ -147,7 +147,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/mailing": ["management", "mailer"],
   "/dashboard/mailing/sent": ["management", "mailer"],
   "/dashboard/mailing/received": ["management", "mailer"],
-  "/dashboard/accounts": ["management"],
+  "/dashboard/accounts": ["management", "branch_admin"],
 };
 
 export function canAccessPage(
@@ -177,7 +177,9 @@ export const MANAGEMENT_ONLY_ACTIONS = {
   locationCrud: ["management"] as const,
   ticketCategoryCrud: ["management"] as const,
   mail: ["management", "mailer"] as const,
-  accountCrud: ["management"] as const,
+  accountCrud: ["management", "branch_admin"] as const,
+  paymentEdit: ["management", "branch_admin"] as const,
+  paymentDelete: ["management"] as const,
   paymentEditDelete: ["management"] as const,
 } as const;
 
