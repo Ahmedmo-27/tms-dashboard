@@ -23,11 +23,16 @@ import { BranchPill } from "../branch-pill";
 import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import { ScanMemberLink } from "./scan-member-link";
 import { AddWalkIn } from "../dialogs/scans/add-walk-in";
+import { EditScanRow } from "../dialogs/scans/edit-scan-row";
+import { DeleteScanRow } from "../dialogs/scans/delete-scan-row";
 import { removeFailedScan, updateNonUserBookingPhone } from "@/lib/data/bookings";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
+
+/** Which Scans Monitor table a row came from; picks the correction endpoint. */
+export type ScanSource = "class" | "pt" | "open-gym";
 
 export interface ClassScan {
   member: string;
@@ -39,6 +44,14 @@ export interface ClassScan {
   statusDetail?: string;
   bookingId?: string;
   branchLabel?: string;
+  /** Row identity, so the front desk can correct or delete this check-in. */
+  source?: ScanSource;
+  /** Scheduled class id for class rows, daily attendance document id otherwise. */
+  parentId?: string;
+  rowId?: string;
+  /** Package the visit was charged to, when the row records it. */
+  pkgId?: string;
+  isGuest?: boolean;
 }
 
 export interface ClassContainerProps {
@@ -308,13 +321,14 @@ export const ClassContainer = ({
                   <TableHead>Package</TableHead>
                   <TableHead>Check-in Time</TableHead>
                   <TableHead className="text-right">Status</TableHead>
+                  <TableHead className="w-[72px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {classScans.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={6}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No check-ins yet. Use Check in or Walk-in above.
@@ -375,6 +389,14 @@ export const ClassContainer = ({
                             ) : null}
                           </div>
                         )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {scan.rowId && scan.parentId ? (
+                          <div className="flex items-center justify-end gap-0.5">
+                            <EditScanRow scan={scan} onSaved={onRefresh} />
+                            <DeleteScanRow scan={scan} onDeleted={onRefresh} />
+                          </div>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   ))
