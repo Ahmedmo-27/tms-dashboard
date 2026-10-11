@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
-import { CheckCircle2, Loader2, Pencil, Search, User } from "lucide-react";
+import { AlertTriangle, CalendarIcon, CheckCircle2, Clock, Loader2, Pencil, Search, Trash2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +20,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -28,19 +35,13 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { getMembers } from "@/lib/data/member";
 import { getPackages } from "@/lib/data/package";
 import { getScheduledClasses } from "@/lib/data/schedule";
-import { updateScanRow, type ScanRowChanges } from "@/lib/data/scan-rows";
+import { updateScanRow, deleteScanRow, type ScanRowChanges } from "@/lib/data/scan-rows";
 import { packageOpensClass } from "@/lib/utils/package-eligibility";
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 import type { Member, MemberPackage } from "@/components/ui/members/columns";
 import type { ClassScan } from "@/components/ui/scans/class-container";
 import type { ScheduledClass } from "@/components/ui/schedule/columns";
 import type { Package } from "@/components/ui/packages/columns";
-
-/** Datetime-local wants the wall clock, not an ISO instant. */
-function toLocalInput(value: string): string {
-  const date = new Date(value);
-  return isNaN(date.getTime()) ? "" : format(date, "yyyy-MM-dd'T'HH:mm");
-}
 
 export function EditScanRow({
   scan,
@@ -76,7 +77,11 @@ export function EditScanRow({
   const [pkgId, setPkgId] = useState<string>(scan.pkgId ?? "");
 
   // Time & Status
-  const [time, setTime] = useState<string>(toLocalInput(scan.time));
+  const [selectedDateTime, setSelectedDateTime] = useState<Date>(() => {
+    const d = new Date(scan.time);
+    return isNaN(d.getTime()) ? new Date() : d;
+  });
+  const [openCalendar, setOpenCalendar] = useState(false);
   const [status, setStatus] = useState<"SUCCESS" | "FAILED" | "WILL_PAY">(
     scan.status ?? "SUCCESS",
   );
@@ -88,6 +93,13 @@ export function EditScanRow({
 
   const canEditGuest = isGuestRow && !newMember && scan.source !== "pt";
 
+  // Delete
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [restoreSession, setRestoreSession] = useState(true);
+  const consumesSessionOnScan = scan.source !== "class";
+  const wasSuccessful = scan.status !== "FAILED";
+
   const reset = useCallback(() => {
     setSearchQuery("");
     setSearchResults([]);
@@ -96,11 +108,37 @@ export function EditScanRow({
       scan.source === "class" && scan.parentId ? scan.parentId : "none"
     );
     setPkgId(scan.pkgId ?? "");
-    setTime(toLocalInput(scan.time));
+    const initialDate = new Date(scan.time);
+    setSelectedDateTime(isNaN(initialDate.getTime()) ? new Date() : initialDate);
+    setOpenCalendar(false);
     setStatus(scan.status ?? "SUCCESS");
     setGuestName(isGuestRow ? scan.member : "");
     setGuestPhone(isGuestRow ? scan.phone : "");
+    setShowDeleteConfirm(false);
+    setDeleting(false);
+    setRestoreSession(true);
   }, [scan, isGuestRow]);
+
+  const handleDelete = async () => {
+    if (!scan.source || !scan.parentId || !scan.rowId) {
+      toast.error("This row cannot be deleted");
+      return;
+    }
+    try {
+      setDeleting(true);
+      await deleteScanRow(
+        { source: scan.source, parentId: scan.parentId, rowId: scan.rowId },
+        restoreSession,
+      );
+      toast.success("Check-in deleted");
+      setOpen(false);
+      onSaved?.();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Load initial catalog packages, day's classes, and current member
   useEffect(() => {
@@ -299,9 +337,9 @@ export function EditScanRow({
     }
 
     // Check-in Time
-    const originalTime = toLocalInput(scan.time);
-    if (time && time !== originalTime) {
-      changes.time = new Date(time).toISOString();
+    const originalTime = new Date(scan.time).getTime();
+    if (!isNaN(originalTime) && Math.abs(selectedDateTime.getTime() - originalTime) > 1000) {
+      changes.time = selectedDateTime.toISOString();
     }
 
     // Status
@@ -366,7 +404,7 @@ export function EditScanRow({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto w-full">
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-x-hidden overflow-y-auto w-full">
         <DialogHeader>
           <DialogTitle>Edit check-in</DialogTitle>
           <DialogDescription>
@@ -375,16 +413,16 @@ export function EditScanRow({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 w-full min-w-0 max-w-full">
           {/* Current scan summary */}
-          <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
-            <div className="flex items-center justify-between">
-              <p className="font-semibold">{scan.member}</p>
-              <span className="text-xs text-muted-foreground">
+          <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <p className="font-semibold truncate min-w-0">{scan.member}</p>
+              <span className="text-xs text-muted-foreground shrink-0">
                 {scan.phone || "No phone"}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate min-w-0">
               Current: <span className="font-medium text-foreground">{scan.method}</span> ·{" "}
               {format(new Date(scan.time), "hh:mm a")}
             </p>
@@ -392,8 +430,8 @@ export function EditScanRow({
 
           {/* Guest / Walk-in fields */}
           {canEditGuest ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+              <div className="space-y-1.5 min-w-0">
                 <Label htmlFor="guest-name">
                   {scan.source === "class" ? "Walk-in Name" : "Guest Name"}
                 </Label>
@@ -402,15 +440,17 @@ export function EditScanRow({
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
                   placeholder="Enter name"
+                  className="w-full min-w-0"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label htmlFor="guest-phone">Phone Number</Label>
                 <Input
                   id="guest-phone"
                   value={guestPhone}
                   onChange={(e) => setGuestPhone(e.target.value)}
                   placeholder="01xxxxxxxxx"
+                  className="w-full min-w-0"
                 />
               </div>
             </div>
@@ -493,7 +533,7 @@ export function EditScanRow({
           </div>
 
           {/* Class selection */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label>Class</Label>
             {loadingInitial ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
@@ -502,15 +542,17 @@ export function EditScanRow({
               </div>
             ) : (
               <Select value={selectedScid} onValueChange={setSelectedScid}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full min-w-0 h-auto min-h-9 py-2 text-left whitespace-normal leading-snug *:data-[slot=select-value]:line-clamp-2 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:text-left *:data-[slot=select-value]:break-words">
                   <SelectValue placeholder="Select class" />
                 </SelectTrigger>
                 <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                   {scan.source !== "class" && (
                     <SelectItem value="none">
-                      {scan.source === "pt"
-                        ? "Personal Training (No class)"
-                        : "Open Gym (No class)"}
+                      <span className="line-clamp-2 break-words whitespace-normal text-left">
+                        {scan.source === "pt"
+                          ? "Personal Training (No class)"
+                          : "Open Gym (No class)"}
+                      </span>
                     </SelectItem>
                   )}
                   {classes.map((cls) => {
@@ -522,9 +564,9 @@ export function EditScanRow({
                     const isCurrent = cls._id === scan.parentId;
                     return (
                       <SelectItem key={cls._id} value={cls._id!}>
-                        <span className="truncate">
+                        <span className="line-clamp-2 break-words whitespace-normal text-left">
                           {name} — {timeStr}
-                          {coach} {isCurrent ? "(Current)" : ""}
+                          {coach} {isCurrent ? " (Current)" : ""}
                         </span>
                       </SelectItem>
                     );
@@ -548,16 +590,16 @@ export function EditScanRow({
                 No packages available for this class in {activeMember.name}&apos;s account.
               </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label>Package to charge</Label>
                 <Select value={pkgId} onValueChange={setPkgId}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full min-w-0 h-auto min-h-9 py-2 text-left whitespace-normal leading-snug *:data-[slot=select-value]:line-clamp-2 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:text-left *:data-[slot=select-value]:break-words">
                     <SelectValue placeholder="Select a package" />
                   </SelectTrigger>
                   <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                     {eligiblePackages.map((p) => (
                       <SelectItem key={p._id} value={p._id}>
-                        <span className="truncate">
+                        <span className="line-clamp-2 break-words whitespace-normal text-left">
                           {p.name} — {p.remainingClasses} left{p.status !== "ACTIVE" ? ` (${p.status})` : ""}
                         </span>
                       </SelectItem>
@@ -572,16 +614,16 @@ export function EditScanRow({
               </div>
             )
           ) : activeMember && selectedScid === "none" && eligiblePackages.length > 0 ? (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <Label>Package to charge</Label>
               <Select value={pkgId} onValueChange={setPkgId}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full min-w-0 h-auto min-h-9 py-2 text-left whitespace-normal leading-snug *:data-[slot=select-value]:line-clamp-2 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:text-left *:data-[slot=select-value]:break-words">
                   <SelectValue placeholder="Select a package" />
                 </SelectTrigger>
                 <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                   {eligiblePackages.map((p) => (
                     <SelectItem key={p._id} value={p._id}>
-                      <span className="truncate">
+                      <span className="line-clamp-2 break-words whitespace-normal text-left">
                         {p.name} — {p.remainingClasses} left{p.status !== "ACTIVE" ? ` (${p.status})` : ""}
                       </span>
                     </SelectItem>
@@ -592,17 +634,90 @@ export function EditScanRow({
           ) : null}
 
           {/* Check-in time & Status */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="scan-time">Check-in time</Label>
-              <Input
-                id="scan-time"
-                type="datetime-local"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+            <div className="space-y-1.5 min-w-0">
+              <Label htmlFor="scan-time-btn">Check-in time</Label>
+              <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="scan-time-btn"
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal h-9 px-3 text-xs sm:text-sm min-w-0"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                      {format(selectedDateTime, "MMM d, yyyy · hh:mm a")}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="z-[70] w-auto p-0"
+                  align="start"
+                  side="bottom"
+                  sideOffset={4}
+                  collisionPadding={16}
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                  onInteractOutside={(e) => {
+                    e.preventDefault();
+                    setOpenCalendar(false);
+                  }}
+                >
+                  <Calendar
+                    mode="single"
+                    selected={selectedDateTime}
+                    onSelect={(d) => {
+                      if (d) {
+                        const updated = new Date(d);
+                        updated.setHours(
+                          selectedDateTime.getHours(),
+                          selectedDateTime.getMinutes(),
+                          selectedDateTime.getSeconds(),
+                          0
+                        );
+                        setSelectedDateTime(updated);
+                      }
+                    }}
+                    initialFocus
+                    className="rounded-md"
+                  />
+                  <div className="p-3 border-t bg-muted/20 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Time</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="time"
+                        value={format(selectedDateTime, "HH:mm")}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            const [h, m] = val.split(":").map(Number);
+                            if (!isNaN(h) && !isNaN(m)) {
+                              const updated = new Date(selectedDateTime);
+                              updated.setHours(h, m, 0, 0);
+                              setSelectedDateTime(updated);
+                            }
+                          }
+                        }}
+                        className="h-8 w-28 text-xs px-2"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-8 text-xs px-2.5"
+                        onClick={() => setOpenCalendar(false)}
+                      >
+                        Done
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <Label>Status</Label>
               <Select
                 value={status}
@@ -610,7 +725,7 @@ export function EditScanRow({
                   setStatus(v as "SUCCESS" | "FAILED" | "WILL_PAY")
                 }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full h-9 min-w-0 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -633,14 +748,94 @@ export function EditScanRow({
           ) : null}
         </div>
 
-        <DialogFooter className="flex flex-row justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save changes"}
-          </Button>
-        </DialogFooter>
+        {showDeleteConfirm ? (
+          <div className="w-full rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2 text-sm mt-2">
+            <div className="flex items-center gap-2 font-medium text-destructive">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>Are you sure you want to delete this check-in?</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This will remove the check-in record for {scan.member}.
+            </p>
+            {consumesSessionOnScan && wasSuccessful ? (
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox
+                  id="modal-restore-session"
+                  checked={restoreSession}
+                  onCheckedChange={(v) => setRestoreSession(v === true)}
+                />
+                <Label htmlFor="modal-restore-session" className="text-xs cursor-pointer">
+                  Return the session to the member
+                </Label>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Confirm Delete"
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={saving || deleting}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive self-start sm:self-auto cursor-pointer"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              Delete scan
+            </Button>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={saving || deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={saving || loadingInitial || deleting}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save changes"
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
