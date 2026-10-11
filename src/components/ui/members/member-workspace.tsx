@@ -9,10 +9,12 @@ import { ScheduledClass } from "@/components/ui/schedule/columns";
 import Packages from "@/components/ui/cards/packages";
 import Bookings from "@/components/ui/cards/bookings";
 import PTAttendance from "@/components/ui/cards/ptAttendance";
+import Deductions from "@/components/ui/cards/deductions";
 import SubPackage from "@/components/ui/dialogs/member package/sub-package";
 import AddClasses from "@/components/ui/dialogs/member package/add-classes";
 import BookClass from "@/components/ui/dialogs/member-bookings/book-class";
 import BookDropIn from "@/components/ui/dialogs/member-bookings/book-drop-in";
+import { PtDropInDialog } from "@/components/ui/dialogs/pt/pt-drop-in-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function MemberWorkspace({
@@ -71,6 +73,7 @@ export function MemberWorkspace({
               catalogPackages={packages}
             />
             <BookDropIn uid={member.id} memberName={member.name} />
+            <PtDropInDialog uid={member.id} memberName={member.name} triggerLabel="PT drop-in" />
             {activePackage && (
               <AddClasses uid={member.id} pkg={activePackage} variant="button" />
             )}
@@ -82,6 +85,7 @@ export function MemberWorkspace({
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="packages">Packages</TabsTrigger>
+            <TabsTrigger value="deductions">Deductions</TabsTrigger>
             <TabsTrigger value="bookings">Bookings</TabsTrigger>
             <TabsTrigger value="attendance">PT attendance</TabsTrigger>
           </TabsList>
@@ -90,6 +94,13 @@ export function MemberWorkspace({
               memberPackages={member.packages || []}
               uid={member.id}
               packages={packages}
+              hideHeader
+            />
+          </TabsContent>
+          <TabsContent value="deductions" className="mt-4">
+            <Deductions
+              memberPackages={member.packages || []}
+              deductions={member.deductions}
               hideHeader
             />
           </TabsContent>

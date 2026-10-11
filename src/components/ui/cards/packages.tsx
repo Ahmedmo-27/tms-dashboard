@@ -31,7 +31,7 @@ import toast from "react-hot-toast";
 import { getActionErrorMessage } from "@/lib/utils/api-error-message";
 import { format } from "date-fns";
 import { MobilePackageCard } from "./mobile-package-card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { useState, Fragment } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -40,47 +40,100 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const SOURCE_LABELS: Record<AdjustmentRecord["source"], string> = {
+export const SOURCE_LABELS: Record<AdjustmentRecord["source"], string> = {
   BOOKING: "Booking",
   PT_ATTENDANCE: "PT Attendance",
+  SPACE_WALK: "Open Gym",
+  ATTENDANCE: "Class Attendance",
+  COACH: "Coach",
   ADMIN: "Admin",
   MEMBER_CANCELLATION: "Member Cancel",
   FRONTDESK_CANCELLATION: "FD Cancel",
 };
 
-const SOURCE_COLORS: Record<AdjustmentRecord["source"], string> = {
+export const SOURCE_COLORS: Record<AdjustmentRecord["source"], string> = {
   BOOKING: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   PT_ATTENDANCE: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  SPACE_WALK: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+  ATTENDANCE: "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400",
+  COACH: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400",
   ADMIN: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
   MEMBER_CANCELLATION: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
   FRONTDESK_CANCELLATION: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
+const HISTORY_PAGE_SIZE = 5;
+
 function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
+  const [deductionsPage, setDeductionsPage] = useState(0);
+  const [attendancePage, setAttendancePage] = useState(0);
+  const [freezesPage, setFreezesPage] = useState(0);
+
   const sortedHistory = [...(pkg.adjustmentHistory ?? [])].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) =>
+      new Date(b.attendanceDate ?? b.date).getTime() -
+      new Date(a.attendanceDate ?? a.date).getTime()
+  );
+  const sortedAttendance = [...(pkg.attendance ?? [])].sort(
+    (a, b) =>
+      new Date(b.attendanceDate).getTime() -
+      new Date(a.attendanceDate).getTime()
   );
   const freezeHistory = [...(pkg.freezeInfo?.freezeHistory ?? [])].sort(
     (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
   );
 
+  const deductionsPageCount = Math.max(
+    1,
+    Math.ceil(sortedHistory.length / HISTORY_PAGE_SIZE)
+  );
+  const safeDeductionsPage = Math.min(deductionsPage, deductionsPageCount - 1);
+  const pagedHistory = sortedHistory.slice(
+    safeDeductionsPage * HISTORY_PAGE_SIZE,
+    (safeDeductionsPage + 1) * HISTORY_PAGE_SIZE
+  );
+
+  const attendancePageCount = Math.max(
+    1,
+    Math.ceil(sortedAttendance.length / HISTORY_PAGE_SIZE)
+  );
+  const safeAttendancePage = Math.min(attendancePage, attendancePageCount - 1);
+  const pagedAttendance = sortedAttendance.slice(
+    safeAttendancePage * HISTORY_PAGE_SIZE,
+    (safeAttendancePage + 1) * HISTORY_PAGE_SIZE
+  );
+
+  const freezesPageCount = Math.max(
+    1,
+    Math.ceil(freezeHistory.length / HISTORY_PAGE_SIZE)
+  );
+  const safeFreezesPage = Math.min(freezesPage, freezesPageCount - 1);
+  const pagedFreezes = freezeHistory.slice(
+    safeFreezesPage * HISTORY_PAGE_SIZE,
+    (safeFreezesPage + 1) * HISTORY_PAGE_SIZE
+  );
+
   return (
     <Tabs defaultValue="deductions" className="w-full">
       <TabsList className="mb-2">
-        <TabsTrigger value="attendance">Attendance</TabsTrigger>
-        <TabsTrigger value="deductions">Deductions</TabsTrigger>
+        <TabsTrigger value="deductions">
+          Deductions {sortedHistory.length > 0 && `(${sortedHistory.length})`}
+        </TabsTrigger>
+        <TabsTrigger value="attendance">
+          Attendance {sortedAttendance.length > 0 && `(${sortedAttendance.length})`}
+        </TabsTrigger>
         <TabsTrigger value="freezes">
           Freezes {freezeHistory.length > 0 && `(${freezeHistory.length})`}
         </TabsTrigger>
       </TabsList>
 
       <TabsContent value="attendance">
-        <ScrollArea className="max-h-48">
-          {(pkg.attendance ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No attendance history
-            </p>
-          ) : (
+        {sortedAttendance.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No attendance history
+          </p>
+        ) : (
+          <div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -89,7 +142,7 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pkg.attendance.map((rec, i) => (
+                {pagedAttendance.map((rec, i) => (
                   <TableRow key={i}>
                     <TableCell className="text-sm py-2">{rec.className}</TableCell>
                     <TableCell className="text-xs text-muted-foreground py-2">
@@ -101,17 +154,24 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
                 ))}
               </TableBody>
             </Table>
-          )}
-        </ScrollArea>
+            <TablePagination
+              pageIndex={safeAttendancePage}
+              pageCount={attendancePageCount}
+              total={sortedAttendance.length}
+              pageSize={HISTORY_PAGE_SIZE}
+              onPageChange={setAttendancePage}
+            />
+          </div>
+        )}
       </TabsContent>
 
       <TabsContent value="deductions">
-        <ScrollArea className="max-h-48">
-          {sortedHistory.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No history available
-            </p>
-          ) : (
+        {sortedHistory.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No history available
+          </p>
+        ) : (
+          <div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -123,54 +183,70 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedHistory.map((rec, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="text-xs text-muted-foreground py-2 whitespace-nowrap">
-                      {format(new Date(rec.date), "dd MMM yyyy")}
-                    </TableCell>
-                    <TableCell className="py-2">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          rec.type === "ADD"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                        )}
+                {pagedHistory.map((rec, i) => {
+                  const displayDate = rec.attendanceDate ?? rec.date;
+                  return (
+                    <TableRow key={i}>
+                      <TableCell className="text-xs text-muted-foreground py-2 whitespace-nowrap">
+                        {displayDate
+                          ? format(new Date(displayDate), "dd MMM yyyy")
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                            rec.type === "ADD"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                          )}
+                        >
+                          {rec.type === "ADD" ? "+Add" : "-Deduct"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                            SOURCE_COLORS[rec.source] ??
+                              "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
+                          )}
+                        >
+                          {SOURCE_LABELS[rec.source] ?? rec.source}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-xs font-medium text-right py-2">
+                        {rec.amount}
+                      </TableCell>
+                      <TableCell
+                        className="text-xs text-muted-foreground py-2 max-w-[220px] truncate"
+                        title={rec.reason ?? rec.className ?? ""}
                       >
-                        {rec.type === "ADD" ? "+Add" : "-Deduct"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-2">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          SOURCE_COLORS[rec.source]
-                        )}
-                      >
-                        {SOURCE_LABELS[rec.source]}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs font-medium text-right py-2">
-                      {rec.amount}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground py-2 max-w-[160px] truncate">
-                      {rec.reason ?? rec.className ?? "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        {rec.reason ?? rec.className ?? "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
-          )}
-        </ScrollArea>
+            <TablePagination
+              pageIndex={safeDeductionsPage}
+              pageCount={deductionsPageCount}
+              total={sortedHistory.length}
+              pageSize={HISTORY_PAGE_SIZE}
+              onPageChange={setDeductionsPage}
+            />
+          </div>
+        )}
       </TabsContent>
 
       <TabsContent value="freezes">
-        <ScrollArea className="max-h-48">
-          {freezeHistory.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No freeze history recorded
-            </p>
-          ) : (
+        {freezeHistory.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No freeze history recorded
+          </p>
+        ) : (
+          <div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -182,7 +258,7 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {freezeHistory.map((rec, i) => (
+                {pagedFreezes.map((rec, i) => (
                   <TableRow key={i}>
                     <TableCell className="text-xs text-muted-foreground py-2 whitespace-nowrap">
                       {rec.startDate ? format(new Date(rec.startDate), "dd MMM yyyy") : "—"}
@@ -214,8 +290,15 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
                 ))}
               </TableBody>
             </Table>
-          )}
-        </ScrollArea>
+            <TablePagination
+              pageIndex={safeFreezesPage}
+              pageCount={freezesPageCount}
+              total={freezeHistory.length}
+              pageSize={HISTORY_PAGE_SIZE}
+              onPageChange={setFreezesPage}
+            />
+          </div>
+        )}
       </TabsContent>
     </Tabs>
   );

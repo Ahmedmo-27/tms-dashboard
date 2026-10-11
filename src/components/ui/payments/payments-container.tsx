@@ -1,7 +1,11 @@
 "use client";
 
-import { Payment, columns } from "./columns";
+import { Payment, columns, getPaymentColumns } from "./columns";
 import { DataTable } from "./data-table";
+import { EditPaymentDialog } from "./edit-payment-dialog";
+import { DeletePaymentDialog } from "./delete-payment-dialog";
+import { useAppSelector } from "@/lib/hooks";
+import { isManagementRole } from "@/lib/config/roles";
 import { Card, CardHeader, CardTitle, CardContent } from "../card";
 import { Input } from "../input";
 import { Button } from "../button";
@@ -32,7 +36,10 @@ import { PaymentDateRangePicker } from "./payment-date-range-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, formatDate, isSameDay } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
-import { isOutflowTransaction } from "@/lib/utils/parsers/payments-parser";
+import {
+  isOutflowTransaction,
+  isDeductedTransaction,
+} from "@/lib/utils/parsers/payments-parser";
 import { ExportPaymentsDialog } from "./export-payments-dialog";
 import { CopyPaymentsForSheetButton } from "./copy-payments-for-sheet-button";
 import type { DateRange } from "react-day-picker";
@@ -54,10 +61,42 @@ export default function PaymentsContainer({
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<"all" | "payments" | "refunds">("all");
+  const [selectedType, setSelectedType] = useState<
+    "all" | "payments" | "deductions" | "refunds"
+  >("all");
 
   const isOutflow = (payment: Payment) => isOutflowTransaction(payment);
+  const isDeducted = (payment: Payment) => isDeductedTransaction(payment);
   const [exportOpen, setExportOpen] = useState(false);
+
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const isManagement = isManagementRole(currentUser?.role);
+
+  const [paymentToEdit, setPaymentToEdit] = useState<Payment | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const handleOpenEdit = (p: Payment) => {
+    setPaymentToEdit(p);
+    setEditDialogOpen(true);
+  };
+
+  const handleOpenDelete = (p: Payment) => {
+    setPaymentToDelete(p);
+    setDeleteDialogOpen(true);
+  };
+
+  const tableColumns = useMemo(
+    () =>
+      getPaymentColumns({
+        isManagement,
+        onEdit: handleOpenEdit,
+        onDelete: handleOpenDelete,
+      }),
+    [isManagement]
+  );
 
   const effectiveStart = initialStartDate || initialDate;
   const effectiveEnd = initialEndDate || initialStartDate || initialDate;
@@ -86,6 +125,11 @@ export default function PaymentsContainer({
   // Calculate payment statistics
   const stats = useMemo(() => {
     const totalAmount = payments.reduce((sum, payment) => {
+      // Exclude package deductions from revenue as no cash is collected
+      if (isDeducted(payment)) {
+        return sum;
+      }
+
       const amountStr = typeof payment.amount === 'string' ? payment.amount : String(payment.amount);
       const numericAmount = parseFloat(amountStr.replace(/[^0-9.-]+/g, ""));
       const val = isNaN(numericAmount) ? 0 : Math.abs(numericAmount);
@@ -100,7 +144,7 @@ export default function PaymentsContainer({
       const timeZone = "Africa/Cairo";
       const paymentDate = formatInTimeZone(new Date(payment.paymentTime), timeZone, "MM/dd/yyyy");
       const today = formatInTimeZone(new Date(), timeZone, "MM/dd/yyyy");
-      return paymentDate === today;
+      return paymentDate === today && !isOutflow(payment) && !isDeducted(payment);
     });
 
     const uniqueMembers = new Set(payments.map((p) => p.memberName)).size;
@@ -111,12 +155,14 @@ export default function PaymentsContainer({
     }, {} as Record<string, number>);
 
     const outflows = payments.filter((p) => isOutflow(p));
+    const deductions = payments.filter((p) => isDeducted(p));
 
     return {
       totalAmount,
-      totalPayments: payments.filter((p) => !isOutflow(p)).length,
+      totalPayments: payments.filter((p) => !isOutflow(p) && !isDeducted(p)).length,
       todayPayments: todayPayments.length,
       totalOutflows: outflows.length,
+      totalDeductions: deductions.length,
       uniqueMembers,
       paymentMethods,
     };
@@ -137,7 +183,8 @@ export default function PaymentsContainer({
 
       const matchesType = 
         selectedType === "all" || 
-        (selectedType === "payments" && !isOutflow(payment)) ||
+        (selectedType === "payments" && !isOutflow(payment) && !isDeducted(payment)) ||
+        (selectedType === "deductions" && isDeducted(payment)) ||
         (selectedType === "refunds" && isOutflow(payment));
 
       return matchesSearch && matchesMethod && matchesType;
@@ -387,11 +434,13 @@ export default function PaymentsContainer({
                         ? "All Types"
                         : selectedType === "payments"
                           ? "Payments Only"
-                          : "Refunds & Cash Outs"}
+                          : selectedType === "deductions"
+                            ? "Package Deductions"
+                            : "Refunds & Cash Outs"}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel>Transaction Type</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setSelectedType("all")}>
@@ -403,7 +452,13 @@ export default function PaymentsContainer({
                   <DropdownMenuItem onClick={() => setSelectedType("payments")}>
                     Payments Only
                     <Badge variant="outline" className="ml-auto">
-                      {payments.filter((p) => !isOutflow(p)).length}
+                      {payments.filter((p) => !isOutflow(p) && !isDeducted(p)).length}
+                    </Badge>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedType("deductions")}>
+                    Package Deductions
+                    <Badge variant="outline" className="ml-auto">
+                      {payments.filter((p) => isDeducted(p)).length}
                     </Badge>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setSelectedType("refunds")}>
@@ -533,7 +588,13 @@ export default function PaymentsContainer({
                 </div>
               </div>
             ) : filteredPayments.length > 0 ? (
-              <DataTable columns={columns} data={filteredPayments} />
+              <DataTable
+                columns={tableColumns}
+                data={filteredPayments}
+                isManagement={isManagement}
+                onEdit={handleOpenEdit}
+                onDelete={handleOpenDelete}
+              />
             ) : payments.length > 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Search className="h-12 w-12 text-muted-foreground/50" />
@@ -568,6 +629,19 @@ export default function PaymentsContainer({
           </div>
         </CardContent>
       </Card>
+
+      <EditPaymentDialog
+        payment={paymentToEdit}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onPaymentUpdated={() => router.refresh()}
+      />
+      <DeletePaymentDialog
+        payment={paymentToDelete}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onPaymentDeleted={() => router.refresh()}
+      />
     </div>
   );
 }

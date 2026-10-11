@@ -53,3 +53,46 @@ export function formatSessionCount(sessions: string): string {
   return sessions === "1000" ? "Unlimited" : sessions;
 }
 
+export function getEffectivePackageNote(pkg: {
+  name?: string;
+  category?: string;
+  numberOfSessions?: string | number;
+  notes?: string | null;
+}): string {
+  if (pkg.notes !== undefined && pkg.notes !== null) {
+    return pkg.notes.trim();
+  }
+
+  const packageName = (pkg.name ?? "").toLowerCase().trim();
+  const category = (pkg.category ?? "")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .trim();
+  const numberOfSessions = String(pkg.numberOfSessions ?? "").trim();
+
+  if (
+    category === "ultimate mindspacer" ||
+    packageName.includes("ultimate mindspacer")
+  ) {
+    return "Can book only two Reformer Pilates classes per month";
+  }
+
+  const isStudioFiveByFields =
+    category === "studio" && numberOfSessions === "5";
+  const isStudioFiveByName =
+    packageName.includes("studio") && /\b5\b/.test(packageName);
+  if (isStudioFiveByFields || isStudioFiveByName) {
+    return "Can’t book Reformer Pilates classes";
+  }
+
+  if (
+    category === "mixed" ||
+    category === "spacer mix" ||
+    packageName.includes("spacer mix")
+  ) {
+    return "Can’t book Reformer Pilates classes";
+  }
+
+  return "";
+}
+

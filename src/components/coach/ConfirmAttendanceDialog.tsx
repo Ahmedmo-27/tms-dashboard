@@ -69,7 +69,9 @@ export function ConfirmAttendanceDialog({
   const [notes, setNotes] = useState("");
 
   const successCount =
-    session?.scans?.filter((s) => s.status === "SUCCESS").length ?? 0;
+    session?.scans?.filter(
+      (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
+    ).length ?? 0;
 
   useEffect(() => {
     if (!session || !open) return;
@@ -83,7 +85,7 @@ export function ConfirmAttendanceDialog({
       // Default to checked-in count, or 0
       const initialCount = successCount;
       setCount(initialCount);
-      setHasMissingPlace(initialCount < session.bookedCount);
+      setHasMissingPlace(initialCount < successCount);
       setUserToggledMissingPlace(false);
       setNotes("");
     }
@@ -93,7 +95,7 @@ export function ConfirmAttendanceDialog({
     const val = Math.max(0, newCount);
     setCount(val);
     if (!userToggledMissingPlace && session) {
-      setHasMissingPlace(val < session.bookedCount);
+      setHasMissingPlace(val < successCount);
     }
   };
 
@@ -150,12 +152,12 @@ export function ConfirmAttendanceDialog({
           {/* Summary metrics */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg border bg-muted/30 p-2.5">
-              <span className="text-xs text-muted-foreground">Booked</span>
-              <p className="text-base font-semibold">{session.bookedCount}</p>
+              <span className="text-xs text-muted-foreground">Scanned</span>
+              <p className="text-base font-semibold">{successCount}</p>
             </div>
             <div className="rounded-lg border bg-muted/30 p-2.5">
-              <span className="text-xs text-muted-foreground">Checked In</span>
-              <p className="text-base font-semibold">{successCount}</p>
+              <span className="text-xs text-muted-foreground">Booked</span>
+              <p className="text-base font-semibold">{session.bookedCount}</p>
             </div>
             <div className="rounded-lg border bg-muted/30 p-2.5">
               <span className="text-xs text-muted-foreground">Capacity</span>
@@ -205,19 +207,19 @@ export function ConfirmAttendanceDialog({
 
           {/* Missing Place Alert & Checkbox */}
           <div className="space-y-3 rounded-lg border p-3.5">
-            {count < session.bookedCount ? (
+            {count < successCount ? (
               <div className="flex items-start gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded border border-amber-200 dark:border-amber-900/50">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                 <div>
                   <span className="font-semibold">Missing Place Detected:</span>{" "}
-                  {session.bookedCount - count} booked member(s) are unaccounted for.
+                  {successCount - count} checked-in member(s) are unaccounted for in the physical headcount.
                 </div>
               </div>
-            ) : count > session.bookedCount ? (
+            ) : count > successCount ? (
               <div className="flex items-start gap-2 text-xs text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 p-2.5 rounded border border-blue-200 dark:border-blue-900/50">
                 <Users className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
                 <div>
-                  More attendees present ({count}) than booked bookings ({session.bookedCount}).
+                  More attendees present ({count}) than scanned in ({successCount}).
                 </div>
               </div>
             ) : null}

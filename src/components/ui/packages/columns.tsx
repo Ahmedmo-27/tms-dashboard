@@ -10,7 +10,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { Class } from "../classes/columns";
 import { Coach } from "../coaches/columns";
-import { formatCategory, formatSessionCount, getCategoryColor } from "@/lib/utils/catalog";
+import {
+  formatCategory,
+  formatSessionCount,
+  getCategoryColor,
+  getEffectivePackageNote,
+} from "@/lib/utils/catalog";
 import { createBranchColumn } from "../branch-column";
 import { cn } from "@/lib/utils";
 import { getPackageBranchLabel } from "@/lib/utils/location-label";
@@ -35,6 +40,7 @@ export type Package = {
   renewalPeriod?: string;
   category: string;
   price: string | number;
+  notes?: string;
   hidden?: boolean;
   isDeprecated?: boolean;
   locationId?: string | { _id?: string; branchName?: string; location?: string };
@@ -146,10 +152,19 @@ export function createColumns(
             : typeof row.original.coachId === "string"
             ? coaches.find((c) => c._id === row.original.coachId)?.coachName
             : undefined;
+        const effectiveNote = getEffectivePackageNote(row.original);
 
         return (
           <div className="min-w-[100px] max-w-[180px] lg:max-w-[220px]">
             <p className="font-medium truncate">{row.original.name}</p>
+            {effectiveNote && (
+              <p
+                className="text-xs text-muted-foreground truncate mt-0.5"
+                title={effectiveNote}
+              >
+                Note: {effectiveNote}
+              </p>
+            )}
             <div className="flex flex-wrap gap-1 mt-1">
               {coachName && (
                 <Badge variant="outline" className="text-[10px]">

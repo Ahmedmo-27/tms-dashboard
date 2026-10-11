@@ -19,6 +19,7 @@ export const packageSchema = z.object({
     .regex(/^[0-9]+$/, "Expiry Period must be a number")
     .min(1, "Expiry Period is required"),
   category: z.string().trim().min(1, "Category is required"),
+  notes: z.string().trim().optional().default(""),
   coachId: z.string().trim().optional().nullable(),
   // Default [] so PT packages (often with no opensClasses) still validate on edit
   opensClasses: z.array(z.string()).default([]),

@@ -28,12 +28,18 @@ export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   pageSize?: number
+  isManagement?: boolean
+  onEdit?: (payment: Payment) => void
+  onDelete?: (payment: Payment) => void
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   pageSize = CATALOG_PAGE_SIZE,
+  isManagement,
+  onEdit,
+  onDelete,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState({
@@ -71,6 +77,9 @@ export function DataTable<TData, TValue>({
             <MobilePaymentCard
               key={row.id}
               payment={row.original as Payment}
+              isManagement={isManagement}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           ))}
         </div>

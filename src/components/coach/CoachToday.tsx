@@ -160,6 +160,9 @@ export function CoachToday() {
                 <p className="text-sm text-muted-foreground">
                   {next.date} · {formatTime12h(next.startTime)} –{" "}
                   {formatTime12h(next.endTime)}
+                  {(next.coachName || next.coachNames) && (
+                    <span> · {next.coachName || next.coachNames}</span>
+                  )}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {next.bookedCount} / {next.capacity} booked
@@ -182,7 +185,7 @@ export function CoachToday() {
         </CardContent>
       </Card>
 
-      {hasScheduledClasses && (
+      {(hasScheduledClasses || (data.todaySessions && data.todaySessions.length > 0)) && (
         <Card data-walkthrough="coach-today-classes">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -225,6 +228,9 @@ export function CoachToday() {
                     <p className="text-xs text-muted-foreground">
                       <Clock className="mr-1 inline h-3 w-3" />
                       {formatTime12h(s.startTime)} – {formatTime12h(s.endTime)}
+                      {(s.coachName || s.coachNames) && (
+                        <span> · {s.coachName || s.coachNames}</span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -241,12 +247,12 @@ export function CoachToday() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {hasScheduledClasses && (
+        {(hasScheduledClasses || hasPtSessions) && (
           <Card data-walkthrough="coach-today-scans">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <ScanLine className="h-4 w-4" />
-                Scans
+                Scans Monitor
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -268,7 +274,7 @@ export function CoachToday() {
                 </div>
               )}
               <Button asChild variant="outline" size="sm" className="mt-3">
-                <Link href="/coach/scans">Open scans</Link>
+                <Link href="/coach/scans">Open scans monitor</Link>
               </Button>
             </CardContent>
           </Card>
@@ -320,8 +326,11 @@ export function CoachToday() {
                     <div>
                       <p className="text-sm font-medium">{alert.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {alert.packageName} · {alert.remainingClasses} left ·{" "}
-                        {alert.daysUntilExpiry}d
+                        {alert.packageName} ·{" "}
+                        {alert.totalClasses
+                          ? `${alert.remainingClasses} out of ${alert.totalClasses} remaining`
+                          : `${alert.remainingClasses} remaining`}{" "}
+                        · {alert.daysUntilExpiry}d
                       </p>
                     </div>
                     <Users className="h-4 w-4 text-muted-foreground" />

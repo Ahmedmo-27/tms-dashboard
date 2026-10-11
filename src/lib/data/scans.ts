@@ -10,9 +10,13 @@ import type {
   ClassScan,
 } from "@/components/ui/scans/class-container";
 
-export const getScans = async () => {
+export const getScans = async (date: Date, locationId?: string) => {
   try {
-    const response = await tms.get("/admin/schedule");
+    const params: Record<string, string> = {
+      date: format(date, "yyyy-MM-dd"),
+    };
+    if (locationId) params.locationId = locationId;
+    const response = await tms.get("/admin/schedule", { params });
     return response.data.data;
   } catch (error) {
     console.error(error);

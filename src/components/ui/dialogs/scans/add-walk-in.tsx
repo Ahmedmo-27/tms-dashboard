@@ -16,6 +16,7 @@ import { addWalkIn } from "@/lib/actions/booking-actions";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
 import { Plus, ArrowBigRight } from "lucide-react";
+import { format } from "date-fns";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import {
   Select,
@@ -50,9 +51,15 @@ const OBJECT_ID_RE = /^[a-fA-F0-9]{24}$/;
 export function AddWalkIn({
   scid,
   compact = false,
+  classTitle,
+  startTime,
+  onSuccess,
 }: {
   scid: string;
   compact?: boolean;
+  classTitle?: string;
+  startTime?: string;
+  onSuccess?: () => void;
 }) {
   const {
     locationId,
@@ -108,6 +115,7 @@ export function AddWalkIn({
 
         if (result.success) {
           setIsOpen(false);
+          onSuccess?.();
           return initialState;
         }
 
@@ -166,10 +174,12 @@ export function AddWalkIn({
         <DialogContent className="z-50 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
-              Add a walk-in for a Guest User
+              {classTitle ? `Add walk-in — ${classTitle}` : "Add a walk-in for a Guest User"}
             </DialogTitle>
             <DialogDescription>
-              Enter guest details to reserve a spot in this class.
+              {classTitle && startTime
+                ? `${format(new Date(startTime), "h:mm a")} · Enter guest details to reserve a spot.`
+                : "Enter guest details to reserve a spot in this class."}
             </DialogDescription>
           </DialogHeader>
 
@@ -184,11 +194,11 @@ export function AddWalkIn({
 
             <div className="grid grid-cols-1 gap-5">
               <div className="space-y-2">
-                <Label htmlFor="walk-in-name" className="text-sm font-medium">
+                <Label htmlFor={`walk-in-name-${scid}`} className="text-sm font-medium">
                   Full Name
                 </Label>
                 <Input
-                  id="walk-in-name"
+                  id={`walk-in-name-${scid}`}
                   name="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -200,11 +210,11 @@ export function AddWalkIn({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="walk-in-phone" className="text-sm font-medium">
+                <Label htmlFor={`walk-in-phone-${scid}`} className="text-sm font-medium">
                   Phone Number <span className="text-muted-foreground font-normal">(optional)</span>
                 </Label>
                 <Input
-                  id="walk-in-phone"
+                  id={`walk-in-phone-${scid}`}
                   name="phoneNumber"
                   type="tel"
                   value={phoneNumber}
@@ -219,11 +229,11 @@ export function AddWalkIn({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="walk-in-amount" className="text-sm font-medium">
+                <Label htmlFor={`walk-in-amount-${scid}`} className="text-sm font-medium">
                   Amount
                 </Label>
                 <Input
-                  id="walk-in-amount"
+                  id={`walk-in-amount-${scid}`}
                   name="amount"
                   type="number"
                   value={amount}
@@ -247,7 +257,7 @@ export function AddWalkIn({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="walk-in-payment-method" className="text-sm font-medium">
+                <Label htmlFor={`walk-in-payment-method-${scid}`} className="text-sm font-medium">
                   Payment Method
                 </Label>
                 <Select
@@ -255,7 +265,7 @@ export function AddWalkIn({
                   value={paymentMethod}
                   onValueChange={setPaymentMethod}
                 >
-                  <SelectTrigger id="walk-in-payment-method">
+                  <SelectTrigger id={`walk-in-payment-method-${scid}`}>
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>

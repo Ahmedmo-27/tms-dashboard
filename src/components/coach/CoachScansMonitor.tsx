@@ -51,6 +51,7 @@ import {
   type FailedScanPayload,
 } from "@/lib/socket";
 import { CoachScansSkeleton } from "@/components/ui/loading/coach-skeletons";
+import { AttendanceContainer } from "@/components/ui/scans/attendance-container";
 import {
   ConfirmAttendanceDialog,
   AttendanceConfirmationData,
@@ -65,6 +66,11 @@ interface CoachScan {
   time: string;
   method: string;
   status: "SUCCESS" | "FAILED" | "WILL_PAY";
+  statusDetail?: string;
+  bookingId?: string;
+  branchLabel?: string;
+  remainingClasses?: number | null;
+  totalClasses?: number | null;
 }
 
 interface CoachClassScanData {
@@ -78,11 +84,26 @@ interface CoachClassScanData {
   capacity: number;
   bookedCount: number;
   location: string | null;
+  coachName?: string;
+  coachNames?: string;
+  allCoachNames?: string;
+  coaches?: { id: string; name: string }[];
   scans: CoachScan[];
   attendanceConfirmation?: AttendanceConfirmationData | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatRemainingSessions(
+  scan: Pick<CoachScan, "remainingClasses" | "totalClasses">
+): string | null {
+  if (scan.remainingClasses === undefined || scan.remainingClasses === null) {
+    return null;
+  }
+  return scan.totalClasses
+    ? `${scan.remainingClasses} out of ${scan.totalClasses} remaining`
+    : `${scan.remainingClasses} remaining`;
+}
 
 function formatTime12h(time: string): string {
   const [hourStr, minuteStr] = time.split(":");
@@ -136,86 +157,6 @@ function statusColor(status: CoachScan["status"]) {
   }
 }
 
-// ─── PT Attendance Card ───────────────────────────────────────────────────────
-
-function PtAttendanceCard({
-  scans,
-  onSelect,
-}: {
-  scans: CoachScan[];
-  onSelect: (scan: CoachScan) => void;
-}) {
-  const successCount = scans.filter((s) => s.status === "SUCCESS").length;
-
-  return (
-    <Card data-walkthrough="coach-scans-pt" className="w-full col-span-full">
-      <CardHeader className="p-4">
-        <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            <span>{scans.length} scanned</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <UserCheck className="h-4 w-4" />
-            <span>{successCount} checked in</span>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-0">
-        <ScrollArea className="h-[250px] rounded-md border">
-          <div className="p-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Check-in Time</TableHead>
-                  <TableHead className="text-right">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {scans.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      No PT check-ins yet
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  scans.map((scan, i) => (
-                    <TableRow
-                      key={i}
-                      data-walkthrough="coach-scans-row"
-                      className="cursor-pointer"
-                      onClick={() => onSelect(scan)}
-                    >
-                      <TableCell className="font-medium">{scan.member}</TableCell>
-                      <TableCell>{scan.phone}</TableCell>
-                      <TableCell>
-                        {format(new Date(scan.time), "hh:mm a")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge className={cn("font-normal", statusColor(scan.status))}>
-                          {statusLabel(scan.status)}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          <ScrollBar orientation="horizontal" />
-          <ScrollBar orientation="vertical" />
-        </ScrollArea>
-      </CardContent>
-    </Card>
-  );
-}
-
 // ─── Class Scan Card ──────────────────────────────────────────────────────────
 
 function ClassScanCard({
@@ -229,9 +170,20 @@ function ClassScanCard({
   onSelect: (scan: CoachScan) => void;
   onConfirmAttendance: (session: CoachClassScanData) => void;
 }) {
-  const successCount = data.scans.filter((s) => s.status === "SUCCESS").length;
+  const currentCoachName = useAppSelector((state: RootState) => state.coach.name);
+  const displayCoach = data.allCoachNames || data.coachNames || data.coachName || currentCoachName;
+  const successCount = data.scans.filter(
+    (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
+  ).length;
   const isHalfway = isSessionPastHalfway(data, currentTime);
   const isConfirmed = Boolean(data.attendanceConfirmation?.confirmed);
+  // Recompute live so stale DB hasMissingPlace values don't produce false alerts,
+  // while honoring manual discrepancy flags when headcount differs from scans.
+  const isActuallyMissing =
+    isConfirmed &&
+    (data.attendanceConfirmation!.confirmedCount < successCount ||
+      (Boolean(data.attendanceConfirmation!.hasMissingPlace) &&
+        data.attendanceConfirmation!.confirmedCount !== successCount));
 
   return (
     <Card data-walkthrough="coach-class-scan-card" className="w-full">
@@ -241,11 +193,11 @@ function ClassScanCard({
             <div className="flex items-center gap-2">
               <h3 className="text-base font-semibold">{data.classTitle}</h3>
               {isConfirmed ? (
-                data.attendanceConfirmation?.hasMissingPlace ? (
+                isActuallyMissing ? (
                   <Badge
                     variant="outline"
                     className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 gap-1 text-xs font-normal"
-                    title={`Attendance confirmed with missing place (${data.attendanceConfirmation.confirmedCount} present)`}
+                    title={`Attendance confirmed with missing place (${data.attendanceConfirmation?.confirmedCount} present)`}
                   >
                     <AlertTriangle className="h-3 w-3" />
                     Missing Place
@@ -262,9 +214,16 @@ function ClassScanCard({
                 )
               ) : null}
             </div>
-            <Badge variant="outline" className="mt-1 font-normal text-xs">
-              {data.category}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+              <Badge variant="outline" className="font-normal text-xs">
+                {data.category}
+              </Badge>
+              {displayCoach && (
+                <Badge variant="secondary" className="font-normal text-xs">
+                  {displayCoach}
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
@@ -297,14 +256,14 @@ function ClassScanCard({
                   data-walkthrough="coach-confirm-attendance-btn"
                   className={cn(
                     "h-7 text-xs font-medium gap-1.5 cursor-pointer",
-                    data.attendanceConfirmation?.hasMissingPlace
+                    isActuallyMissing
                       ? "border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400"
                       : "border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
                   )}
                   onClick={() => onConfirmAttendance(data)}
                   title="Click to view or edit attendance headcount"
                 >
-                  {data.attendanceConfirmation?.hasMissingPlace ? (
+                  {isActuallyMissing ? (
                     <AlertTriangle className="h-3.5 w-3.5" />
                   ) : (
                     <CheckCircle2 className="h-3.5 w-3.5" />
@@ -386,6 +345,7 @@ function ClassScanCard({
 export function CoachScansMonitor() {
   const coachApi = useCoachApi();
   const hasPtSessions = useAppSelector((state: RootState) => state.coach.hasPtSessions);
+  const hasScheduledClasses = useAppSelector((state: RootState) => state.coach.hasScheduledClasses);
   const token = useAppSelector((state: RootState) => state.coach.token);
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -463,7 +423,7 @@ export function CoachScansMonitor() {
     if (date) setSelectedDate(date);
   };
 
-  const isEmpty = classes.length === 0 && ptScans.length === 0;
+  const isEmpty = !hasPtSessions && classes.length === 0;
 
   // ── Render ──────────────────────────────────────────────────────────────
 
@@ -522,31 +482,40 @@ export function CoachScansMonitor() {
         <div className="space-y-6">
           {hasPtSessions && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-                Personal Training
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                <PtAttendanceCard scans={ptScans} onSelect={setPeek} />
-              </div>
+              <AttendanceContainer
+                title="Today's Clients"
+                classScans={ptScans}
+                emptyMessage="No PT check-ins yet for this date."
+                memberHrefBuilder={(memberId) => `/coach/clients/${memberId}`}
+                onSelect={setPeek}
+                dataWalkthrough="coach-scans-pt"
+                rowWalkthrough="coach-scans-row"
+              />
             </div>
           )}
 
-          {classes.length > 0 && (
+          {(hasScheduledClasses || classes.length > 0) && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 Scheduled Classes
               </h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {classes.map((cls) => (
-                  <ClassScanCard
-                    key={cls.scheduledClassId}
-                    data={cls}
-                    currentTime={currentTime}
-                    onSelect={setPeek}
-                    onConfirmAttendance={setConfirmingSession}
-                  />
-                ))}
-              </div>
+              {classes.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                  No scheduled classes for this date.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {classes.map((cls) => (
+                    <ClassScanCard
+                      key={cls.scheduledClassId}
+                      data={cls}
+                      currentTime={currentTime}
+                      onSelect={setPeek}
+                      onConfirmAttendance={setConfirmingSession}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -577,7 +546,20 @@ export function CoachScansMonitor() {
               ) : (
                 <p className="text-muted-foreground">{peek.phone}</p>
               )}
-              {peek.memberId && hasPtSessions && (
+              {peek.method && (
+                <p className="text-muted-foreground">
+                  Package: <span className="font-medium text-foreground">{peek.method}</span>
+                </p>
+              )}
+              {formatRemainingSessions(peek) && (
+                <p className="text-muted-foreground">
+                  Sessions:{" "}
+                  <span className="font-medium text-foreground">
+                    {formatRemainingSessions(peek)}
+                  </span>
+                </p>
+              )}
+              {peek.memberId && (hasPtSessions || hasScheduledClasses) && (
                 <Button asChild size="sm">
                   <Link
                     href={`/coach/clients/${peek.memberId}`}

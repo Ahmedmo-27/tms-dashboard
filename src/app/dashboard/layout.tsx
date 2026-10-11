@@ -29,16 +29,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <SidebarProvider>
               <AppSidebar />
               <SidebarInset className="min-h-0">
-                <header className="flex h-14 shrink-0 items-center gap-2 overflow-hidden border-b px-3 min-w-0">
-                  <SidebarTrigger />
-                  <Separator orientation="vertical" className="mr-2 h-4" />
-                  <Suspense fallback={null}>
-                    <Nav />
-                  </Suspense>
-                  <div className="ml-auto flex min-w-0 shrink items-center gap-2">
+                <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-background/95 px-2.5 sm:px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 min-w-0">
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
+                    <SidebarTrigger className="h-8 w-8 shrink-0" />
+                    <Separator orientation="vertical" className="h-4 shrink-0" />
+                    <Suspense fallback={null}>
+                      <Nav />
+                    </Suspense>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 md:gap-2">
                     <Suspense fallback={null}>
                       <DashboardBranchBar />
                     </Suspense>
+                    <Separator orientation="vertical" className="h-4 shrink-0 hidden sm:block" />
                     <CommandPalette />
                     <MailNotificationBell />
                     <HelpButton />

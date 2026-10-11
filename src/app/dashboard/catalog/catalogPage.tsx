@@ -28,6 +28,7 @@ import { Coach } from "@/components/ui/coaches/columns";
 import { AddClass } from "@/components/ui/dialogs/class/add-class";
 import { AddPackageDialog } from "@/components/ui/dialogs/package/add-package";
 import { OpenGymPricingDialog } from "@/components/ui/dialogs/open-gym/open-gym-pricing-dialog";
+import { PtPricingDialog } from "@/components/ui/dialogs/pt/pt-pricing-dialog";
 import { AddCoachDialog } from "@/components/ui/dialogs/coach/add-coach";
 import type { Location } from "@/lib/data/locations";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
@@ -240,6 +241,7 @@ function CatalogPageInner({
               </div>
               <div className="grid grid-cols-2 gap-2 w-full md:w-auto md:flex md:flex-row [&>div]:min-w-0 [&_button]:w-full md:[&_button]:w-auto">
                 <OpenGymPricingDialog packages={packages} classes={classes} />
+                <PtPricingDialog triggerLabel="PT pricing" />
                 <AddPackageDialog
                   classes={classes}
                   categories={packageCategories}

@@ -14,10 +14,10 @@ import {
   TableHead,
 } from "@/components/ui/table";
 import { Calendar, Clock, X } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { MobilePTAttendanceCard } from "./mobile-pt-attendance-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { useState, useMemo } from "react";
 
 interface PTAttendanceRecord {
@@ -29,24 +29,40 @@ interface PTAttendanceProps {
   attendance: PTAttendanceRecord[];
 }
 
+const PAGE_SIZE = 10;
+
 export default function PTAttendance({
   attendance,
   hideHeader = false,
 }: PTAttendanceProps & { hideHeader?: boolean }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [pageIndex, setPageIndex] = useState(0);
 
   const filteredAttendance = useMemo(() => {
-    if (!fromDate && !toDate) return attendance;
-    return attendance.filter((rec) => {
-      const d = new Date(rec.attendanceTime).getTime();
-      const from = fromDate ? new Date(fromDate).getTime() : -Infinity;
-      const to = toDate ? new Date(toDate + "T23:59:59").getTime() : Infinity;
-      return d >= from && d <= to;
-    });
+    const base = !fromDate && !toDate
+      ? [...attendance]
+      : attendance.filter((rec) => {
+          const d = new Date(rec.attendanceTime).getTime();
+          const from = fromDate ? new Date(fromDate).getTime() : -Infinity;
+          const to = toDate ? new Date(toDate + "T23:59:59").getTime() : Infinity;
+          return d >= from && d <= to;
+        });
+    return base.sort(
+      (a, b) =>
+        new Date(b.attendanceTime || 0).getTime() -
+        new Date(a.attendanceTime || 0).getTime()
+    );
   }, [attendance, fromDate, toDate]);
 
   const hasFilter = fromDate || toDate;
+  const pageCount = Math.ceil(filteredAttendance.length / PAGE_SIZE);
+  const safePageIndex =
+    pageIndex >= pageCount && pageCount > 0 ? pageCount - 1 : pageIndex;
+  const paginatedAttendance = filteredAttendance.slice(
+    safePageIndex * PAGE_SIZE,
+    (safePageIndex + 1) * PAGE_SIZE
+  );
 
   const formatDateTime = (date: string) => {
     if (!date) return { time: "", date: "", dayOfWeek: "" };
@@ -82,7 +98,10 @@ export default function PTAttendance({
             <Input
               type="date"
               value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setPageIndex(0);
+              }}
               className="h-7 text-xs w-36"
             />
           </div>
@@ -91,7 +110,10 @@ export default function PTAttendance({
             <Input
               type="date"
               value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setPageIndex(0);
+              }}
               className="h-7 text-xs w-36"
             />
           </div>
@@ -100,7 +122,11 @@ export default function PTAttendance({
               variant="ghost"
               size="sm"
               className="h-7 px-2 text-xs text-muted-foreground"
-              onClick={() => { setFromDate(""); setToDate(""); }}
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+                setPageIndex(0);
+              }}
             >
               <X className="h-3 w-3 mr-1" />
               Clear
@@ -120,11 +146,11 @@ export default function PTAttendance({
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredAttendance.map((record, index) => (
+              {paginatedAttendance.map((record, index) => (
                 <MobilePTAttendanceCard
-                  key={index}
+                  key={safePageIndex * PAGE_SIZE + index}
                   attendance={record}
-                  index={index}
+                  index={safePageIndex * PAGE_SIZE + index}
                 />
               ))}
             </div>
@@ -133,59 +159,67 @@ export default function PTAttendance({
 
         {/* Compact Desktop View */}
         <div className="hidden lg:block">
-          <ScrollArea className="h-96 pr-1">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-b border-border/30">
-                  <TableHead className="text-xs font-medium text-muted-foreground">
-                    Package
-                  </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground">
-                    Attendance Time
-                  </TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-b border-border/30">
+                <TableHead className="text-xs font-medium text-muted-foreground">
+                  Package
+                </TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground">
+                  Attendance Time
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAttendance.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={2}
+                    className="h-20 text-center text-muted-foreground text-sm"
+                  >
+                    {hasFilter
+                      ? "No attendance records for the selected period"
+                      : "No attendance found"}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAttendance.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      className="h-20 text-center text-muted-foreground text-sm"
+              ) : (
+                paginatedAttendance.map((record, index) => {
+                  const t = formatDateTime(record.attendanceTime);
+                  return (
+                    <TableRow
+                      key={safePageIndex * PAGE_SIZE + index}
+                      className="hover:bg-muted/40 transition-colors"
                     >
-                      {hasFilter
-                        ? "No attendance records for the selected period"
-                        : "No attendance found"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredAttendance.map((record, index) => {
-                    const t = formatDateTime(record.attendanceTime);
-                    return (
-                      <TableRow
-                        key={index}
-                        className="hover:bg-muted/40 transition-colors"
-                      >
-                        <TableCell className="py-2 px-3 text-sm">
-                          <div className="">{record.package}</div>
-                        </TableCell>
-                        <TableCell className="py-2 px-3 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                            <span>{t.date}</span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-                            <span>{t.time}</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+                      <TableCell className="py-2 px-3 text-sm">
+                        <div className="">{record.package}</div>
+                      </TableCell>
+                      <TableCell className="py-2 px-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span>{t.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span>{t.time}</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </div>
+
+        {filteredAttendance.length > 0 && (
+          <TablePagination
+            pageIndex={safePageIndex}
+            pageCount={pageCount}
+            total={filteredAttendance.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPageIndex}
+          />
+        )}
       </CardContent>
     </Card>
   );

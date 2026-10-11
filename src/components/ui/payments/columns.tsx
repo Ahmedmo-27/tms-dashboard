@@ -1,6 +1,12 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "../badge";
 import { Avatar, AvatarFallback } from "../avatar";
+import { Button } from "../button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import {
@@ -10,10 +16,20 @@ import {
   Building2,
   Phone,
   MapPin,
+  Pencil,
+  Trash2,
+  Package,
 } from "lucide-react";
 import { OutflowPurposeCell } from "./outflow-details-dialog";
+import {
+  isOutflowTransaction,
+  isDeductedTransaction,
+  type RawPaymentRecord,
+} from "@/lib/utils/parsers/payments-parser";
 
 export type Payment = {
+  _id?: string;
+  id?: string;
   memberName: string;
   phone: string;
   purpose: string;
@@ -26,31 +42,38 @@ export type Payment = {
   isCashOut?: boolean;
   refundReason?: string;
   paymentLabel?: string | null;
+  note?: string;
+  locationId?: string;
+  rawPayment?: RawPaymentRecord;
 };
 
 const getPaymentMethodIcon = (method: string) => {
-  switch (method.toLowerCase()) {
-    case "CASH":
+  switch ((method ?? "").toLowerCase()) {
+    case "cash":
       return <Banknote className="h-4 w-4" />;
-    case "INSTAPAY":
-    case "APP":
+    case "instapay":
+    case "app":
       return <Smartphone className="h-4 w-4" />;
-    case "VALU":
+    case "valu":
       return <Building2 className="h-4 w-4" />;
+    case "deducted":
+      return <Package className="h-4 w-4" />;
     default:
       return <CreditCard className="h-4 w-4" />;
   }
 };
 
 const getPaymentMethodColor = (method: string) => {
-  switch (method.toLowerCase()) {
-    case "CASH":
+  switch ((method ?? "").toLowerCase()) {
+    case "cash":
       return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "INSTAPAY":
-    case "APP":
+    case "instapay":
+    case "app":
       return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-    case "VALU":
+    case "valu":
       return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
+    case "deducted":
+      return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700";
     default:
       return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
   }
@@ -126,11 +149,25 @@ export const columns: ColumnDef<Payment>[] = [
     enableSorting: true,
     cell: ({ row }) => {
       const amount = row.getValue("amount");
-      const isOutflow = row.original.isRefunded || row.original.isCashOut;
+      const isOutflow = isOutflowTransaction(row.original);
+      const isDeducted = isDeductedTransaction(row.original);
 
       const numericAmount = typeof amount === 'string'
         ? parseFloat(amount.replace(/[^0-9.-]+/g, ""))
         : parseFloat(String(amount));
+
+      if (isDeducted) {
+        return (
+          <div className="flex flex-col items-end min-w-[80px] max-w-[120px]">
+            <span className="font-mono font-medium text-muted-foreground">
+              EGP {Math.abs(numericAmount).toLocaleString()}
+            </span>
+            <span className="text-[10px] text-muted-foreground font-normal">
+              Package credit
+            </span>
+          </div>
+        );
+      }
 
       return (
         <div className={`font-mono font-semibold min-w-[80px] max-w-[120px] text-right ${isOutflow ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
@@ -193,3 +230,77 @@ export const columns: ColumnDef<Payment>[] = [
     },
   },
 ];
+
+export function getPaymentColumns({
+  isManagement,
+  onEdit,
+  onDelete,
+}: {
+  isManagement?: boolean;
+  onEdit?: (payment: Payment) => void;
+  onDelete?: (payment: Payment) => void;
+} = {}): ColumnDef<Payment>[] {
+  const cols = [...columns];
+
+  if (isManagement && (onEdit || onDelete)) {
+    cols.push({
+      id: "actions",
+      header: () => <span className="sr-only">Actions</span>,
+      size: 90,
+      cell: ({ row }) => {
+        const payment = row.original;
+        const isMoneyOut = isOutflowTransaction(payment);
+        if (isMoneyOut) {
+          return null;
+        }
+
+        const isRefunded = Boolean(payment.isRefunded);
+
+        return (
+          <div className="flex items-center justify-end gap-1 shrink-0">
+            {onEdit && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:bg-muted text-muted-foreground hover:text-foreground"
+                    onClick={() => onEdit(payment)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">Edit payment</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit Payment</TooltipContent>
+              </Tooltip>
+            )}
+            {onDelete && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:bg-destructive/10 text-muted-foreground hover:text-destructive disabled:opacity-40"
+                    disabled={isRefunded}
+                    onClick={() => onDelete(payment)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete payment</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isRefunded
+                    ? "Refunded payments cannot be deleted"
+                    : "Delete Payment"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        );
+      },
+    });
+  }
+
+  return cols;
+}
+

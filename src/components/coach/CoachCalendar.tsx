@@ -445,6 +445,11 @@ export function CoachCalendar() {
                       <Badge variant="secondary" className="text-[10px] font-normal">
                         {session.category}
                       </Badge>
+                      {(session.coachName || session.coachNames) && (
+                        <Badge variant="outline" className="text-[10px] font-normal">
+                          {session.coachName || session.coachNames}
+                        </Badge>
+                      )}
                       {isNext && (
                         <Badge className="text-[10px] font-normal">Up next</Badge>
                       )}

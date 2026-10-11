@@ -30,11 +30,11 @@ export function HelpButton({
             size="sm"
             data-walkthrough={dataWalkthrough}
             onClick={() => openHelpModal()}
-            className={`h-9 px-2.5 sm:px-3 gap-1.5 text-muted-foreground hover:text-foreground shrink-0 ${className ?? ""}`}
+            className={`h-8 px-2 sm:h-8.5 sm:px-2.5 lg:h-9 lg:px-3 gap-1.5 text-muted-foreground hover:text-foreground shrink-0 ${className ?? ""}`}
             aria-label="Tutorials and guides"
           >
-            <HelpCircle className="h-4 w-4 text-primary" />
-            <span className="hidden sm:inline text-xs font-semibold">Guides</span>
+            <HelpCircle className="h-4 w-4 text-primary shrink-0" />
+            <span className="hidden lg:inline text-xs font-semibold">Guides</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">

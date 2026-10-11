@@ -154,7 +154,7 @@ export const getColumns = (
       const scls = row.original;
       return (
         <div className="text-center font-medium">
-          {scls.availableSlots}
+          {Math.max(0, scls.availableSlots ?? 0)}
         </div>
       );
     },

@@ -1,4 +1,11 @@
-import { Member } from "@/components/ui/members/columns";
+import { Member, AdjustmentRecord } from "@/components/ui/members/columns";
+
+const toDayKey = (val: any): string => {
+  if (!val) return "";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "";
+  return d.toISOString().split("T")[0];
+};
 
 export const parseMembers = (members: any): Member[] => {
   if (!Array.isArray(members)) return [];
@@ -7,6 +14,25 @@ export const parseMembers = (members: any): Member[] => {
     if (!member || !member.uid) return;
 
     const parsedPackages: any = [];
+    const allDeductions: AdjustmentRecord[] = [];
+    const seenMemberAttendance = new Set<string>();
+    const parsedPtAttendance: any = [];
+
+    const pushMemberAttendance = (packageLabel: string, attendanceTime: any) => {
+      if (!attendanceTime) return;
+      const d = new Date(attendanceTime);
+      if (isNaN(d.getTime())) return;
+      const dayKey = toDayKey(d);
+      const label = (packageLabel || "Attendance").trim();
+      const key = `${dayKey}:${label.toLowerCase()}`;
+      if (seenMemberAttendance.has(key)) return;
+      seenMemberAttendance.add(key);
+      parsedPtAttendance.push({
+        attendanceTime: d.toISOString(),
+        package: label,
+      });
+    };
+
     (member.packages || []).forEach((pkg: any) => {
       if (!pkg) return;
 
@@ -21,17 +47,134 @@ export const parseMembers = (members: any): Member[] => {
         pkg.name ??
         (pkg.pkgId ? "Package" : "Archived Package");
 
-      const bundledAttendance = (member.ptAttendance ?? [])
-        .filter((rec: any) => {
-          if (!rec) return false;
-          const recPkgId =
-            rec.pkgId?._id?.toString() ?? rec.pkgId?.toString();
-          return recPkgId === pkgIdStr;
-        })
-        .map((rec: any) => ({
-          className: rec.pkgId?.name ?? "PT Attendance",
-          attendanceDate: rec.attendanceTime,
-        }));
+      const rawAdjustments: any[] = Array.isArray(pkg.adjustmentHistory)
+        ? [...pkg.adjustmentHistory]
+        : [];
+
+      const ptForPackage = (member.ptAttendance ?? []).filter((rec: any) => {
+        if (!rec) return false;
+        const recPkgId =
+          rec.pkgId?._id?.toString() ?? rec.pkgId?.toString();
+        return recPkgId === pkgIdStr;
+      });
+
+      // Ensure every PT attendance record for this package also appears in adjustmentHistory
+      ptForPackage.forEach((rec: any) => {
+        const attTime = rec.attendanceTime ?? rec.date;
+        const dayKey = toDayKey(attTime);
+        if (!dayKey) return;
+        const alreadyInAdjustments = rawAdjustments.some((adj: any) => {
+          if (!adj || adj.type !== "DEDUCT") return false;
+          const adjDay = toDayKey(adj.attendanceDate ?? adj.date);
+          return (
+            adjDay === dayKey &&
+            (adj.source === "PT_ATTENDANCE" ||
+              adj.source === "COACH" ||
+              adj.source === "ADMIN" ||
+              adj.source === "ATTENDANCE")
+          );
+        });
+        if (!alreadyInAdjustments) {
+          rawAdjustments.push({
+            date: attTime,
+            attendanceDate: attTime,
+            className: rec.className ?? rec.pkgId?.name ?? pkgName,
+            amount: 1,
+            type: "DEDUCT",
+            source: "PT_ATTENDANCE",
+            reason: `PT attendance: ${rec.className ?? rec.pkgId?.name ?? pkgName}`,
+          });
+        }
+      });
+
+      const adjustmentHistory: AdjustmentRecord[] = rawAdjustments
+        .filter(Boolean)
+        .map((adj: any) => ({
+          date: adj.date ?? adj.attendanceDate ?? new Date().toISOString(),
+          attendanceDate: adj.attendanceDate,
+          className: adj.className,
+          packageName: pkgName,
+          pkgId: pkgIdStr,
+          amount: typeof adj.amount === "number" ? adj.amount : Number(adj.amount) || 0,
+          type: (adj.type === "ADD" ? "ADD" : "DEDUCT") as "ADD" | "DEDUCT",
+          source: adj.source ?? "ADMIN",
+          reason: adj.reason ?? adj.className ?? pkgName,
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.attendanceDate ?? b.date).getTime() -
+            new Date(a.attendanceDate ?? a.date).getTime()
+        );
+
+      allDeductions.push(...adjustmentHistory);
+
+      // Build package attendance list from backend pkg.attendance, ptAttendance, and attendance-based deductions
+      const seenPkgAtt = new Set<string>();
+      const bundledAttendance: { className: string; attendanceDate: string }[] = [];
+
+      const addPkgAttendance = (className: string, attendanceDate: any) => {
+        if (!attendanceDate) return;
+        const d = new Date(attendanceDate);
+        if (isNaN(d.getTime())) return;
+        const dayKey = toDayKey(d);
+        const label = (className || pkgName).trim();
+        const key = `${dayKey}:${label.toLowerCase()}`;
+        if (seenPkgAtt.has(key)) return;
+        seenPkgAtt.add(key);
+        bundledAttendance.push({
+          className: label,
+          attendanceDate: d.toISOString(),
+        });
+      };
+
+      (pkg.attendance ?? []).forEach((rec: any) => {
+        if (!rec) return;
+        addPkgAttendance(
+          rec.className ?? pkgName,
+          rec.attendanceDate ?? rec.attendanceTime ?? rec.date
+        );
+      });
+
+      ptForPackage.forEach((rec: any) => {
+        addPkgAttendance(
+          rec.className ?? rec.pkgId?.name ?? pkgName,
+          rec.attendanceTime ?? rec.date
+        );
+      });
+
+      adjustmentHistory.forEach((adj) => {
+        if (adj.type !== "DEDUCT") return;
+        const reasonLower = (adj.reason || "").trim().toLowerCase();
+        const isAttendanceSource =
+          adj.source === "PT_ATTENDANCE" ||
+          adj.source === "ATTENDANCE" ||
+          adj.source === "SPACE_WALK" ||
+          adj.source === "BOOKING" ||
+          ((adj.source === "COACH" || adj.source === "ADMIN") &&
+            (reasonLower.startsWith("completed session") ||
+              reasonLower.startsWith("makeup") ||
+              reasonLower.startsWith("attended")));
+        if (isAttendanceSource) {
+          addPkgAttendance(
+            adj.className || adj.reason || pkgName,
+            adj.attendanceDate ?? adj.date
+          );
+        }
+      });
+
+      bundledAttendance.sort(
+        (a, b) =>
+          new Date(b.attendanceDate).getTime() -
+          new Date(a.attendanceDate).getTime()
+      );
+
+      bundledAttendance.forEach((att) => {
+        const displayLabel =
+          att.className && att.className !== pkgName
+            ? `${att.className} — ${pkgName}`
+            : pkgName;
+        pushMemberAttendance(displayLabel, att.attendanceDate);
+      });
 
       const rawStatus = (pkg.status ?? "").toUpperCase();
       const isFrozen = rawStatus === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
@@ -75,7 +218,7 @@ export const parseMembers = (members: any): Member[] => {
         pkgEndDate: pkgEndDateStr,
         remainingClasses: remainingClasses,
         status: effectiveStatus,
-        adjustmentHistory: pkg.adjustmentHistory ?? [],
+        adjustmentHistory,
         attendance: bundledAttendance,
         freezeInfo: pkg.freezeInfo,
       };
@@ -102,15 +245,32 @@ export const parseMembers = (members: any): Member[] => {
       parsedBookings.push(parsedBooking);
     });
 
-    const parsedPtAttendance: any = [];
     (member.ptAttendance || []).forEach((record: any) => {
       if (!record) return;
-      const parsedRecord = {
-        attendanceTime: record.attendanceTime,
-        package: record.pkgId?.name ?? "PT Attendance",
-      };
-      parsedPtAttendance.push(parsedRecord);
+      pushMemberAttendance(
+        record.pkgId?.name ?? record.packageName ?? record.className ?? "PT Attendance",
+        record.attendanceTime ?? record.date
+      );
     });
+
+    (member.attendance || []).forEach((att: any) => {
+      const sc = att?.scid;
+      if (!sc || typeof sc !== "object") return;
+      const title = sc.cid?.title ?? sc.className ?? "Scheduled Class";
+      pushMemberAttendance(title, sc.startTime);
+    });
+
+    parsedPtAttendance.sort(
+      (a: any, b: any) =>
+        new Date(b.attendanceTime).getTime() -
+        new Date(a.attendanceTime).getTime()
+    );
+
+    allDeductions.sort(
+      (a, b) =>
+        new Date(b.attendanceDate ?? b.date).getTime() -
+        new Date(a.attendanceDate ?? a.date).getTime()
+    );
 
     const parsedMember: Member = {
       id: member.uid._id?.toString() ?? String(member.uid._id ?? ""),
@@ -125,6 +285,7 @@ export const parseMembers = (members: any): Member[] => {
           (!p.pkgEndDate || new Date(p.pkgEndDate) >= new Date())
       ).length,
       ptAttendance: parsedPtAttendance,
+      deductions: allDeductions,
     };
     parsedMembers.push(parsedMember);
   });

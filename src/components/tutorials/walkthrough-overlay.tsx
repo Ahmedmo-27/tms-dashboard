@@ -57,8 +57,22 @@ export function WalkthroughOverlay() {
 
   // Card Positioning logic
   const cardStyle = useMemo<React.CSSProperties>(() => {
-    const cardWidth = Math.min(420, windowSize.width - 32);
+    const isMobile = windowSize.width < 640;
+    const cardWidth = isMobile ? windowSize.width - 24 : Math.min(420, windowSize.width - 32);
     const estimatedCardHeight = 220;
+
+    if (isMobile) {
+      // On mobile, dock cleanly at bottom (or top if spotlight hole is at bottom)
+      const holeInBottomHalf = paddedHole && paddedHole.top > windowSize.height / 2;
+      return {
+        position: "fixed",
+        left: 12,
+        right: 12,
+        width: "calc(100% - 24px)",
+        ...(holeInBottomHalf ? { top: 16 } : { bottom: 16 }),
+        zIndex: 9999,
+      };
+    }
 
     if (!paddedHole) {
       return {
@@ -150,26 +164,26 @@ export function WalkthroughOverlay() {
       {/* Floating Tooltip Card */}
       <div
         style={cardStyle}
-        className="pointer-events-auto rounded-2xl border border-primary/40 bg-zinc-950/95 p-5 text-white shadow-2xl backdrop-blur-md transition-all duration-300 ease-out animate-in fade-in zoom-in-95"
+        className="pointer-events-auto rounded-2xl border border-primary/40 bg-zinc-950/95 p-4 sm:p-5 text-white shadow-2xl backdrop-blur-md transition-all duration-300 ease-out animate-in fade-in zoom-in-95"
       >
         {/* Header Row */}
-        <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3">
           <div className="flex items-center gap-2 min-w-0">
             <Badge
               variant="outline"
-              className="border-primary/50 text-primary bg-primary/10 text-xs px-2 py-0.5 font-mono shrink-0"
+              className="border-primary/50 text-primary bg-primary/10 text-xs px-2 py-0.5 font-mono shrink-0 truncate max-w-[180px] sm:max-w-none"
             >
-              <Sparkles className="w-3 h-3 mr-1" />
-              {activeScenario.title}
+              <Sparkles className="w-3 h-3 mr-1 shrink-0" />
+              <span className="truncate">{activeScenario.title}</span>
             </Badge>
-            <span className="text-xs text-zinc-400 font-mono">
+            <span className="text-xs text-zinc-400 font-mono shrink-0">
               {stepIndex + 1} / {totalSteps}
             </span>
           </div>
           <button
             type="button"
             onClick={skipTutorial}
-            className="text-zinc-400 hover:text-white rounded-lg p-1 transition-colors hover:bg-zinc-800"
+            className="text-zinc-400 hover:text-white rounded-lg p-1 transition-colors hover:bg-zinc-800 shrink-0"
             aria-label="Exit tutorial"
           >
             <X className="w-4 h-4" />
@@ -177,11 +191,11 @@ export function WalkthroughOverlay() {
         </div>
 
         {/* Step Title & Instruction */}
-        <div className="space-y-1.5 mb-4">
-          <h3 className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
+        <div className="space-y-1 sm:space-y-1.5 mb-3 sm:mb-4">
+          <h3 className="text-sm sm:text-base font-bold tracking-tight text-white flex items-center gap-1.5">
             {currentStep.title}
           </h3>
-          <p className="text-sm text-zinc-300 leading-relaxed">
+          <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed line-clamp-3 sm:line-clamp-none">
             {isNavigating ? "Navigating to target page..." : currentStep.description}
           </p>
         </div>

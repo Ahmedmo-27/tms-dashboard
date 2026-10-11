@@ -3,9 +3,11 @@ import Link from "next/link";
 export function ScanMemberLink({
   name,
   memberId,
+  href,
 }: {
   name: string;
   memberId?: string;
+  href?: string;
 }) {
   if (!memberId) {
     return <span className="font-medium">{name}</span>;
@@ -13,8 +15,9 @@ export function ScanMemberLink({
 
   return (
     <Link
-      href={`/dashboard/our-members/${memberId}`}
+      href={href ?? `/dashboard/our-members/${memberId}`}
       className="font-medium text-primary hover:underline"
+      onClick={(e) => e.stopPropagation()}
     >
       {name}
     </Link>

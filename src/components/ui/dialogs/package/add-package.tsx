@@ -40,6 +40,7 @@ interface ActionState {
     numberOfSessions: string;
     expiryPeriod: string;
     price: string;
+    notes?: string;
     category: string;
     coachId?: string;
     opensClasses: string[];
@@ -70,6 +71,7 @@ export function AddPackageDialog({
       numberOfSessions: "",
       expiryPeriod: "",
       price: "",
+      notes: "",
       category: "",
       coachId: "",
       opensClasses: [],
@@ -104,6 +106,7 @@ export function AddPackageDialog({
         numberOfSessions: formData.get("numberOfSessions") as string,
         expiryPeriod: formData.get("expiryPeriod") as string,
         price: formData.get("price") as string,
+        notes: (formData.get("notes") as string) ?? "",
         category: formData.get("category") as string,
         coachId: formData.get("coachId") as string,
         opensClasses: selectedClassIds,
@@ -249,6 +252,25 @@ export function AddPackageDialog({
                 {state?.errors && "price" in state.errors && (
                   <p className="text-destructive text-sm">
                     {state.errors.price}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-sm font-medium">
+                  Notes (optional)
+                </Label>
+                <Input
+                  id="notes"
+                  name="notes"
+                  type="text"
+                  placeholder="e.g. Can’t book Reformer Pilates classes"
+                  className="w-full"
+                  defaultValue={state?.defaultValues?.notes}
+                />
+                {state?.errors && "notes" in state.errors && (
+                  <p className="text-destructive text-sm">
+                    {state.errors.notes}
                   </p>
                 )}
               </div>

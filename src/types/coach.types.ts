@@ -6,6 +6,7 @@ export interface ClientDto {
   source: string[];
   activePackagesCount: number;
   remainingClasses: number | null;
+  totalClasses?: number | null;
   daysUntilExpiry: number | null;
   nearestExpiryDate: string | null;
 }
@@ -14,6 +15,7 @@ export interface ActivePackageDto {
   pkgId: string;
   pkgStartDate: string;
   remainingClasses: number;
+  totalClasses?: number | null;
 }
 
 export interface CalendarClientDto {
@@ -33,6 +35,10 @@ export interface SessionDto {
   capacity: number;
   bookedCount: number;
   location: string | null;
+  coachName?: string;
+  coachNames?: string;
+  allCoachNames?: string;
+  coaches?: { id: string; name: string }[];
   clients: CalendarClientDto[];
 }
 
@@ -68,12 +74,17 @@ export interface TodaySessionSummaryDto {
   endTime: string;
   capacity: number;
   bookedCount: number;
+  coachName?: string;
+  coachNames?: string;
+  allCoachNames?: string;
+  coaches?: { id: string; name: string }[];
 }
 
 export interface TodayPtAlertDto {
   memberId: string;
   name: string;
   remainingClasses: number;
+  totalClasses?: number | null;
   daysUntilExpiry: number;
   packageName: string;
 }
@@ -96,6 +107,21 @@ export interface DeductionHistoryItemDto {
   reason: string;
   sessionDate: string;
   classesRemainingAfter: number;
+  totalClasses?: number | null;
   createdAt: string;
   pkgId?: string;
+  packageName?: string;
+  source?: string;
+}
+
+export interface ClientAttendanceItemDto {
+  id: string;
+  type: "PT" | "CLASS";
+  title: string;
+  date: string;
+  method?: string;
+  notes?: string;
+  location?: string | null;
+  pkgId?: string;
+  scheduledClassId?: string;
 }

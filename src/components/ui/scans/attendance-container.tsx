@@ -29,6 +29,11 @@ export interface AttendanceContainerProps {
     mapMethod: (method: string) => MethodSheetMapping;
     classPrice?: string;
   };
+  emptyMessage?: string;
+  memberHrefBuilder?: (memberId: string) => string;
+  onSelect?: (scan: ClassScan) => void;
+  dataWalkthrough?: string;
+  rowWalkthrough?: string;
 }
 
 export const AttendanceContainer = ({
@@ -37,6 +42,11 @@ export const AttendanceContainer = ({
   headerActions,
   sheetCopy,
   showBranch = false,
+  emptyMessage,
+  memberHrefBuilder,
+  onSelect,
+  dataWalkthrough,
+  rowWalkthrough,
   onRefresh,
 }: AttendanceContainerProps & {
   showBranch?: boolean;
@@ -55,33 +65,36 @@ export const AttendanceContainer = ({
     }
   };
   return (
-    <Card className="w-full">
-      <CardHeader className="space-y-4 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold">{title}</h3>
+    <Card data-walkthrough={dataWalkthrough} className="w-full">
+      <CardHeader className="space-y-3 p-4">
+        {/* Name */}
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold">{title}</h3>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          {headerActions}
+          {sheetCopy ? (
+            <CopyAttendanceForSheetButton
+              scans={classScans}
+              mapMethod={sheetCopy.mapMethod}
+              classPrice={sheetCopy.classPrice}
+            />
+          ) : null}
+        </div>
+
+        {/* Bookings */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground pt-0.5">
+          <div className="flex items-center gap-1">
+            <Users className="h-4 w-4" />
+            <span>
+              {classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0}
+            </span>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {headerActions}
-            {sheetCopy ? (
-              <CopyAttendanceForSheetButton
-                scans={classScans}
-                mapMethod={sheetCopy.mapMethod}
-                classPrice={sheetCopy.classPrice}
-              />
-            ) : null}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>
-                {classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <UserCheck className="h-4 w-4" />
-              <span>{classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0} checked in</span>
-            </div>
-            </div>
+          <div className="flex items-center gap-1">
+            <UserCheck className="h-4 w-4" />
+            <span>{classScans?.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length || 0} checked in</span>
           </div>
         </div>
       </CardHeader>
@@ -107,17 +120,37 @@ export const AttendanceContainer = ({
                       colSpan={showBranch ? 7 : 6}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No check-ins yet. Use Quick actions or a member QR to record one.
+                      {emptyMessage ?? "No check-ins yet. Use Quick actions or a member QR to record one."}
                     </TableCell>
                   </TableRow>
                 ) : (
                   classScans.map((scan, index) => (
-                    <TableRow key={index}>
+                    <TableRow
+                      key={index}
+                      data-walkthrough={rowWalkthrough}
+                      className={cn(onSelect && "cursor-pointer")}
+                      onClick={() => onSelect?.(scan)}
+                    >
                       <TableCell>
-                        <ScanMemberLink name={scan.member} memberId={scan.memberId} />
+                        <ScanMemberLink
+                          name={scan.member}
+                          memberId={scan.memberId}
+                          href={memberHrefBuilder && scan.memberId ? memberHrefBuilder(scan.memberId) : undefined}
+                        />
                       </TableCell>
                       <TableCell>{scan.phone}</TableCell>
-                      <TableCell>{scan.method}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-0.5">
+                          <span>{scan.method}</span>
+                          {scan.remainingClasses !== undefined && scan.remainingClasses !== null && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {scan.totalClasses
+                                ? `${scan.remainingClasses} out of ${scan.totalClasses} remaining`
+                                : `${scan.remainingClasses} remaining`}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       {showBranch ? (
                         <TableCell>
                           {scan.branchLabel ? (
@@ -149,7 +182,12 @@ export const AttendanceContainer = ({
                       </TableCell>
                       <TableCell className="text-right">
                         {scan.rowId && scan.parentId ? (
-                          <div className="flex items-center justify-end gap-0.5">
+                          <div
+                            className="flex items-center justify-end gap-0.5"
+                            // The row itself is clickable now; a correction
+                            // must not also trigger its onSelect.
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <EditScanRow scan={scan} onSaved={onRefresh} />
                             <DeleteScanRow scan={scan} onDeleted={onRefresh} />
                           </div>

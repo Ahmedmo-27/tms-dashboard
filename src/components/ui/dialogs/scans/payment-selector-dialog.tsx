@@ -36,7 +36,13 @@ const paymentMethods = [
   { value: "DEDUCTED", header: "Deducted from a new package" },
 ];
 
-export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
+export function PaymentSelectorDialog({
+  bookingId,
+  onSuccess,
+}: {
+  bookingId: string;
+  onSuccess?: () => void;
+}) {
   const {
     locationId,
     setModalLocationId,
@@ -90,6 +96,7 @@ export function PaymentSelectorDialog({ bookingId }: { bookingId: string }) {
 
         if (result.success) {
           setIsOpen(false);
+          onSuccess?.();
           return initialState;
         }
         return { ...result, defaultValues } as ActionState;

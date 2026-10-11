@@ -209,6 +209,7 @@ export const MANAGEMENT_ONLY_ACTIONS = {
   ticketCategoryCrud: ["management"] as const,
   mail: ["management", "mailer"] as const,
   accountCrud: ["management"] as const,
+  paymentEditDelete: ["management"] as const,
 } as const;
 
 /** Branch operational actions — management needs a selected branch. */

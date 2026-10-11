@@ -163,7 +163,7 @@ export function LoginForm({
                   type="tel"
                   inputMode="numeric"
                   placeholder="08123456789"
-                  autoComplete="tel"
+                  autoComplete="username tel"
                   defaultValue={state?.defaultValues?.phoneNumber}
                   disabled={pending}
                   required

@@ -8,6 +8,8 @@ import {
   setUnreadCount,
   incrementUnreadCount,
   addMailNotification,
+  setMailNotifications,
+  mapEmailToNotificationItem,
   MailNotificationItem,
 } from "@/lib/store/features/mailSlice";
 import { createTmsSocket } from "@/lib/socket";
@@ -53,6 +55,28 @@ export function MailNotificationListener() {
         console.debug("Failed to fetch mail unread count:", err);
       });
 
+    // Fetch initial recent notifications
+    tms.get("/admin/mail/inbox", { params: { limit: 15 } })
+      .then((res) => {
+        if (!mounted) return;
+        const data = res.data?.data || res.data;
+        const rawEmails = Array.isArray(data) ? data : (data?.emails || []);
+        if (Array.isArray(rawEmails)) {
+          const items = rawEmails.map(mapEmailToNotificationItem);
+          dispatch(setMailNotifications(items));
+        }
+      })
+      .catch((err) => {
+        console.debug("Failed to fetch initial mail notifications:", err);
+      });
+
+    // Register service worker for mobile and background notifications
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch((err) => {
+        console.debug("ServiceWorker registration failed:", err);
+      });
+    }
+
     // Connect to socket and join mail room
     const initSocket = async () => {
       try {
@@ -66,17 +90,32 @@ export function MailNotificationListener() {
           socket.emit("mail:joinRoom", { token });
         });
 
-        socket.on("mail:newEmail", (payload: any) => {
+        socket.on("mail:newEmail", async (payload: any) => {
           if (!mounted) return;
+
+          // STRICT PRIVACY CHECK: Verify this incoming email was meant for this user
+          const currentUserId = String(authUser?._id || authUser?.id || coachUser?._id || coachUser?.id || "");
+          const myEmail = (authUser?.tmsEmail || authUser?.email || coachUser?.email || "").toLowerCase().trim();
+
+          if (payload.recipientUser && currentUserId && String(payload.recipientUser) !== currentUserId) {
+            return;
+          }
+          if (payload.recipientEmail && myEmail) {
+            const recStr = String(payload.recipientEmail).toLowerCase().trim();
+            const toStr = String(payload.to || "").toLowerCase();
+            if (recStr !== myEmail && !toStr.includes(myEmail)) {
+              return;
+            }
+          }
 
           const emailId = payload.id || payload._id || "";
           dispatch(incrementUnreadCount(1));
-          dispatch(addMailNotification({
+          dispatch(addMailNotification(mapEmailToNotificationItem({
             ...payload,
             id: emailId,
             _id: emailId,
             isRead: false,
-          }));
+          })));
 
           const fromName = parseSender(payload.from || "").name;
           const targetInboxUrl = isManagingCoach
@@ -119,6 +158,47 @@ export function MailNotificationListener() {
               position: "top-right",
             }
           );
+
+          // Trigger native browser notification if allowed (supports mobile Android Chrome + Desktop)
+          if (
+            typeof window !== "undefined" &&
+            "Notification" in window &&
+            Notification.permission === "granted"
+          ) {
+            const notifTitle = `New email from ${fromName}`;
+            const notifOptions: NotificationOptions = {
+              body: payload.subject || payload.snippet || "New incoming message",
+              icon: "/Logo.jpg",
+              tag: emailId || undefined,
+              data: { url: targetInboxUrl },
+            };
+
+            let swTriggered = false;
+            if ("serviceWorker" in navigator) {
+              try {
+                const reg = await navigator.serviceWorker.ready;
+                if (reg && "showNotification" in reg) {
+                  await reg.showNotification(notifTitle, notifOptions);
+                  swTriggered = true;
+                }
+              } catch (swErr) {
+                console.debug("ServiceWorker showNotification failed:", swErr);
+              }
+            }
+
+            if (!swTriggered) {
+              try {
+                const desktopNotif = new Notification(notifTitle, notifOptions);
+                desktopNotif.onclick = () => {
+                  window.focus();
+                  router.push(targetInboxUrl);
+                  desktopNotif.close();
+                };
+              } catch (err) {
+                console.debug("Failed to create desktop notification:", err);
+              }
+            }
+          }
         });
       } catch (err) {
         console.debug("Error initializing mail notification socket:", err);

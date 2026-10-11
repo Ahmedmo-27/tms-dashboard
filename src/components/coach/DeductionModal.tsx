@@ -38,13 +38,15 @@ function toLocalInputValue(date: Date): string {
 }
 
 function toStoredIso(date: Date): string {
+  const now = new Date();
   return new Date(
     date.getFullYear(),
     date.getMonth(),
     date.getDate(),
-    12,
-    0,
-    0
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+    now.getMilliseconds()
   ).toISOString();
 }
 
@@ -53,6 +55,7 @@ interface DeductionModalProps {
   memberId: string;
   memberName?: string;
   remainingClasses?: number;
+  totalClasses?: number;
   memberPackageStartDate: string;
   pkgId: string;
   pkgName?: string;
@@ -73,6 +76,7 @@ export function DeductionModal({
   memberId,
   memberName,
   remainingClasses,
+  totalClasses,
   memberPackageStartDate,
   pkgId,
   pkgName,
@@ -121,6 +125,7 @@ export function DeductionModal({
     try {
       const body = {
         memberId,
+        pkgId,
         memberPackageStartDate,
         reason,
         sessionDate: toStoredIso(values.sessionDate),
@@ -184,7 +189,9 @@ export function DeductionModal({
               {remainingClasses !== undefined && (
                 <p>
                   <span className="text-muted-foreground">Remaining after · </span>
-                  {Math.max(0, remainingClasses - 1)}
+                  {totalClasses
+                    ? `${Math.max(0, remainingClasses - 1)} out of ${totalClasses} remaining`
+                    : `${Math.max(0, remainingClasses - 1)} remaining`}
                 </p>
               )}
               <p>

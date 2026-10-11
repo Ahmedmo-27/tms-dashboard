@@ -8,6 +8,19 @@ import { getProducts } from "@/lib/data/products";
 import { NetworkError, UnauthorizedError } from "@/core/api-error";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
+import { formatInTimeZone } from "date-fns-tz";
+
+function parseCairoDateParam(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+    return raw.trim();
+  }
+  const dateObj = new Date(raw);
+  if (Number.isNaN(dateObj.getTime())) {
+    return undefined;
+  }
+  return formatInTimeZone(dateObj, "Africa/Cairo", "yyyy-MM-dd");
+}
 
 export default async function Page({
   searchParams,
@@ -15,12 +28,10 @@ export default async function Page({
   searchParams: Promise<{ date?: string; locationId?: string }>;
 }) {
   const params = await searchParams;
-  const dateParam = params.date
-    ? new Date(params.date).toLocaleString().split("T")[0]
-    : new Date().toLocaleString().split("T")[0];
+  const dateParam = parseCairoDateParam(params.date);
   const locationId = params.locationId;
   try {
-    const orders = await getOrders(locationId);
+    const orders = await getOrders(locationId, dateParam);
     const products = await getProducts();
     return (
       <div className="flex min-h-full flex-col gap-8 p-8">

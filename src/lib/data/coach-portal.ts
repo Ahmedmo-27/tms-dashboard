@@ -2,6 +2,7 @@ import type { AxiosInstance } from "axios";
 import type {
   CoachMeDto,
   DeductionHistoryItemDto,
+  ClientAttendanceItemDto,
   TodaySummaryDto,
 } from "@/types/coach.types";
 import type { CoachNotification } from "@/lib/store/features/coachSlice";
@@ -44,4 +45,12 @@ export async function getCoachDeductions(
 ): Promise<DeductionHistoryItemDto[]> {
   const res = await api.get(`/api/coach/clients/${memberId}/deductions`);
   return (res.data.data?.deductions ?? []) as DeductionHistoryItemDto[];
+}
+
+export async function getCoachClientAttendance(
+  api: AxiosInstance,
+  memberId: string
+): Promise<ClientAttendanceItemDto[]> {
+  const res = await api.get(`/api/coach/clients/${memberId}/attendance`);
+  return (res.data.data?.attendance ?? []) as ClientAttendanceItemDto[];
 }

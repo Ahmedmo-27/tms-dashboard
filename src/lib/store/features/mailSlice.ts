@@ -11,6 +11,24 @@ export interface MailNotificationItem {
   recipientUser?: string | null;
 }
 
+export function mapEmailToNotificationItem(e: any): MailNotificationItem {
+  const id = (e._id || e.id || "").toString();
+  let snippet = e.snippet;
+  if (!snippet && e.text) {
+    snippet = e.text.replace(/\s+/g, " ").trim().slice(0, 120);
+  }
+  return {
+    id,
+    _id: id,
+    from: e.from || "Unknown",
+    subject: e.subject || "(No Subject)",
+    snippet: snippet || "",
+    date: e.date ? (typeof e.date === "string" ? e.date : new Date(e.date).toISOString()) : new Date().toISOString(),
+    isRead: Boolean(e.isRead),
+    recipientUser: e.recipientUser ? (e.recipientUser._id || e.recipientUser).toString() : null,
+  };
+}
+
 interface MailState {
   unreadCount: number;
   notifications: MailNotificationItem[];

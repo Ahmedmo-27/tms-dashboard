@@ -33,6 +33,7 @@ export async function editPackageAction(_prevState: any, formData: FormData) {
 export async function addPackageAction(_prevState: any, formData: FormData) {
   const rawRestrictions = formData.get("classRestrictions") as string | null;
   const coachId = (formData.get("coachId") as string) || undefined;
+  const notesRaw = formData.get("notes");
 
   const pkg = {
     _id: "newId",
@@ -41,6 +42,7 @@ export async function addPackageAction(_prevState: any, formData: FormData) {
     numberOfSessions: formData.get("numberOfSessions") as string,
     expiryPeriod: formData.get("expiryPeriod") as string,
     category: formData.get("category") as string,
+    notes: typeof notesRaw === "string" ? notesRaw.trim() : "",
     coachId: coachId && coachId.trim() !== "" ? coachId.trim() : undefined,
     opensClasses: (formData.getAll("opensClasses") as string[]).filter(
       (id) => id.trim() !== ""

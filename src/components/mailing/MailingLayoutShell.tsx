@@ -12,7 +12,8 @@ import {
   Copy, 
   Check, 
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tms } from "@/lib/tms-api";
@@ -21,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 import { useAppSelector } from "@/lib/hooks";
 import { isAccountantRole } from "@/lib/config/roles";
+import { MailNotificationPermissionBanner } from "./MailNotificationPermissionBanner";
 
 interface MailingLayoutShellProps {
   basePath: string;
@@ -33,6 +35,7 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
   const [copied, setCopied] = useState(false);
   const role = useAppSelector((state) => state.auth.user?.role as string | undefined);
   const readOnly = isAccountantRole(role);
+  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
 
   useEffect(() => {
     tms.get("/admin/mail/profile")
@@ -43,6 +46,10 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
         }
       })
       .catch(() => {});
+
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setBrowserPermission(Notification.permission);
+    }
   }, []);
 
   const handleCopyEmail = () => {
@@ -54,13 +61,38 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
     }
   };
 
+  const handleEnableAlerts = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission === "denied") {
+      toast.error("Notifications are blocked in your browser. Allow them in your address bar site settings.", { duration: 5000 });
+      return;
+    }
+    try {
+      const res = await Notification.requestPermission();
+      setBrowserPermission(res);
+      if (res === "granted") {
+        toast.success("Desktop email notifications activated!");
+        try {
+          new Notification("The Mind Space", {
+            body: "Email notifications are now enabled!",
+            icon: "/Logo.ico",
+          });
+        } catch {}
+      } else if (res === "denied") {
+        toast.error("Notifications permission was denied.");
+      }
+    } catch (e) {
+      console.error("Failed to request notification permission:", e);
+    }
+  };
+
   const allNavItems = [
     {
       title: "Compose",
       href: basePath,
       icon: PenSquare,
       exact: true,
-      description: "Send direct & broadcast emails",
+      description: "Send dedicated & broadcast emails",
     },
     {
       title: "Inbox",
@@ -206,56 +238,82 @@ export function MailingLayoutShell({ basePath, children }: MailingLayoutShellPro
           {profile && (
             <div
               data-walkthrough="mail-profile-card"
-              className="bg-card rounded-xl border p-4 space-y-3 shadow-xs"
+              className="bg-card rounded-xl border p-3 space-y-2 shadow-2xs"
             >
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                <div className="flex items-center gap-1.5 font-medium text-muted-foreground text-[11px]">
                   <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                   <span>Active Mailbox</span>
                 </div>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/5 text-primary border-primary/20">
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-primary/5 text-primary border-primary/20">
                   Ready
                 </Badge>
               </div>
 
-              <div className="flex items-center gap-3 pt-1">
-                <div className="h-9 w-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center shrink-0 text-xs">
+              <div className="flex items-center gap-2.5 pt-0.5">
+                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center shrink-0 text-[10px]">
                   {getInitials(profile.name, profile.email)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-sm text-foreground truncate" title={profile.name}>
+                  <div className="font-semibold text-xs text-foreground truncate" title={profile.name}>
                     {profile.name || "Mail User"}
                   </div>
-                  <div className="text-xs text-muted-foreground truncate" title={profile.email}>
+                  <div className="text-[11px] text-muted-foreground truncate" title={profile.email}>
                     {profile.email}
                   </div>
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyEmail}
-                className="w-full text-xs h-8 gap-1.5 font-normal text-muted-foreground hover:text-foreground"
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-emerald-500" />
-                    <span>Copied</span>
-                  </>
+              <div className="flex items-center gap-1.5 pt-1 border-t border-border/60">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyEmail}
+                  className="flex-1 h-7 text-[11px] gap-1 px-2 font-normal text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-500" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3" />
+                      <span>Copy Address</span>
+                    </>
+                  )}
+                </Button>
+
+                {browserPermission === "granted" ? (
+                  <Badge
+                    variant="outline"
+                    className="h-7 px-2 text-[10px] font-normal gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shrink-0"
+                    title="Email alerts active"
+                  >
+                    <Bell className="h-3 w-3" />
+                    <span>Alerts</span>
+                  </Badge>
                 ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>Copy Address</span>
-                  </>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEnableAlerts}
+                    className="h-7 px-2 text-[11px] font-medium text-primary hover:text-primary hover:bg-primary/10 border-primary/30 rounded-md cursor-pointer shrink-0 gap-1"
+                    title="Enable desktop alerts"
+                  >
+                    <Bell className="h-3 w-3" />
+                    <span>Alerts</span>
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
           )}
         </aside>
 
         {/* Main Content Area */}
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 space-y-4">
+          <MailNotificationPermissionBanner />
           {children}
         </main>
       </div>
