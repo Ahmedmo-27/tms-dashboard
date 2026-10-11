@@ -122,15 +122,35 @@ export function MoveScanClassDialog({
 
   const eligiblePackages: MemberPackage[] = useMemo(() => {
     if (!memberPackages.length) return [];
-    if (!selectedClass?.cid || !catalogPackages.length) return memberPackages;
+    let pool = memberPackages.filter((p) => p.status !== "DELETED");
 
-    const validCatalogIds = new Set(
-      catalogPackages
-        .filter((cp) => packageOpensClass(cp, selectedClass.cid))
-        .map((cp) => cp._id)
-    );
+    if (selectedClass?.cid && catalogPackages.length > 0) {
+      const validCatalogIds = new Set(
+        catalogPackages
+          .filter((cp) => packageOpensClass(cp, selectedClass.cid))
+          .map((cp) => cp._id)
+      );
+      pool = pool.filter((p: MemberPackage) => validCatalogIds.has(p._id));
+    }
 
-    return memberPackages.filter((p: MemberPackage) => validCatalogIds.has(p._id));
+    // Deduplicate by catalog pkgId (p._id), picking the best holding (ACTIVE with remainingClasses > 0)
+    const byId = new Map<string, MemberPackage>();
+    for (const pkg of pool) {
+      const existing = byId.get(pkg._id);
+      if (!existing) {
+        byId.set(pkg._id, pkg);
+        continue;
+      }
+      const isPkgActive = pkg.status === "ACTIVE" && pkg.remainingClasses > 0;
+      const isExistingActive = existing.status === "ACTIVE" && existing.remainingClasses > 0;
+      if (isPkgActive && !isExistingActive) {
+        byId.set(pkg._id, pkg);
+      } else if (isPkgActive && isExistingActive && pkg.remainingClasses > existing.remainingClasses) {
+        byId.set(pkg._id, pkg);
+      }
+    }
+
+    return Array.from(byId.values());
   }, [memberPackages, selectedClass, catalogPackages]);
 
   useEffect(() => {
@@ -199,7 +219,7 @@ export function MoveScanClassDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] w-full">
         <DialogHeader>
           <DialogTitle>Move check-in to another class</DialogTitle>
           <DialogDescription>
@@ -237,10 +257,10 @@ export function MoveScanClassDialog({
               </p>
             ) : (
               <Select value={targetScid} onValueChange={setTargetScid}>
-                <SelectTrigger id="target-class">
+                <SelectTrigger id="target-class" className="w-full">
                   <SelectValue placeholder="Select the class attended" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                   {classes.map((cls) => {
                     const timeStr = cls.startTime
                       ? format(new Date(cls.startTime), "hh:mm a")
@@ -249,8 +269,10 @@ export function MoveScanClassDialog({
                     const coach = cls.coachName ? ` (${cls.coachName})` : "";
                     return (
                       <SelectItem key={cls._id} value={cls._id!}>
-                        {name} — {timeStr}
-                        {coach}
+                        <span className="truncate">
+                          {name} — {timeStr}
+                          {coach}
+                        </span>
                       </SelectItem>
                     );
                   })}
@@ -276,13 +298,15 @@ export function MoveScanClassDialog({
               <div className="space-y-1.5">
                 <Label>Package to charge for new class</Label>
                 <Select value={pkgId} onValueChange={setPkgId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a package" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                     {eligiblePackages.map((p: MemberPackage) => (
                       <SelectItem key={p._id} value={p._id}>
-                        {p.name} — {p.remainingClasses} left ({p.status})
+                        <span className="truncate">
+                          {p.name} — {p.remainingClasses} left{p.status !== "ACTIVE" ? ` (${p.status})` : ""}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -295,8 +319,9 @@ export function MoveScanClassDialog({
           ) : null}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-row justify-end gap-2 pt-2">
           <Button
+            type="button"
             variant="outline"
             onClick={() => setOpen(false)}
             disabled={moving}
@@ -304,6 +329,7 @@ export function MoveScanClassDialog({
             Cancel
           </Button>
           <Button
+            type="button"
             onClick={handleMove}
             disabled={moving || !targetScid || loadingClasses}
           >

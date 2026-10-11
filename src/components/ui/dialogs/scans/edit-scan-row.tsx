@@ -204,7 +204,7 @@ export function EditScanRow({
   // Filter packages available for this newly chosen class and in member's holdings
   const eligiblePackages: MemberPackage[] = useMemo(() => {
     if (!activeMember?.packages) return [];
-    const nonDeleted = activeMember.packages.filter(
+    let pool = activeMember.packages.filter(
       (p) => p.status !== "DELETED"
     );
 
@@ -215,10 +215,27 @@ export function EditScanRow({
           .filter((cp) => packageOpensClass(cp, targetCid))
           .map((cp) => cp._id)
       );
-      return nonDeleted.filter((p) => validCatalogIds.has(p._id));
+      pool = pool.filter((p) => validCatalogIds.has(p._id));
     }
 
-    return nonDeleted;
+    // Deduplicate by catalog pkgId (p._id), picking the best holding (ACTIVE with remainingClasses > 0)
+    const byId = new Map<string, MemberPackage>();
+    for (const pkg of pool) {
+      const existing = byId.get(pkg._id);
+      if (!existing) {
+        byId.set(pkg._id, pkg);
+        continue;
+      }
+      const isPkgActive = pkg.status === "ACTIVE" && pkg.remainingClasses > 0;
+      const isExistingActive = existing.status === "ACTIVE" && existing.remainingClasses > 0;
+      if (isPkgActive && !isExistingActive) {
+        byId.set(pkg._id, pkg);
+      } else if (isPkgActive && isExistingActive && pkg.remainingClasses > existing.remainingClasses) {
+        byId.set(pkg._id, pkg);
+      }
+    }
+
+    return Array.from(byId.values());
   }, [activeMember, targetCid, catalogPackages]);
 
   // If a class is chosen that the previously chosen package isn't available for,
@@ -349,7 +366,7 @@ export function EditScanRow({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto w-full">
         <DialogHeader>
           <DialogTitle>Edit check-in</DialogTitle>
           <DialogDescription>
@@ -485,10 +502,10 @@ export function EditScanRow({
               </div>
             ) : (
               <Select value={selectedScid} onValueChange={setSelectedScid}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select class" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                   {scan.source !== "class" && (
                     <SelectItem value="none">
                       {scan.source === "pt"
@@ -505,8 +522,10 @@ export function EditScanRow({
                     const isCurrent = cls._id === scan.parentId;
                     return (
                       <SelectItem key={cls._id} value={cls._id!}>
-                        {name} — {timeStr}
-                        {coach} {isCurrent ? "(Current)" : ""}
+                        <span className="truncate">
+                          {name} — {timeStr}
+                          {coach} {isCurrent ? "(Current)" : ""}
+                        </span>
                       </SelectItem>
                     );
                   })}
@@ -532,13 +551,15 @@ export function EditScanRow({
               <div className="space-y-1.5">
                 <Label>Package to charge</Label>
                 <Select value={pkgId} onValueChange={setPkgId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a package" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                     {eligiblePackages.map((p) => (
                       <SelectItem key={p._id} value={p._id}>
-                        {p.name} — {p.remainingClasses} left ({p.status})
+                        <span className="truncate">
+                          {p.name} — {p.remainingClasses} left{p.status !== "ACTIVE" ? ` (${p.status})` : ""}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -554,13 +575,15 @@ export function EditScanRow({
             <div className="space-y-1.5">
               <Label>Package to charge</Label>
               <Select value={pkgId} onValueChange={setPkgId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a package" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                   {eligiblePackages.map((p) => (
                     <SelectItem key={p._id} value={p._id}>
-                      {p.name} — {p.remainingClasses} left ({p.status})
+                      <span className="truncate">
+                        {p.name} — {p.remainingClasses} left{p.status !== "ACTIVE" ? ` (${p.status})` : ""}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -587,7 +610,7 @@ export function EditScanRow({
                   setStatus(v as "SUCCESS" | "FAILED" | "WILL_PAY")
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -610,7 +633,7 @@ export function EditScanRow({
           ) : null}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-row justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
             Cancel
           </Button>
