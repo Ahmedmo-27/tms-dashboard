@@ -24,6 +24,7 @@ import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button
 import { ScanMemberLink } from "./scan-member-link";
 import { AddWalkIn } from "../dialogs/scans/add-walk-in";
 import { EditScanRow } from "../dialogs/scans/edit-scan-row";
+import { MoveScanClassDialog } from "../dialogs/scans/move-scan-class-dialog";
 import { DeleteScanRow } from "../dialogs/scans/delete-scan-row";
 import { removeFailedScan, updateNonUserBookingPhone } from "@/lib/data/bookings";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,7 @@ export interface ClassScan {
 export interface ClassContainerProps {
   classData: ScheduledClass;
   classScans: ClassScan[];
+  availableClasses?: ScheduledClass[];
 }
 
 function MissingPhonePopover({
@@ -135,6 +137,7 @@ function MissingPhonePopover({
 export const ClassContainer = ({
   classData,
   classScans,
+  availableClasses,
   showBranch = false,
   onRefresh,
 }: ClassContainerProps & { showBranch?: boolean; onRefresh?: () => void }) => {
@@ -420,7 +423,16 @@ export const ClassContainer = ({
                       <TableCell className="text-right">
                         {scan.rowId && scan.parentId ? (
                           <div className="flex items-center justify-end gap-0.5">
-                            <EditScanRow scan={scan} onSaved={onRefresh} />
+                            <MoveScanClassDialog
+                              scan={scan}
+                              availableClasses={availableClasses}
+                              onMoved={onRefresh}
+                            />
+                            <EditScanRow
+                              scan={scan}
+                              availableClasses={availableClasses}
+                              onSaved={onRefresh}
+                            />
                             <DeleteScanRow scan={scan} onDeleted={onRefresh} />
                           </div>
                         ) : null}

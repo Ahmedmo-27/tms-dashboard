@@ -171,6 +171,7 @@ export function ScanContainer({
 
   const viewingToday = isToday(selectedDate);
   const viewingPast = isPast(startOfDay(selectedDate)) && !viewingToday;
+  const allDayClasses = scans.map((s) => s.classData);
 
   return (
     <div className="p-4 sm:p-5 space-y-5">
@@ -261,6 +262,7 @@ export function ScanContainer({
           <AttendanceContainer
             title="Personal Training"
             classScans={dailyAttendance.pt}
+            availableClasses={allDayClasses}
             showBranch={isViewingAllBranches}
             sheetCopy={{ mapMethod: mapPtMethodToSheetLabel }}
             onRefresh={() => fetchAll(selectedDate, true)}
@@ -285,6 +287,7 @@ export function ScanContainer({
           <AttendanceContainer
             title="Open Gym"
             classScans={dailyAttendance.openGym}
+            availableClasses={allDayClasses}
             showBranch={isViewingAllBranches}
             sheetCopy={{ mapMethod: mapOpenGymMethodToSheetLabel }}
             onRefresh={() => fetchAll(selectedDate, true)}
@@ -324,6 +327,7 @@ export function ScanContainer({
               key={scan.classData._id ?? index}
               classData={scan.classData}
               classScans={scan.classScans}
+              availableClasses={allDayClasses}
               showBranch={isViewingAllBranches}
               onRefresh={() => fetchAll(selectedDate, true)}
             />

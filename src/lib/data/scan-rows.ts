@@ -19,6 +19,8 @@ export interface ScanRowChanges {
   /** Open gym guest rows only. */
   guestName?: string;
   guestPhone?: string;
+  /** Move this scan to a new scheduled class. */
+  targetScid?: string;
 }
 
 function path({ source, parentId, rowId }: ScanRowRef): string {
@@ -31,6 +33,32 @@ export const updateScanRow = async (
 ) => {
   try {
     const response = await tms.patch(path(ref), changes);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+/**
+ * Moves a check-in to a new scheduled class (e.g. if the member scanned a false QR code).
+ * Returns the session from the false class and charges/records it in the target class.
+ */
+export const moveScanToClass = async (
+  ref: ScanRowRef,
+  targetScid: string,
+  options?: {
+    uid?: string;
+    pkgId?: string;
+    time?: string;
+    status?: "SUCCESS" | "FAILED";
+  },
+) => {
+  try {
+    const response = await tms.post(`${path(ref)}/move-class`, {
+      targetScid,
+      ...options,
+    });
     return response.data;
   } catch (error) {
     console.log(error);
