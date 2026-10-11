@@ -14,7 +14,7 @@ import {
 import { ScrollArea, ScrollBar } from "../scroll-area";
 import { cn } from "@/lib/utils";
 import { mapMethodToSheetLabel } from "@/lib/utils/copy-class-for-sheet";
-import { Clock, Users, UserCheck, X, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Clock, Users, UserCheck, X, AlertTriangle, CheckCircle2, Pencil } from "lucide-react";
 import { ScheduledClass } from "../schedule/columns";
 import { format } from "date-fns";
 import { CheckInsSelector } from "../dialogs/scans/check-in-selector";
@@ -26,7 +26,7 @@ import { AddWalkIn } from "../dialogs/scans/add-walk-in";
 import { EditScanRow } from "../dialogs/scans/edit-scan-row";
 import { MoveScanClassDialog } from "../dialogs/scans/move-scan-class-dialog";
 import { DeleteScanRow } from "../dialogs/scans/delete-scan-row";
-import { removeFailedScan, updateNonUserBookingPhone } from "@/lib/data/bookings";
+import { removeFailedScan, updateNonUserBookingPhone, updateNonUserBookingName } from "@/lib/data/bookings";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState } from "react";
@@ -61,6 +61,84 @@ export interface ClassContainerProps {
   classData: ScheduledClass;
   classScans: ClassScan[];
   availableClasses?: ScheduledClass[];
+}
+
+function EditWalkInNamePopover({
+  bookingId,
+  currentName,
+  onSuccess,
+}: {
+  bookingId: string;
+  currentName: string;
+  onSuccess?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(currentName);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+    try {
+      setSaving(true);
+      await updateNonUserBookingName(bookingId, name.trim());
+      toast.success("Walk-in name updated");
+      setOpen(false);
+      onSuccess?.();
+    } catch {
+      toast.error("Failed to update name");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setName(currentName);
+        setOpen(next);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded transition-colors inline-flex items-center"
+          title="Edit walk-in name"
+          aria-label="Edit walk-in name"
+        >
+          <Pencil className="h-3 w-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 space-y-3" align="start">
+        <p className="text-sm font-medium">Edit Walk-in Name</p>
+        <Input
+          placeholder="Enter name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSave();
+          }}
+        />
+        <div className="flex justify-end gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 function MissingPhonePopover({
@@ -365,7 +443,16 @@ export const ClassContainer = ({
                   classScans.map((scan, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <ScanMemberLink name={scan.member} memberId={scan.memberId} />
+                        <div className="flex items-center gap-1.5">
+                          <ScanMemberLink name={scan.member} memberId={scan.memberId} />
+                          {!scan.memberId && scan.bookingId ? (
+                            <EditWalkInNamePopover
+                              bookingId={scan.bookingId}
+                              currentName={scan.member}
+                              onSuccess={onRefresh}
+                            />
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {scan.phone && scan.phone !== "No Phone" ? (
@@ -382,43 +469,42 @@ export const ClassContainer = ({
                         {format(new Date(scan.time), "hh:mm a")}
                       </TableCell>
                       <TableCell className="text-right">
-                        {(scan.status === "WILL_PAY" && scan.bookingId) ? (
-                          <PaymentSelectorDialog
-                            bookingId={scan.bookingId}
-                            onSuccess={onRefresh}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-center gap-1">
-                              <Badge
-                                className={cn(
-                                  "font-normal",
-                                  getStatusColor(scan.status)
-                                )}
-                              >
-                                {scan.status}
-                              </Badge>
-                              {scan.status === "FAILED" && scan.memberId && (
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-5 w-5 text-red-500 hover:bg-red-50 hover:text-red-700"
-                                  disabled={removingUid === scan.memberId}
-                                  onClick={() => handleRemoveFailedScan(scan.memberId!)}
-                                  aria-label="Remove failed scan"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </Button>
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <Badge
+                              className={cn(
+                                "font-normal",
+                                getStatusColor(scan.status)
                               )}
-                            </div>
-                            {scan.statusDetail ? (
-                              <span className="text-xs text-muted-foreground max-w-[160px] text-right">
-                                {scan.statusDetail}
-                              </span>
+                            >
+                              {scan.status}
+                            </Badge>
+                            {scan.status === "WILL_PAY" && scan.bookingId ? (
+                              <PaymentSelectorDialog
+                                bookingId={scan.bookingId}
+                                onSuccess={onRefresh}
+                              />
                             ) : null}
+                            {scan.status === "FAILED" && scan.memberId && (
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-5 w-5 text-red-500 hover:bg-red-50 hover:text-red-700"
+                                disabled={removingUid === scan.memberId}
+                                onClick={() => handleRemoveFailedScan(scan.memberId!)}
+                                aria-label="Remove failed scan"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                           </div>
-                        )}
+                          {scan.statusDetail ? (
+                            <span className="text-xs text-muted-foreground max-w-[160px] text-right">
+                              {scan.statusDetail}
+                            </span>
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         {scan.rowId && scan.parentId ? (

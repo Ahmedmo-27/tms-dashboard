@@ -45,8 +45,8 @@ export const parseSchedule = (
           paid: entry.status === "PAID",
         });
         if (entry.status === "ATTENDED") {
-          console.log(entry);
           walkInScans.push({
+            _id: entry._id,
             uid: {
               name: entry.name,
               phoneNumber: entry.phoneNumber,
@@ -61,6 +61,7 @@ export const parseSchedule = (
         }
         if (entry.status === "PAID") {
           walkInScans.push({
+            _id: entry._id,
             uid: {
               name: entry.name,
               phoneNumber: entry.phoneNumber,

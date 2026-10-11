@@ -77,15 +77,16 @@ export function EditScanRow({
 
   // Time & Status
   const [time, setTime] = useState<string>(toLocalInput(scan.time));
-  const [status, setStatus] = useState<"SUCCESS" | "FAILED">(
-    scan.status === "FAILED" ? "FAILED" : "SUCCESS",
+  const [status, setStatus] = useState<"SUCCESS" | "FAILED" | "WILL_PAY">(
+    scan.status ?? "SUCCESS",
   );
 
   // Guest
-  const [guestName, setGuestName] = useState(scan.isGuest ? scan.member : "");
-  const [guestPhone, setGuestPhone] = useState(scan.isGuest ? scan.phone : "");
+  const isGuestRow = Boolean(scan.isGuest || !scan.memberId);
+  const [guestName, setGuestName] = useState(isGuestRow ? scan.member : "");
+  const [guestPhone, setGuestPhone] = useState(isGuestRow ? scan.phone : "");
 
-  const canEditGuest = scan.source === "open-gym" && scan.isGuest && !newMember;
+  const canEditGuest = isGuestRow && !newMember && scan.source !== "pt";
 
   const reset = useCallback(() => {
     setSearchQuery("");
@@ -96,10 +97,10 @@ export function EditScanRow({
     );
     setPkgId(scan.pkgId ?? "");
     setTime(toLocalInput(scan.time));
-    setStatus(scan.status === "FAILED" ? "FAILED" : "SUCCESS");
-    setGuestName(scan.isGuest ? scan.member : "");
-    setGuestPhone(scan.isGuest ? scan.phone : "");
-  }, [scan]);
+    setStatus(scan.status ?? "SUCCESS");
+    setGuestName(isGuestRow ? scan.member : "");
+    setGuestPhone(isGuestRow ? scan.phone : "");
+  }, [scan, isGuestRow]);
 
   // Load initial catalog packages, day's classes, and current member
   useEffect(() => {
@@ -203,7 +204,7 @@ export function EditScanRow({
   // Filter packages available for this newly chosen class and in member's holdings
   const eligiblePackages: MemberPackage[] = useMemo(() => {
     if (!activeMember?.packages) return [];
-    const nonDeleted = activeMember.packages.filter(
+    let pool = activeMember.packages.filter(
       (p) => p.status !== "DELETED"
     );
 
@@ -214,10 +215,27 @@ export function EditScanRow({
           .filter((cp) => packageOpensClass(cp, targetCid))
           .map((cp) => cp._id)
       );
-      return nonDeleted.filter((p) => validCatalogIds.has(p._id));
+      pool = pool.filter((p) => validCatalogIds.has(p._id));
     }
 
-    return nonDeleted;
+    // Deduplicate by catalog pkgId (p._id), picking the best holding (ACTIVE with remainingClasses > 0)
+    const byId = new Map<string, MemberPackage>();
+    for (const pkg of pool) {
+      const existing = byId.get(pkg._id);
+      if (!existing) {
+        byId.set(pkg._id, pkg);
+        continue;
+      }
+      const isPkgActive = pkg.status === "ACTIVE" && pkg.remainingClasses > 0;
+      const isExistingActive = existing.status === "ACTIVE" && existing.remainingClasses > 0;
+      if (isPkgActive && !isExistingActive) {
+        byId.set(pkg._id, pkg);
+      } else if (isPkgActive && isExistingActive && pkg.remainingClasses > existing.remainingClasses) {
+        byId.set(pkg._id, pkg);
+      }
+    }
+
+    return Array.from(byId.values());
   }, [activeMember, targetCid, catalogPackages]);
 
   // If a class is chosen that the previously chosen package isn't available for,
@@ -287,15 +305,23 @@ export function EditScanRow({
     }
 
     // Status
-    const originalStatus = scan.status === "FAILED" ? "FAILED" : "SUCCESS";
-    if (status !== originalStatus) {
+    if (status !== scan.status) {
       changes.status = status;
     }
 
-    // Guest details
+    // Guest / Walk-in details
     if (canEditGuest) {
-      if (guestName !== scan.member) changes.guestName = guestName;
-      if (guestPhone !== scan.phone) changes.guestPhone = guestPhone;
+      const trimmedName = guestName.trim();
+      if (trimmedName && trimmedName !== scan.member) {
+        changes.guestName = trimmedName;
+        changes.name = trimmedName;
+      }
+      const trimmedPhone = guestPhone.trim();
+      const originalPhone = scan.phone === "No Phone" ? "" : scan.phone;
+      if (trimmedPhone !== originalPhone) {
+        changes.guestPhone = trimmedPhone;
+        changes.phoneNumber = trimmedPhone;
+      }
     }
 
     if (Object.keys(changes).length === 0) {
@@ -340,7 +366,7 @@ export function EditScanRow({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto w-full">
         <DialogHeader>
           <DialogTitle>Edit check-in</DialogTitle>
           <DialogDescription>
@@ -364,9 +390,39 @@ export function EditScanRow({
             </p>
           </div>
 
+          {/* Guest / Walk-in fields */}
+          {canEditGuest ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="guest-name">
+                  {scan.source === "class" ? "Walk-in Name" : "Guest Name"}
+                </Label>
+                <Input
+                  id="guest-name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder="Enter name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="guest-phone">Phone Number</Label>
+                <Input
+                  id="guest-phone"
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                  placeholder="01xxxxxxxxx"
+                />
+              </div>
+            </div>
+          ) : null}
+
           {/* Member section */}
           <div className="space-y-2">
-            <Label>Member</Label>
+            <Label>
+              {isGuestRow
+                ? "Reassign to a registered member (optional)"
+                : "Member"}
+            </Label>
             {newMember ? (
               <div className="flex items-center justify-between rounded-lg border bg-muted/40 p-3">
                 <div className="flex items-center gap-2.5">
@@ -395,7 +451,11 @@ export function EditScanRow({
                 <div className="relative">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search a different member by name or phone..."
+                    placeholder={
+                      isGuestRow
+                        ? "Search a registered member by name or phone to reassign..."
+                        : "Search a different member by name or phone..."
+                    }
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -432,28 +492,6 @@ export function EditScanRow({
             )}
           </div>
 
-          {/* Guest fields if open gym guest */}
-          {canEditGuest ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="guest-name">Guest name</Label>
-                <Input
-                  id="guest-name"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="guest-phone">Guest phone</Label>
-                <Input
-                  id="guest-phone"
-                  value={guestPhone}
-                  onChange={(e) => setGuestPhone(e.target.value)}
-                />
-              </div>
-            </div>
-          ) : null}
-
           {/* Class selection */}
           <div className="space-y-1.5">
             <Label>Class</Label>
@@ -464,10 +502,10 @@ export function EditScanRow({
               </div>
             ) : (
               <Select value={selectedScid} onValueChange={setSelectedScid}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select class" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                   {scan.source !== "class" && (
                     <SelectItem value="none">
                       {scan.source === "pt"
@@ -484,8 +522,10 @@ export function EditScanRow({
                     const isCurrent = cls._id === scan.parentId;
                     return (
                       <SelectItem key={cls._id} value={cls._id!}>
-                        {name} — {timeStr}
-                        {coach} {isCurrent ? "(Current)" : ""}
+                        <span className="truncate">
+                          {name} — {timeStr}
+                          {coach} {isCurrent ? "(Current)" : ""}
+                        </span>
                       </SelectItem>
                     );
                   })}
@@ -511,13 +551,15 @@ export function EditScanRow({
               <div className="space-y-1.5">
                 <Label>Package to charge</Label>
                 <Select value={pkgId} onValueChange={setPkgId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a package" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                     {eligiblePackages.map((p) => (
                       <SelectItem key={p._id} value={p._id}>
-                        {p.name} — {p.remainingClasses} left ({p.status})
+                        <span className="truncate">
+                          {p.name} — {p.remainingClasses} left{p.status !== "ACTIVE" ? ` (${p.status})` : ""}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -533,13 +575,15 @@ export function EditScanRow({
             <div className="space-y-1.5">
               <Label>Package to charge</Label>
               <Select value={pkgId} onValueChange={setPkgId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a package" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
                   {eligiblePackages.map((p) => (
                     <SelectItem key={p._id} value={p._id}>
-                      {p.name} — {p.remainingClasses} left ({p.status})
+                      <span className="truncate">
+                        {p.name} — {p.remainingClasses} left{p.status !== "ACTIVE" ? ` (${p.status})` : ""}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -562,13 +606,16 @@ export function EditScanRow({
               <Label>Status</Label>
               <Select
                 value={status}
-                onValueChange={(v) => setStatus(v as "SUCCESS" | "FAILED")}
+                onValueChange={(v) =>
+                  setStatus(v as "SUCCESS" | "FAILED" | "WILL_PAY")
+                }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="SUCCESS">SUCCESS</SelectItem>
+                  <SelectItem value="WILL_PAY">WILL_PAY</SelectItem>
                   <SelectItem value="FAILED">FAILED</SelectItem>
                 </SelectContent>
               </Select>
@@ -579,10 +626,14 @@ export function EditScanRow({
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Marking this failed returns the session to {activeMember?.name || scan.member}.
             </p>
+          ) : status === "WILL_PAY" && scan.status === "SUCCESS" ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Marking this WILL_PAY returns the session credit until payment is recorded.
+            </p>
           ) : null}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-row justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
             Cancel
           </Button>

@@ -69,6 +69,7 @@ export const parseScans = (
         parentId: cls._id,
         rowId: getId(scan._id),
         pkgId: getId(scan.pkgId),
+        isGuest: !getMemberId(scan.uid),
       };
       parsedScans.push(parsedScan);
     });
