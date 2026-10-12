@@ -17,7 +17,15 @@ function extractAfterWith(method: string): string {
 export function mapMethodToSheetLabel(method: string): MethodSheetMapping {
   const normalized = (method || "").trim().toLowerCase();
 
-  if (normalized === "drop in" || normalized === "drop-in") {
+  if (
+    normalized === "drop in" ||
+    normalized === "drop-in" ||
+    normalized === "dropin" ||
+    normalized === "walk in" ||
+    normalized === "walk-in" ||
+    normalized === "walkin" ||
+    normalized === "waitlist confirmed"
+  ) {
     return { kind: "dropin" };
   }
   if (normalized.includes("spacer mix")) {
