@@ -131,6 +131,7 @@ export const parseSchedule = (
           isManual: Boolean(entry.isManual),
         });
       });
+    }
     const allScans = [...cls.scans, ...walkInScans].map((scan: any) => ({
       ...scan,
       method: scan.method === "Waitlist Confirmed" ? "Walk In" : scan.method,
