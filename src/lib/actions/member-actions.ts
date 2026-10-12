@@ -6,11 +6,12 @@ import {
   subscribeGuestToPackage,
   subscribeMemberToPackage,
   unsubscribeMemberFromPackage,
+  updateMember,
 } from "../data/member";
 import { addMember as addMemberRequest } from "../data/users";
 import { parseStateError } from "../utils/state-errors";
 import { bookClass, bookDropIn, cancelBooking } from "../data/bookings";
-import { nonUserDataSchema } from "../schemas/newUserSchema";
+import { nonUserDataSchema, editMemberSchema } from "../schemas/newUserSchema";
 import { bookClassSchema } from "../schemas/bookClassSchema";
 import { getAuthenticatedUser } from "../data/auth";
 import { canOverrideBookingTimeRestrictions } from "../config/roles";
@@ -289,5 +290,58 @@ export const cancelBookingAction = async (uid: string, scid: string) => {
     };
   } catch (error) {
     return parseStateError(error);
+  }
+};
+
+export const editMemberAction = async (_prevState: any, formData: FormData) => {
+  try {
+    const uid = formData.get("uid") as string;
+    if (!uid?.trim()) {
+      return {
+        success: false,
+        errors: { message: "Member ID is required" },
+        data: null,
+      };
+    }
+
+    const rawNationalId = (formData.get("nationalId") as string) || "";
+    const cleanNationalId = rawNationalId.trim().replace(/[\s\-]/g, "");
+    const name = (formData.get("name") as string)?.trim();
+    const phoneNumber = (formData.get("phoneNumber") as string)?.trim();
+    const email = (formData.get("email") as string)?.trim();
+
+    const validated = editMemberSchema.parse({
+      name,
+      phoneNumber,
+      email: email || undefined,
+      nationalId: cleanNationalId,
+    });
+
+    const payload: {
+      name: string;
+      phoneNumber: string;
+      email?: string;
+      nationalId?: string;
+    } = {
+      name: validated.name,
+      phoneNumber: validated.phoneNumber,
+      nationalId: validated.nationalId || "",
+    };
+    if (validated.email) {
+      payload.email = validated.email;
+    }
+
+    const response = await updateMember(uid, payload);
+
+    revalidatePath(`/dashboard/our-members/${uid}`);
+    revalidatePath("/dashboard/our-members");
+
+    return {
+      success: true,
+      errors: null,
+      data: response,
+    };
+  } catch (error) {
+    return parseStateError(error as Error);
   }
 };

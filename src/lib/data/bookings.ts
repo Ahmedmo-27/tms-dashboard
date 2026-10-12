@@ -93,6 +93,8 @@ export const bookWalkIn = async (
       ...(locationId ? { locationId } : {}),
     });
     revalidatePath("/dashboard/scans-monitor");
+    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/payments");
     return response.data;
   } catch (error) {
     throw error;
@@ -146,6 +148,9 @@ export const saveNonUserBookingPayment = async (
   amount?: number,
   paymentDate?: string,
   locationId?: string,
+  uid?: string,
+  pkgId?: string,
+  phoneNumber?: string,
 ) => {
   try {
     const response = await tms.post(
@@ -156,9 +161,13 @@ export const saveNonUserBookingPayment = async (
       amount,
       paymentDate,
       ...(locationId ? { locationId } : {}),
+      ...(uid ? { uid } : {}),
+      ...(pkgId ? { pkgId } : {}),
+      ...(phoneNumber ? { phoneNumber } : {}),
     });
     revalidatePath("/dashboard/schedule");
     revalidatePath("/dashboard/scans-monitor");
+    revalidatePath("/dashboard/payments");
     return response.data;
   } catch (error) {
     console.log(error);
@@ -221,4 +230,58 @@ export const removeManualAttendance = async (uid: string, scid: string) => {
     throw error;
   }
 };
+
+export const getWaitlistedMembers = async (scid: string) => {
+  try {
+    const response = await tms.get("/admin/bookings/waitlist", {
+      params: { scid },
+    });
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("Failed to fetch waitlist", error);
+    throw error;
+  }
+};
+
+export const promoteFromWaitlist = async (uid: string, scid: string) => {
+  try {
+    const response = await tms.post("/admin/bookings/waitlist/promote", {
+      uid,
+      scid,
+    });
+    revalidatePath("/dashboard/schedule");
+    return response.data;
+  } catch (error) {
+    console.error("Failed to promote from waitlist", error);
+    throw error;
+  }
+};
+
+export const removeFromWaitlist = async (uid: string, scid: string) => {
+  try {
+    const response = await tms.delete("/admin/bookings/waitlist", {
+      data: { uid, scid },
+    });
+    revalidatePath("/dashboard/schedule");
+    return response.data;
+  } catch (error) {
+    console.error("Failed to remove from waitlist", error);
+    throw error;
+  }
+};
+
+export const addToWaitlist = async (uid: string, scid: string) => {
+  try {
+    const response = await tms.post("/admin/bookings/waitlist", {
+      uid,
+      scid,
+    });
+    revalidatePath("/dashboard/schedule");
+    return response.data;
+  } catch (error) {
+    console.error("Failed to add to waitlist", error);
+    throw error;
+  }
+};
+
 

@@ -2,7 +2,22 @@
 
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { Copy, Mail, Phone, Package } from "lucide-react";
+import {
+  Copy,
+  Mail,
+  Phone,
+  Package,
+  CreditCard,
+  Pencil,
+  ChevronDown,
+  PackagePlus,
+  CalendarPlus,
+  Plus,
+  Calendar,
+  Dumbbell,
+  UserCheck,
+  SlidersHorizontal,
+} from "lucide-react";
 import { Member } from "@/components/ui/members/columns";
 import { Package as CatalogPackage } from "@/components/ui/packages/columns";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
@@ -13,9 +28,19 @@ import Deductions from "@/components/ui/cards/deductions";
 import SubPackage from "@/components/ui/dialogs/member package/sub-package";
 import AddClasses from "@/components/ui/dialogs/member package/add-classes";
 import BookClass from "@/components/ui/dialogs/member-bookings/book-class";
-import BookDropIn from "@/components/ui/dialogs/member-bookings/book-drop-in";
+import { OpenGymDropInDialog } from "@/components/ui/dialogs/open-gym/open-gym-drop-in-dialog";
 import { PtDropInDialog } from "@/components/ui/dialogs/pt/pt-drop-in-dialog";
+import { EditMemberDialog } from "@/components/ui/dialogs/members/edit-member-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function MemberWorkspace({
   member,
@@ -27,6 +52,12 @@ export function MemberWorkspace({
   scheduledClasses: ScheduledClass[];
 }) {
   const [tab, setTab] = useState("packages");
+  const [subPackageOpen, setSubPackageOpen] = useState(false);
+  const [addClassesOpen, setAddClassesOpen] = useState(false);
+  const [bookClassOpen, setBookClassOpen] = useState(false);
+  const [openGymDropInOpen, setOpenGymDropInOpen] = useState(false);
+  const [ptDropInOpen, setPtDropInOpen] = useState(false);
+
   const activePackage =
     member.packages?.find((pkg) => pkg.status?.toUpperCase() === "ACTIVE") ??
     member.packages?.[0];
@@ -58,6 +89,10 @@ export function MemberWorkspace({
                 <Mail className="h-3.5 w-3.5" />
                 {member.email || "No email"}
               </span>
+              <span className="inline-flex items-center gap-1.5 font-mono">
+                <CreditCard className="h-3.5 w-3.5" />
+                {member.nationalId ? `ID: ${member.nationalId}` : "No National ID"}
+              </span>
               <span className="inline-flex items-center gap-1.5">
                 <Package className="h-3.5 w-3.5" />
                 {member.activePkgs} active
@@ -65,18 +100,124 @@ export function MemberWorkspace({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <SubPackage uid={member.id} packages={packages} />
+            <EditMemberDialog
+              member={member}
+              trigger={
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 cursor-pointer">
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span>Edit Member</span>
+                </Button>
+              }
+            />
+
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 cursor-pointer">
+                  <PackagePlus className="h-4 w-4" />
+                  <span>Packages</span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onSelect={() => setSubPackageOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>Add Package</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setAddClassesOpen(true)}
+                  disabled={!activePackage}
+                  className="cursor-pointer"
+                >
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  <span>Adjust Classes</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 cursor-pointer">
+                  <CalendarPlus className="h-4 w-4" />
+                  <span>Bookings</span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem
+                  onSelect={() => setBookClassOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <span>Book a class</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal px-2 py-1">
+                  Drop-in Sessions
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onSelect={() => setOpenGymDropInOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <Dumbbell className="mr-2 h-4 w-4" />
+                  <span>Open gym drop-in</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setPtDropInOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <UserCheck className="mr-2 h-4 w-4" />
+                  <span>PT drop-in</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Dialogs */}
+            <SubPackage
+              uid={member.id}
+              packages={packages}
+              hideTrigger
+              open={subPackageOpen}
+              onOpenChange={setSubPackageOpen}
+            />
+
+            {activePackage && (
+              <AddClasses
+                uid={member.id}
+                pkg={activePackage}
+                variant="none"
+                open={addClassesOpen}
+                onOpenChange={setAddClassesOpen}
+              />
+            )}
+
             <BookClass
               uid={member.id}
               scheduledClasses={scheduledClasses}
               member={member}
               catalogPackages={packages}
+              hideTrigger
+              open={bookClassOpen}
+              onOpenChange={setBookClassOpen}
             />
-            <BookDropIn uid={member.id} memberName={member.name} />
-            <PtDropInDialog uid={member.id} memberName={member.name} triggerLabel="PT drop-in" />
-            {activePackage && (
-              <AddClasses uid={member.id} pkg={activePackage} variant="button" />
-            )}
+
+            <OpenGymDropInDialog
+              uid={member.id}
+              memberName={member.name}
+              hideTrigger
+              open={openGymDropInOpen}
+              onOpenChange={setOpenGymDropInOpen}
+            />
+
+            <PtDropInDialog
+              uid={member.id}
+              memberName={member.name}
+              hideTrigger
+              open={ptDropInOpen}
+              onOpenChange={setPtDropInOpen}
+            />
           </div>
         </div>
       </div>

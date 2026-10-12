@@ -40,6 +40,7 @@ export interface UserAccount {
   email: string;
   phoneNumber: string;
   role: AccountRole;
+  nationalId?: string;
   locationId?: BranchLocation | string;
   tmsEmail?: string;
   sendAsName?: string;
@@ -68,6 +69,7 @@ export interface CreateAccountPayload {
   phoneNumber: string;
   password: string;
   role: AccountRole;
+  nationalId?: string;
   locationId?: string;
   tmsEmail?: string;
   sendAsName?: string;
@@ -80,6 +82,7 @@ export interface UpdateAccountPayload {
   phoneNumber?: string;
   password?: string;
   role?: AccountRole;
+  nationalId?: string | null;
   locationId?: string | null;
   tmsEmail?: string | null;
   sendAsName?: string | null;

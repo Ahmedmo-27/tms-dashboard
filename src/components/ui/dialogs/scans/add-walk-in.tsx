@@ -32,6 +32,7 @@ const paymentMethods = [
   { value: "INSTAPAY", header: "Instapay" },
   { value: "VALU", header: "Valu" },
   { value: "WILL_PAY", header: "Pay Later (Will Pay)" },
+  { value: "FOC", header: "FOC (Invitation / Complimentary)" },
 ];
 
 interface ActionState {
@@ -96,6 +97,10 @@ export function AddWalkIn({
     setIsOpen(open);
     if (!open) {
       setIsLoading(false);
+      setName("");
+      setPhoneNumber("");
+      setAmount("");
+      setPaymentDate("");
       setPaymentMethod("CASH");
     }
   };
@@ -115,6 +120,11 @@ export function AddWalkIn({
 
         if (result.success) {
           setIsOpen(false);
+          setName("");
+          setPhoneNumber("");
+          setAmount("");
+          setPaymentDate("");
+          setPaymentMethod("CASH");
           onSuccess?.();
           return initialState;
         }
@@ -185,6 +195,7 @@ export function AddWalkIn({
 
           <form action={formAction} className="mt-4 space-y-6">
             <input type="hidden" name="scid" value={scid} />
+            <input type="hidden" name="paymentMethod" value={paymentMethod} />
             <ManagementBranchField
               locationId={locationId}
               onLocationChange={setModalLocationId}
@@ -229,39 +240,10 @@ export function AddWalkIn({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`walk-in-amount-${scid}`} className="text-sm font-medium">
-                  Amount
-                </Label>
-                <Input
-                  id={`walk-in-amount-${scid}`}
-                  name="amount"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="e.g., 500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Payment Date</Label>
-                <div onClick={(e) => e.stopPropagation()}>
-                  <PopoverDatePicker
-                    className="w-full"
-                    selectedDate={
-                      paymentDate === "" ? undefined : new Date(paymentDate)
-                    }
-                    handleDateChange={handleDateChange}
-                  />
-                </div>
-                <input type="hidden" name="paymentDate" value={paymentDate} />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor={`walk-in-payment-method-${scid}`} className="text-sm font-medium">
-                  Payment Method
+                  Payment Method / Status
                 </Label>
                 <Select
-                  name="paymentMethod"
                   value={paymentMethod}
                   onValueChange={setPaymentMethod}
                 >
@@ -277,6 +259,42 @@ export function AddWalkIn({
                   </SelectContent>
                 </Select>
               </div>
+
+              {paymentMethod === "FOC" ? (
+                <div className="rounded-md border border-indigo-200 bg-indigo-50/50 p-3 text-xs text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/20 dark:text-indigo-300">
+                  This walk-in is Free of Charge (FOC / Invitation). No payment record will be created.
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor={`walk-in-amount-${scid}`} className="text-sm font-medium">
+                      Amount
+                    </Label>
+                    <Input
+                      id={`walk-in-amount-${scid}`}
+                      name="amount"
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="e.g., 500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Payment Date</Label>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <PopoverDatePicker
+                        className="w-full"
+                        selectedDate={
+                          paymentDate === "" ? undefined : new Date(paymentDate)
+                        }
+                        handleDateChange={handleDateChange}
+                      />
+                    </div>
+                    <input type="hidden" name="paymentDate" value={paymentDate} />
+                  </div>
+                </>
+              )}
             </div>
 
             {fieldErrors?.userExists && (

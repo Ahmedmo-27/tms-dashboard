@@ -10,7 +10,7 @@ function parseScanStatus(
   if (typeof status === "boolean") {
     return status ? "SUCCESS" : "FAILED";
   }
-  if (status === "SUCCESS" || status === "FAILED" || status === "WILL_PAY") {
+  if (status === "SUCCESS" || status === "FAILED" || status === "WILL_PAY" || status === "FOC") {
     return status;
   }
   return "FAILED";
@@ -34,6 +34,9 @@ function getFailedStatusDetail(
 ): string | undefined {
   if (status !== "FAILED" || !method) return undefined;
   if (method === "No Active Package") return "No active package found";
+  if (method === "No Access At Location") return "No access at this branch";
+  if (method === "Package Frozen") return "Package is currently frozen";
+  if (method === "Package Expired") return "Package has expired";
   return undefined;
 }
 
@@ -56,12 +59,29 @@ export const parseScans = (
     const parsedScans: ClassScan[] = [];
     cls.scans.forEach((scan: any) => {
       const status = parseScanStatus(scan.status);
+      const memberId = getMemberId(scan.uid);
+      const matchingBooked = memberId
+        ? cls.bookedMembers?.find(
+            (b: any) =>
+              (b.uid?._id ? String(b.uid._id) : String(b.uid ?? "")) === memberId
+          )
+        : undefined;
+      const memberName =
+        scan.uid?.name ||
+        (matchingBooked?.uid as any)?.name ||
+        matchingBooked?.name ||
+        "Unknown Member";
+      const memberPhone =
+        scan.uid?.phoneNumber ||
+        (matchingBooked?.uid as any)?.phoneNumber ||
+        matchingBooked?.phone ||
+        "No Phone";
       const parsedScan: ClassScan = {
-        member: scan.uid?.name || "Unknown Member",
-        memberId: getMemberId(scan.uid),
-        phone: scan.uid?.phoneNumber || "No Phone",
+        member: memberName,
+        memberId,
+        phone: memberPhone,
         time: new Date(scan.scanTime).toString(),
-        method: scan.method,
+        method: scan.method === "Waitlist Confirmed" ? "Walk In" : scan.method,
         status,
         statusDetail: getFailedStatusDetail(status, scan.method),
         bookingId: scan.bookingId,
@@ -69,7 +89,7 @@ export const parseScans = (
         parentId: cls._id,
         rowId: getId(scan._id),
         pkgId: getId(scan.pkgId),
-        isGuest: !getMemberId(scan.uid),
+        isGuest: !memberId,
       };
       parsedScans.push(parsedScan);
     });

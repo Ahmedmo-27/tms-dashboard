@@ -4,18 +4,40 @@ import { parseMembers } from "../utils/parsers/members-parser";
 export const registerMember = async (
   name: string,
   password: string,
-  phoneNumber: string
+  phoneNumber: string,
+  nationalId?: string
 ) => {
   try {
-    const requestBody = {
+    const requestBody: Record<string, string> = {
       name,
       phoneNumber,
       password,
     };
+    if (nationalId) {
+      requestBody.nationalId = nationalId;
+    }
     const response = await tms.post("/auth/register-manually", requestBody);
     return response.data.data.user;
   } catch (error) {
     console.log(error);
+    throw error;
+  }
+};
+
+export const updateMember = async (
+  uid: string,
+  payload: {
+    name?: string;
+    phoneNumber?: string;
+    email?: string;
+    nationalId?: string;
+  }
+) => {
+  try {
+    const response = await tms.patch(`/admin/member/${uid}`, payload);
+    return response.data;
+  } catch (error) {
+    console.error(error);
     throw error;
   }
 };

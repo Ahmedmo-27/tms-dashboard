@@ -231,11 +231,10 @@ export function PtDropInDialog({
     const timeout = setTimeout(async () => {
       try {
         const params: Record<string, string | number> = { page: 1, limit: 10 };
-        if (/^\d+$/.test(searchQuery)) {
-          params.phone = searchQuery;
-        } else {
-          params.name = searchQuery;
-        }
+        const trimmed = searchQuery.trim();
+        params.search = trimmed;
+        params.name = trimmed;
+        params.phone = trimmed;
         const response = await tms.get("/admin/member", { params });
         const members = response.data?.data?.members ?? [];
         const seen = new Set<string>();
@@ -350,6 +349,7 @@ export function PtDropInDialog({
               <form action={memberFormAction} className="space-y-4">
                 <input type="hidden" name="uid" value={selectedUid} />
                 <input type="hidden" name="locationId" value={locationId} />
+                <input type="hidden" name="paymentMethod" value={memberPaymentMethod} />
                 <input type="hidden" name="coachId" value={selectedCoachId} />
                 <input type="hidden" name="amount" value={amount} />
                 <input type="hidden" name="paymentDate" value={paymentDate} />
@@ -447,7 +447,6 @@ export function PtDropInDialog({
                 <div className="space-y-1.5">
                   <Label>Payment Method</Label>
                   <Select
-                    name="paymentMethod"
                     value={memberPaymentMethod}
                     onValueChange={setMemberPaymentMethod}
                   >
@@ -551,6 +550,7 @@ export function PtDropInDialog({
             <TabsContent value="guest" className="space-y-4 pt-2">
               <form action={guestFormAction} className="space-y-4">
                 <input type="hidden" name="locationId" value={locationId} />
+                <input type="hidden" name="paymentMethod" value={guestPaymentMethod} />
                 <input type="hidden" name="coachId" value={selectedCoachId} />
                 <input type="hidden" name="amount" value={amount} />
                 <input type="hidden" name="paymentDate" value={paymentDate} />
@@ -616,7 +616,6 @@ export function PtDropInDialog({
                 <div className="space-y-1.5">
                   <Label>Payment Method</Label>
                   <Select
-                    name="paymentMethod"
                     value={guestPaymentMethod}
                     onValueChange={setGuestPaymentMethod}
                   >

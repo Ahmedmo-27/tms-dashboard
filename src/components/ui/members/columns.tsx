@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "../button";
 import {
@@ -11,6 +12,7 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { EditMemberDialog } from "@/components/ui/dialogs/members/edit-member-dialog";
 
 export type AdjustmentRecord = {
   date: string;
@@ -82,6 +84,7 @@ export type Member = {
   bookings: Booking[];
   ptAttendance: any[];
   deductions?: AdjustmentRecord[];
+  nationalId?: string;
 };
 
 function soonestActiveExpiry(packages: MemberPackage[]): Date | null {
@@ -92,6 +95,49 @@ function soonestActiveExpiry(packages: MemberPackage[]): Date | null {
     .filter((time) => !Number.isNaN(time) && time >= now);
   if (times.length === 0) return null;
   return new Date(Math.min(...times));
+}
+
+function MemberActionCell({ member }: { member: Member }) {
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
+  return (
+    <div onClick={(event) => event.stopPropagation()}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0 touch-manipulation">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuLabel className="truncate">Helping {member.name}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => navigator.clipboard.writeText(member.phone)}
+          >
+            Copy phone number
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/dashboard/our-members/${member.id}`} className="w-full cursor-pointer">
+              View member data
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setShowEditDialog(true)}
+            className="cursor-pointer"
+          >
+            Edit member
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <EditMemberDialog
+        member={member}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+      />
+    </div>
+  );
 }
 
 export const columns = (pkgId?: string): ColumnDef<Member>[] => [
@@ -112,9 +158,20 @@ export const columns = (pkgId?: string): ColumnDef<Member>[] => [
     header: "Phone",
     cell: ({ row }) => {
       const phone = row.getValue("phone") as string;
+      const nationalId = row.original.nationalId;
       return (
-        <div className="font-mono text-sm truncate max-w-[120px] sm:max-w-none">
-          {phone}
+        <div className="flex flex-col">
+          <span className="font-mono text-sm truncate max-w-[120px] sm:max-w-none">
+            {phone}
+          </span>
+          {nationalId ? (
+            <span
+              className="font-mono text-[11px] text-muted-foreground truncate"
+              title={`National ID: ${nationalId}`}
+            >
+              ID: {nationalId}
+            </span>
+          ) : null}
         </div>
       );
     },
@@ -175,35 +232,6 @@ export const columns = (pkgId?: string): ColumnDef<Member>[] => [
   {
     id: "actions",
     header: "",
-    cell: ({ row }) => {
-      const member = row.original;
-
-      return (
-        <div onClick={(event) => event.stopPropagation()}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0 touch-manipulation">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel className="truncate">Helping {member.name}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(member.phone)}
-            >
-              Copy phone number
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={`/dashboard/our-members/${member.id}`} className="w-full cursor-pointer">
-                View member data
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        </div>
-      );
-    },
+    cell: ({ row }) => <MemberActionCell member={row.original} />,
   },
 ];

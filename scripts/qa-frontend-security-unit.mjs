@@ -181,6 +181,12 @@ async function main() {
   check("getDashboardRouteForRole user -> null", getDashboardRouteForRole("user") === null);
   check("getDashboardRouteForRole undefined -> null", getDashboardRouteForRole(undefined) === null);
 
+  // PT Reports route security
+  check("PT Reports: managing_coach can access /coach/reports", isManagingCoachRole("managing_coach") === true);
+  check("PT Reports: coach cannot access /coach/reports", isManagingCoachRole("coach") === false);
+  check("PT Reports: getDashboardRouteForRole managing_coach -> /coach/today (not /coach/reports)",
+    getDashboardRouteForRole("managing_coach") === "/coach/today");
+
   // --- middleware role redirection contract ---
   const simulateMiddleware = (pathname, role, hasToken) => {
     const isCoach = isCoachRole(role);

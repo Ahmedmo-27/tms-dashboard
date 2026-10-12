@@ -125,3 +125,90 @@ export interface ClientAttendanceItemDto {
   pkgId?: string;
   scheduledClassId?: string;
 }
+
+export type PtAchievementFilterType = "weekly" | "monthly" | "date";
+
+export interface PtAchievementParams {
+  filterType: PtAchievementFilterType;
+  date?: string;      // yyyy-MM-dd (for weekly mode)
+  month?: string;     // yyyy-MM (for monthly mode)
+  startDate?: string; // yyyy-MM-dd (for date mode)
+  endDate?: string;   // yyyy-MM-dd (for date mode)
+  coachId?: string;
+}
+
+export interface CoachAchievementRow {
+  coachId: string;
+  coachName: string;
+  sessions: number;
+  scanSessions: number;
+  deductionSessions: number;
+  boughtPackages: number;
+  boughtRevenue: number;
+  activeClients: number;
+  remainingSessions: number;
+  lowBalanceClients: number;
+  expiringSoon: number;
+}
+
+export interface BoughtPackageItem {
+  paymentId: string;
+  memberId: string | null;
+  memberName: string;
+  phone: string;
+  packageName: string;
+  packageId: string;
+  amount: number;
+  numberOfSessions: number;
+  paymentDate: string;
+  remainingSessions: number | null;
+  packageStatus: string | null;
+}
+
+export interface DeliveredSessionItem {
+  id: string;
+  date: string;
+  source: "SCAN" | "COACH_DEDUCTION";
+  memberId: string;
+  memberName: string;
+  phone: string;
+  packageName: string;
+  reason?: string;
+}
+
+export interface ClientBalanceItem {
+  memberId: string;
+  memberName: string;
+  phone: string;
+  packageName: string;
+  packageId: string;
+  remainingSessions: number;
+  pkgEndDate: string;
+  status: string;
+  daysUntilExpiry: number;
+  isLowBalance: boolean;
+  isExpiringSoon: boolean;
+}
+
+export interface PtAchievementReport {
+  range: { startDate: string; endDate: string; filterType: string };
+  totals: {
+    sessions: number;
+    scanSessions: number;
+    deductionSessions: number;
+    boughtPackages: number;
+    boughtRevenue: number;
+    activeClients: number;
+    remainingSessions: number;
+    lowBalanceClients: number;
+    expiringSoon: number;
+  };
+  coaches: CoachAchievementRow[];
+  selectedCoach?: {
+    coachId: string;
+    coachName: string;
+    boughtPackages: BoughtPackageItem[];
+    deliveredSessions: DeliveredSessionItem[];
+    activeClients: ClientBalanceItem[];
+  };
+}

@@ -4,6 +4,8 @@ import type {
   DeductionHistoryItemDto,
   ClientAttendanceItemDto,
   TodaySummaryDto,
+  PtAchievementParams,
+  PtAchievementReport,
 } from "@/types/coach.types";
 import type { CoachNotification } from "@/lib/store/features/coachSlice";
 
@@ -53,4 +55,18 @@ export async function getCoachClientAttendance(
 ): Promise<ClientAttendanceItemDto[]> {
   const res = await api.get(`/api/coach/clients/${memberId}/attendance`);
   return (res.data.data?.attendance ?? []) as ClientAttendanceItemDto[];
+}
+
+export async function getPtAchievementReport(
+  api: AxiosInstance,
+  params: PtAchievementParams
+): Promise<PtAchievementReport> {
+  const clean: Record<string, string> = { filterType: params.filterType };
+  if (params.date) clean.date = params.date;
+  if (params.month) clean.month = params.month;
+  if (params.startDate) clean.startDate = params.startDate;
+  if (params.endDate) clean.endDate = params.endDate;
+  if (params.coachId) clean.coachId = params.coachId;
+  const res = await api.get("/api/coach/managing/pt-achievement", { params: clean });
+  return res.data.data as PtAchievementReport;
 }

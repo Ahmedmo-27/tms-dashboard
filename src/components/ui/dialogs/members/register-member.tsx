@@ -31,6 +31,7 @@ interface ActionState {
     name: string;
     phoneNumber: string;
     password: string;
+    nationalId?: string;
   };
 }
 
@@ -43,6 +44,7 @@ export function RegisterMember() {
       name: "",
       password: "",
       phoneNumber: "",
+      nationalId: "",
     },
   };
 
@@ -53,6 +55,7 @@ export function RegisterMember() {
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [nationalId, setNationalId] = useState("");
   const [copiedMessage, setCopiedMessage] = useState("");
 
   const [state, formAction, pending] = useActionState(
@@ -62,6 +65,7 @@ export function RegisterMember() {
         name: formData.get("name") as string,
         password: formData.get("password") as string,
         phoneNumber: formData.get("phoneNumber") as string,
+        nationalId: formData.get("nationalId") as string,
       };
 
       const result = await registerUser(currentState, formData);
@@ -196,6 +200,28 @@ The Mind Space Team 💫`;
                       </p>
                     )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="register-member-national-id" className="text-sm font-medium">
+                  National ID Number <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
+                </Label>
+                <Input
+                  id="register-member-national-id"
+                  name="nationalId"
+                  type="text"
+                  placeholder="e.g. 29901011234567"
+                  className="w-full min-h-[40px]"
+                  value={nationalId}
+                  onChange={(e) => setNationalId(e.target.value)}
+                />
+                {state?.errors &&
+                  typeof state.errors == "object" &&
+                  "nationalId" in state.errors && (
+                    <p className="text-destructive text-xs sm:text-sm">
+                      {(state.errors as Record<string, string>).nationalId}
+                    </p>
+                  )}
               </div>
 
               <div className="space-y-4 sm:space-y-6 w-full">

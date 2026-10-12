@@ -181,7 +181,12 @@ export default function PaymentsContainer({
         (payment.memberName ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (payment.phone ?? "").includes(searchTerm) ||
         (payment.purpose ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (payment.refundReason ?? "").toLowerCase().includes(searchTerm.toLowerCase());
+        (payment.refundReason ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.note ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.location ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.rawPayment?.orderId ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.rawPayment?.coachName ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.rawPayment?.coachEmail ?? "").toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesMethod =
         selectedMethod === null || payment.paymentMethod === selectedMethod;

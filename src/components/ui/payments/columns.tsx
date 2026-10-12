@@ -19,6 +19,7 @@ import {
   Pencil,
   Trash2,
   Package,
+  Globe,
 } from "lucide-react";
 import { OutflowPurposeCell } from "./outflow-details-dialog";
 import {
@@ -58,6 +59,8 @@ const getPaymentMethodIcon = (method: string) => {
       return <Building2 className="h-4 w-4" />;
     case "deducted":
       return <Package className="h-4 w-4" />;
+    case "coachera":
+      return <Globe className="h-4 w-4" />;
     default:
       return <CreditCard className="h-4 w-4" />;
   }
@@ -74,6 +77,8 @@ const getPaymentMethodColor = (method: string) => {
       return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
     case "deducted":
       return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700";
+    case "coachera":
+      return "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-850";
     default:
       return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
   }

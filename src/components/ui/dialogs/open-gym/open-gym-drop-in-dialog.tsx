@@ -176,11 +176,10 @@ export function OpenGymDropInDialog({
     const timeout = setTimeout(async () => {
       try {
         const params: Record<string, string | number> = { page: 1, limit: 10 };
-        if (/^\d+$/.test(searchQuery)) {
-          params.phone = searchQuery;
-        } else {
-          params.name = searchQuery;
-        }
+        const trimmed = searchQuery.trim();
+        params.search = trimmed;
+        params.name = trimmed;
+        params.phone = trimmed;
         const response = await tms.get("/admin/member", { params });
         const members = response.data.data.members ?? [];
         const seen = new Set<string>();
@@ -309,9 +308,9 @@ export function OpenGymDropInDialog({
                   <div className="space-y-2" ref={searchRef}>
                     <Label className="text-sm font-medium">Search member</Label>
                     <div className="relative">
-                      <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        placeholder="Name or phone number"
+                        placeholder="Search member by name or phone..."
                         value={searchQuery}
                         onChange={(e) => {
                           setSearchQuery(e.target.value);
@@ -320,33 +319,37 @@ export function OpenGymDropInDialog({
                             setSelectedMemberName("");
                           }
                         }}
+                        onFocus={() => {
+                          if (searchResults.length > 0) setShowSuggestions(true);
+                        }}
                         className="pl-8"
                       />
+
+                      {showSuggestions && searchResults.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md max-h-48 overflow-y-auto">
+                          {searchResults.map((member, idx) => (
+                            <button
+                              key={`${member.id}-${idx}`}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex justify-between items-center"
+                              onClick={() => {
+                                setSelectedUid(member.id);
+                                setSelectedMemberName(member.name);
+                                setSearchQuery(member.name);
+                                setShowSuggestions(false);
+                              }}
+                            >
+                              <span className="font-medium">{member.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {member.phone}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     {isSearching && (
                       <p className="text-xs text-muted-foreground">Searching…</p>
-                    )}
-                    {showSuggestions && searchResults.length > 0 && (
-                      <div className="rounded-md border max-h-40 overflow-y-auto">
-                        {searchResults.map((member, idx) => (
-                          <button
-                            key={`${member.id}-${idx}`}
-                            type="button"
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex flex-col"
-                            onClick={() => {
-                              setSelectedUid(member.id);
-                              setSelectedMemberName(member.name);
-                              setSearchQuery(member.name);
-                              setShowSuggestions(false);
-                            }}
-                          >
-                            <span className="font-medium">{member.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {member.phone}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
                     )}
                     {selectedUid && (
                       <p className="text-sm text-green-700 dark:text-green-400">

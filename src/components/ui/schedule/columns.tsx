@@ -11,11 +11,13 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { ShowBookedMembers } from "./show-booked-members";
 import { Member } from "./show-booked-members";
+import { ShowWaitlist } from "./show-waitlist";
 import { format } from "date-fns";
 import CancelClassDialog from "../dialogs/schedule/cancel-class";
 import EditSlotsDialog from "../dialogs/schedule/edit-slots";
 import { EditClassComponent } from "../dialogs/schedule/edit-class";
 import { BookNonUserDialog } from "../dialogs/schedule/book-non-user";
+import { AddToWaitlistDialog } from "../dialogs/schedule/add-to-waitlist-dialog";
 
 export interface AttendanceConfirmation {
   confirmed: boolean;
@@ -26,6 +28,17 @@ export interface AttendanceConfirmation {
   notes?: string;
 }
 
+export type WaitlistMember = {
+  _id?: string;
+  uid: string;
+  name: string;
+  phone?: string;
+  status?: string;
+  position?: number;
+  addedAt?: string;
+  isManual?: boolean;
+};
+
 export type ScheduledClass = {
   _id?: string;
   cid: string;
@@ -33,6 +46,7 @@ export type ScheduledClass = {
   endTime: string;
   availableSlots: number;
   bookedMembers: Member[];
+  waitlist?: WaitlistMember[];
   coachName: string;
   coachId?: string | string[];
   category?: string;
@@ -52,7 +66,7 @@ function ScheduledClassActionsCell({
   coaches: any[];
 }) {
   const [activeModal, setActiveModal] = useState<
-    "book" | "slots" | "edit" | "cancel" | null
+    "book" | "waitlist" | "slots" | "edit" | "cancel" | null
   >(null);
 
   return (
@@ -71,6 +85,12 @@ function ScheduledClassActionsCell({
             className="cursor-pointer"
           >
             Book Class
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => setActiveModal("waitlist")}
+            className="cursor-pointer"
+          >
+            Add to Waitlist
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => setActiveModal("slots")}
@@ -96,6 +116,15 @@ function ScheduledClassActionsCell({
       {activeModal === "book" && (
         <BookNonUserDialog
           scid={scls._id as string}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setActiveModal(null);
+          }}
+        />
+      )}
+      {activeModal === "waitlist" && (
+        <AddToWaitlistDialog
+          scheduledClass={scls}
           open={true}
           onOpenChange={(open) => {
             if (!open) setActiveModal(null);
@@ -222,12 +251,24 @@ export const getColumns = (
   {
     id: "showBooked",
     header: "Booked",
-    size: 80,
+    size: 90,
     minSize: 60,
-    maxSize: 100,
+    maxSize: 120,
     cell: ({ row }) => {
       const scls = row.original;
-      return <ShowBookedMembers members={scls.bookedMembers as Member[]} scid={scls._id ?? ""} />;
+      const waitlist = scls.waitlist ?? [];
+      const hasWaitlist = waitlist.length > 0;
+      return (
+        <div className="flex items-center justify-center gap-1">
+          <ShowBookedMembers
+            members={scls.bookedMembers as Member[]}
+            scid={scls._id ?? ""}
+          />
+          {hasWaitlist && (
+            <ShowWaitlist waitlist={waitlist} scid={scls._id ?? ""} />
+          )}
+        </div>
+      );
     },
   },
   {

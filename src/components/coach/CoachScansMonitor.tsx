@@ -65,7 +65,7 @@ interface CoachScan {
   phone: string;
   time: string;
   method: string;
-  status: "SUCCESS" | "FAILED" | "WILL_PAY";
+  status: "SUCCESS" | "FAILED" | "WILL_PAY" | "FOC";
   statusDetail?: string;
   bookingId?: string;
   branchLabel?: string;
@@ -141,6 +141,8 @@ function statusLabel(status: CoachScan["status"]) {
       return "Checked in";
     case "FAILED":
       return "Failed";
+    case "FOC":
+      return "FOC";
     default:
       return "Will pay";
   }
@@ -152,6 +154,8 @@ function statusColor(status: CoachScan["status"]) {
       return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
     case "FAILED":
       return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+    case "FOC":
+      return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400";
     default:
       return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
   }
@@ -173,7 +177,7 @@ function ClassScanCard({
   const currentCoachName = useAppSelector((state: RootState) => state.coach.name);
   const displayCoach = data.allCoachNames || data.coachNames || data.coachName || currentCoachName;
   const successCount = data.scans.filter(
-    (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
+    (s) => s.status === "SUCCESS" || s.status === "WILL_PAY" || s.status === "FOC"
   ).length;
   const isHalfway = isSessionPastHalfway(data, currentTime);
   const isConfirmed = Boolean(data.attendanceConfirmation?.confirmed);
