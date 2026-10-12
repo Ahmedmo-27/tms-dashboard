@@ -240,7 +240,7 @@ function CatalogPageInner({
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 w-full md:w-auto md:flex md:flex-row [&>div]:min-w-0 [&_button]:w-full md:[&_button]:w-auto">
-                <OpenGymPricingDialog packages={packages} classes={classes} />
+                <OpenGymPricingDialog />
                 <PtPricingDialog triggerLabel="PT pricing" />
                 <AddPackageDialog
                   classes={classes}
