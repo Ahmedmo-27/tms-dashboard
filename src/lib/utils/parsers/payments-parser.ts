@@ -172,26 +172,17 @@ function isPackageOrClassPayment(record: RawPaymentRecord): boolean {
 }
 
 function getTransactionFlags(record: RawPaymentRecord) {
-  // Primary signal: entryType or isMoneyOut set by the API on dedicated refund/cashout rows.
-  // A raw payment row with isRefunded=true is just "this purchase was refunded" — it stays
-  // as a positive purchase entry. The separate refund row carries the negative amount.
   if (record.isMoneyOut === true || record.entryType === "REFUND" || record.entryType === "CASHOUT") {
     const isCashOut = record.entryType === "CASHOUT" || record.isCashOut === true;
     return { isCashOut, isRefunded: true };
   }
 
-  // Fallback heuristics for legacy / supplemental data sources (refunds/cashouts endpoints)
   const type = normalizeType(record);
 
   const explicitCashOut =
     record.isCashOut === true ||
     type === "CASH_OUT" ||
     type === "CASHOUT";
-
-  // NOTE: record.isRefunded / record.isRefund are intentionally NOT used here.
-  // On a payment document those flags just mean "this purchase was refunded" — they
-  // are informational only and must not cause the row to render as an outflow.
-  // Outflow rendering is exclusively driven by the primary path above (entryType / isMoneyOut).
 
   const typedMemberRefund =
     type === "REFUND" ||
@@ -229,14 +220,22 @@ function getLocationLabel(loc: LocationRef): string | null {
   return loc.branchName ?? loc.location ?? null;
 }
 
+function isPackagePaymentRecord(record: RawPaymentRecord): boolean {
+  return (
+    record.purpose === "PACKAGE" ||
+    record.purpose === "NON_USER_PACKAGE" ||
+    Boolean(record.pkgId)
+  );
+}
+
 export function resolvePaymentLocation(record: RawPaymentRecord): string {
-  const resolved =
+  const explicit =
     getLocationLabel(record.scid?.locationId) ??
     record.scid?.cid?.locations?.[0]?.branchName ??
     getLocationLabel(record.locationId) ??
     getLocationLabel(record.pkgId?.locationId);
 
-  if (resolved) return resolved;
+  if (explicit) return explicit;
 
   if (
     record.paymentMethod?.toUpperCase() === "COACHERA" ||
@@ -244,6 +243,10 @@ export function resolvePaymentLocation(record: RawPaymentRecord): string {
     record.purpose === "ONLINE_CLASS"
   ) {
     return "Online";
+  }
+
+  if (isPackagePaymentRecord(record)) {
+    return "Cairo";
   }
 
   return " -- ";
@@ -361,4 +364,3 @@ export function isDeductedTransaction(payment: Payment | RawPaymentRecord): bool
 export function getOutflowBadgeLabel(payment: Payment): string {
   return payment.isCashOut ? "Cash Out" : "Refunded";
 }
-

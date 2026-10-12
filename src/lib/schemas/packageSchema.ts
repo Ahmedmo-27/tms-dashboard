@@ -6,18 +6,18 @@ export const packageSchema = z.object({
   price: z
     .string()
     .trim()
-    .regex(/^[0-9]+$/, "Price must be a number")
-    .min(1, "Price is required"),
+    .min(1, "Price is required")
+    .regex(/^[0-9]+(\.[0-9]+)?$/, "Price must be a number"),
   numberOfSessions: z
     .string()
     .trim()
-    .regex(/^[0-9]+$/, "Sessions must be a number")
-    .min(1, "Sessions is required"),
+    .min(1, "Sessions is required")
+    .regex(/^[0-9]+$/, "Sessions must be a number"),
   expiryPeriod: z
     .string()
     .trim()
-    .regex(/^[0-9]+$/, "Expiry Period must be a number")
-    .min(1, "Expiry Period is required"),
+    .min(1, "Expiry Period is required")
+    .regex(/^[0-9]+$/, "Expiry Period must be a number"),
   category: z.string().trim().min(1, "Category is required"),
   notes: z.string().trim().optional().default(""),
   coachId: z.string().trim().optional().nullable(),

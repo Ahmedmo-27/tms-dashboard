@@ -389,6 +389,8 @@ export function AddNonMemberPackage({
                   <Label className="text-sm font-medium">Paid amount</Label>
                   <Input
                     type="number"
+                    min={0}
+                    step="any"
                     className="w-full mt-1"
                     value={selectedAmount}
                     onChange={(e) => setSelectedAmount(e.target.value)}

@@ -246,6 +246,8 @@ export function AddPackageDialog({
                 <Input
                   name="price"
                   type="number"
+                  min={0}
+                  step="any"
                   className="w-full"
                   defaultValue={state?.defaultValues?.price}
                 />

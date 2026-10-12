@@ -34,6 +34,7 @@ export const editClassAction = async (_prevState: any, formData: FormData) => {
     const validatedData = classSchema.parse(cls);
     await editClass(validatedData);
     revalidatePath("/dashboard/catalog");
+    revalidatePath("/dashboard/schedule");
     return { success: true, errors: null, data: null };
   } catch (error) {
     return parseStateError(error as Error);
@@ -44,6 +45,7 @@ export async function deleteClassAction(classId: string) {
   try {
     await deleteClass(classId);
     revalidatePath("/dashboard/catalog");
+    revalidatePath("/dashboard/schedule");
     return { success: true, errors: null };
   } catch (error) {
     return parseStateError(error as Error);

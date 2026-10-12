@@ -340,6 +340,8 @@ export default function AddGuestPackage({
                   <Label className="text-sm font-medium">Paid Amount</Label>
                   <Input
                     type="number"
+                    min={0}
+                    step="any"
                     className="w-full mt-1"
                     value={selectedAmount}
                     onChange={(e) => setSelectedAmount(e.target.value)}

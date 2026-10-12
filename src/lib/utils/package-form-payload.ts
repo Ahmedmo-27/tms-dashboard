@@ -27,8 +27,10 @@ export function buildPackagePayloadFromFormData(formData: FormData): Record<stri
   const pkg: Record<string, unknown> = {};
 
   Object.entries(rawData).forEach(([key, value]) => {
-    if (key === "_id" || (value !== null && value !== "")) {
-      pkg[key] = value;
+    if (key === "_id") {
+      if (value !== null && value !== "") pkg[key] = value;
+    } else {
+      pkg[key] = typeof value === "string" ? value : (value ?? "");
     }
   });
 
