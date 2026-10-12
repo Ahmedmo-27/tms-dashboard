@@ -196,7 +196,11 @@ export default function EditPackageDialog({
             </DialogTitle>
             <DialogDescription>Edit package data</DialogDescription>
           </DialogHeader>
-          <form action={formAction} className="mt-4">
+          <form
+            action={formAction}
+            className="mt-4"
+            key={`${pkg._id}-${pkg.price}-${open}`}
+          >
             <input type="hidden" name="_id" value={pkg._id} />
             {selectedClassIds.map((classId) => (
               <input
@@ -220,7 +224,7 @@ export default function EditPackageDialog({
                   id="name"
                   name="name"
                   type="text"
-                  defaultValue={pkg.name}
+                  defaultValue={state?.defaultValues?.name ?? pkg.name}
                 />
                 {fieldError("name") && (
                   <div className="text-destructive text-sm">{fieldError("name")}</div>
@@ -234,7 +238,7 @@ export default function EditPackageDialog({
                     name="numberOfSessions"
                     type="number"
                     min={1}
-                    defaultValue={pkg.numberOfSessions}
+                    defaultValue={state?.defaultValues?.numberOfSessions ?? pkg.numberOfSessions}
                     className="w-full"
                   />
                   {fieldError("numberOfSessions") && (
@@ -251,7 +255,7 @@ export default function EditPackageDialog({
                     type="number"
                     min={1}
                     max={365}
-                    defaultValue={pkg.expiryPeriod}
+                    defaultValue={state?.defaultValues?.expiryPeriod ?? pkg.expiryPeriod}
                     className="w-full"
                   />
                   {fieldError("expiryPeriod") && (
@@ -269,8 +273,10 @@ export default function EditPackageDialog({
                 <Input
                   id="price"
                   name="price"
-                  type="text"
-                  defaultValue={pkg.price}
+                  type="number"
+                  min={0}
+                  step="any"
+                  defaultValue={state?.defaultValues?.price ?? String(pkg.price ?? "")}
                 />
                 {fieldError("price") && (
                   <div className="text-destructive text-sm">{fieldError("price")}</div>
@@ -286,7 +292,7 @@ export default function EditPackageDialog({
                   name="notes"
                   type="text"
                   placeholder="e.g. Can’t book Reformer Pilates classes"
-                  defaultValue={effectiveNote}
+                  defaultValue={state?.defaultValues?.notes ?? effectiveNote}
                 />
                 {fieldError("notes") && (
                   <div className="text-destructive text-sm">{fieldError("notes")}</div>
