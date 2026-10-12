@@ -13,10 +13,10 @@ import {
   Copy,
   Check,
   MessageCircle,
-  UserCheck,
   Plus,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { WaitlistMember } from "./columns";
 import {
   promoteFromWaitlist,
@@ -36,6 +36,7 @@ export function WaitlistContainer({
   scid?: string;
   onWaitlistChange?: (items: WaitlistMember[]) => void;
 }) {
+  const router = useRouter();
   const [items, setItems] = useState<WaitlistMember[]>(waitlist);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingUid, setLoadingUid] = useState<string | null>(null);
@@ -58,31 +59,33 @@ export function WaitlistContainer({
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  const handlePromote = async (uid: string) => {
-    if (!scid) return;
+  const handleConfirm = async (member: WaitlistMember) => {
+    if (!scid || !member.uid) return;
     try {
-      setLoadingUid(uid);
-      await promoteFromWaitlist(uid, scid);
-      const updated = items.filter((m) => m.uid !== uid);
+      setLoadingUid(member.uid);
+      await promoteFromWaitlist(member.uid, scid);
+      const updated = items.filter((m) => m.uid !== member.uid);
       setItems(updated);
       onWaitlistChange?.(updated);
-      toast.success("Member promoted to class successfully");
+      router.refresh();
+      toast.success(`Booking confirmed for ${member.name}! Transferred to class.`);
     } catch (err: any) {
-      console.error("Promote error:", err);
-      toast.error(err?.message || "Failed to promote member from waitlist");
+      console.error("Confirm waitlist error:", err);
+      toast.error(err?.message || "Failed to confirm booking from waitlist");
     } finally {
       setLoadingUid(null);
     }
   };
 
-  const handleRemove = async (uid: string) => {
-    if (!scid) return;
+  const handleRemove = async (member: WaitlistMember) => {
+    if (!scid || !member.uid) return;
     try {
-      setLoadingUid(uid);
-      await removeFromWaitlist(uid, scid);
-      const updated = items.filter((m) => m.uid !== uid);
+      setLoadingUid(member.uid);
+      await removeFromWaitlist(member.uid, scid);
+      const updated = items.filter((m) => m.uid !== member.uid);
       setItems(updated);
       onWaitlistChange?.(updated);
+      router.refresh();
       toast.success("Member removed from waitlist");
     } catch (err: any) {
       console.error("Remove waitlist error:", err);
@@ -187,11 +190,19 @@ export function WaitlistContainer({
                               Waiting
                             </Badge>
                           )}
+                          {member.isManual && (
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] px-1 py-0 text-amber-700 border-amber-300 bg-amber-50 dark:text-amber-300 dark:border-amber-800 dark:bg-amber-950/40"
+                            >
+                              Manual
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Right side: Contact actions + Promote + Remove */}
+                    {/* Right side: Contact actions + Confirmed + Remove */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       {member.phone && (
                         <>
@@ -228,13 +239,13 @@ export function WaitlistContainer({
                           <Button
                             type="button"
                             size="sm"
-                            variant="outline"
-                            className="h-6 text-[10px] px-2 text-primary hover:bg-primary/10 cursor-pointer gap-1"
+                            className="h-6 text-[10px] px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700 cursor-pointer gap-1 shadow-xs font-medium"
                             disabled={isItemLoading}
-                            onClick={() => handlePromote(member.uid)}
+                            onClick={() => handleConfirm(member)}
+                            title={`Confirm booking for ${member.name} and transfer to class`}
                           >
-                            <UserCheck className="h-3 w-3" />
-                            Promote
+                            <Check className="h-3 w-3 stroke-[2.5]" />
+                            Confirmed
                           </Button>
                           <Button
                             type="button"
@@ -243,7 +254,7 @@ export function WaitlistContainer({
                             className="h-6 w-6 text-destructive hover:bg-destructive/10 cursor-pointer"
                             disabled={isItemLoading}
                             aria-label={`Remove ${member.name} from waitlist`}
-                            onClick={() => handleRemove(member.uid)}
+                            onClick={() => handleRemove(member)}
                           >
                             <X className="h-3.5 w-3.5" />
                           </Button>
@@ -268,8 +279,9 @@ export function WaitlistContainer({
               const refreshed = await getWaitlistedMembers(scid);
               setItems(refreshed);
               onWaitlistChange?.(refreshed);
+              router.refresh();
             } catch {
-              // ignore
+              router.refresh();
             }
           }}
         />
