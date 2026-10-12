@@ -223,14 +223,24 @@ function getLocationLabel(loc: LocationRef): string | null {
   return loc.branchName ?? loc.location ?? null;
 }
 
-export function resolvePaymentLocation(record: RawPaymentRecord): string {
+function isPackagePaymentRecord(record: RawPaymentRecord): boolean {
   return (
+    record.purpose === "PACKAGE" ||
+    record.purpose === "NON_USER_PACKAGE" ||
+    Boolean(record.pkgId)
+  );
+}
+
+export function resolvePaymentLocation(record: RawPaymentRecord): string {
+  const explicit =
     getLocationLabel(record.scid?.locationId) ??
     record.scid?.cid?.locations?.[0]?.branchName ??
     getLocationLabel(record.locationId) ??
-    getLocationLabel(record.pkgId?.locationId) ??
-    " -- "
-  );
+    getLocationLabel(record.pkgId?.locationId);
+
+  if (explicit) return explicit;
+  if (isPackagePaymentRecord(record)) return "Cairo";
+  return " -- ";
 }
 
 export function resolvePtPaymentPurpose(record: {
