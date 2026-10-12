@@ -39,6 +39,7 @@ import {
   MoreHorizontal,
   Mail,
   HelpCircle,
+  Award,
 } from "lucide-react";
 import { NotificationPanel } from "@/components/coach/NotificationPanel";
 import { HelpButton } from "@/components/tutorials/help-button";
@@ -72,6 +73,7 @@ function titleForPath(pathname: string, items: NavItem[]): string {
   if (pathname.startsWith("/coach/settings")) return "Settings";
   if (pathname.startsWith("/coach/scans")) return "Scans Monitor";
   if (pathname.startsWith("/coach/mailing")) return "Mailing";
+  if (pathname.startsWith("/coach/reports")) return "PT Reports";
   return "Coach Portal";
 }
 
@@ -117,6 +119,9 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       router.replace("/coach/today");
     } else if (pathname.startsWith("/coach/mailing") && role !== "managing_coach") {
       toast.error("Mailing dashboard is not enabled for your account");
+      router.replace("/coach/today");
+    } else if (pathname.startsWith("/coach/reports") && role !== "managing_coach") {
+      toast.error("PT Reports are not enabled for your account");
       router.replace("/coach/today");
     }
   }, [pathname, hasPtSessions, hasScheduledClasses, role, capabilitiesLoaded, router]);
@@ -230,6 +235,13 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
             icon: Mail,
             match: (p: string) => p.startsWith("/coach/mailing"),
             dataWalkthrough: "coach-nav-mailing",
+          },
+          {
+            href: "/coach/reports/pt-achievement",
+            label: "PT Reports",
+            icon: Award,
+            match: (p: string) => p.startsWith("/coach/reports"),
+            dataWalkthrough: "coach-nav-pt-reports",
           },
         ]
       : []),

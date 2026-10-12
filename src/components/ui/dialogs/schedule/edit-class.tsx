@@ -8,8 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import TimePicker from "../../timepicker";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useActionState } from "react";
 import { editClassAction } from "@/lib/actions/schedule-actions";
 import {
@@ -27,6 +26,7 @@ import { ApiError } from "@/core/api-error";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { format } from "date-fns";
 import { DatePicker } from "../../date-picker";
+import { Clock } from "lucide-react";
 
 import toast from "react-hot-toast";
 
@@ -125,12 +125,22 @@ export function EditClassComponent({
     initialState
   );
 
-  const handleStartDateChange = (date: string) => {
-    setSelectedStartDate(date);
-  };
+  const startTimeValue = useMemo(() => {
+    try {
+      const d = new Date(selectedStartDate);
+      return isNaN(d.getTime()) ? "10:00" : format(d, "HH:mm");
+    } catch {
+      return "10:00";
+    }
+  }, [selectedStartDate]);
 
-  const handleEndDateChange = (date: string) => {
-    setSelectedEndDate(date);
+  const handleStartTimeChange = (timeStr: string) => {
+    const [h, m] = timeStr.split(":").map(Number);
+    const start = new Date(selectedStartDate);
+    start.setHours(isNaN(h) ? 10 : h, isNaN(m) ? 0 : m, 0, 0);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    setSelectedStartDate(start.toString());
+    setSelectedEndDate(end.toString());
   };
 
   const coachOptions = coaches.map((c) => c.coachName);
@@ -166,12 +176,12 @@ export function EditClassComponent({
           <input
             type="hidden"
             name="startTime"
-            defaultValue={selectedStartDate || scheduledClass?.startTime}
+            value={selectedStartDate}
           />
           <input
             type="hidden"
             name="endTime"
-            defaultValue={selectedEndDate || scheduledClass?.endTime}
+            value={selectedEndDate}
           />
           <div className="grid grid-cols-2 gap-6">
             {selectedCoachIds.map((id) => (
@@ -199,49 +209,69 @@ export function EditClassComponent({
               ) : null}
             </div>
 
-            <div className="space-y-2 ">
+            <div className="space-y-2">
               <Label className="text-sm font-medium">Start Date</Label>
               <DatePicker
                 date={new Date(selectedStartDate)}
                 onSelect={(newDate) => {
                   if (newDate) {
-                    handleStartDateChange(newDate.toISOString());
-                    handleEndDateChange(newDate.toISOString());
+                    const prev = new Date(selectedStartDate);
+                    const updatedStart = new Date(newDate);
+                    updatedStart.setHours(prev.getHours(), prev.getMinutes(), 0, 0);
+                    const updatedEnd = new Date(updatedStart.getTime() + 60 * 60 * 1000);
+                    setSelectedStartDate(updatedStart.toString());
+                    setSelectedEndDate(updatedEnd.toString());
                   }
                 }}
               />
             </div>
 
-            <div className="flex flex-col">
-              <div className="space-y-2 ">
-                <Label className="text-sm font-medium">Start Time</Label>
-                <TimePicker
-                  date={new Date(selectedStartDate)}
-                  onChange={handleStartDateChange}
+            <div className="space-y-2">
+              <Label htmlFor="edit-start-time" className="text-sm font-medium">
+                Start Time
+              </Label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  id="edit-start-time"
+                  type="time"
+                  value={startTimeValue}
+                  onChange={(e) => handleStartTimeChange(e.target.value)}
+                  className="pl-9 w-full"
                 />
-                {state?.errors &&
-                typeof state.errors == "object" &&
-                "startTime" in state.errors ? (
-                  <p className="text-destructive text-sm">
-                    {(state.errors as any).startTime}
-                  </p>
-                ) : null}
               </div>
+              {state?.errors &&
+              typeof state.errors == "object" &&
+              "startTime" in state.errors ? (
+                <p className="text-destructive text-sm">
+                  {(state.errors as any).startTime}
+                </p>
+              ) : null}
+            </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">End Time</Label>
-                <TimePicker
-                  date={new Date(selectedEndDate)}
-                  onChange={handleEndDateChange}
-                />
-                {state?.errors &&
-                typeof state.errors == "object" &&
-                "endTime" in state.errors ? (
-                  <p className="text-destructive text-sm">
-                    {(state.errors as any).endTime}
-                  </p>
-                ) : null}
+            <div className="col-span-2 space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground">
+                Class Schedule (1 Hour)
+              </Label>
+              <div className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-muted/40 px-3 py-1 text-sm shadow-xs">
+                <div className="flex items-center gap-1.5 font-medium text-foreground">
+                  <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>
+                    {format(new Date(selectedStartDate), "hh:mm a")} –{" "}
+                    {format(new Date(selectedEndDate), "hh:mm a")}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
+                  1 hr default
+                </span>
               </div>
+              {state?.errors &&
+              typeof state.errors == "object" &&
+              "endTime" in state.errors ? (
+                <p className="text-destructive text-sm">
+                  {(state.errors as any).endTime}
+                </p>
+              ) : null}
             </div>
           </div>
           {state?.errors &&

@@ -40,13 +40,21 @@ const paymentMethods = [
   { value: "CASH", header: "Cash" },
 ];
 
+interface SubPackageProps {
+  packages: Package[];
+  uid: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+}
+
 export default function SubPackage({
   packages,
   uid,
-}: {
-  packages: Package[];
-  uid: string;
-}) {
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  hideTrigger = false,
+}: SubPackageProps) {
   const {
     locationId,
     setModalLocationId,
@@ -54,7 +62,9 @@ export default function SubPackage({
     hasLocationId,
     resetModalBranch,
   } = useManagementBranchSelection();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
   const [pkg, setPkg] = useState<Package | null>(null);
 
   const [selectedStartDate, setSelectedStartDate] = useState<string>("");
@@ -81,7 +91,11 @@ export default function SubPackage({
   };
 
   const toggleOpen = (value: boolean) => {
-    setOpen(value);
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
     if (value) resetModalBranch();
     if (!value) resetForm();
   };
@@ -127,10 +141,12 @@ export default function SubPackage({
   const sortedPackages = sortPackagesWithOpenGymFirst(packages);
 
   return (
-    <div>
-      <Button variant="outline" size="sm" onClick={() => toggleOpen(true)}>
-        Add Package
-      </Button>
+    <>
+      {!hideTrigger && (
+        <Button variant="outline" size="sm" onClick={() => toggleOpen(true)}>
+          Add Package
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={toggleOpen}>
         <DialogContent>
@@ -302,6 +318,6 @@ export default function SubPackage({
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

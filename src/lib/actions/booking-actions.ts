@@ -37,11 +37,17 @@ export const recordNonUserBookingPaymentAction = async (
   formData: FormData
 ) => {
   try {
+    const paymentMethod = formData.get("paymentMethod") as string;
+    const isFoc = paymentMethod === "FOC";
+    const isDeducted = paymentMethod === "DEDUCTED";
     const bookingData = {
       bookingId: formData.get("bookingId") as string,
-      paymentMethod: formData.get("paymentMethod") as string,
-      amount: formData.get("amount") || undefined,
-      paymentDate: formData.get("paymentDate") || undefined,
+      paymentMethod,
+      amount: isFoc || isDeducted ? undefined : formData.get("amount") || undefined,
+      paymentDate: isFoc || isDeducted ? undefined : formData.get("paymentDate") || undefined,
+      uid: (formData.get("uid") as string) || undefined,
+      pkgId: (formData.get("pkgId") as string) || undefined,
+      phoneNumber: (formData.get("phoneNumber") as string) || undefined,
     };
     const locationId = (formData.get("locationId") as string) || undefined;
     const validatedAttendanceData = attendanceSchema.parse(bookingData);
@@ -51,6 +57,9 @@ export const recordNonUserBookingPaymentAction = async (
       validatedAttendanceData.amount,
       validatedAttendanceData.paymentDate,
       locationId,
+      validatedAttendanceData.uid,
+      validatedAttendanceData.pkgId,
+      validatedAttendanceData.phoneNumber,
     );
     return {
       success: true,
@@ -68,13 +77,15 @@ export const addWalkIn = async (
   formData: FormData
 ) => {
   try {
+    const paymentMethodRaw = (formData.get("paymentMethod") as string) || undefined;
+    const isFoc = paymentMethodRaw === "FOC";
     const bookingData = {
       name: formData.get("name") as string,
       phoneNumber: formData.get("phoneNumber") as string,
       scid: formData.get("scid") as string,
-      paymentMethod: (formData.get("paymentMethod") as string) || undefined,
-      amount: formData.get("amount") || undefined,
-      paymentDate: formData.get("paymentDate") || undefined,
+      paymentMethod: paymentMethodRaw,
+      amount: isFoc ? undefined : formData.get("amount") || undefined,
+      paymentDate: isFoc ? undefined : formData.get("paymentDate") || undefined,
     };
     const locationId = (formData.get("locationId") as string) || undefined;
     const validatedBookingData = walkInSchema.parse(bookingData);
@@ -87,8 +98,8 @@ export const addWalkIn = async (
       validatedBookingData.phoneNumber || "",
       validatedBookingData.scid,
       paymentMethod,
-      validatedBookingData.amount,
-      validatedBookingData.paymentDate,
+      isFoc ? undefined : validatedBookingData.amount,
+      isFoc ? undefined : validatedBookingData.paymentDate,
       locationId,
     );
     revalidatePath("/dashboard/scans-monitor");

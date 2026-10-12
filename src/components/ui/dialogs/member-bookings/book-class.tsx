@@ -44,27 +44,50 @@ interface ActionState {
   };
 }
 
+interface BookClassProps {
+  scheduledClasses: ScheduledClass[];
+  uid: string;
+  member: Member;
+  catalogPackages: Package[];
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+}
+
 export default function BookClass({
   scheduledClasses,
   uid,
   member,
   catalogPackages,
-}: {
-  scheduledClasses: ScheduledClass[];
-  uid: string;
-  member: Member;
-  catalogPackages: Package[];
-}) {
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  hideTrigger = false,
+}: BookClassProps) {
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
   const canOverrideTime = canOverrideBookingTimeRestrictions(
     user?.role as string | undefined
   );
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
   const [cls, setCls] = useState<ScheduledClass | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
   const [overrideTimeRestrictions, setOverrideTimeRestrictions] =
     useState(false);
+
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+    if (!value) {
+      setCls(null);
+      setSelectedDate("");
+      setOverrideTimeRestrictions(false);
+    }
+  };
 
   const classesForDate = useMemo(() => {
     if (!selectedDate) return [];
@@ -163,21 +186,13 @@ export default function BookClass({
   const canSubmit = !!cls && eligibility?.eligible === true && !pending;
 
   return (
-    <div>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        Book a class
-      </Button>
-      <Dialog
-        open={open}
-        onOpenChange={(value) => {
-          setOpen(value);
-          if (!value) {
-            setCls(null);
-            setSelectedDate("");
-            setOverrideTimeRestrictions(false);
-          }
-        }}
-      >
+    <>
+      {!hideTrigger && (
+        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+          Book a class
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Book a class</DialogTitle>
@@ -320,6 +335,6 @@ export default function BookClass({
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

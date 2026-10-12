@@ -1,7 +1,7 @@
 export type SheetScanInput = {
   member: string;
   method: string;
-  status: "SUCCESS" | "FAILED" | "WILL_PAY";
+  status: "SUCCESS" | "FAILED" | "WILL_PAY" | "FOC";
 };
 
 export type MethodSheetMapping =
@@ -121,11 +121,18 @@ function buildMemberSheetRow(
   mapMethod: (method: string) => MethodSheetMapping,
   classPrice?: string
 ): string | null {
-  if (scan.status !== "SUCCESS" && scan.status !== "FAILED") {
+  if (
+    scan.status !== "SUCCESS" &&
+    scan.status !== "FAILED" &&
+    scan.status !== "FOC"
+  ) {
     return null;
   }
 
   const name = scan.member || "";
+  if (scan.status === "FOC") {
+    return `${name}\tFOC`;
+  }
   const mapped = mapMethod(scan.method);
   const price = classPrice?.trim() || "450";
 
@@ -141,7 +148,10 @@ function buildRows(
   classPrice?: string
 ): string {
   const eligible = scans.filter(
-    (scan) => scan.status === "SUCCESS" || scan.status === "FAILED"
+    (scan) =>
+      scan.status === "SUCCESS" ||
+      scan.status === "FAILED" ||
+      scan.status === "FOC"
   );
 
   return eligible
@@ -151,7 +161,11 @@ function buildRows(
 }
 
 export function isSheetCopyEligible(scan: SheetScanInput): boolean {
-  return scan.status === "SUCCESS" || scan.status === "FAILED";
+  return (
+    scan.status === "SUCCESS" ||
+    scan.status === "FAILED" ||
+    scan.status === "FOC"
+  );
 }
 
 export function buildSheetClipboardText(

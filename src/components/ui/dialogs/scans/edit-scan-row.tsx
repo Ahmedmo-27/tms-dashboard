@@ -97,7 +97,7 @@ export function EditScanRow({
     return isNaN(d.getTime()) ? new Date() : d;
   });
   const [openCalendar, setOpenCalendar] = useState(false);
-  const [status, setStatus] = useState<"SUCCESS" | "FAILED" | "WILL_PAY">(
+  const [status, setStatus] = useState<"SUCCESS" | "FAILED" | "WILL_PAY" | "FOC">(
     scan.status ?? "SUCCESS",
   );
 
@@ -764,7 +764,7 @@ export function EditScanRow({
               <Select
                 value={status}
                 onValueChange={(v) =>
-                  setStatus(v as "SUCCESS" | "FAILED" | "WILL_PAY")
+                  setStatus(v as "SUCCESS" | "FAILED" | "WILL_PAY" | "FOC")
                 }
               >
                 <SelectTrigger className="w-full h-9 min-w-0 text-xs sm:text-sm">
@@ -773,6 +773,7 @@ export function EditScanRow({
                 <SelectContent>
                   <SelectItem value="SUCCESS">SUCCESS</SelectItem>
                   <SelectItem value="WILL_PAY">WILL_PAY</SelectItem>
+                  <SelectItem value="FOC">FOC</SelectItem>
                   <SelectItem value="FAILED">FAILED</SelectItem>
                 </SelectContent>
               </Select>

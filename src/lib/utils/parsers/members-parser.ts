@@ -277,6 +277,7 @@ export const parseMembers = (members: any): Member[] => {
       name: member.uid.name ?? "Unknown",
       phone: member.uid.phoneNumber ?? "",
       email: member.uid.email ?? "",
+      nationalId: member.uid.nationalId || "",
       packages: parsedPackages,
       bookings: parsedBookings,
       activePkgs: parsedPackages.filter(

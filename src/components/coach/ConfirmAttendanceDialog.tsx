@@ -70,7 +70,7 @@ export function ConfirmAttendanceDialog({
 
   const successCount =
     session?.scans?.filter(
-      (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
+      (s) => s.status === "SUCCESS" || s.status === "WILL_PAY" || s.status === "FOC"
     ).length ?? 0;
 
   useEffect(() => {

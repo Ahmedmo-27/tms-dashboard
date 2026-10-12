@@ -9,16 +9,20 @@ import { redirect } from "next/navigation";
 
 export const registerUser = async (_prevState: unknown, formData: FormData) => {
   try {
+    const rawNationalId = (formData.get("nationalId") as string) || "";
+    const cleanNationalId = rawNationalId.trim().replace(/[\s\-]/g, "");
     const userData = {
       name: formData.get("name") as string,
       phoneNumber: formData.get("phoneNumber") as string,
       password: formData.get("password") as string,
+      nationalId: cleanNationalId,
     };
     const validatedUser = newUserSchema.parse(userData);
     const user = await registerMember(
       validatedUser.name,
       validatedUser.password,
-      validatedUser.phoneNumber
+      validatedUser.phoneNumber,
+      validatedUser.nationalId || undefined
     );
     return {
       success: true,

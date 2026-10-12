@@ -231,11 +231,10 @@ export function PtDropInDialog({
     const timeout = setTimeout(async () => {
       try {
         const params: Record<string, string | number> = { page: 1, limit: 10 };
-        if (/^\d+$/.test(searchQuery)) {
-          params.phone = searchQuery;
-        } else {
-          params.name = searchQuery;
-        }
+        const trimmed = searchQuery.trim();
+        params.search = trimmed;
+        params.name = trimmed;
+        params.phone = trimmed;
         const response = await tms.get("/admin/member", { params });
         const members = response.data?.data?.members ?? [];
         const seen = new Set<string>();

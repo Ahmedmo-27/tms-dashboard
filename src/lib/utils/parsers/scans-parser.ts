@@ -10,7 +10,7 @@ function parseScanStatus(
   if (typeof status === "boolean") {
     return status ? "SUCCESS" : "FAILED";
   }
-  if (status === "SUCCESS" || status === "FAILED" || status === "WILL_PAY") {
+  if (status === "SUCCESS" || status === "FAILED" || status === "WILL_PAY" || status === "FOC") {
     return status;
   }
   return "FAILED";
@@ -34,6 +34,9 @@ function getFailedStatusDetail(
 ): string | undefined {
   if (status !== "FAILED" || !method) return undefined;
   if (method === "No Active Package") return "No active package found";
+  if (method === "No Access At Location") return "No access at this branch";
+  if (method === "Package Frozen") return "Package is currently frozen";
+  if (method === "Package Expired") return "Package has expired";
   return undefined;
 }
 

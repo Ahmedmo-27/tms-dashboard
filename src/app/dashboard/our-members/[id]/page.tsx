@@ -50,6 +50,7 @@ export default async function Page({
       name: memberData.name,
       phone: memberData.phone,
       email: memberData.email,
+      nationalId: memberData.nationalId || "",
       activePkgs: memberData.activePkgs,
       packages: memberData.packages,
       bookings: memberData.bookings,

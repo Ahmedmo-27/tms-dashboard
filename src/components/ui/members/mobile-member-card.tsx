@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent } from "../card";
 import { Avatar, AvatarFallback } from "../avatar";
 import { Badge } from "../badge";
@@ -10,10 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../dropdown-menu";
-import { Phone, Mail, Package, MoreHorizontal, User } from "lucide-react";
+import { Phone, Mail, Package, MoreHorizontal, User, CreditCard } from "lucide-react";
 import { Member } from "./columns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { EditMemberDialog } from "@/components/ui/dialogs/members/edit-member-dialog";
 
 interface MobileMemberCardProps {
   member: Member;
@@ -22,6 +24,7 @@ interface MobileMemberCardProps {
 
 export function MobileMemberCard({ member, pkgId }: MobileMemberCardProps) {
   const router = useRouter();
+  const [showEditDialog, setShowEditDialog] = useState(false);
   
   const initials = member.name
     .split(" ")
@@ -88,6 +91,15 @@ export function MobileMemberCard({ member, pkgId }: MobileMemberCardProps) {
                       View member data
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowEditDialog(true);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    Edit member
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -99,6 +111,12 @@ export function MobileMemberCard({ member, pkgId }: MobileMemberCardProps) {
               <Phone className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">{member.phone}</span>
             </div>
+            {member.nationalId && (
+              <div className="flex items-center gap-2 text-muted-foreground font-mono text-xs">
+                <CreditCard className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">ID: {member.nationalId}</span>
+              </div>
+            )}
             {member.email && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-3 w-3 flex-shrink-0" />
@@ -141,6 +159,11 @@ export function MobileMemberCard({ member, pkgId }: MobileMemberCardProps) {
           )}
         </div>
       </CardContent>
+      <EditMemberDialog
+        member={member}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+      />
     </Card>
   );
 }

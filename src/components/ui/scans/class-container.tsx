@@ -25,6 +25,7 @@ import { ScanMemberLink } from "./scan-member-link";
 import { AddWalkIn } from "../dialogs/scans/add-walk-in";
 import { EditScanRow } from "../dialogs/scans/edit-scan-row";
 import { removeFailedScan, updateNonUserBookingPhone, updateNonUserBookingName } from "@/lib/data/bookings";
+import { deleteScanRow } from "@/lib/data/scan-rows";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState } from "react";
@@ -39,7 +40,7 @@ export interface ClassScan {
   phone: string;
   time: string;
   method: string;
-  status: "SUCCESS" | "FAILED" | "WILL_PAY";
+  status: "SUCCESS" | "FAILED" | "WILL_PAY" | "FOC";
   statusDetail?: string;
   bookingId?: string;
   branchLabel?: string;
@@ -219,11 +220,20 @@ export const ClassContainer = ({
 }: ClassContainerProps & { showBranch?: boolean; onRefresh?: () => void }) => {
   const [removingUid, setRemovingUid] = useState<string | null>(null);
 
-  const handleRemoveFailedScan = async (uid: string) => {
-    const scid = String(classData._id);
+  const handleRemoveFailedScan = async (scan: ClassScan) => {
+    const targetKey = scan.rowId || scan.memberId;
+    if (!targetKey) return;
     try {
-      setRemovingUid(uid);
-      await removeFailedScan(uid, scid);
+      setRemovingUid(targetKey);
+      if (scan.rowId && scan.parentId && scan.source) {
+        await deleteScanRow(
+          { source: scan.source, parentId: scan.parentId, rowId: scan.rowId },
+          false
+        );
+      } else if (scan.memberId) {
+        const scid = String(classData._id);
+        await removeFailedScan(scan.memberId, scid);
+      }
       toast.success("Failed scan removed");
       onRefresh?.();
     } catch (err) {
@@ -241,6 +251,8 @@ export const ClassContainer = ({
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
       case "WILL_PAY":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case "FOC":
+        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400";
       default:
         return "";
     }
@@ -255,7 +267,7 @@ export const ClassContainer = ({
   const isPastHalfway = halfwayMs > 0 && Date.now() >= halfwayMs;
   const attendanceConfirmation = classData.attendanceConfirmation;
   const successScanCount = classScans.filter(
-    (s) => s.status === "SUCCESS" || s.status === "WILL_PAY"
+    (s) => s.status === "SUCCESS" || s.status === "WILL_PAY" || s.status === "FOC"
   ).length;
   // Recompute the actual discrepancy live (headcount vs scans) so stale DB
   // records from the old booking-based logic don't produce false alarms,
@@ -404,12 +416,12 @@ export const ClassContainer = ({
           <div className="flex items-center gap-1">
             <Users className="h-4 w-4" />
             <span>
-              {classScans.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length}/{classData.bookedMembers.length}
+              {classScans.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY" || scan.status === "FOC").length}/{classData.bookedMembers.length}
             </span>
           </div>
           <div className="flex items-center gap-1">
             <UserCheck className="h-4 w-4" />
-            <span>{classScans.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY").length} checked in</span>
+            <span>{classScans.filter((scan) => scan.status === "SUCCESS" || scan.status === "WILL_PAY" || scan.status === "FOC").length} checked in</span>
           </div>
         </div>
       </CardHeader>
@@ -480,17 +492,21 @@ export const ClassContainer = ({
                             {scan.status === "WILL_PAY" && scan.bookingId ? (
                               <PaymentSelectorDialog
                                 bookingId={scan.bookingId}
+                                initialPhone={scan.phone && scan.phone !== "No Phone" ? scan.phone : ""}
+                                scid={scan.parentId || classData._id}
+                                targetCid={classData.cid}
+                                className={classData.className}
                                 onSuccess={onRefresh}
                               />
                             ) : null}
-                            {scan.status === "FAILED" && scan.memberId && (
+                            {scan.status === "FAILED" && (scan.rowId || scan.memberId) && (
                               <Button
                                 type="button"
                                 size="icon"
                                 variant="ghost"
                                 className="h-5 w-5 text-red-500 hover:bg-red-50 hover:text-red-700"
-                                disabled={removingUid === scan.memberId}
-                                onClick={() => handleRemoveFailedScan(scan.memberId!)}
+                                disabled={removingUid === (scan.rowId || scan.memberId)}
+                                onClick={() => handleRemoveFailedScan(scan)}
                                 aria-label="Remove failed scan"
                               >
                                 <X className="h-3.5 w-3.5" />

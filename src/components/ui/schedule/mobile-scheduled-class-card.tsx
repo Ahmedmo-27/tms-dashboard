@@ -20,10 +20,12 @@ import {
 import { ScheduledClass } from "./columns";
 import { format } from "date-fns";
 import { ShowBookedMembers } from "./show-booked-members";
+import { ShowWaitlist } from "./show-waitlist";
 import CancelClassDialog from "../dialogs/schedule/cancel-class";
 import EditSlotsDialog from "../dialogs/schedule/edit-slots";
 import { EditClassComponent } from "../dialogs/schedule/edit-class";
 import { BookNonUserDialog } from "../dialogs/schedule/book-non-user";
+import { AddToWaitlistDialog } from "../dialogs/schedule/add-to-waitlist-dialog";
 
 interface MobileScheduledClassCardProps {
   scheduledClass: ScheduledClass;
@@ -35,7 +37,7 @@ export function MobileScheduledClassCard({
   coaches 
 }: MobileScheduledClassCardProps) {
   const [activeModal, setActiveModal] = useState<
-    "book" | "slots" | "edit" | "cancel" | null
+    "book" | "waitlist" | "slots" | "edit" | "cancel" | null
   >(null);
 
   const handleDropdownClick = (e: React.MouseEvent) => {
@@ -83,6 +85,12 @@ export function MobileScheduledClassCard({
                     className="cursor-pointer"
                   >
                     Book Class
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setActiveModal("waitlist")}
+                    className="cursor-pointer"
+                  >
+                    Add to Waitlist
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => setActiveModal("slots")}
@@ -141,6 +149,9 @@ export function MobileScheduledClassCard({
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 <ShowBookedMembers members={scheduledClass.bookedMembers} scid={scheduledClass._id ?? ""} />
+                {scheduledClass.waitlist && scheduledClass.waitlist.length > 0 && (
+                  <ShowWaitlist waitlist={scheduledClass.waitlist} scid={scheduledClass._id ?? ""} />
+                )}
               </div>
             </div>
           </div>
@@ -167,6 +178,15 @@ export function MobileScheduledClassCard({
         {activeModal === "book" && (
           <BookNonUserDialog
             scid={scheduledClass._id as string}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal === "waitlist" && (
+          <AddToWaitlistDialog
+            scheduledClass={scheduledClass}
             open={true}
             onOpenChange={(open) => {
               if (!open) setActiveModal(null);

@@ -50,6 +50,12 @@ export interface RawPaymentRecord {
   refundReason?: string;
   reason?: string;
   paymentLabel?: string | null;
+  orderId?: string;
+  coachId?: string;
+  coachEmail?: string;
+  coachName?: string;
+  durationMonths?: number;
+  platform?: string;
 }
 
 export function normalizePaymentsPayload(data: unknown): RawPaymentRecord[] {
@@ -224,13 +230,23 @@ function getLocationLabel(loc: LocationRef): string | null {
 }
 
 export function resolvePaymentLocation(record: RawPaymentRecord): string {
-  return (
+  const resolved =
     getLocationLabel(record.scid?.locationId) ??
     record.scid?.cid?.locations?.[0]?.branchName ??
     getLocationLabel(record.locationId) ??
-    getLocationLabel(record.pkgId?.locationId) ??
-    " -- "
-  );
+    getLocationLabel(record.pkgId?.locationId);
+
+  if (resolved) return resolved;
+
+  if (
+    record.paymentMethod?.toUpperCase() === "COACHERA" ||
+    record.platform?.toUpperCase() === "COACHERA" ||
+    record.purpose === "ONLINE_CLASS"
+  ) {
+    return "Online";
+  }
+
+  return " -- ";
 }
 
 export function resolvePtPaymentPurpose(record: {
@@ -268,7 +284,17 @@ export const parsePayments = (payments: unknown): Payment[] => {
       resolveOpenGymPaymentPurpose(payment) ??
       resolvePtPaymentPurpose(payment) ??
       "";
-    if (!purpose && payment.pkgId) {
+    if (
+      payment.paymentMethod?.toUpperCase() === "COACHERA" ||
+      payment.platform?.toUpperCase() === "COACHERA" ||
+      payment.purpose === "ONLINE_CLASS"
+    ) {
+      purpose =
+        payment.note ||
+        (payment.coachName
+          ? `Coachera Online Class · Coach: ${payment.coachName}`
+          : "Coachera Online Class");
+    } else if (!purpose && payment.pkgId) {
       purpose = payment.pkgId.name;
     } else if (!purpose && payment.scid) {
       purpose = payment.scid.cid.title;
