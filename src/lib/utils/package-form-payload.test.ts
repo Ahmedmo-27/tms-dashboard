@@ -90,4 +90,48 @@ function formFrom(entries: Record<string, string | string[]>): FormData {
   assert.deepEqual(validated.opensClasses, ["class_a", "class_b"]);
 }
 
+// Decimal and zero prices must be supported
+{
+  const fdDecimal = formFrom({
+    _id: "pkg_dec_1",
+    name: "Decimal Pack",
+    price: "150.50",
+    numberOfSessions: "5",
+    expiryPeriod: "30",
+    category: "STUDIO",
+  });
+  const validatedDecimal = packageSchema.parse(buildPackagePayloadFromFormData(fdDecimal));
+  assert.equal(validatedDecimal.price, "150.50");
+
+  const fdZero = formFrom({
+    _id: "pkg_zero_1",
+    name: "Free Pack",
+    price: "0",
+    numberOfSessions: "1",
+    expiryPeriod: "7",
+    category: "STUDIO",
+  });
+  const validatedZero = packageSchema.parse(buildPackagePayloadFromFormData(fdZero));
+  assert.equal(validatedZero.price, "0");
+}
+
+// Empty price gives "Price is required"
+{
+  const fdEmptyPrice = formFrom({
+    _id: "pkg_err_1",
+    name: "Pack Without Price",
+    price: "",
+    numberOfSessions: "5",
+    expiryPeriod: "30",
+    category: "STUDIO",
+  });
+  const payload = buildPackagePayloadFromFormData(fdEmptyPrice);
+  const result = packageSchema.safeParse(payload);
+  assert.equal(result.success, false);
+  if (!result.success) {
+    const issue = result.error.issues.find((i) => i.path[0] === "price");
+    assert.equal(issue?.message, "Price is required");
+  }
+}
+
 console.log("package-form-payload.test.ts: all assertions passed");
