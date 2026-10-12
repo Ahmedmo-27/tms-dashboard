@@ -159,7 +159,11 @@ export function CopyAttendanceForSheetButton({
                   const checked = selectedIndexes.has(index);
                   const mapped = mapMethod(scan.method);
                   const packageLabel =
-                    mapped.kind === "dropin" ? "Drop in" : mapped.label;
+                    scan.status === "FOC"
+                      ? "FOC"
+                      : mapped.kind === "dropin"
+                      ? "Drop in"
+                      : mapped.label;
 
                   return (
                     <label

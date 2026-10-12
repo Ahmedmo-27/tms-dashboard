@@ -237,7 +237,11 @@ export const AttendanceContainer = ({
                       <TableCell>{scan.phone}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <span>{scan.method}</span>
+                          <span>
+                            {scan.status === "FOC" || scan.method === "Invitation"
+                              ? "FOC"
+                              : scan.method}
+                          </span>
                           {scan.remainingClasses !== undefined && scan.remainingClasses !== null && (
                             <span className="text-xs font-medium text-muted-foreground">
                               {scan.totalClasses

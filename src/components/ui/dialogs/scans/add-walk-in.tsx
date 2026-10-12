@@ -97,6 +97,10 @@ export function AddWalkIn({
     setIsOpen(open);
     if (!open) {
       setIsLoading(false);
+      setName("");
+      setPhoneNumber("");
+      setAmount("");
+      setPaymentDate("");
       setPaymentMethod("CASH");
     }
   };
@@ -116,6 +120,11 @@ export function AddWalkIn({
 
         if (result.success) {
           setIsOpen(false);
+          setName("");
+          setPhoneNumber("");
+          setAmount("");
+          setPaymentDate("");
+          setPaymentMethod("CASH");
           onSuccess?.();
           return initialState;
         }
@@ -186,6 +195,7 @@ export function AddWalkIn({
 
           <form action={formAction} className="mt-4 space-y-6">
             <input type="hidden" name="scid" value={scid} />
+            <input type="hidden" name="paymentMethod" value={paymentMethod} />
             <ManagementBranchField
               locationId={locationId}
               onLocationChange={setModalLocationId}
@@ -234,7 +244,6 @@ export function AddWalkIn({
                   Payment Method / Status
                 </Label>
                 <Select
-                  name="paymentMethod"
                   value={paymentMethod}
                   onValueChange={setPaymentMethod}
                 >

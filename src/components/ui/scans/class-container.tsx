@@ -474,7 +474,11 @@ export const ClassContainer = ({
                           />
                         )}
                       </TableCell>
-                      <TableCell>{scan.method}</TableCell>
+                      <TableCell>
+                        {scan.status === "FOC" || scan.method === "Invitation"
+                          ? "FOC"
+                          : scan.method}
+                      </TableCell>
                       <TableCell>
                         {format(new Date(scan.time), "hh:mm a")}
                       </TableCell>

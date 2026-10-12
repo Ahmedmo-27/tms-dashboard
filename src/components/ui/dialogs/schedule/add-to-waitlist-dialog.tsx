@@ -15,13 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ScheduledClassSearchSelect } from "@/components/ui/scheduled-class-search-select";
 import { Badge } from "@/components/ui/badge";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { addToWaitlist, getWaitlistedMembers } from "@/lib/data/bookings";
@@ -65,6 +59,8 @@ export function AddToWaitlistDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  const isClassFixed = Boolean(scheduledClass?._id || scid);
+
   // Sync class ID when prop changes
   useEffect(() => {
     if (scheduledClass?._id) {
@@ -87,7 +83,7 @@ export function AddToWaitlistDialog({
     setSearchResults([]);
     setSelectedMember(null);
     setShowSuggestions(false);
-    if (!scheduledClass && !scid) {
+    if (!isClassFixed) {
       setSelectedClassId("");
     }
   };
@@ -205,7 +201,7 @@ export function AddToWaitlistDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {/* Target Class Info or Selector */}
-          {activeClass ? (
+          {isClassFixed && activeClass ? (
             <div className="rounded-lg border bg-muted/40 p-3 space-y-1 text-sm">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-foreground">
@@ -232,21 +228,21 @@ export function AddToWaitlistDialog({
               <Label htmlFor="class-select" className="text-xs font-medium">
                 Select Class <span className="text-destructive">*</span>
               </Label>
-              <Select
+              <ScheduledClassSearchSelect
+                id="class-select"
+                classes={scheduledClasses}
                 value={selectedClassId}
-                onValueChange={setSelectedClassId}
-              >
-                <SelectTrigger id="class-select" className="h-9 text-sm">
-                  <SelectValue placeholder="Choose a scheduled class..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {scheduledClasses.map((cls) => (
-                    <SelectItem key={cls._id} value={cls._id || ""}>
-                      {cls.className} ({format(new Date(cls.startTime), "HH:mm")}) - {cls.coachName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={setSelectedClassId}
+                placeholder="Choose a scheduled class..."
+                allowClear
+              />
+              {activeClass?.category && (
+                <div className="pt-0.5">
+                  <Badge variant="outline" className="text-[10px]">
+                    {activeClass.category}
+                  </Badge>
+                </div>
+              )}
             </div>
           ) : null}
 

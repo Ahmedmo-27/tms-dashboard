@@ -82,7 +82,7 @@ export const parseSchedule = (
               name: entry.name,
               phoneNumber: entry.phoneNumber,
             },
-            method: "Invitation",
+            method: "FOC",
             status: "FOC",
             scanTime: entry.attendanceTime
               ? new Date(entry.attendanceTime)

@@ -93,6 +93,8 @@ export const bookWalkIn = async (
       ...(locationId ? { locationId } : {}),
     });
     revalidatePath("/dashboard/scans-monitor");
+    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/payments");
     return response.data;
   } catch (error) {
     throw error;
@@ -165,6 +167,7 @@ export const saveNonUserBookingPayment = async (
     });
     revalidatePath("/dashboard/schedule");
     revalidatePath("/dashboard/scans-monitor");
+    revalidatePath("/dashboard/payments");
     return response.data;
   } catch (error) {
     console.log(error);
