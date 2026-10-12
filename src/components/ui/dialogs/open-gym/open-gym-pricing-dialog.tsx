@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,321 +10,127 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
-import { OpenGymBranchSelect } from "@/components/ui/open-gym/branch-select";
-import { Package } from "@/components/ui/packages/columns";
-import { Class } from "@/components/ui/classes/columns";
-import { MultiSelect } from "@/components/ui/multiselect";
-import {
-  createOpenGymPackage,
-  deleteOpenGymPackage,
   getOpenGymDropInPrices,
   setOpenGymDropInPrice,
-  updateOpenGymPackage,
   type OpenGymBranchPrice,
 } from "@/lib/data/open-gym";
-import {
-  daysToDuration,
-  durationToDays,
-  DurationUnit,
-  formatDurationLabel,
-} from "@/lib/utils/open-gym-duration";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
-import { Plus, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-type PackageRow = {
-  key: string;
-  pkgId?: string;
-  name: string;
-  durationValue: string;
-  durationUnit: DurationUnit;
-  price: string;
-  sessions: string;
-  selectedClassTitles: string[];
-  selectedClassIds: string[];
-};
-
-function packageLocationId(pkg: Package): string {
-  if (!pkg.locationId) return "";
-  return typeof pkg.locationId === "string"
-    ? pkg.locationId
-    : pkg.locationId._id ?? "";
-}
-
-function newPackageRow(): PackageRow {
-  return {
-    key: `new-${crypto.randomUUID()}`,
-    name: "",
-    durationValue: "1",
-    durationUnit: "weeks",
-    price: "",
-    sessions: "",
-    selectedClassTitles: [],
-    selectedClassIds: [],
-  };
-}
-
-function packageToRow(pkg: Package): PackageRow {
-  const { value, unit } = daysToDuration(Number(pkg.expiryPeriod));
-  const validClasses = (pkg.opensClasses ?? []).filter((c) => c?._id);
-  const sessions = Number(pkg.numberOfSessions);
-  const hasClassBundle =
-    validClasses.length > 0 && Number.isFinite(sessions) && sessions < 1000;
-
-  return {
-    key: pkg._id,
-    pkgId: pkg._id,
-    name: pkg.name,
-    durationValue: value,
-    durationUnit: unit,
-    price: String(pkg.price ?? ""),
-    sessions: hasClassBundle ? String(sessions) : "",
-    selectedClassTitles: validClasses.map((c) => c.title),
-    selectedClassIds: validClasses.map((c) => c._id),
-  };
-}
-
-function isPositiveNumber(value: string): boolean {
-  const parsed = Number(value);
-  return value !== "" && Number.isFinite(parsed) && parsed > 0;
-}
-
-export function OpenGymPricingDialog({
-  packages = [],
-  classes = [],
-  triggerLabel = "Open gym pricing",
-  hideTrigger = false,
-  open: openProp,
-  onOpenChange,
-}: {
-  packages?: Package[];
-  classes?: Class[];
+type OpenGymPricingDialogProps = {
   triggerLabel?: string;
+  triggerClassName?: string;
+  variant?: "default" | "outline" | "ghost" | "secondary";
+  size?: "default" | "sm" | "lg" | "icon";
   hideTrigger?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-}) {
+  onPriceUpdated?: () => void;
+  // Retained for backward-compatibility with existing callers
+  packages?: unknown[];
+  classes?: unknown[];
+};
+
+export function OpenGymPricingDialog({
+  triggerLabel = "Open gym pricing",
+  triggerClassName,
+  variant = "outline",
+  size = "sm",
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
+  onPriceUpdated,
+}: OpenGymPricingDialogProps) {
   const router = useRouter();
-  const {
-    locationId,
-    setModalLocationId,
-    needsBranchSelection,
-    hasLocationId,
-    resetModalBranch,
-  } = useManagementBranchSelection();
+  const { userLocationId, canViewAllBranches } = useBranchContext();
+
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isControlled = openProp !== undefined;
   const open = isControlled ? openProp : uncontrolledOpen;
+
   const setOpen = (value: boolean) => {
     if (!isControlled) setUncontrolledOpen(value);
     onOpenChange?.(value);
-    if (value) resetModalBranch();
   };
-  const [prices, setPrices] = useState<OpenGymBranchPrice[]>([]);
-  const [dropInPrice, setDropInPrice] = useState("");
-  const [rows, setRows] = useState<PackageRow[]>([]);
-  const [deletedPkgIds, setDeletedPkgIds] = useState<string[]>([]);
+
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [branches, setBranches] = useState<OpenGymBranchPrice[]>([]);
+  const [branchInputs, setBranchInputs] = useState<Record<string, string>>({});
+  const [batchPrice, setBatchPrice] = useState("");
 
-  const bookableClasses = useMemo(
-    () => classes.filter((cls) => cls.category !== "WORKSPACE"),
-    [classes],
-  );
-  const classMap = useMemo(
-    () => new Map(bookableClasses.map((cls) => [cls.title, cls._id])),
-    [bookableClasses],
-  );
-  const classOptions = useMemo(
-    () => bookableClasses.map((cls) => cls.title),
-    [bookableClasses],
-  );
-
-  const branchPackages = useMemo(() => {
-    if (!locationId) return [];
-    return packages
-      .filter(
-        (pkg) =>
-          pkg.category === "OPEN_GYM" &&
-          packageLocationId(pkg) === locationId,
-      )
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [locationId, packages]);
-
-  const loadPrices = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      setPrices(await getOpenGymDropInPrices());
+      const branchList = await getOpenGymDropInPrices();
+      setBranches(branchList);
+      const bMap: Record<string, string> = {};
+      branchList.forEach((b) => {
+        bMap[b.locationId] = b.price != null ? String(b.price) : "";
+      });
+      setBranchInputs(bMap);
     } catch {
-      setPrices([]);
+      toast.error("Failed to load open gym drop-in prices.");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (open) loadPrices();
+    if (open) {
+      loadData();
+    }
   }, [open]);
 
-  useEffect(() => {
-    if (!locationId) {
-      setDropInPrice("");
-      setRows([]);
-      setDeletedPkgIds([]);
+  const displayedBranches =
+    !canViewAllBranches && userLocationId
+      ? branches.filter((b) => b.locationId === userLocationId)
+      : branches;
+
+  const handleApplyBatchPrice = () => {
+    const val = batchPrice.trim();
+    if (!val || Number.isNaN(Number(val)) || Number(val) < 0) {
+      toast.error("Please enter a valid price to apply to all branches.");
       return;
     }
-
-    const branch = prices.find((p) => p.locationId === locationId);
-    setDropInPrice(branch?.price != null ? String(branch.price) : "");
-    setRows(
-      branchPackages.length > 0
-        ? branchPackages.map(packageToRow)
-        : [newPackageRow()],
-    );
-    setDeletedPkgIds([]);
-  }, [locationId, prices, branchPackages]);
-
-  const updateRow = <K extends keyof PackageRow>(
-    key: string,
-    field: K,
-    value: PackageRow[K],
-  ) => {
-    setRows((prev) =>
-      prev.map((row) => (row.key === key ? { ...row, [field]: value } : row)),
-    );
-  };
-
-  const updateRowClasses = (key: string, titles: string[]) => {
-    setRows((prev) =>
-      prev.map((row) =>
-        row.key === key
-          ? {
-              ...row,
-              selectedClassTitles: titles,
-              selectedClassIds: titles.map((title) => classMap.get(title) ?? ""),
-            }
-          : row,
-      ),
-    );
-  };
-
-  const addRow = () => {
-    setRows((prev) => [...prev, newPackageRow()]);
-  };
-
-  const removeRow = (row: PackageRow) => {
-    if (row.pkgId) {
-      setDeletedPkgIds((prev) =>
-        prev.includes(row.pkgId!) ? prev : [...prev, row.pkgId!],
-      );
-    }
-    setRows((prev) => {
-      const next = prev.filter((item) => item.key !== row.key);
-      return next.length > 0 ? next : [newPackageRow()];
+    const updated: Record<string, string> = {};
+    displayedBranches.forEach((b) => {
+      updated[b.locationId] = val;
     });
+    setBranchInputs((prev) => ({ ...prev, ...updated }));
+    toast.success(`Applied ${val} EGP to all branches.`);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!locationId) {
-      toast.error("Select a branch first");
-      return;
-    }
 
-    const rowsToSave = rows.filter(
-      (row) =>
-        row.name.trim().length > 0 &&
-        isPositiveNumber(row.durationValue) &&
-        isPositiveNumber(row.price) &&
-        (!row.pkgId || !deletedPkgIds.includes(row.pkgId)),
-    );
-
-    if (
-      !isPositiveNumber(dropInPrice) &&
-      rowsToSave.length === 0 &&
-      deletedPkgIds.length === 0
-    ) {
-      toast.error("Add at least one package or drop-in price");
-      return;
-    }
-
-    for (const row of rowsToSave) {
-      const expiryPeriod = durationToDays(
-        Number(row.durationValue),
-        row.durationUnit,
-      );
-      if (expiryPeriod < 1) {
-        toast.error(`Invalid duration for "${row.name || "package"}"`);
-        return;
-      }
-      if (row.selectedClassIds.length > 0 && !isPositiveNumber(row.sessions)) {
-        toast.error(
-          `Enter how many class sessions are included in "${row.name || "package"}"`,
-        );
-        return;
-      }
-      if (
-        row.selectedClassIds.length === 0 &&
-        row.sessions.trim().length > 0
-      ) {
-        toast.error(
-          `Select classes for "${row.name || "package"}" or clear the session count`,
-        );
+    for (const b of displayedBranches) {
+      const val = branchInputs[b.locationId]?.trim();
+      if (!val || Number.isNaN(Number(val)) || Number(val) < 0) {
+        toast.error(`Please enter a valid price for ${b.branchName}`);
         return;
       }
     }
 
     setSaving(true);
     try {
-      const tasks: Promise<unknown>[] = [];
-
-      if (isPositiveNumber(dropInPrice)) {
-        tasks.push(setOpenGymDropInPrice(locationId, Number(dropInPrice)));
-      }
-
-      for (const pkgId of deletedPkgIds) {
-        tasks.push(deleteOpenGymPackage(pkgId));
-      }
-
-      for (const row of rowsToSave) {
-        const hasClasses = row.selectedClassIds.length > 0;
-        const payload = {
-          name: row.name.trim(),
-          price: Number(row.price),
-          expiryPeriod: durationToDays(
-            Number(row.durationValue),
-            row.durationUnit,
-          ),
-          locationId,
-          ...(hasClasses
-            ? {
-                opensClasses: row.selectedClassIds,
-                numberOfSessions: Number(row.sessions),
-                classRestrictions: [],
-              }
-            : { opensClasses: [] }),
-        };
-
-        if (row.pkgId) {
-          tasks.push(updateOpenGymPackage({ pkgId: row.pkgId, ...payload }));
-        } else {
-          tasks.push(createOpenGymPackage(payload));
-        }
-      }
-
-      await Promise.all(tasks);
-      toast.success("Open gym pricing saved");
-      await loadPrices();
+      const promises = displayedBranches.map((b) => {
+        const val = branchInputs[b.locationId]?.trim() || "0";
+        return setOpenGymDropInPrice(b.locationId, Number(val));
+      });
+      await Promise.all(promises);
+      toast.success("Open gym drop-in prices saved successfully!");
+      onPriceUpdated?.();
       router.refresh();
       setOpen(false);
-    } catch (err) {
-      toast.error(getApiErrorMessage(err) || "Failed to save open gym pricing");
+    } catch (err: unknown) {
+      toast.error(
+        getApiErrorMessage(err) || "Failed to save open gym drop-in prices",
+      );
     } finally {
       setSaving(false);
     }
@@ -333,236 +139,135 @@ export function OpenGymPricingDialog({
   return (
     <div>
       {!hideTrigger && (
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10 px-2.5 sm:px-4"
-        onClick={() => {
-          setOpen(true);
-        }}
-      >
-        <span className="truncate">{triggerLabel}</span>
-      </Button>
+        <Button
+          variant={variant}
+          size={size}
+          className={
+            triggerClassName ||
+            "w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10 px-2.5 sm:px-4"
+          }
+          onClick={() => setOpen(true)}
+        >
+          <span className="truncate">{triggerLabel}</span>
+        </Button>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Open gym pricing</DialogTitle>
+            <DialogTitle>Open gym drop-in pricing</DialogTitle>
             <DialogDescription>
-              Create open gym packages per branch. Each package can be gym-only,
-              or a combo with class sessions — set the duration, price, name,
-              and optionally pick which classes are included.
+              Configure the single-visit drop-in price for open gym sessions per
+              branch.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {needsBranchSelection && (
-              <OpenGymBranchSelect
-                value={locationId}
-                onChange={setModalLocationId}
-                disabled={saving}
-              />
-            )}
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Drop-in price (EGP)</Label>
-              <Input
-                type="number"
-                min={0}
-                value={dropInPrice}
-                onChange={(e) => setDropInPrice(e.target.value)}
-                placeholder="Single visit"
-                disabled={!locationId}
-              />
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="ml-2 text-sm text-muted-foreground">
+                Loading prices...
+              </span>
             </div>
+          ) : (
+            <form onSubmit={handleSave} className="space-y-4 pt-1">
+              {displayedBranches.length > 1 && (
+                <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-muted/30">
+                  <div className="text-xs text-muted-foreground">
+                    Quickly set the same drop-in price across all branches:
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 450"
+                      value={batchPrice}
+                      onChange={(e) => setBatchPrice(e.target.value)}
+                      className="w-24 h-8 text-xs"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleApplyBatchPrice}
+                      className="h-8 text-xs shrink-0"
+                    >
+                      Apply to all
+                    </Button>
+                  </div>
+                </div>
+              )}
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <Label className="text-sm font-medium">Packages</Label>
+              <div className="space-y-3">
+                {displayedBranches.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    No branches found.
+                  </p>
+                ) : (
+                  displayedBranches.map((b) => (
+                    <div
+                      key={b.locationId}
+                      className="flex items-center justify-between gap-4 p-3 rounded-md border"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium leading-none truncate">
+                          {b.branchName}
+                        </p>
+                        {b.location && (
+                          <p className="text-xs text-muted-foreground truncate mt-1">
+                            {b.location}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={branchInputs[b.locationId] ?? ""}
+                          onChange={(e) =>
+                            setBranchInputs((prev) => ({
+                              ...prev,
+                              [b.locationId]: e.target.value,
+                            }))
+                          }
+                          placeholder="0"
+                          className="w-28 text-right font-medium"
+                          required
+                        />
+                        <span className="text-xs text-muted-foreground w-8">
+                          EGP
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
-                  onClick={addRow}
-                  disabled={!locationId}
+                  onClick={() => setOpen(false)}
+                  disabled={saving}
                 >
-                  <Plus className="mr-1 h-4 w-4" />
-                  Add package
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saving || displayedBranches.length === 0}
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Save open gym pricing"
+                  )}
                 </Button>
               </div>
-
-              {rows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Select a branch to manage packages.
-                </p>
-              ) : (
-                rows.map((row) => {
-                  const durationPreview = isPositiveNumber(row.durationValue)
-                    ? formatDurationLabel(
-                        Number(row.durationValue),
-                        row.durationUnit,
-                      )
-                    : null;
-                  const isCombo = row.selectedClassIds.length > 0;
-
-                  return (
-                    <div
-                      key={row.key}
-                      className="rounded-md border p-3 space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-medium">
-                            {row.pkgId ? "Existing package" : "New package"}
-                            {isCombo ? (
-                              <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                combo
-                              </span>
-                            ) : null}
-                          </p>
-                          {durationPreview ? (
-                            <p className="text-xs text-muted-foreground">
-                              Open gym: {durationPreview}
-                              {isCombo && isPositiveNumber(row.sessions)
-                                ? ` • ${row.sessions} class sessions`
-                                : ""}
-                            </p>
-                          ) : null}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeRow(row)}
-                          disabled={!locationId}
-                          aria-label="Remove package"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Package name
-                          </Label>
-                          <Input
-                            value={row.name}
-                            onChange={(e) =>
-                              updateRow(row.key, "name", e.target.value)
-                            }
-                            placeholder="e.g. Open Gym + 8 Studio Sessions"
-                            disabled={!locationId}
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">
-                            Open gym duration
-                          </Label>
-                          <div className="flex gap-2">
-                            <Input
-                              type="number"
-                              min={1}
-                              value={row.durationValue}
-                              onChange={(e) =>
-                                updateRow(
-                                  row.key,
-                                  "durationValue",
-                                  e.target.value,
-                                )
-                              }
-                              disabled={!locationId}
-                            />
-                            <Select
-                              value={row.durationUnit}
-                              onValueChange={(value: DurationUnit) =>
-                                updateRow(row.key, "durationUnit", value)
-                              }
-                              disabled={!locationId}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="weeks">Weeks</SelectItem>
-                                <SelectItem value="months">Months</SelectItem>
-                                <SelectItem value="days">Days</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">
-                            Price (EGP)
-                          </Label>
-                          <Input
-                            type="number"
-                            min={0}
-                            value={row.price}
-                            onChange={(e) =>
-                              updateRow(row.key, "price", e.target.value)
-                            }
-                            placeholder="0"
-                            disabled={!locationId}
-                          />
-                        </div>
-
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Included class sessions (optional)
-                          </Label>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={row.sessions}
-                            onChange={(e) =>
-                              updateRow(row.key, "sessions", e.target.value)
-                            }
-                            placeholder="Leave empty for gym-only package"
-                            disabled={!locationId}
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Open gym visits stay unlimited for the package
-                            duration. This count is only for booking classes.
-                          </p>
-                        </div>
-
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Classes included (optional)
-                          </Label>
-                          <MultiSelect
-                            placeholder="Select classes for combo packages"
-                            options={classOptions}
-                            selected={row.selectedClassTitles}
-                            onChange={(titles) =>
-                              updateRowClasses(row.key, titles)
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={!locationId || saving}>
-                {saving ? "Saving…" : "Save open gym pricing"}
-              </Button>
-            </div>
-          </form>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
