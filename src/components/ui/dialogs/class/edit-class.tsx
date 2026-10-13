@@ -7,8 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { editClassAction } from "@/lib/actions/class-actions";
 import {
   Select,
@@ -66,37 +65,32 @@ const resolveLocationId = (
   return match?._id ?? value;
 };
 
-export default function EditClassDialog({
+function EditClassForm({
   cls,
-  categories = CLASS_CATEGORIES as unknown as string[],
+  categories,
   locations = [],
-  compact = false,
-  buttonClassName,
-}: EditClassDialogProps) {
+  onClose,
+}: {
+  cls: Class;
+  categories: string[];
+  locations: Location[];
+  onClose: () => void;
+}) {
   const availableCategories =
     categories && categories.length > 0
       ? categories
       : (CLASS_CATEGORIES as unknown as string[]);
 
-  const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(cls.category);
-
   const [selectedLocation, setSelectedLocation] = useState(
     resolveLocationId(cls.locations?.[0], locations)
   );
-  const normalizedLocationIds = (cls.locations || []).map((location) =>
-    resolveLocationId(location, locations)
-  );
+
   const initialState: ActionState = {
     success: false,
     errors: null,
     data: null,
-    defaultValues: {
-      title: cls.title,
-      price: String(cls.price ?? ""),
-      category: cls.category,
-      locations: normalizedLocationIds,
-    },
+    defaultValues: undefined,
   };
 
   const [state, formAction, pending] = useActionState(
@@ -109,7 +103,7 @@ export default function EditClassDialog({
       };
       const result = await editClassAction(currentState, formData);
       if (result.success) {
-        setOpen(false);
+        onClose();
         return initialState;
       }
 
@@ -121,9 +115,158 @@ export default function EditClassDialog({
     initialState
   );
 
+  return (
+    <form action={formAction} className="mt-4">
+      <input type="hidden" name="_id" value={cls._id} />
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="title" className="text-sm font-medium">
+            Class Name
+          </Label>
+          <Input
+            id="title"
+            name="title"
+            type="text"
+            defaultValue={state?.defaultValues?.title ?? cls.title}
+          />
+          {state.errors && "title" in state.errors && (
+            <div className="text-destructive text-sm">
+              {state.errors.title}
+            </div>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="price" className="text-sm font-medium">
+            Price
+          </Label>
+          <Input
+            id="price"
+            name="price"
+            type="number"
+            min={0}
+            step="any"
+            defaultValue={state?.defaultValues?.price ?? String(cls.price ?? "")}
+          />
+          {state.errors && "price" in state.errors && (
+            <div className="text-destructive text-sm">
+              {state.errors.price}
+            </div>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Category</Label>
+          <input type="hidden" name="category" value={selectedCategory} />
+          <Select
+            value={selectedCategory || undefined}
+            disabled={pending}
+            onValueChange={setSelectedCategory}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableCategories.length === 0 ? (
+                <SelectItem value="_empty" disabled>
+                  No categories available
+                </SelectItem>
+              ) : (
+                availableCategories.map((category) => (
+                  <SelectItem
+                    key={category}
+                    value={category}
+                    className="cursor-pointer hover:bg-accent"
+                  >
+                    {formatCategory(category)}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          {state.errors && "category" in state.errors && (
+            <div className="text-destructive text-sm">
+              {state.errors.category}
+            </div>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Location</Label>
+          <input type="hidden" name="locations" value={selectedLocation} />
+          <Select
+            value={selectedLocation || undefined}
+            disabled={pending}
+            onValueChange={setSelectedLocation}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a location" />
+            </SelectTrigger>
+            <SelectContent>
+              {locations.length === 0 ? (
+                <SelectItem value="_empty" disabled>
+                  No locations available
+                </SelectItem>
+              ) : (
+                locations.map((location) => (
+                  <SelectItem
+                    key={location._id}
+                    value={location._id}
+                    className="hover:bg-accent"
+                  >
+                    {location.branchName}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          {state.errors && "locations" in state.errors && (
+            <div className="text-destructive text-sm">
+              {state.errors.locations}
+            </div>
+          )}
+        </div>
+
+        {state.errors && "message" in state.errors && (
+          <div className="text-destructive">{state.errors.message}</div>
+        )}
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
+        <Button
+          type="button"
+          className="px-4 w-full sm:w-auto"
+          variant="outline"
+          onClick={onClose}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="px-4 w-full sm:w-auto"
+          disabled={pending}
+          variant="default"
+        >
+          {pending ? "Saving..." : "Save Changes"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export default function EditClassDialog({
+  cls,
+  categories = CLASS_CATEGORIES as unknown as string[],
+  locations = [],
+  compact = false,
+  buttonClassName,
+}: EditClassDialogProps) {
+  const [open, setOpen] = useState(false);
+
   const triggerButton = (
     <Button
-      onClick={() => setOpen(true)}
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        setOpen(true);
+      }}
       variant="outline"
       size={compact ? "icon" : "default"}
       className={cn(
@@ -155,137 +298,15 @@ export default function EditClassDialog({
             </DialogTitle>
             <DialogDescription>Edit class data</DialogDescription>
           </DialogHeader>
-          <form action={formAction} className="mt-4">
-            <input type="hidden" name="_id" value={cls._id} />
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-sm font-medium">
-                  Class Name
-                </Label>
-                <Input
-                  id="title"
-                  name="title"
-                  type="text"
-                  defaultValue={state.defaultValues?.title}
-                />
-                {state.errors && "title" in state.errors && (
-                  <div className="text-destructive text-sm">
-                    {state.errors.title}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price" className="text-sm font-medium">
-                  Price
-                </Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  defaultValue={state.defaultValues?.price}
-                />
-                {state.errors && "price" in state.errors && (
-                  <div className="text-destructive text-sm">
-                    {state.errors.price}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Category</Label>
-                <Select
-                  name="category"
-                  value={selectedCategory || undefined}
-                  disabled={pending}
-                  onValueChange={setSelectedCategory}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableCategories.length === 0 ? (
-                      <SelectItem value="_empty" disabled>
-                        No categories available
-                      </SelectItem>
-                    ) : (
-                      availableCategories.map((category) => (
-                        <SelectItem
-                          key={category}
-                          value={category}
-                          className="cursor-pointer hover:bg-accent"
-                        >
-                          {formatCategory(category)}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {state.errors && "category" in state.errors && (
-                  <div className="text-destructive text-sm">
-                    {state.errors.category}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Location</Label>
-                <Select
-                  name="locations"
-                  value={selectedLocation || undefined}
-                  disabled={pending}
-                  onValueChange={setSelectedLocation}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.length === 0 ? (
-                      <SelectItem value="_empty" disabled>
-                        No locations available
-                      </SelectItem>
-                    ) : (
-                      locations.map((location) => (
-                        <SelectItem
-                          key={location._id}
-                          value={location._id}
-                          className="hover:bg-accent"
-                        >
-                          {location.branchName}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {state.errors && "locations" in state.errors && (
-                  <div className="text-destructive text-sm">
-                    {state.errors.locations}
-                  </div>
-                )}
-              </div>
-
-
-              {state.errors && state.errors.message && (
-                <div className="text-destructive">{state.errors.message}</div>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
-              <Button
-                type="button"
-                className="px-4 w-full sm:w-auto"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="px-4 w-full sm:w-auto"
-                disabled={pending}
-                variant="default"
-              >
-                {pending ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </form>
+          {open && (
+            <EditClassForm
+              key={cls._id}
+              cls={cls}
+              categories={categories}
+              locations={locations}
+              onClose={() => setOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

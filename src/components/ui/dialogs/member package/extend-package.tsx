@@ -9,8 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
-import { useActionState } from "react";
+import { useEffect, useState, useActionState } from "react";
 import { changePkgEndDate } from "@/lib/actions/member-actions";
 import toast from "react-hot-toast";
 
@@ -39,6 +38,12 @@ export default function ExtendPackage({
   };
 
   const [date, setDate] = useState(pkg.pkgEndDate);
+
+  useEffect(() => {
+    if (open) {
+      setDate(pkg.pkgEndDate);
+    }
+  }, [open, pkg.pkgEndDate]);
 
   const initialState = {
     success: false,

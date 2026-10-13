@@ -41,6 +41,8 @@ export function buildPackagePayloadFromFormData(formData: FormData): Record<stri
   pkg.opensClasses = opensClasses;
   if (coachId) {
     pkg.coachId = coachId;
+  } else if (formData.has("coachId") && formData.get("coachId") === "") {
+    pkg.coachId = null;
   }
   pkg.classRestrictions = rawRestrictions ? JSON.parse(rawRestrictions) : [];
 
