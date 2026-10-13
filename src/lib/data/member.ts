@@ -120,6 +120,7 @@ export const subscribeGuestToPackage = async (
   paymentDate?: string,
   amount?: string,
   locationId?: string,
+  nationalId?: string,
 ) => {
   try {
     type RequestBody = {
@@ -132,6 +133,7 @@ export const subscribeGuestToPackage = async (
       amount: string | undefined;
       pendingDeduction: boolean;
       locationId?: string;
+      nationalId?: string;
     };
     const requestBody: RequestBody = {
       name,
@@ -143,6 +145,7 @@ export const subscribeGuestToPackage = async (
       amount,
       pendingDeduction,
       ...(locationId ? { locationId } : {}),
+      ...(nationalId ? { nationalId } : {}),
     };
     console.log(requestBody)
     const response = await tms.post("admin/nonUserPackage", requestBody);

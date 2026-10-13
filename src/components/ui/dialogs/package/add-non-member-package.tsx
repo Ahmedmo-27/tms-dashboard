@@ -42,6 +42,7 @@ type PendingMemberHit = {
   id: string;
   name: string;
   phone: string;
+  nationalId?: string;
 };
 
 export function AddNonMemberPackage({
@@ -69,6 +70,7 @@ export function AddNonMemberPackage({
 
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [nationalId, setNationalId] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PendingMemberHit[]>([]);
@@ -89,6 +91,7 @@ export function AddNonMemberPackage({
     setPkg(null);
     setName("");
     setPhoneNumber("");
+    setNationalId("");
     setSelectedMemberId("");
     setSearchQuery("");
     setSearchResults([]);
@@ -147,10 +150,11 @@ export function AddNonMemberPackage({
         const response = await tms.get("/admin/pending-members", { params });
         const users = response.data.data.users ?? [];
         setSearchResults(
-          users.map((u: { _id: string; name: string; phoneNumber: string }) => ({
+          users.map((u: { _id: string; name: string; phoneNumber: string; nationalId?: string }) => ({
             id: u._id,
             name: u.name,
             phone: u.phoneNumber,
+            nationalId: u.nationalId,
           }))
         );
         setShowSuggestions(true);
@@ -220,6 +224,7 @@ export function AddNonMemberPackage({
 
             <input type="hidden" name="name" value={name} />
             <input type="hidden" name="phoneNumber" value={phoneNumber} />
+            <input type="hidden" name="nationalId" value={nationalId} />
             <input type="hidden" name="pkgId" value={pkg?._id ?? ""} />
             <input type="hidden" name="startDate" value={selectedStartDate} />
             <input type="hidden" name="endDate" value={selectedEndDate} />
@@ -267,6 +272,7 @@ export function AddNonMemberPackage({
                         setSelectedMemberId(member.id);
                         setName(member.name);
                         setPhoneNumber(member.phone);
+                        if (member.nationalId) setNationalId(member.nationalId);
                         setSearchQuery(member.name);
                         setShowSuggestions(false);
                       }}
@@ -307,6 +313,17 @@ export function AddNonMemberPackage({
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">National ID *</Label>
+              <Input
+                placeholder="Enter National ID (e.g. 29901011234567)"
+                value={nationalId}
+                onChange={(e) => setNationalId(e.target.value)}
+                disabled={pending}
+                required
+              />
             </div>
 
             <div className="space-y-2">
@@ -441,6 +458,7 @@ export function AddNonMemberPackage({
                   pending ||
                   !name.trim() ||
                   !phoneNumber.trim() ||
+                  !nationalId.trim() ||
                   !pkg ||
                   !selectedStartDate ||
                   !hasLocationId

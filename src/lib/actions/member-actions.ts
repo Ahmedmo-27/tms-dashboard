@@ -11,7 +11,7 @@ import {
 import { addMember as addMemberRequest } from "../data/users";
 import { parseStateError } from "../utils/state-errors";
 import { bookClass, bookDropIn, cancelBooking } from "../data/bookings";
-import { nonUserDataSchema, editMemberSchema } from "../schemas/newUserSchema";
+import { nonUserDataSchema, editMemberSchema, addNonMemberPackageSchema } from "../schemas/newUserSchema";
 import { bookClassSchema } from "../schemas/bookClassSchema";
 import { getAuthenticatedUser } from "../data/auth";
 import { canOverrideBookingTimeRestrictions } from "../config/roles";
@@ -111,6 +111,8 @@ export const subscribeGuestPackageAction = async (
   try {
     const name = formData.get("name") as string;
     const phoneNumber = formData.get("phoneNumber") as string;
+    const rawNationalId = (formData.get("nationalId") as string) || "";
+    const cleanNationalId = rawNationalId.trim().replace(/[\s\-]/g, "");
     const pkgId = formData.get("pkgId") as string;
     const startDate = formData.get("startDate") as string;
     const paymentMethod = formData.get("paymentMethod") as string;
@@ -123,9 +125,10 @@ export const subscribeGuestPackageAction = async (
 
     console.log(formData);
 
-    nonUserDataSchema.parse({
+    addNonMemberPackageSchema.parse({
       name,
       phoneNumber,
+      nationalId: cleanNationalId,
     });
 
     const response = await subscribeGuestToPackage(
@@ -138,6 +141,7 @@ export const subscribeGuestPackageAction = async (
       paymentDate === "" ? undefined : paymentDate,
       priceChanged ? amount : undefined,
       locationId,
+      cleanNationalId,
     );
 
     revalidatePath("/dashboard/scans-monitor");
