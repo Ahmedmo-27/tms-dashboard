@@ -31,6 +31,10 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAppSelector } from "@/lib/hooks";
+import type { RootState } from "@/lib/store/store";
+import { canAccessPtReport } from "@/lib/config/roles";
 import { useCoachApi } from "@/hooks/useCoachApi";
 import { getPtAchievementReport } from "@/lib/data/coach-portal";
 import type {
@@ -82,7 +86,25 @@ function getMonthRange(date: Date) {
 }
 
 export function CoachPtAchievementReport() {
+  const router = useRouter();
   const coachApi = useCoachApi();
+
+  const { role, name, email, phoneNumber, coachId, capabilitiesLoaded } =
+    useAppSelector((state: RootState) => state.coach);
+
+  const isAuthorized = canAccessPtReport({
+    role,
+    name,
+    email,
+    phoneNumber,
+    coachId,
+  });
+
+  useEffect(() => {
+    if (capabilitiesLoaded && !isAuthorized) {
+      router.replace("/coach/today");
+    }
+  }, [capabilitiesLoaded, isAuthorized, router]);
 
   // Filter state
   const [filterType, setFilterType] = useState<PtAchievementFilterType>("weekly");
@@ -164,6 +186,10 @@ export function CoachPtAchievementReport() {
   }, [filterType, weekInfo.startKey, monthInfo.monthKey, appliedDateRange, selectedCoachId]);
 
   const loadReport = useCallback(async () => {
+    if (!isAuthorized) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -183,7 +209,7 @@ export function CoachPtAchievementReport() {
     } finally {
       setLoading(false);
     }
-  }, [coachApi, currentParams]);
+  }, [coachApi, currentParams, isAuthorized]);
 
   useEffect(() => {
     loadReport();
@@ -655,6 +681,10 @@ export function CoachPtAchievementReport() {
   );
 
   const isDrillDown = selectedCoachId !== "all" && Boolean(data?.selectedCoach);
+
+  if (capabilitiesLoaded && !isAuthorized) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">

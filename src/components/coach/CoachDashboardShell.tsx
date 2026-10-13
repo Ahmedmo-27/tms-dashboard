@@ -47,6 +47,7 @@ import { useWalkthrough } from "@/lib/tutorials/walkthrough-context";
 import { MailNotificationListener } from "@/components/mailing/MailNotificationListener";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { canAccessPtReport } from "@/lib/config/roles";
 
 import { logoutCoachAction } from "@/lib/actions/coach-auth-actions";
 
@@ -84,8 +85,26 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   const coachApi = useCoachApi();
   const { openHelpModal } = useWalkthrough();
 
-  const { coachId, name, role, notifications, hasPtSessions, hasScheduledClasses, token, capabilitiesLoaded } =
-    useAppSelector((state: RootState) => state.coach);
+  const {
+    coachId,
+    name,
+    email,
+    phoneNumber,
+    role,
+    notifications,
+    hasPtSessions,
+    hasScheduledClasses,
+    token,
+    capabilitiesLoaded,
+  } = useAppSelector((state: RootState) => state.coach);
+
+  const canViewPtReports = canAccessPtReport({
+    role,
+    name,
+    email,
+    phoneNumber,
+    coachId,
+  });
 
   const [moreOpen, setMoreOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -120,11 +139,19 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     } else if (pathname.startsWith("/coach/mailing") && role !== "managing_coach") {
       toast.error("Mailing dashboard is not enabled for your account");
       router.replace("/coach/today");
-    } else if (pathname.startsWith("/coach/reports") && role !== "managing_coach") {
+    } else if (pathname.startsWith("/coach/reports") && !canViewPtReports) {
       toast.error("PT Reports are not enabled for your account");
       router.replace("/coach/today");
     }
-  }, [pathname, hasPtSessions, hasScheduledClasses, role, capabilitiesLoaded, router]);
+  }, [
+    pathname,
+    hasPtSessions,
+    hasScheduledClasses,
+    role,
+    canViewPtReports,
+    capabilitiesLoaded,
+    router,
+  ]);
 
   const unreadCount = (notifications as { read: boolean }[]).filter((n) => !n.read).length;
   const mailUnreadCount = useAppSelector((state: RootState) => state.mail.unreadCount);
@@ -236,13 +263,17 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
             match: (p: string) => p.startsWith("/coach/mailing"),
             dataWalkthrough: "coach-nav-mailing",
           },
-          {
-            href: "/coach/reports/pt-achievement",
-            label: "PT Reports",
-            icon: Award,
-            match: (p: string) => p.startsWith("/coach/reports"),
-            dataWalkthrough: "coach-nav-pt-reports",
-          },
+          ...(canViewPtReports
+            ? [
+                {
+                  href: "/coach/reports/pt-achievement",
+                  label: "PT Reports",
+                  icon: Award,
+                  match: (p: string) => p.startsWith("/coach/reports"),
+                  dataWalkthrough: "coach-nav-pt-reports",
+                },
+              ]
+            : []),
         ]
       : []),
     {
