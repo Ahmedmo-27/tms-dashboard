@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import DeletePackageDialog from "../dialogs/package/delete-package";
 import EditPackageDialog from "../dialogs/package/edit-package";
-import { Eye, EyeClosed, LoaderIcon, Users } from "lucide-react";
+import { Edit, Eye, EyeClosed, LoaderIcon, Trash, Users } from "lucide-react";
 import { Button, buttonVariants } from "../button";
 import { Badge } from "../badge";
 import { changePackageVisibility } from "@/lib/data/package";
@@ -135,7 +135,9 @@ export function createColumns(
   classes: Class[],
   packageCategories: string[],
   showBranch = false,
-  coaches: Coach[] = []
+  coaches: Coach[] = [],
+  onEdit?: (pkg: Package) => void,
+  onDelete?: (pkg: Package) => void
 ): ColumnDef<Package>[] {
   return [
     ...createBranchColumn<Package>(showBranch, (pkg) =>
@@ -263,15 +265,55 @@ export function createColumns(
               </TooltipTrigger>
               <TooltipContent>View active members</TooltipContent>
             </Tooltip>
-            <EditPackageDialog
-              key={`edit-${pkg._id}`}
-              pkg={pkg}
-              classes={classes}
-              categories={packageCategories}
-              coaches={coaches}
-              compact
-            />
-            <DeletePackageDialog key={`delete-${pkg._id}`} pkg={pkg} compact />
+            {onEdit ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 cursor-pointer shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(pkg);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="sr-only">Edit Package</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit Package</TooltipContent>
+              </Tooltip>
+            ) : (
+              <EditPackageDialog
+                key={`edit-${pkg._id}`}
+                pkg={pkg}
+                classes={classes}
+                categories={packageCategories}
+                coaches={coaches}
+                compact
+              />
+            )}
+            {onDelete ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 cursor-pointer shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(pkg);
+                    }}
+                  >
+                    <Trash className="h-4 w-4" />
+                    <span className="sr-only">Delete Package</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete Package</TooltipContent>
+              </Tooltip>
+            ) : (
+              <DeletePackageDialog key={`delete-${pkg._id}`} pkg={pkg} compact />
+            )}
           </div>
         );
       },

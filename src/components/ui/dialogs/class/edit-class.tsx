@@ -48,6 +48,8 @@ interface EditClassDialogProps {
   locations?: Location[];
   compact?: boolean;
   buttonClassName?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const resolveLocationId = (
@@ -257,8 +259,16 @@ export default function EditClassDialog({
   locations = [],
   compact = false,
   buttonClassName,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: EditClassDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (val: boolean) => {
+    if (!isControlled) setInternalOpen(val);
+    controlledOnOpenChange?.(val);
+  };
 
   const triggerButton = (
     <Button
@@ -282,13 +292,15 @@ export default function EditClassDialog({
 
   return (
     <div>
-      {compact ? (
-        <Tooltip>
-          <TooltipTrigger asChild>{triggerButton}</TooltipTrigger>
-          <TooltipContent>Edit Class</TooltipContent>
-        </Tooltip>
-      ) : (
-        triggerButton
+      {!isControlled && (
+        compact ? (
+          <Tooltip>
+            <TooltipTrigger asChild>{triggerButton}</TooltipTrigger>
+            <TooltipContent>Edit Class</TooltipContent>
+          </Tooltip>
+        ) : (
+          triggerButton
+        )
       )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto z-50">

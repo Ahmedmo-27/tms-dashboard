@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Class } from "./columns";
+import { createColumns, Class } from "./columns";
 import { DataTable } from "./data-table";
 import { Card, CardContent, CardHeader, CardTitle } from "../card";
 import { Input } from "../input";
@@ -14,13 +14,16 @@ import { formatCategory } from "@/lib/utils/catalog";
 import { Package } from "../packages/columns";
 import type { Location } from "@/lib/data/locations";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import EditClassDialog from "../dialogs/class/edit-class";
+import DeleteClassDialog from "../dialogs/class/delete-class";
+import ManagePackagesDialog from "../dialogs/class/manage-packages";
 
 interface ClassesContainerProps {
   classes: Class[];
   packages: Package[];
   classCategories: string[];
   locations: Location[];
-  columns: ColumnDef<Class>[];
+  columns?: ColumnDef<Class>[];
 }
 
 export function ClassesContainer({
@@ -31,6 +34,22 @@ export function ClassesContainer({
   columns,
 }: ClassesContainerProps) {
   const { isViewingAllBranches } = useBranchContext();
+  const [editingClass, setEditingClass] = useState<Class | null>(null);
+  const [deletingClass, setDeletingClass] = useState<Class | null>(null);
+  const [managingClass, setManagingClass] = useState<Class | null>(null);
+
+  const tableColumns = useMemo(() => {
+    return createColumns(
+      packages,
+      classCategories,
+      locations,
+      isViewingAllBranches,
+      (cls) => setManagingClass(cls),
+      (cls) => setEditingClass(cls),
+      (cls) => setDeletingClass(cls)
+    );
+  }, [packages, classCategories, locations, isViewingAllBranches]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [locationFilter, setLocationFilter] = useState<string | null>(null);
@@ -283,7 +302,7 @@ export function ClassesContainer({
             </div>
           ) : (
             <DataTable
-              columns={columns}
+              columns={tableColumns}
               data={filteredClasses}
               packages={packages}
               classCategories={classCategories}
@@ -291,10 +310,49 @@ export function ClassesContainer({
               showLocation={isViewingAllBranches}
               embedded
               hideSearch
+              onManagePackages={(cls) => setManagingClass(cls)}
+              onEdit={(cls) => setEditingClass(cls)}
+              onDelete={(cls) => setDeletingClass(cls)}
             />
           )}
         </CardContent>
       </Card>
+
+      {managingClass && (
+        <ManagePackagesDialog
+          key={managingClass._id}
+          cls={managingClass}
+          packages={packages}
+          open={!!managingClass}
+          onOpenChange={(open) => {
+            if (!open) setManagingClass(null);
+          }}
+        />
+      )}
+
+      {editingClass && (
+        <EditClassDialog
+          key={editingClass._id}
+          cls={editingClass}
+          categories={classCategories}
+          locations={locations}
+          open={!!editingClass}
+          onOpenChange={(open) => {
+            if (!open) setEditingClass(null);
+          }}
+        />
+      )}
+
+      {deletingClass && (
+        <DeleteClassDialog
+          key={deletingClass._id}
+          cls={deletingClass}
+          open={!!deletingClass}
+          onOpenChange={(open) => {
+            if (!open) setDeletingClass(null);
+          }}
+        />
+      )}
     </div>
   );
 }

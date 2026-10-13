@@ -9,6 +9,8 @@ import {
   Eye,
   EyeClosed,
   LoaderIcon,
+  Edit,
+  Trash,
 } from "lucide-react";
 import { Package } from "./columns";
 import { cn } from "@/lib/utils";
@@ -35,6 +37,8 @@ interface MobilePackageCardProps {
   classes: Class[];
   packageCategories: string[];
   coaches?: Coach[];
+  onEdit?: (pkg: Package) => void;
+  onDelete?: (pkg: Package) => void;
 }
 
 export function MobilePackageCard({
@@ -42,6 +46,8 @@ export function MobilePackageCard({
   classes,
   packageCategories,
   coaches = [],
+  onEdit,
+  onDelete,
 }: MobilePackageCardProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -186,16 +192,44 @@ export function MobilePackageCard({
                 </Button>
               </div>
               <div className="flex-1 min-w-0 [&_button]:w-full">
-                <EditPackageDialog
-                  key={`edit-${pkg._id}`}
-                  pkg={pkg}
-                  classes={classes}
-                  categories={packageCategories}
-                  coaches={coaches}
-                />
+                {onEdit ? (
+                  <Button
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(pkg);
+                    }}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit</span>
+                  </Button>
+                ) : (
+                  <EditPackageDialog
+                    key={`edit-${pkg._id}`}
+                    pkg={pkg}
+                    classes={classes}
+                    categories={packageCategories}
+                    coaches={coaches}
+                  />
+                )}
               </div>
               <div className="flex-1 min-w-0 [&_button]:w-full">
-                <DeletePackageDialog key={`delete-${pkg._id}`} pkg={pkg} />
+                {onDelete ? (
+                  <Button
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(pkg);
+                    }}
+                    className="flex items-center justify-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash className="h-4 w-4" />
+                    <span>Delete</span>
+                  </Button>
+                ) : (
+                  <DeletePackageDialog key={`delete-${pkg._id}`} pkg={pkg} />
+                )}
               </div>
             </div>
           </div>

@@ -1,9 +1,13 @@
 import { Card, CardContent } from "../card";
 import { Badge } from "../badge";
+import { Button } from "../button";
 import {
   Dumbbell,
   MapPin,
   DollarSign,
+  Edit,
+  Layers,
+  Trash,
 } from "lucide-react";
 import { Class, formatLocations } from "./columns";
 import { Package } from "../packages/columns";
@@ -20,6 +24,9 @@ interface MobileClassCardProps {
   classCategories?: string[];
   locations?: Location[];
   showLocation?: boolean;
+  onManagePackages?: (cls: Class) => void;
+  onEdit?: (cls: Class) => void;
+  onDelete?: (cls: Class) => void;
 }
 
 export function MobileClassCard({
@@ -28,6 +35,9 @@ export function MobileClassCard({
   classCategories = [],
   locations = [],
   showLocation = false,
+  onManagePackages,
+  onEdit,
+  onDelete,
 }: MobileClassCardProps) {
   const formatPrice = (price: string | number) => {
     const normalized = String(price ?? "").trim();
@@ -111,18 +121,60 @@ export function MobileClassCard({
           <div className="pt-3 border-t">
             <div className="flex gap-2 w-full">
               <div className="flex-1">
-                <ManagePackagesDialog key={`manage-${cls._id}`} cls={cls} packages={packages} />
+                {onManagePackages ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onManagePackages(cls);
+                    }}
+                  >
+                    <Layers className="size-4.5 mr-1" />
+                    <span>Packages</span>
+                  </Button>
+                ) : (
+                  <ManagePackagesDialog key={`manage-${cls._id}`} cls={cls} packages={packages} />
+                )}
               </div>
               <div className="flex-1">
-                <EditClassDialog
-                  key={`edit-${cls._id}`}
-                  cls={cls}
-                  categories={classCategories}
-                  locations={locations}
-                />
+                {onEdit ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(cls);
+                    }}
+                  >
+                    <Edit className="size-4.5 mr-1" />
+                    <span>Edit</span>
+                  </Button>
+                ) : (
+                  <EditClassDialog
+                    key={`edit-${cls._id}`}
+                    cls={cls}
+                    categories={classCategories}
+                    locations={locations}
+                  />
+                )}
               </div>
               <div className="flex-1">
-                <DeleteClassDialog key={`delete-${cls._id}`} cls={cls} />
+                {onDelete ? (
+                  <Button
+                    variant="outline"
+                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(cls);
+                    }}
+                  >
+                    <Trash className="size-4.5 mr-1" />
+                    <span>Delete</span>
+                  </Button>
+                ) : (
+                  <DeleteClassDialog key={`delete-${cls._id}`} cls={cls} />
+                )}
               </div>
             </div>
           </div>

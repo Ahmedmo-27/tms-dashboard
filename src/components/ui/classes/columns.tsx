@@ -4,6 +4,13 @@ import DeleteClassDialog from "../dialogs/class/delete-class";
 import ManagePackagesDialog from "../dialogs/class/manage-packages";
 import { Package } from "../packages/columns";
 import { Badge } from "../badge";
+import { Button } from "../button";
+import { Edit, Layers, Trash } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatCategory, getCategoryColor } from "@/lib/utils/catalog";
 import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/data/locations";
@@ -44,7 +51,10 @@ export function createColumns(
   packages: Package[],
   classCategories: string[],
   locations: Location[] = [],
-  showLocation = false
+  showLocation = false,
+  onManagePackages?: (cls: Class) => void,
+  onEdit?: (cls: Class) => void,
+  onDelete?: (cls: Class) => void
 ): ColumnDef<Class>[] {
   const locationMap = new Map(
     locations.map((location) => [location._id, location.branchName || location.location])
@@ -135,27 +145,87 @@ export function createColumns(
         const cls = row.original;
         return (
           <div className="flex items-center justify-end gap-2 shrink-0">
-            <ManagePackagesDialog
-              key={`manage-${cls._id}`}
-              cls={cls}
-              packages={packages}
-              compact
-              buttonClassName="h-9.5 w-9.5"
-            />
-            <EditClassDialog
-              key={`edit-${cls._id}`}
-              cls={cls}
-              categories={classCategories}
-              locations={locations}
-              compact
-              buttonClassName="h-9.5 w-9.5"
-            />
-            <DeleteClassDialog
-              key={`delete-${cls._id}`}
-              cls={cls}
-              compact
-              buttonClassName="h-9.5 w-9.5"
-            />
+            {onManagePackages ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9.5 w-9.5 cursor-pointer shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onManagePackages(cls);
+                    }}
+                  >
+                    <Layers className="size-4.5" />
+                    <span className="sr-only">Manage Packages</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Manage Packages</TooltipContent>
+              </Tooltip>
+            ) : (
+              <ManagePackagesDialog
+                key={`manage-${cls._id}`}
+                cls={cls}
+                packages={packages}
+                compact
+                buttonClassName="h-9.5 w-9.5"
+              />
+            )}
+            {onEdit ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9.5 w-9.5 cursor-pointer shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(cls);
+                    }}
+                  >
+                    <Edit className="size-4.5" />
+                    <span className="sr-only">Edit Class</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit Class</TooltipContent>
+              </Tooltip>
+            ) : (
+              <EditClassDialog
+                key={`edit-${cls._id}`}
+                cls={cls}
+                categories={classCategories}
+                locations={locations}
+                compact
+                buttonClassName="h-9.5 w-9.5"
+              />
+            )}
+            {onDelete ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9.5 w-9.5 cursor-pointer shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(cls);
+                    }}
+                  >
+                    <Trash className="size-4.5" />
+                    <span className="sr-only">Delete Class</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete Class</TooltipContent>
+              </Tooltip>
+            ) : (
+              <DeleteClassDialog
+                key={`delete-${cls._id}`}
+                cls={cls}
+                compact
+                buttonClassName="h-9.5 w-9.5"
+              />
+            )}
           </div>
         );
       },

@@ -9,9 +9,26 @@ import { Class } from "@/components/ui/classes/columns";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
 import { PACKAGE_CATEGORIES } from "@/lib/utils/catalog";
 
+import EditPackageDialog from "@/components/ui/dialogs/package/edit-package";
+import DeletePackageDialog from "@/components/ui/dialogs/package/delete-package";
+
 export default function PackagesPage({ packages, classes }: { packages: Package[]; classes: Class[] }) {
   const { isViewingAllBranches } = useBranchContext();
-  const columns = createColumns(classes, [], isViewingAllBranches);
+  const [editingPackage, setEditingPackage] = React.useState<Package | null>(null);
+  const [deletingPackage, setDeletingPackage] = React.useState<Package | null>(null);
+
+  const columns = React.useMemo(
+    () =>
+      createColumns(
+        classes,
+        PACKAGE_CATEGORIES as unknown as string[],
+        isViewingAllBranches,
+        [],
+        (pkg) => setEditingPackage(pkg),
+        (pkg) => setDeletingPackage(pkg)
+      ),
+    [classes, isViewingAllBranches]
+  );
 
   return (
     <div className="flex min-h-full flex-col gap-4 sm:gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8">
@@ -34,12 +51,17 @@ export default function PackagesPage({ packages, classes }: { packages: Package[
         </div>
       </div>
 
-
       {/* Main Content */}
       <div className="flex-1">
         {/* Mobile: No card wrapper for better spacing */}
         <div className="block md:hidden">
-          <DataTable columns={columns} data={packages} classes={classes} />
+          <DataTable
+            columns={columns}
+            data={packages}
+            classes={classes}
+            onEdit={(pkg) => setEditingPackage(pkg)}
+            onDelete={(pkg) => setDeletingPackage(pkg)}
+          />
         </div>
 
         {/* Desktop: Card wrapper */}
@@ -48,10 +70,40 @@ export default function PackagesPage({ packages, classes }: { packages: Package[
             <div className="flex items-center gap-4"></div>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={packages} classes={classes} />
+            <DataTable
+              columns={columns}
+              data={packages}
+              classes={classes}
+              onEdit={(pkg) => setEditingPackage(pkg)}
+              onDelete={(pkg) => setDeletingPackage(pkg)}
+            />
           </CardContent>
         </Card>
       </div>
+
+      {editingPackage && (
+        <EditPackageDialog
+          key={editingPackage._id}
+          pkg={editingPackage}
+          classes={classes}
+          categories={PACKAGE_CATEGORIES as unknown as string[]}
+          open={!!editingPackage}
+          onOpenChange={(open) => {
+            if (!open) setEditingPackage(null);
+          }}
+        />
+      )}
+
+      {deletingPackage && (
+        <DeletePackageDialog
+          key={deletingPackage._id}
+          pkg={deletingPackage}
+          open={!!deletingPackage}
+          onOpenChange={(open) => {
+            if (!open) setDeletingPackage(null);
+          }}
+        />
+      )}
     </div>
   );
 }

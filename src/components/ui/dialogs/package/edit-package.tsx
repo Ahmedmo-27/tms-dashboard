@@ -357,14 +357,25 @@ export default function EditPackageDialog({
   categories = PACKAGE_CATEGORIES as unknown as string[],
   coaches = [],
   compact = false,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   pkg: Package;
   classes: Class[];
   categories?: string[];
   coaches?: Coach[];
   compact?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (val: boolean) => {
+    if (!isControlled) setInternalOpen(val);
+    controlledOnOpenChange?.(val);
+  };
+
   const [availableCoaches, setAvailableCoaches] = useState<Coach[]>(coaches);
 
   useEffect(() => {
@@ -382,7 +393,6 @@ export default function EditPackageDialog({
   const triggerButton = (
     <Button
       type="button"
-      onSelect={(e) => e.preventDefault()}
       onClick={(e) => {
         e.stopPropagation();
         setOpen(true);
@@ -399,13 +409,15 @@ export default function EditPackageDialog({
 
   return (
     <div>
-      {compact ? (
-        <Tooltip>
-          <TooltipTrigger asChild>{triggerButton}</TooltipTrigger>
-          <TooltipContent>Edit Package</TooltipContent>
-        </Tooltip>
-      ) : (
-        triggerButton
+      {!isControlled && (
+        compact ? (
+          <Tooltip>
+            <TooltipTrigger asChild>{triggerButton}</TooltipTrigger>
+            <TooltipContent>Edit Package</TooltipContent>
+          </Tooltip>
+        ) : (
+          triggerButton
+        )
       )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto z-50">
