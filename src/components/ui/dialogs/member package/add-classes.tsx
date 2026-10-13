@@ -10,8 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
-import { useActionState } from "react";
+import { useEffect, useState, useActionState } from "react";
 import { adjustClassesAction } from "@/lib/actions/member-actions";
 import toast from "react-hot-toast";
 
@@ -87,6 +86,17 @@ export default function AddClasses({
   const composedDeductReason = deductNotes.trim()
     ? `${deductChip}. ${deductNotes.trim()}`
     : deductChip;
+
+  useEffect(() => {
+    if (open) {
+      setAmount(1);
+      setType("ADD");
+      setReasonError("");
+      setDeductChip(DEDUCT_REASON_CHIPS[0]);
+      setDeductNotes("");
+      setSessionDate(toLocalInputValue(new Date()));
+    }
+  }, [open]);
 
   const initialState = { success: false, errors: null, data: null };
 

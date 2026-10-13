@@ -264,13 +264,14 @@ export function createColumns(
               <TooltipContent>View active members</TooltipContent>
             </Tooltip>
             <EditPackageDialog
+              key={`edit-${pkg._id}`}
               pkg={pkg}
               classes={classes}
               categories={packageCategories}
               coaches={coaches}
               compact
             />
-            <DeletePackageDialog pkg={pkg} compact />
+            <DeletePackageDialog key={`delete-${pkg._id}`} pkg={pkg} compact />
           </div>
         );
       },

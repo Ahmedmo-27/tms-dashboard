@@ -73,20 +73,24 @@ export default function ManagePackagesDialog({
 
     const addPatches = added.map((id) => {
       const pkg = packages.find((p) => p._id === id)!;
+      const currentClassIds = (pkg.opensClasses ?? [])
+        .filter((c) => c != null)
+        .map((c) => (typeof c === "string" ? c : c._id));
       return editPackage({
         _id: id,
-        opensClasses: [...pkg.opensClasses.map((c) => c._id), cls._id],
+        opensClasses: [...new Set([...currentClassIds, cls._id])],
       }).then(() => ({ id, name: pkg.name, success: true as const }))
         .catch(() => ({ id, name: pkg.name, success: false as const }));
     });
 
     const removePatches = removed.map((id) => {
       const pkg = packages.find((p) => p._id === id)!;
+      const currentClassIds = (pkg.opensClasses ?? [])
+        .filter((c) => c != null)
+        .map((c) => (typeof c === "string" ? c : c._id));
       return editPackage({
         _id: id,
-        opensClasses: pkg.opensClasses
-          .filter((c) => c._id !== cls._id)
-          .map((c) => c._id),
+        opensClasses: currentClassIds.filter((cid) => cid !== cls._id),
       }).then(() => ({ id, name: pkg.name, success: true as const }))
         .catch(() => ({ id, name: pkg.name, success: false as const }));
     });

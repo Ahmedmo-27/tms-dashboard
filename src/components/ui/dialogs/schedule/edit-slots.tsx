@@ -42,8 +42,10 @@ export default function EditSlotsDialog({
   );
 
   useEffect(() => {
-    setCurrentSlots(Math.max(0, scheduledClass.availableSlots ?? 0));
-  }, [scheduledClass]);
+    if (open) {
+      setCurrentSlots(Math.max(0, scheduledClass.availableSlots ?? 0));
+    }
+  }, [open, scheduledClass]);
 
   const initialState = {
     success: false,
@@ -93,7 +95,6 @@ export default function EditSlotsDialog({
           </DialogHeader>
           <form action={formAction}>
             <input type="hidden" name="scid" value={scheduledClass._id} />
-            <input type="hidden" name="availableSlots" value={currentSlots} />
             <div className="flex items-center w-full gap-2 justify-center my-4">
               <div className="flex gap-2">
                 <Button

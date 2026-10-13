@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useActionState } from "react";
 import { editClassAction } from "@/lib/actions/schedule-actions";
 import {
@@ -83,6 +83,20 @@ export function EditClassComponent({
   const [selectedEndDate, setSelectedEndDate] = useState<string>(
     scheduledClass?.endTime?.toString() || new Date().toString()
   );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const coachIds = Array.isArray(scheduledClass.coachId)
+      ? scheduledClass.coachId
+      : scheduledClass.coachId
+      ? [scheduledClass.coachId]
+      : [];
+    const names = scheduledClass.coachName ? scheduledClass.coachName.split(", ") : [];
+    setSelectedCoachIds(coachIds);
+    setSelectedCoachNames(names);
+    setSelectedStartDate(scheduledClass?.startTime?.toString() || new Date().toString());
+    setSelectedEndDate(scheduledClass?.endTime?.toString() || new Date().toString());
+  }, [isOpen, scheduledClass]);
 
   const initialState: ActionState = {
     success: false,

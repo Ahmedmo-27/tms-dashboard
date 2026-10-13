@@ -136,12 +136,14 @@ export function createColumns(
         return (
           <div className="flex items-center justify-end gap-2 shrink-0">
             <ManagePackagesDialog
+              key={`manage-${cls._id}`}
               cls={cls}
               packages={packages}
               compact
               buttonClassName="h-9.5 w-9.5"
             />
             <EditClassDialog
+              key={`edit-${cls._id}`}
               cls={cls}
               categories={classCategories}
               locations={locations}
@@ -149,6 +151,7 @@ export function createColumns(
               buttonClassName="h-9.5 w-9.5"
             />
             <DeleteClassDialog
+              key={`delete-${cls._id}`}
               cls={cls}
               compact
               buttonClassName="h-9.5 w-9.5"

@@ -6,8 +6,8 @@ export const classSchema = z.object({
   price: z
     .string()
     .trim()
-    .regex(/^[0-9]+$/, "Price must be a number")
-    .min(1, "Price is required"),
+    .min(1, "Price is required")
+    .regex(/^[0-9]+(\.[0-9]+)?$/, "Price must be a number"),
   category: z.string().trim().min(1, "Category is required"),
   locations: z
     .array(z.string().min(1, "Location value cannot be blank"))

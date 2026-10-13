@@ -187,6 +187,7 @@ export function MobilePackageCard({
               </div>
               <div className="flex-1 min-w-0 [&_button]:w-full">
                 <EditPackageDialog
+                  key={`edit-${pkg._id}`}
                   pkg={pkg}
                   classes={classes}
                   categories={packageCategories}
@@ -194,7 +195,7 @@ export function MobilePackageCard({
                 />
               </div>
               <div className="flex-1 min-w-0 [&_button]:w-full">
-                <DeletePackageDialog pkg={pkg} />
+                <DeletePackageDialog key={`delete-${pkg._id}`} pkg={pkg} />
               </div>
             </div>
           </div>

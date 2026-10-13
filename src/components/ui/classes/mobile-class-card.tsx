@@ -111,17 +111,18 @@ export function MobileClassCard({
           <div className="pt-3 border-t">
             <div className="flex gap-2 w-full">
               <div className="flex-1">
-                <ManagePackagesDialog cls={cls} packages={packages} />
+                <ManagePackagesDialog key={`manage-${cls._id}`} cls={cls} packages={packages} />
               </div>
               <div className="flex-1">
                 <EditClassDialog
+                  key={`edit-${cls._id}`}
                   cls={cls}
                   categories={classCategories}
                   locations={locations}
                 />
               </div>
               <div className="flex-1">
-                <DeleteClassDialog cls={cls} />
+                <DeleteClassDialog key={`delete-${cls._id}`} cls={cls} />
               </div>
             </div>
           </div>
