@@ -109,6 +109,8 @@ export function LoginForm({
               token: loginData.token,
               coachId: loginData.userId,
               name: loginData.name,
+              email: (loginData.email as string) || undefined,
+              phoneNumber: (loginData.phoneNumber as string) || undefined,
               role: loginData.role,
               hasPtSessions: loginData.hasPtSessions as boolean | undefined,
               hasScheduledClasses: loginData.hasScheduledClasses as boolean | undefined,

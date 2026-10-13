@@ -47,6 +47,50 @@ export function isManagingCoachRole(role: string | null | undefined): boolean {
   return role === "managing_coach";
 }
 
+export interface CoachIdentity {
+  role?: string | null;
+  name?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  coachId?: string | null;
+  userId?: string | null;
+}
+
+export function isNourRashadCoach(coach: CoachIdentity | null | undefined): boolean {
+  if (!coach) return false;
+
+  const name = coach.name?.trim().toLowerCase().replace(/\s+/g, " ");
+  if (name === "nour rashad") return true;
+
+  const email = coach.email?.trim().toLowerCase();
+  if (
+    email === "nour.rashad.space@gmail.com" ||
+    email === "nour.rashad@the-mind-space.com"
+  ) {
+    return true;
+  }
+
+  const phone = coach.phoneNumber?.replace(/\D/g, "");
+  if (phone === "01117878300" || phone === "201117878300") {
+    return true;
+  }
+
+  const id = coach.coachId || coach.userId;
+  if (id === "6aaa67fa3661ee212b0cdf28") {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * PT Report page is strictly restricted to managing_coach Nour Rashad only.
+ */
+export function canAccessPtReport(coach: CoachIdentity | null | undefined): boolean {
+  if (!coach || coach.role !== "managing_coach") return false;
+  return isNourRashadCoach(coach);
+}
+
 export function isMailerRole(role: string | null | undefined): boolean {
   return toPermissionRole(role) === "mailer";
 }
