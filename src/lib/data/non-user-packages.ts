@@ -10,21 +10,33 @@ export const getNonUserPackages = async (
       page,
       limit,
     };
-    if (searchString?.trim()) {
-      if (/^\d+$/.test(searchString)) {
-        params.phoneNumber = searchString; // Search by phone if numeric
+    const trimmed = searchString?.trim();
+    if (trimmed) {
+      const cleanDigits = trimmed.replace(/\D/g, "");
+      if (cleanDigits.length >= 4) {
+        params.phoneNumber = cleanDigits;
       } else {
-        params.name = searchString; // Search by name if not numeric
+        params.name = trimmed;
       }
+      params.search = trimmed;
     }
     const response = await tms.get("/admin/nonUserPackage", {
       params,
     });
-    console.log(response.data)
     return {
-      data: response.data.data,
+      data: response.data.data || [],
     };
-  } catch (error) {
+  } catch (error: any) {
+    if (
+      error?.status === 404 ||
+      error?.response?.status === 404 ||
+      error?.name === "NotFoundError" ||
+      error?.message?.includes("404")
+    ) {
+      return {
+        data: [],
+      };
+    }
     throw error;
   }
 };

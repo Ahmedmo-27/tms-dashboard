@@ -18,6 +18,8 @@ import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import { Input } from "@/components/ui/input";
 import { getMembers } from "@/lib/data/member";
 import { getPackages } from "@/lib/data/package";
+import { getNonUserPackages } from "@/lib/data/non-user-packages";
+import { getUsers } from "@/lib/data/users";
 import { packageOpensClass } from "@/lib/utils/package-eligibility";
 import type { Package } from "@/components/ui/packages/columns";
 import type { Member, MemberPackage } from "@/components/ui/members/columns";
@@ -79,9 +81,13 @@ export function PaymentSelectorDialog({
   const [paymentDate, setPaymentDate] = useState<string>("");
 
   // Deducted package matching state
+  type MatchedUser = Member & {
+    isNonMember?: boolean;
+  };
+
   const [phone, setPhone] = useState(initialPhone || "");
   const [catalogPackages, setCatalogPackages] = useState<Package[]>([]);
-  const [matchedMember, setMatchedMember] = useState<Member | null>(null);
+  const [matchedMember, setMatchedMember] = useState<MatchedUser | null>(null);
   const [eligiblePackages, setEligiblePackages] = useState<MemberPackage[]>([]);
   const [selectedPkgId, setSelectedPkgId] = useState<string>("");
   const [isSearchingMember, setIsSearchingMember] = useState(false);
@@ -101,7 +107,7 @@ export function PaymentSelectorDialog({
     }
   };
 
-  // Lookup member and verify package eligibility when DEDUCTED is chosen
+  // Lookup member or non-member and verify package eligibility when DEDUCTED is chosen
   useEffect(() => {
     if (!isOpen || selectedPaymentMethod !== "DEDUCTED") return;
 
@@ -131,34 +137,60 @@ export function PaymentSelectorDialog({
           }
         }
 
-        const res = await getMembers(trimmedPhone, 1, 5);
+        const cleanQuery = trimmedPhone.replace(/\D/g, "");
+
+        // Concurrently search members, non-user packages, and pending users
+        const [membersRes, nonUserPkgsRes, usersRes] = await Promise.allSettled([
+          getMembers(trimmedPhone, 1, 5),
+          getNonUserPackages(cleanQuery || trimmedPhone, 1, 10),
+          getUsers(trimmedPhone, 1, 5),
+        ]);
+
         if (isCancelled) return;
 
-        const membersList = res?.data || [];
-        if (membersList.length === 0) {
-          setMatchedMember(null);
-          setEligiblePackages([]);
-          setSelectedPkgId("");
-          setSearchStatus("not_found");
-          setSearchMessage(`No member found with phone number "${trimmedPhone}".`);
-          return;
-        }
+        const membersList = membersRes.status === "fulfilled" ? membersRes.value?.data || [] : [];
+        const nonUserPkgsList = nonUserPkgsRes.status === "fulfilled" ? nonUserPkgsRes.value?.data || [] : [];
+        const pendingUsersList = usersRes.status === "fulfilled" ? usersRes.value?.data || [] : [];
 
-        const cleanQuery = trimmedPhone.replace(/\D/g, "");
-        const found =
+        // 1. Try to find a registered member
+        const foundMember =
           membersList.find((m) => {
             const cleanM = (m.phone || "").replace(/\D/g, "");
-            return cleanM === cleanQuery || cleanM.endsWith(cleanQuery) || cleanQuery.endsWith(cleanM);
-          }) || membersList[0];
+            return cleanQuery && (cleanM === cleanQuery || cleanM.endsWith(cleanQuery) || cleanQuery.endsWith(cleanM));
+          }) || (membersList.length > 0 && cleanQuery.length >= 8 ? membersList[0] : null);
 
-        setMatchedMember(found);
+        const memberEligible = foundMember
+          ? (foundMember.packages || []).filter((p) => {
+              if (p.status !== "ACTIVE" && p.status !== undefined) return false;
+              if (typeof p.remainingClasses === "number" && p.remainingClasses <= 0) return false;
+              if (targetCid && pkgs.length > 0) {
+                const catPkg = pkgs.find((cp) => cp._id === p._id || cp.name === p.name);
+                if (catPkg && !packageOpensClass(catPkg, targetCid)) {
+                  return false;
+                }
+              }
+              return true;
+            })
+          : [];
 
-        // Filter packages that are active, have remaining classes, and open this class
-        const eligible = (found.packages || []).filter((p) => {
-          if (p.status !== "ACTIVE" && p.status !== undefined) return false;
-          if (typeof p.remainingClasses === "number" && p.remainingClasses <= 0) return false;
+        // 2. Try to find matching non-member packages
+        const matchingNonUserPkgs = nonUserPkgsList.filter((np: any) => {
+          const cleanP = (np.phoneNumber || "").replace(/\D/g, "");
+          return !cleanQuery || cleanP === cleanQuery || cleanP.endsWith(cleanQuery) || cleanQuery.endsWith(cleanP);
+        });
+
+        const nonUserEligible = matchingNonUserPkgs.filter((np: any) => {
+          if (np.added === true) return false;
+          const rem = typeof np.remainingClasses === "number" ? np.remainingClasses : Number(np.remainingClasses) || 0;
+          if (rem <= 0) return false;
+          if (np.pkgEndDate && !isNaN(new Date(np.pkgEndDate).getTime()) && new Date(np.pkgEndDate) < new Date()) {
+            return false;
+          }
           if (targetCid && pkgs.length > 0) {
-            const catPkg = pkgs.find((cp) => cp._id === p._id || cp.name === p.name);
+            const catPkg =
+              typeof np.pkgId === "object" && np.pkgId
+                ? np.pkgId
+                : pkgs.find((cp) => cp._id === np.pkgId || cp._id === np.pkgId?._id);
             if (catPkg && !packageOpensClass(catPkg, targetCid)) {
               return false;
             }
@@ -166,24 +198,116 @@ export function PaymentSelectorDialog({
           return true;
         });
 
-        if (eligible.length === 0) {
+        // If member found with eligible packages, prioritize member
+        if (foundMember && memberEligible.length > 0) {
+          setMatchedMember({ ...foundMember, isNonMember: false });
+          setEligiblePackages(memberEligible);
+          setSelectedPkgId((prev) => (memberEligible.some((e) => e._id === prev) ? prev : memberEligible[0]._id));
+          setSearchStatus("found");
+          setSearchMessage("");
+          return;
+        }
+
+        // If non-member found with eligible packages, select non-member
+        if (nonUserEligible.length > 0) {
+          const firstNp = nonUserEligible[0];
+          const matchedPendingUser = pendingUsersList.find((u: any) => {
+            const cleanU = (u.phoneNumber || "").replace(/\D/g, "");
+            return cleanQuery && (cleanU === cleanQuery || cleanU.endsWith(cleanQuery) || cleanQuery.endsWith(cleanU));
+          });
+
+          const nonMemberName = firstNp.name || matchedPendingUser?.name || "Guest";
+          const nonMemberPhone = firstNp.phoneNumber || matchedPendingUser?.phoneNumber || trimmedPhone;
+          const nonMemberId = matchedPendingUser?._id || matchedPendingUser?.id || firstNp._id || nonMemberPhone;
+
+          const mappedPkgs: MemberPackage[] = nonUserEligible.map((np: any) => {
+            const catPkg =
+              typeof np.pkgId === "object" && np.pkgId
+                ? np.pkgId
+                : pkgs.find((cp) => cp._id === np.pkgId || cp._id === np.pkgId?._id);
+            const pkgName = catPkg?.name || (typeof np.pkgId === "object" ? np.pkgId?.name : "Package") || "Package";
+            return {
+              _id: np._id,
+              name: pkgName,
+              pkgStartDate: np.pkgStartDate ? String(np.pkgStartDate) : "",
+              pkgEndDate: np.pkgEndDate ? String(np.pkgEndDate) : "",
+              status: "ACTIVE",
+              remainingClasses:
+                typeof np.remainingClasses === "number" ? np.remainingClasses : Number(np.remainingClasses) || 0,
+              adjustmentHistory: [],
+              attendance: [],
+            };
+          });
+
+          setMatchedMember({
+            id: nonMemberId,
+            name: nonMemberName,
+            phone: nonMemberPhone,
+            email: matchedPendingUser?.email || "",
+            activePkgs: mappedPkgs.length,
+            packages: mappedPkgs,
+            bookings: [],
+            ptAttendance: [],
+            isNonMember: true,
+          });
+          setEligiblePackages(mappedPkgs);
+          setSelectedPkgId((prev) => (mappedPkgs.some((e) => e._id === prev) ? prev : mappedPkgs[0]._id));
+          setSearchStatus("found");
+          setSearchMessage("");
+          return;
+        }
+
+        // If a member was found but has no eligible packages
+        if (foundMember) {
+          setMatchedMember(null);
           setEligiblePackages([]);
           setSelectedPkgId("");
           setSearchStatus("no_packages");
           setSearchMessage(
-            `Member found (${found.name}), but has no active package eligible for ${className || "this class"} with remaining sessions.`
+            `Member found (${foundMember.name}), but has no active package eligible for ${className || "this class"} with remaining sessions.`
           );
-        } else {
-          setEligiblePackages(eligible);
-          setSelectedPkgId((prev) => (eligible.some((e) => e._id === prev) ? prev : eligible[0]._id));
-          setSearchStatus("found");
-          setSearchMessage("");
+          return;
         }
+
+        // If non-member packages were found but none are eligible
+        if (matchingNonUserPkgs.length > 0) {
+          const nmName = matchingNonUserPkgs[0].name || "Non-member";
+          setMatchedMember(null);
+          setEligiblePackages([]);
+          setSelectedPkgId("");
+          setSearchStatus("no_packages");
+          setSearchMessage(
+            `Non-member found (${nmName}), but has no active package eligible for ${className || "this class"} with remaining sessions.`
+          );
+          return;
+        }
+
+        // If a pending user was found but has no packages
+        if (pendingUsersList.length > 0) {
+          const matchedPendingUser =
+            pendingUsersList.find((u: any) => {
+              const cleanU = (u.phoneNumber || "").replace(/\D/g, "");
+              return cleanQuery && (cleanU === cleanQuery || cleanU.endsWith(cleanQuery) || cleanQuery.endsWith(cleanU));
+            }) || pendingUsersList[0];
+          setMatchedMember(null);
+          setEligiblePackages([]);
+          setSelectedPkgId("");
+          setSearchStatus("no_packages");
+          setSearchMessage(`Non-member found (${matchedPendingUser.name}), but they have no packages assigned.`);
+          return;
+        }
+
+        // Neither member nor non-member found
+        setMatchedMember(null);
+        setEligiblePackages([]);
+        setSelectedPkgId("");
+        setSearchStatus("not_found");
+        setSearchMessage(`No member or non-member with packages found with phone number "${trimmedPhone}".`);
       } catch (err) {
         if (!isCancelled) {
-          console.error("Member lookup error", err);
+          console.error("User lookup error", err);
           setSearchStatus("not_found");
-          setSearchMessage("Failed to lookup member by phone number.");
+          setSearchMessage("Failed to lookup user by phone number.");
         }
       } finally {
         if (!isCancelled) {
@@ -322,7 +446,7 @@ export function PaymentSelectorDialog({
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <Label htmlFor="deductedPhone" className="text-sm font-medium">
-                      Member Phone Number
+                      Phone Number
                     </Label>
                     <Input
                       id="deductedPhone"
@@ -338,7 +462,7 @@ export function PaymentSelectorDialog({
                   {isSearchingMember || searchStatus === "searching" ? (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                      <span>Checking member and package eligibility...</span>
+                      <span>Checking package eligibility...</span>
                     </div>
                   ) : null}
 
@@ -346,7 +470,7 @@ export function PaymentSelectorDialog({
                     <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-medium">No Member Found</p>
+                        <p className="font-medium">No User Found</p>
                         <p>{searchMessage}</p>
                       </div>
                     </div>
@@ -368,6 +492,15 @@ export function PaymentSelectorDialog({
                         <div className="flex items-center gap-1.5 font-medium">
                           <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                           <span>{matchedMember.name}</span>
+                          {matchedMember.isNonMember ? (
+                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                              Non-member
+                            </span>
+                          ) : (
+                            <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                              Member
+                            </span>
+                          )}
                         </div>
                         <span className="text-muted-foreground">{matchedMember.phone}</span>
                       </div>
@@ -409,7 +542,7 @@ export function PaymentSelectorDialog({
 
                   {searchStatus === "idle" ? (
                     <p className="text-xs text-muted-foreground">
-                      Enter the member's phone number to verify their package eligibility.
+                      Enter the member or non-member's phone number to verify their package eligibility.
                     </p>
                   ) : null}
                 </div>

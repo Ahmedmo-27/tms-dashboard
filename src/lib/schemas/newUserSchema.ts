@@ -11,6 +11,24 @@ export const nonUserDataSchema = z.object({
     .regex(/^[0-9]{11}$/, "Invalid Phone Number"),
 });
 
+export const addNonMemberPackageSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters"),
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(/^[0-9]{11}$/, "Invalid Phone Number"),
+  nationalId: z
+    .string()
+    .trim()
+    .min(1, "ID is required")
+    .refine((val) => /^[a-zA-Z0-9]{6,20}$/.test(val.replace(/[\s\-]/g, "")), {
+      message: "ID must be 6-20 alphanumeric characters",
+    }),
+});
+
 export const newUserSchema = z.object({
   name: z
     .string()
