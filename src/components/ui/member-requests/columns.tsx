@@ -82,6 +82,14 @@ export const columns: ColumnDef<User>[] = [
   {
     accessorKey: "email",
     header: "Email",
+    cell: ({ row }) => {
+      const email = row.original.email;
+      return email ? (
+        <span>{email}</span>
+      ) : (
+        <span className="text-muted-foreground text-sm">—</span>
+      );
+    },
   },
   {
     id: "pendingPackages",

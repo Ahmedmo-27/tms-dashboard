@@ -3,11 +3,8 @@ import { z } from "zod";
 export const nonUserDataSchema = z.object({
   name: z
     .string()
-    .min(3, "Username must be at least 3 characters")
-    .regex(/^[A-Z][a-z]+ [A-Z][a-z]+$/, {
-      message:
-        "Username must contain first and last names with capitalized initials (e.g., Abdelrahman Tolan)",
-    }),
+    .trim()
+    .min(2, "Name must be at least 2 characters"),
   phoneNumber: z
     .string()
     .trim()
