@@ -237,16 +237,15 @@ export function resolvePaymentLocation(record: RawPaymentRecord): string {
 
   if (explicit) return explicit;
 
+  if (isPackagePaymentRecord(record)) {
+    return "Cairo";
+  }
+
   if (
     record.paymentMethod?.toUpperCase() === "COACHERA" ||
-    record.platform?.toUpperCase() === "COACHERA" ||
     record.purpose === "ONLINE_CLASS"
   ) {
     return "Online";
-  }
-
-  if (isPackagePaymentRecord(record)) {
-    return "Cairo";
   }
 
   return " -- ";
@@ -287,18 +286,18 @@ export const parsePayments = (payments: unknown): Payment[] => {
       resolveOpenGymPaymentPurpose(payment) ??
       resolvePtPaymentPurpose(payment) ??
       "";
-    if (
-      payment.paymentMethod?.toUpperCase() === "COACHERA" ||
-      payment.platform?.toUpperCase() === "COACHERA" ||
-      payment.purpose === "ONLINE_CLASS"
+    if (!purpose && payment.pkgId) {
+      purpose = payment.pkgId.name;
+    } else if (
+      !purpose &&
+      (payment.paymentMethod?.toUpperCase() === "COACHERA" ||
+        payment.purpose === "ONLINE_CLASS")
     ) {
       purpose =
         payment.note ||
         (payment.coachName
           ? `Coachera Online Class · Coach: ${payment.coachName}`
           : "Coachera Online Class");
-    } else if (!purpose && payment.pkgId) {
-      purpose = payment.pkgId.name;
     } else if (!purpose && payment.scid) {
       purpose = payment.scid.cid.title;
     } else if (!purpose && payment.purpose === "DROPIN") {

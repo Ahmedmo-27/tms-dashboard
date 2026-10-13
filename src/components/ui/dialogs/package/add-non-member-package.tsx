@@ -205,8 +205,8 @@ export function AddNonMemberPackage({
           <DialogHeader>
             <DialogTitle>Add package to non member</DialogTitle>
             <DialogDescription>
-              Search for a pending signup and assign a package. It will transfer
-              to their member account when approved.
+              Enter non-member details and assign a package. They will appear in
+              Member Requests and automatically link when registering on the app.
             </DialogDescription>
           </DialogHeader>
 
@@ -240,21 +240,17 @@ export function AddNonMemberPackage({
             )}
 
             <div className="space-y-2" ref={searchRef}>
-              <Label className="text-sm font-medium">Search non member</Label>
+              <Label className="text-sm font-medium">
+                Search existing signups (optional)
+              </Label>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Name or phone number"
+                  placeholder="Search by name or phone number..."
                   value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    if (selectedMemberId && e.target.value !== name) {
-                      setSelectedMemberId("");
-                      setName("");
-                      setPhoneNumber("");
-                    }
-                  }}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8"
+                  disabled={pending}
                 />
               </div>
               {isSearching && (
@@ -285,23 +281,33 @@ export function AddNonMemberPackage({
               )}
               {showSuggestions && searchResults.length === 0 && !isSearching && searchQuery.length >= 2 && (
                 <p className="text-xs text-muted-foreground">
-                  No pending signups found.
+                  No existing pending signups found. You can enter non-member details below.
                 </p>
               )}
             </div>
 
-            {selectedMemberId && (
-              <div className="grid grid-cols-2 gap-4 rounded-md border p-3 bg-muted/30">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Name</Label>
-                  <p className="text-sm font-medium">{name}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Phone</Label>
-                  <p className="text-sm font-medium">{phoneNumber}</p>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Name *</Label>
+                <Input
+                  placeholder="Enter name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={pending}
+                  required
+                />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Phone number *</Label>
+                <Input
+                  placeholder="010XXXXXXXX (11 digits)"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  disabled={pending}
+                  required
+                />
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Package</Label>
@@ -433,7 +439,8 @@ export function AddNonMemberPackage({
                 type="submit"
                 disabled={
                   pending ||
-                  !selectedMemberId ||
+                  !name.trim() ||
+                  !phoneNumber.trim() ||
                   !pkg ||
                   !selectedStartDate ||
                   !hasLocationId
