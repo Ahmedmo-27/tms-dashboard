@@ -27,6 +27,11 @@ import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { format } from "date-fns";
 import { DatePicker } from "../../date-picker";
 import { Clock } from "lucide-react";
+import {
+  getDefaultClassDurationMinutes,
+  formatDurationLabel,
+  formatDurationBadge,
+} from "@/lib/utils/class-duration";
 
 import toast from "react-hot-toast";
 
@@ -84,6 +89,29 @@ export function EditClassComponent({
     scheduledClass?.endTime?.toString() || new Date().toString()
   );
 
+  const isReformer = useMemo(() => {
+    return /reformer/i.test(scheduledClass?.className || "");
+  }, [scheduledClass?.className]);
+
+  const defaultDurationMinutes = useMemo(() => {
+    return getDefaultClassDurationMinutes(scheduledClass?.className);
+  }, [scheduledClass?.className]);
+
+  const defaultDurationMs = defaultDurationMinutes * 60 * 1000;
+
+  const getDurationMs = () => {
+    const s = new Date(selectedStartDate).getTime();
+    const e = new Date(selectedEndDate).getTime();
+    const diff = e - s;
+    if (!isNaN(diff) && diff > 0) {
+      if (isReformer && diff === 60 * 60 * 1000) {
+        return defaultDurationMs;
+      }
+      return diff;
+    }
+    return defaultDurationMs;
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     const coachIds = Array.isArray(scheduledClass.coachId)
@@ -94,9 +122,18 @@ export function EditClassComponent({
     const names = scheduledClass.coachName ? scheduledClass.coachName.split(", ") : [];
     setSelectedCoachIds(coachIds);
     setSelectedCoachNames(names);
-    setSelectedStartDate(scheduledClass?.startTime?.toString() || new Date().toString());
-    setSelectedEndDate(scheduledClass?.endTime?.toString() || new Date().toString());
-  }, [isOpen, scheduledClass]);
+    const startStr = scheduledClass?.startTime?.toString() || new Date().toString();
+    let endStr = scheduledClass?.endTime?.toString() || new Date().toString();
+    if (isReformer && scheduledClass?.startTime && scheduledClass?.endTime) {
+      const s = new Date(scheduledClass.startTime).getTime();
+      const e = new Date(scheduledClass.endTime).getTime();
+      if (e - s === 60 * 60 * 1000) {
+        endStr = new Date(s + defaultDurationMs).toString();
+      }
+    }
+    setSelectedStartDate(startStr);
+    setSelectedEndDate(endStr);
+  }, [isOpen, scheduledClass, isReformer, defaultDurationMs]);
 
   const initialState: ActionState = {
     success: false,
@@ -148,11 +185,22 @@ export function EditClassComponent({
     }
   }, [selectedStartDate]);
 
+  const currentDurationMinutes = useMemo(() => {
+    const s = new Date(selectedStartDate).getTime();
+    const e = new Date(selectedEndDate).getTime();
+    const diff = e - s;
+    if (!isNaN(diff) && diff > 0) {
+      return Math.round(diff / (60 * 1000));
+    }
+    return defaultDurationMinutes;
+  }, [selectedStartDate, selectedEndDate, defaultDurationMinutes]);
+
   const handleStartTimeChange = (timeStr: string) => {
     const [h, m] = timeStr.split(":").map(Number);
     const start = new Date(selectedStartDate);
     start.setHours(isNaN(h) ? 10 : h, isNaN(m) ? 0 : m, 0, 0);
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const duration = getDurationMs();
+    const end = new Date(start.getTime() + duration);
     setSelectedStartDate(start.toString());
     setSelectedEndDate(end.toString());
   };
@@ -232,7 +280,8 @@ export function EditClassComponent({
                     const prev = new Date(selectedStartDate);
                     const updatedStart = new Date(newDate);
                     updatedStart.setHours(prev.getHours(), prev.getMinutes(), 0, 0);
-                    const updatedEnd = new Date(updatedStart.getTime() + 60 * 60 * 1000);
+                    const duration = getDurationMs();
+                    const updatedEnd = new Date(updatedStart.getTime() + duration);
                     setSelectedStartDate(updatedStart.toString());
                     setSelectedEndDate(updatedEnd.toString());
                   }
@@ -265,7 +314,7 @@ export function EditClassComponent({
 
             <div className="col-span-2 space-y-2">
               <Label className="text-sm font-medium text-muted-foreground">
-                Class Schedule (1 Hour)
+                Class Schedule ({formatDurationLabel(currentDurationMinutes)})
               </Label>
               <div className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-muted/40 px-3 py-1 text-sm shadow-xs">
                 <div className="flex items-center gap-1.5 font-medium text-foreground">
@@ -276,7 +325,7 @@ export function EditClassComponent({
                   </span>
                 </div>
                 <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
-                  1 hr default
+                  {formatDurationBadge(currentDurationMinutes)}
                 </span>
               </div>
               {state?.errors &&

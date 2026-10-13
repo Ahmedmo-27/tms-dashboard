@@ -36,6 +36,11 @@ import { Label } from "@/components/ui/label";
 import { Plus, Clock, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+  getDefaultClassDurationMinutes,
+  formatDurationLabel,
+  formatDurationBadge,
+} from "@/lib/utils/class-duration";
 import { ApiError } from "@/core/api-error";
 import type { Location } from "@/lib/data/locations";
 
@@ -118,6 +123,10 @@ export function ScheduleClass({
     }
   }, [date]);
 
+  const durationMinutes = useMemo(() => {
+    return getDefaultClassDurationMinutes(selectedClassTitle);
+  }, [selectedClassTitle]);
+
   const { startDateTime, endDateTime } = useMemo(() => {
     const base = date ? new Date(date) : new Date();
     const [hStr, mStr] = (timeString || "10:00").split(":");
@@ -127,9 +136,9 @@ export function ScheduleClass({
     const start = new Date(base);
     start.setHours(isNaN(h) ? 10 : h, isNaN(m) ? 0 : m, 0, 0);
 
-    const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour duration default
+    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
     return { startDateTime: start, endDateTime: end };
-  }, [date, timeString]);
+  }, [date, timeString, durationMinutes]);
 
   const [state, formAction, pending] = useActionState(
     async (currentState: any, formData: FormData) => {
@@ -407,7 +416,7 @@ export function ScheduleClass({
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-muted-foreground">
-                  Class Schedule (1 Hour)
+                  Class Schedule ({formatDurationLabel(durationMinutes)})
                 </Label>
                 <div className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-muted/40 px-3 py-1 text-sm shadow-xs">
                   <div className="flex items-center gap-1.5 font-medium text-foreground">
@@ -417,7 +426,7 @@ export function ScheduleClass({
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
-                    1 hr default
+                    {formatDurationBadge(durationMinutes)}
                   </span>
                 </div>
                 {state?.errors &&
