@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Package } from "./columns";
+import { createColumns, Package } from "./columns";
 import { DataTable } from "./data-table";
 import { Card, CardContent, CardHeader, CardTitle } from "../card";
 import { Input } from "../input";
@@ -20,12 +20,15 @@ import { cn } from "@/lib/utils";
 import { formatCategory } from "@/lib/utils/catalog";
 import { Class } from "../classes/columns";
 import { Coach } from "../coaches/columns";
+import EditPackageDialog from "../dialogs/package/edit-package";
+import DeletePackageDialog from "../dialogs/package/delete-package";
+import { useBranchContext } from "@/lib/hooks/use-branch-context";
 
 interface PackagesContainerProps {
   packages: Package[];
   classes: Class[];
   packageCategories: string[];
-  columns: ColumnDef<Package>[];
+  columns?: ColumnDef<Package>[];
   coaches?: Coach[];
 }
 
@@ -36,6 +39,21 @@ export function PackagesContainer({
   columns,
   coaches = [],
 }: PackagesContainerProps) {
+  const { isViewingAllBranches } = useBranchContext();
+  const [editingPackage, setEditingPackage] = useState<Package | null>(null);
+  const [deletingPackage, setDeletingPackage] = useState<Package | null>(null);
+
+  const tableColumns = useMemo(() => {
+    return createColumns(
+      classes,
+      packageCategories,
+      isViewingAllBranches,
+      coaches,
+      (pkg) => setEditingPackage(pkg),
+      (pkg) => setDeletingPackage(pkg)
+    );
+  }, [classes, packageCategories, isViewingAllBranches, coaches]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [visibilityFilter, setVisibilityFilter] = useState<
@@ -314,17 +332,44 @@ export function PackagesContainer({
             </div>
           ) : (
             <DataTable
-              columns={columns}
+              columns={tableColumns}
               data={filteredPackages}
               classes={classes}
               packageCategories={packageCategories}
               coaches={coaches}
               embedded
               hideSearch
+              onEdit={(pkg) => setEditingPackage(pkg)}
+              onDelete={(pkg) => setDeletingPackage(pkg)}
             />
           )}
         </CardContent>
       </Card>
+
+      {editingPackage && (
+        <EditPackageDialog
+          key={editingPackage._id}
+          pkg={editingPackage}
+          classes={classes}
+          categories={packageCategories}
+          coaches={coaches}
+          open={!!editingPackage}
+          onOpenChange={(open) => {
+            if (!open) setEditingPackage(null);
+          }}
+        />
+      )}
+
+      {deletingPackage && (
+        <DeletePackageDialog
+          key={deletingPackage._id}
+          pkg={deletingPackage}
+          open={!!deletingPackage}
+          onOpenChange={(open) => {
+            if (!open) setDeletingPackage(null);
+          }}
+        />
+      )}
     </div>
   );
 }

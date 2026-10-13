@@ -37,6 +37,8 @@ export interface DataTableProps<TData, TValue> {
   coaches?: Coach[]
   hideSearch?: boolean
   embedded?: boolean
+  onEdit?: (pkg: Package) => void
+  onDelete?: (pkg: Package) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -48,6 +50,8 @@ export function DataTable<TData, TValue>({
   coaches = [],
   hideSearch = false,
   embedded = false,
+  onEdit,
+  onDelete,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("")
   const [pagination, setPagination] = useState({
@@ -124,6 +128,8 @@ export function DataTable<TData, TValue>({
                 classes={classes}
                 packageCategories={packageCategories}
                 coaches={coaches}
+                onEdit={onEdit}
+                onDelete={onDelete}
               />
             ))}
           </div>

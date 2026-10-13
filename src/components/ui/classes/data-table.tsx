@@ -37,6 +37,9 @@ export interface DataTableProps<TData, TValue> {
   showLocation?: boolean
   hideSearch?: boolean
   embedded?: boolean
+  onManagePackages?: (cls: Class) => void
+  onEdit?: (cls: Class) => void
+  onDelete?: (cls: Class) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -49,6 +52,9 @@ export function DataTable<TData, TValue>({
   showLocation = false,
   hideSearch = false,
   embedded = false,
+  onManagePackages,
+  onEdit,
+  onDelete,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("")
   const [pagination, setPagination] = useState({
@@ -126,6 +132,9 @@ export function DataTable<TData, TValue>({
                 classCategories={classCategories}
                 locations={locations}
                 showLocation={showLocation}
+                onManagePackages={onManagePackages}
+                onEdit={onEdit}
+                onDelete={onDelete}
               />
             ))}
           </div>

@@ -23,11 +23,22 @@ import {
 export default function DeletePackageDialog({
   pkg,
   compact = false,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   pkg: { name: string; _id: string };
   compact?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (val: boolean) => {
+    if (!isControlled) setInternalOpen(val);
+    controlledOnOpenChange?.(val);
+  };
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,19 +90,21 @@ export default function DeletePackageDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {compact ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-              {triggerButton}
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Delete Package</TooltipContent>
-        </Tooltip>
-      ) : (
-        <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-          {triggerButton}
-        </DialogTrigger>
+      {!isControlled && (
+        compact ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+                {triggerButton}
+              </DialogTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Delete Package</TooltipContent>
+          </Tooltip>
+        ) : (
+          <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+            {triggerButton}
+          </DialogTrigger>
+        )
       )}
       <DialogContent onClick={(e) => e.stopPropagation()} className="max-w-[95vw] sm:max-w-lg">
         <DialogHeader>
