@@ -35,7 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ScanBarcode } from "lucide-react";
 import Link from "next/link";
 
 function parseDateParam(value: string | null | undefined): Date {
@@ -173,6 +173,34 @@ export function ScanContainer({
   const viewingPast = isPast(startOfDay(selectedDate)) && !viewingToday;
   const allDayClasses = scans.map((s) => s.classData);
 
+  const isSuccessScan = (scan: ClassScan) =>
+    scan.status === "SUCCESS" || scan.status === "WILL_PAY" || scan.status === "FOC";
+  const isFailedScan = (scan: ClassScan) => scan.status === "FAILED";
+
+  const classSuccessfulScans = scans.reduce(
+    (acc, curr) =>
+      acc + (curr.classScans?.filter(isSuccessScan).length || 0),
+    0
+  );
+  const ptSuccessfulScans =
+    dailyAttendance.pt?.filter(isSuccessScan).length || 0;
+  const openGymSuccessfulScans =
+    dailyAttendance.openGym?.filter(isSuccessScan).length || 0;
+  const totalSuccessfulScans =
+    classSuccessfulScans + ptSuccessfulScans + openGymSuccessfulScans;
+
+  const classFailedScans = scans.reduce(
+    (acc, curr) =>
+      acc + (curr.classScans?.filter(isFailedScan).length || 0),
+    0
+  );
+  const ptFailedScans =
+    dailyAttendance.pt?.filter(isFailedScan).length || 0;
+  const openGymFailedScans =
+    dailyAttendance.openGym?.filter(isFailedScan).length || 0;
+  const totalFailedScans =
+    classFailedScans + ptFailedScans + openGymFailedScans;
+
   return (
     <div className="p-4 sm:p-5 space-y-5">
       <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -229,6 +257,48 @@ export function ScanContainer({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Disclaimer at the top of the scans monitor */}
+      <div
+        data-walkthrough="scans-total-disclaimer"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5 sm:px-4 text-card-foreground shadow-2xs"
+      >
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <ScanBarcode className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold tracking-tight text-foreground">
+                Total Scans:
+              </span>
+              <span className="inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground px-2.5 py-0.5 text-xs font-bold">
+                {totalSuccessfulScans}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Disclaimer: Total scans shows the complete count of successful scans of the day ({viewingToday ? "today" : formatDate(selectedDate, "EEE d MMM yyyy")}).
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground sm:justify-end">
+          <span className="rounded-md bg-background/80 px-2.5 py-1 border shadow-2xs">
+            Classes: <strong className="text-foreground">{classSuccessfulScans}</strong>
+          </span>
+          <span className="rounded-md bg-background/80 px-2.5 py-1 border shadow-2xs">
+            Personal Training: <strong className="text-foreground">{ptSuccessfulScans}</strong>
+          </span>
+          <span className="rounded-md bg-background/80 px-2.5 py-1 border shadow-2xs">
+            Open Gym: <strong className="text-foreground">{openGymSuccessfulScans}</strong>
+          </span>
+          {totalFailedScans > 0 && (
+            <span className="rounded-md bg-destructive/10 text-destructive px-2.5 py-1 border border-destructive/20 shadow-2xs">
+              Failed (excluded): <strong>{totalFailedScans}</strong>
+            </span>
+          )}
         </div>
       </div>
 
