@@ -28,7 +28,7 @@ import {
   getPackageEndDateFromStart,
   sortPackagesWithOpenGymFirst,
 } from "@/lib/utils/open-gym";
-import { tms } from "@/lib/tms-api";
+import { getMembers } from "@/lib/data/member";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -155,24 +155,19 @@ export function OpenGymSubscribeDialog({
     setIsSearching(true);
     const timeout = setTimeout(async () => {
       try {
-        const params: Record<string, string | number> = { page: 1, limit: 10 };
         const trimmed = searchQuery.trim();
-        params.search = trimmed;
-        params.name = trimmed;
-        params.phone = trimmed;
-        const response = await tms.get("/admin/member", { params });
-        const members = response.data.data.members ?? [];
+        const response = await getMembers(trimmed, 1, 10);
+        const members = response?.data ?? [];
         const seen = new Set<string>();
         const uniqueHits: MemberSearchHit[] = [];
         for (const m of members) {
-          const rawId = m.uid?._id ?? m._id;
-          const id = rawId ? String(rawId) : "";
+          const id = m.id ? String(m.id) : "";
           if (id && !seen.has(id)) {
             seen.add(id);
             uniqueHits.push({
               id,
-              name: m.uid?.name || "Unknown",
-              phone: m.uid?.phoneNumber || "",
+              name: m.name || "Unknown",
+              phone: m.phone || "",
             });
           }
         }

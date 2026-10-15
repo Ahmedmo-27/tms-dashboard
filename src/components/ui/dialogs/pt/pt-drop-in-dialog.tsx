@@ -26,7 +26,9 @@ import {
   ptGuestDropInAction,
   ptMemberDropInAction,
 } from "@/lib/actions/pt-actions";
-import { tms } from "@/lib/tms-api";
+import { getMembers } from "@/lib/data/member";
+import { getCoaches } from "@/lib/data/coaches";
+import { getPtDropInPrice } from "@/lib/data/pt";
 import { Search, ArrowBigRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -163,11 +165,9 @@ export function PtDropInDialog({
       setCoaches(preloadedCoaches);
       return;
     }
-    tms
-      .get("/admin/coaches")
-      .then((res) => {
-        const list = res.data?.data ?? [];
-        setCoaches(list);
+    getCoaches()
+      .then((list) => {
+        setCoaches(list ?? []);
       })
       .catch(() => {
         // non-blocking
@@ -181,14 +181,9 @@ export function PtDropInDialog({
       if (!priceChanged) setAmount("750");
       return;
     }
-    const params: Record<string, string> = { locationId };
-    if (selectedCoachId) {
-      params.coachId = selectedCoachId;
-    }
-    tms
-      .get("/admin/pt/dropInPrice", { params })
-      .then((res) => {
-        const price = String(res.data?.data?.price ?? 750);
+    getPtDropInPrice(locationId, selectedCoachId || undefined)
+      .then((priceNum) => {
+        const price = String(priceNum ?? 750);
         setDefaultPrice(price);
         if (!priceChanged) {
           setAmount(price);
@@ -230,24 +225,19 @@ export function PtDropInDialog({
     setIsSearching(true);
     const timeout = setTimeout(async () => {
       try {
-        const params: Record<string, string | number> = { page: 1, limit: 10 };
         const trimmed = searchQuery.trim();
-        params.search = trimmed;
-        params.name = trimmed;
-        params.phone = trimmed;
-        const response = await tms.get("/admin/member", { params });
-        const members = response.data?.data?.members ?? [];
+        const response = await getMembers(trimmed, 1, 10);
+        const members = response?.data ?? [];
         const seen = new Set<string>();
         const uniqueHits: MemberSearchHit[] = [];
         for (const m of members) {
-          const rawId = m.uid?._id ?? m._id;
-          const id = rawId ? String(rawId) : "";
+          const id = m.id ? String(m.id) : "";
           if (id && !seen.has(id)) {
             seen.add(id);
             uniqueHits.push({
               id,
-              name: m.uid?.name || "Unknown",
-              phone: m.uid?.phoneNumber || "",
+              name: m.name || "Unknown",
+              phone: m.phone || "",
             });
           }
         }

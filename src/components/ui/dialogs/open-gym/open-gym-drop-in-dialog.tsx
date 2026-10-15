@@ -26,7 +26,8 @@ import {
   openGymGuestDropInAction,
   openGymMemberDropInAction,
 } from "@/lib/actions/open-gym-actions";
-import { tms } from "@/lib/tms-api";
+import { getMembers } from "@/lib/data/member";
+import { getOpenGymDropInPrice } from "@/lib/data/open-gym";
 import { Search, ArrowBigRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -137,12 +138,9 @@ export function OpenGymDropInDialog({
       setDefaultPrice("");
       return;
     }
-    tms
-      .get("/admin/openGym/dropInPrice", {
-        params: { locationId },
-      })
-      .then((res) => {
-        const price = String(res.data.data.price ?? "");
+    getOpenGymDropInPrice(locationId)
+      .then((priceNum) => {
+        const price = String(priceNum ?? "");
         setDefaultPrice(price);
         setAmount(price);
       })
@@ -175,24 +173,19 @@ export function OpenGymDropInDialog({
     setIsSearching(true);
     const timeout = setTimeout(async () => {
       try {
-        const params: Record<string, string | number> = { page: 1, limit: 10 };
         const trimmed = searchQuery.trim();
-        params.search = trimmed;
-        params.name = trimmed;
-        params.phone = trimmed;
-        const response = await tms.get("/admin/member", { params });
-        const members = response.data.data.members ?? [];
+        const response = await getMembers(trimmed, 1, 10);
+        const members = response?.data ?? [];
         const seen = new Set<string>();
         const uniqueHits: MemberSearchHit[] = [];
         for (const m of members) {
-          const rawId = m.uid?._id ?? m._id;
-          const id = rawId ? String(rawId) : "";
+          const id = m.id ? String(m.id) : "";
           if (id && !seen.has(id)) {
             seen.add(id);
             uniqueHits.push({
               id,
-              name: m.uid?.name || "Unknown",
-              phone: m.uid?.phoneNumber || "",
+              name: m.name || "Unknown",
+              phone: m.phone || "",
             });
           }
         }
