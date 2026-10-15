@@ -222,6 +222,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/mailing/sent": ["management", "mailer", "accountant"],
   "/dashboard/mailing/received": ["management", "mailer", "accountant"],
   "/dashboard/accounts": ["management", "branch_admin"],
+  "/dashboard/notifications": ["management"],
   "/dashboard/finance": ["accountant"],
 };
 
@@ -252,6 +253,7 @@ export const MANAGEMENT_ONLY_ACTIONS = {
   locationCrud: ["management"] as const,
   ticketCategoryCrud: ["management"] as const,
   mail: ["management", "mailer"] as const,
+  notifications: ["management"] as const,
   accountCrud: ["management", "branch_admin"] as const,
   paymentEdit: ["management", "branch_admin"] as const,
   paymentDelete: ["management"] as const,

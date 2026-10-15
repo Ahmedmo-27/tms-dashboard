@@ -26,7 +26,7 @@ import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { Package } from "@/components/ui/packages/columns";
 import { Member } from "@/components/ui/members/columns";
 import { bookClassAction } from "@/lib/actions/member-actions";
-import { tms } from "@/lib/tms-api";
+import { getMembers } from "@/lib/data/member";
 import { parseMembers } from "@/lib/utils/parsers/members-parser";
 import {
   getActivePackagesSummary,
@@ -158,26 +158,19 @@ export function BookMemberClassDialog({
     setIsSearching(true);
     const timeout = setTimeout(async () => {
       try {
-        const params: Record<string, string | number> = { page: 1, limit: 10 };
-        if (/^\d+$/.test(searchQuery)) {
-          params.phone = searchQuery;
-        } else {
-          params.name = searchQuery;
-        }
-
-        const response = await tms.get("/admin/member", { params });
-        const members = response.data.data.members ?? [];
+        const trimmed = searchQuery.trim();
+        const response = await getMembers(trimmed, 1, 10);
+        const members = response?.data ?? [];
         const seen = new Set<string>();
         const uniqueHits: MemberSearchHit[] = [];
         for (const m of members) {
-          const rawId = m.uid?._id ?? m._id;
-          const id = rawId ? String(rawId) : "";
+          const id = m.id ? String(m.id) : "";
           if (id && !seen.has(id)) {
             seen.add(id);
             uniqueHits.push({
               id,
-              name: m.uid?.name || "Unknown",
-              phone: m.uid?.phoneNumber || "",
+              name: m.name || "Unknown",
+              phone: m.phone || "",
             });
           }
         }
@@ -199,11 +192,8 @@ export function BookMemberClassDialog({
     setSelectedClassId("");
 
     try {
-      const response = await tms.get("/admin/member", {
-        params: { uid, page: 1, limit: 1 },
-      });
-      const members = parseMembers(response.data.data.members ?? []);
-      const member = members[0];
+      const response = await getMembers(null, 1, 1, uid);
+      const member = response?.data?.[0];
 
       if (!member) {
         toast.error("Member not found");

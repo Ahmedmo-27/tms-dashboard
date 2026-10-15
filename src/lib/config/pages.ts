@@ -24,6 +24,7 @@ import {
   Building2,
   Repeat,
   BookOpenCheck,
+  Bell,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -199,6 +200,12 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           icon: UserCog,
           roles: ["management", "branch_admin"],
         },
+        {
+          title: "Notifications",
+          url: "/dashboard/notifications",
+          icon: Bell,
+          roles: ["management"],
+        },
       ],
     },
   ],
@@ -212,6 +219,10 @@ function navItemPath(url: string): string {
 
 export const getPageTitle = (path: string): string => {
   const pathname = navItemPath(path);
+
+  if (pathname === "/dashboard/notifications" || pathname.startsWith("/dashboard/notifications/")) {
+    return "Notifications Management";
+  }
 
   if (pathname === "/dashboard/accounts" || pathname.startsWith("/dashboard/accounts/")) {
     return "Accounts Management";

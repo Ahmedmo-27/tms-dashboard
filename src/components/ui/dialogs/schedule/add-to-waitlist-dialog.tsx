@@ -19,7 +19,7 @@ import { ScheduledClassSearchSelect } from "@/components/ui/scheduled-class-sear
 import { Badge } from "@/components/ui/badge";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
 import { addToWaitlist, getWaitlistedMembers } from "@/lib/data/bookings";
-import { tms } from "@/lib/tms-api";
+import { getMembers } from "@/lib/data/member";
 import { format } from "date-fns";
 
 type MemberSearchHit = {
@@ -117,27 +117,20 @@ export function AddToWaitlistDialog({
     setIsSearching(true);
     const timeout = setTimeout(async () => {
       try {
-        const params: Record<string, string | number> = { page: 1, limit: 10 };
-        if (/^\d+$/.test(searchQuery.trim())) {
-          params.phone = searchQuery.trim();
-        } else {
-          params.name = searchQuery.trim();
-        }
-
-        const response = await tms.get("/admin/member", { params });
-        const members = response.data?.data?.members ?? [];
+        const trimmed = searchQuery.trim();
+        const response = await getMembers(trimmed, 1, 10);
+        const members = response?.data ?? [];
         const seen = new Set<string>();
         const uniqueHits: MemberSearchHit[] = [];
 
         for (const m of members) {
-          const rawId = m.uid?._id ?? m._id;
-          const id = rawId ? String(rawId) : "";
+          const id = m.id ? String(m.id) : "";
           if (id && !seen.has(id)) {
             seen.add(id);
             uniqueHits.push({
               id,
-              name: m.uid?.name || "Unknown Member",
-              phone: m.uid?.phoneNumber || "",
+              name: m.name || "Unknown Member",
+              phone: m.phone || "",
             });
           }
         }
