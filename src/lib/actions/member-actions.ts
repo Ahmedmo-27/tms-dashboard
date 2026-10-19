@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import {
   editMemberPackage,
   adjustMemberPackage,
+  recordMemberPreviousSessions,
   subscribeGuestToPackage,
   subscribeMemberToPackage,
   unsubscribeMemberFromPackage,
@@ -172,6 +173,20 @@ export const subscribePackageAction = async (
     const priceChanged = (formData.get("priceChanged") as string) === "true";
     const pendingDeduction =
       (formData.get("pendingDeduction") as string) === "true";
+    const rawPreviousDates = formData.get("previousSessionDates") as string;
+
+    let previousSessionDates: string[] | undefined = undefined;
+    if (rawPreviousDates) {
+      try {
+        const parsed = JSON.parse(rawPreviousDates);
+        if (Array.isArray(parsed)) previousSessionDates = parsed;
+      } catch {
+        previousSessionDates = rawPreviousDates
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
 
     const response = await subscribeMemberToPackage(
       uid,
@@ -182,6 +197,66 @@ export const subscribePackageAction = async (
       priceChanged ? amount : undefined,
       locationId,
       pendingDeduction,
+      previousSessionDates,
+    );
+
+    revalidatePath(`/dashboard/our-members/${uid}`);
+    revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/scans-monitor");
+
+    return {
+      success: true,
+      errors: null,
+      data: response,
+    };
+  } catch (error) {
+    return parseStateError(error as Error);
+  }
+};
+
+export const recordPreviousSessionsAction = async (
+  _prevState: any,
+  formData: FormData
+) => {
+  try {
+    const uid = formData.get("uid") as string;
+    const pkgId = formData.get("pkgId") as string;
+    const pkgStartDate = formData.get("pkgStartDate") as string;
+    const rawDates = formData.get("previousSessionDates") as string;
+    const reason = (formData.get("reason") as string)?.trim() || undefined;
+
+    if (!uid || !pkgId || !pkgStartDate) {
+      return {
+        success: false,
+        errors: { message: "Member, package, and start date are required" },
+        data: null,
+      };
+    }
+
+    let dates: string[] = [];
+    if (rawDates) {
+      try {
+        const parsed = JSON.parse(rawDates);
+        if (Array.isArray(parsed)) dates = parsed;
+      } catch {
+        dates = rawDates.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    }
+
+    if (dates.length === 0) {
+      return {
+        success: false,
+        errors: { message: "At least one previous session date is required" },
+        data: null,
+      };
+    }
+
+    const response = await recordMemberPreviousSessions(
+      uid,
+      pkgId,
+      pkgStartDate,
+      dates,
+      reason
     );
 
     revalidatePath(`/dashboard/our-members/${uid}`);

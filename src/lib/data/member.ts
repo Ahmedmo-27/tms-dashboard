@@ -165,6 +165,7 @@ export const subscribeMemberToPackage = async (
   amount?: string,
   locationId?: string,
   pendingDeduction = false,
+  previousSessionDates?: string[],
 ) => {
   try {
     type RequestBody = {
@@ -175,6 +176,7 @@ export const subscribeMemberToPackage = async (
       paymentDate: string | undefined;
       amount: string | undefined;
       pendingDeduction?: boolean;
+      previousSessionDates?: string[];
       locationId?: string;
     };
     const requestBody: RequestBody = {
@@ -184,10 +186,39 @@ export const subscribeMemberToPackage = async (
       paymentMethod,
       paymentDate,
       amount,
+      ...(previousSessionDates && previousSessionDates.length > 0
+        ? { previousSessionDates }
+        : {}),
       ...(pendingDeduction ? { pendingDeduction: true } : {}),
       ...(locationId ? { locationId } : {}),
     };
     const response = await tms.post("admin/member-packages", requestBody);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const recordMemberPreviousSessions = async (
+  uid: string,
+  pkgId: string,
+  pkgStartDate: string,
+  previousSessionDates: string[],
+  reason?: string
+) => {
+  try {
+    const requestBody = {
+      uid,
+      pkgId,
+      pkgStartDate,
+      previousSessionDates,
+      ...(reason ? { reason } : {}),
+    };
+    const response = await tms.post(
+      "admin/member-packages/previous-sessions",
+      requestBody
+    );
     return response.data;
   } catch (error) {
     console.error(error);

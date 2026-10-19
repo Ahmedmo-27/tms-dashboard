@@ -30,8 +30,18 @@ import {
   isOpenGymPackage,
   sortPackagesWithOpenGymFirst,
 } from "@/lib/utils/open-gym";
+import { Plus, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
+
+function toLocalTodayString(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -77,6 +87,36 @@ export default function SubPackage({
   const [priceChanged, setPriceChanged] = useState(false);
   const [pendingDeduction, setPendingDeduction] = useState(false);
 
+  const [hasPreviousSessions, setHasPreviousSessions] = useState(false);
+  const [previousSessionDates, setPreviousSessionDates] = useState<string[]>([]);
+  const [dateToAdd, setDateToAdd] = useState<string>("");
+  const [dateError, setDateError] = useState<string>("");
+
+  const handleAddPreviousDate = () => {
+    if (!dateToAdd || !pkg) return;
+    const today = toLocalTodayString();
+    if (dateToAdd > today) {
+      setDateError("Session date cannot be in the future");
+      return;
+    }
+    if (previousSessionDates.includes(dateToAdd)) {
+      setDateError("Date already added");
+      return;
+    }
+    if (previousSessionDates.length >= Number(pkg.numberOfSessions)) {
+      setDateError(`Cannot exceed package total sessions (${pkg.numberOfSessions})`);
+      return;
+    }
+    setPreviousSessionDates((prev) => [...prev, dateToAdd].sort());
+    setDateToAdd("");
+    setDateError("");
+  };
+
+  const handleRemovePreviousDate = (toRemove: string) => {
+    setPreviousSessionDates((prev) => prev.filter((d) => d !== toRemove));
+    setDateError("");
+  };
+
   // Reset state when modal opens
   const resetForm = () => {
     setPkg(null);
@@ -88,6 +128,10 @@ export default function SubPackage({
     setShowEdits(false);
     setPriceChanged(false);
     setPendingDeduction(false);
+    setHasPreviousSessions(false);
+    setPreviousSessionDates([]);
+    setDateToAdd("");
+    setDateError("");
   };
 
   const toggleOpen = (value: boolean) => {
@@ -174,6 +218,11 @@ export default function SubPackage({
             <input type="hidden" name="paymentMethod" value={selectedPaymentMethod} />
             <input type="hidden" name="priceChanged" value={String(priceChanged)} />
             <input type="hidden" name="pendingDeduction" value={pendingDeduction.toString()} />
+            <input
+              type="hidden"
+              name="previousSessionDates"
+              value={JSON.stringify(previousSessionDates)}
+            />
 
             <div className="space-y-2 mt-4">
               <ManagementBranchField
@@ -244,18 +293,117 @@ export default function SubPackage({
               </Select>
             </div>
 
-            <div className="flex gap-2 items-center mt-4">
-              <Checkbox
-                checked={pendingDeduction}
-                onCheckedChange={() => setPendingDeduction((prev) => !prev)}
-                disabled={pending}
-              />
-              <p
-                onClick={() => !pending && setPendingDeduction((prev) => !prev)}
-                className="cursor-pointer"
-              >
-                Attended a class using this package
-              </p>
+            {/* Previous Sessions (already attended) */}
+            <div className="space-y-3 mt-4 pt-2 border-t">
+              <div className="flex gap-2 items-center">
+                <Checkbox
+                  id="previous-sessions-check"
+                  checked={hasPreviousSessions}
+                  onCheckedChange={(checked) => {
+                    const val = Boolean(checked);
+                    setHasPreviousSessions(val);
+                    if (!val) {
+                      setPreviousSessionDates([]);
+                      setDateError("");
+                    }
+                  }}
+                  disabled={pending || !pkg}
+                />
+                <label
+                  htmlFor="previous-sessions-check"
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  Member has already attended sessions with this package
+                </label>
+              </div>
+
+              {hasPreviousSessions && (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Record dates of past sessions already taken. These will be deducted from the package without affecting today&apos;s scans monitor.
+                  </p>
+
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={dateToAdd}
+                      max={toLocalTodayString()}
+                      onChange={(e) => {
+                        setDateToAdd(e.target.value);
+                        setDateError("");
+                      }}
+                      disabled={pending || !pkg}
+                      className="flex-1 text-sm bg-background"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddPreviousDate();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleAddPreviousDate}
+                      disabled={pending || !pkg || !dateToAdd}
+                      className="gap-1 shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add</span>
+                    </Button>
+                  </div>
+
+                  {dateError && (
+                    <p className="text-xs text-destructive">{dateError}</p>
+                  )}
+
+                  {previousSessionDates.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-1.5 rounded-md border bg-background">
+                        {previousSessionDates.map((dStr) => (
+                          <Badge
+                            key={dStr}
+                            variant="secondary"
+                            className="gap-1 text-xs py-0.5 px-2 font-normal"
+                          >
+                            <span>{dStr}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePreviousDate(dStr)}
+                              className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+
+                      {pkg && (
+                        <div className="flex items-center justify-between text-xs px-1">
+                          <span className="text-muted-foreground">
+                            Sessions deducted: <strong>{previousSessionDates.length}</strong>
+                          </span>
+                          <span className="text-foreground">
+                            Remaining sessions:{" "}
+                            <strong>
+                              {Math.max(
+                                0,
+                                Number(pkg.numberOfSessions) - previousSessionDates.length
+                              )}
+                            </strong>{" "}
+                            of {pkg.numberOfSessions}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      No dates added yet. Pick a past date and click &quot;Add&quot;.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Edit payment details */}
