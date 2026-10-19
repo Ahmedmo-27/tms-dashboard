@@ -54,6 +54,7 @@ import { getPackages } from "@/lib/data/package";
 import { getScheduledClasses } from "@/lib/data/schedule";
 import { updateScanRow, deleteScanRow, type ScanRowChanges } from "@/lib/data/scan-rows";
 import { packageOpensClass } from "@/lib/utils/package-eligibility";
+import { isOpenGymPackage } from "@/lib/utils/open-gym";
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 import { cn } from "@/lib/utils";
 import type { Member, MemberPackage } from "@/components/ui/members/columns";
@@ -77,11 +78,18 @@ export function EditScanRow({
   // Member
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
 
+  const initialScid =
+    scan.source === "class" && scan.parentId
+      ? scan.parentId
+      : scan.source === "open-gym"
+      ? "open-gym"
+      : scan.source === "pt"
+      ? "pt"
+      : "open-gym";
+
   // Class
   const [classes, setClasses] = useState<ScheduledClass[]>([]);
-  const [selectedScid, setSelectedScid] = useState<string>(
-    scan.source === "class" && scan.parentId ? scan.parentId : "none"
-  );
+  const [selectedScid, setSelectedScid] = useState<string>(initialScid);
   const [classPopoverOpen, setClassPopoverOpen] = useState(false);
   const [classSearch, setClassSearch] = useState("");
 
@@ -117,7 +125,13 @@ export function EditScanRow({
 
   const reset = useCallback(() => {
     setSelectedScid(
-      scan.source === "class" && scan.parentId ? scan.parentId : "none"
+      scan.source === "class" && scan.parentId
+        ? scan.parentId
+        : scan.source === "open-gym"
+        ? "open-gym"
+        : scan.source === "pt"
+        ? "pt"
+        : "open-gym"
     );
     setClassPopoverOpen(false);
     setClassSearch("");
@@ -205,16 +219,24 @@ export function EditScanRow({
 
   // Determine currently selected class
   const selectedClass = useMemo(() => {
-    if (!selectedScid || selectedScid === "none") return null;
+    if (!selectedScid || selectedScid === "none" || selectedScid === "open-gym" || selectedScid === "pt") return null;
     return classes.find((c) => c._id === selectedScid) ?? null;
   }, [classes, selectedScid]);
 
+  const isOpenGymSelected =
+    selectedScid === "open-gym" || (selectedScid === "none" && scan.source !== "pt");
+  const isPtSelected =
+    selectedScid === "pt" || (selectedScid === "none" && scan.source === "pt");
+
   // Selected class display label
   const selectedClassLabel = useMemo(() => {
-    if (selectedScid === "none") {
-      return scan.source === "pt"
-        ? "Personal Training (No class)"
-        : "Open Gym (No class)";
+    if (isOpenGymSelected) {
+      const isCurrent = scan.source === "open-gym" ? " (Current)" : "";
+      return `Open Gym${isCurrent}`;
+    }
+    if (isPtSelected) {
+      const isCurrent = scan.source === "pt" ? " (Current)" : "";
+      return `Personal Training (No class)${isCurrent}`;
     }
     if (!selectedClass) return "Select class";
     const timeStr = selectedClass.startTime
@@ -223,17 +245,13 @@ export function EditScanRow({
     const coach = selectedClass.coachName ? ` (${selectedClass.coachName})` : "";
     const isCurrent = selectedClass._id === scan.parentId ? " (Current)" : "";
     return `${selectedClass.className || "Class"} — ${timeStr}${coach}${isCurrent}`;
-  }, [selectedClass, selectedScid, scan.source, scan.parentId]);
-
-  const noClassLabel =
-    scan.source === "pt"
-      ? "Personal Training (No class)"
-      : "Open Gym (No class)";
+  }, [selectedClass, isOpenGymSelected, isPtSelected, scan.source, scan.parentId]);
 
   // Sliced / filtered classes for the search dropdown: don't show all classes at once
-  const { visibleClasses, totalMatches, isSearching, matchesNoClass } = useMemo(() => {
+  const { visibleClasses, totalMatches, isSearching, matchesOpenGym, matchesPt } = useMemo(() => {
     const query = classSearch.trim().toLowerCase();
-    const canHaveNoClass = scan.source !== "class";
+    const matchesOpen = !query || "open gym".includes(query);
+    const matchesPersonal = scan.source === "pt" && (!query || "personal training (no class)".includes(query));
 
     if (!query) {
       // Don't show all classes at once: show currently selected class first, then up to 5 other classes
@@ -247,7 +265,8 @@ export function EditScanRow({
         visibleClasses: list,
         totalMatches: classes.length,
         isSearching: false,
-        matchesNoClass: canHaveNoClass,
+        matchesOpenGym: true,
+        matchesPt: scan.source === "pt",
       };
     }
 
@@ -264,16 +283,14 @@ export function EditScanRow({
       );
     });
 
-    const matchesNo =
-      canHaveNoClass && noClassLabel.toLowerCase().includes(query);
-
     return {
       visibleClasses: matches.slice(0, 8),
       totalMatches: matches.length,
       isSearching: true,
-      matchesNoClass: matchesNo,
+      matchesOpenGym: matchesOpen,
+      matchesPt: matchesPersonal,
     };
-  }, [classes, selectedScid, classSearch, scan.source, noClassLabel]);
+  }, [classes, selectedScid, classSearch, scan.source]);
 
   const targetCid = selectedClass?.cid;
 
@@ -288,15 +305,22 @@ export function EditScanRow({
     );
   }, [activeMember, selectedClass]);
 
-  // Filter packages available for this newly chosen class and in member's holdings
+  // Filter packages available for this newly chosen class/open gym and in member's holdings
   const eligiblePackages: MemberPackage[] = useMemo(() => {
     if (!activeMember?.packages) return [];
     let pool = activeMember.packages.filter(
       (p) => p.status !== "DELETED"
     );
 
-    // If a class is chosen, filter by catalog packages that open this class
-    if (targetCid && catalogPackages.length > 0) {
+    if (isOpenGymSelected && catalogPackages.length > 0) {
+      const openGymIds = new Set(
+        catalogPackages
+          .filter((cp) => isOpenGymPackage(cp.category))
+          .map((cp) => cp._id)
+      );
+      pool = pool.filter((p) => openGymIds.has(p._id));
+    } else if (targetCid && catalogPackages.length > 0) {
+      // If a class is chosen, filter by catalog packages that open this class
       const validCatalogIds = new Set(
         catalogPackages
           .filter((cp) => packageOpensClass(cp, targetCid))
@@ -305,7 +329,7 @@ export function EditScanRow({
       pool = pool.filter((p) => validCatalogIds.has(p._id));
     }
 
-    // Deduplicate by catalog pkgId (p._id), picking the best holding (ACTIVE with remainingClasses > 0)
+    // Deduplicate by catalog pkgId (p._id), picking the best holding (ACTIVE with remainingClasses > 0 or unlimited space)
     const byId = new Map<string, MemberPackage>();
     for (const pkg of pool) {
       const existing = byId.get(pkg._id);
@@ -313,8 +337,10 @@ export function EditScanRow({
         byId.set(pkg._id, pkg);
         continue;
       }
-      const isPkgActive = pkg.status === "ACTIVE" && pkg.remainingClasses > 0;
-      const isExistingActive = existing.status === "ACTIVE" && existing.remainingClasses > 0;
+      const cat = catalogPackages.find((cp) => cp._id === pkg._id);
+      const isSpace = cat && isOpenGymPackage(cat.category);
+      const isPkgActive = pkg.status === "ACTIVE" && (isSpace || pkg.remainingClasses > 0);
+      const isExistingActive = existing.status === "ACTIVE" && (isSpace || existing.remainingClasses > 0);
       if (isPkgActive && !isExistingActive) {
         byId.set(pkg._id, pkg);
       } else if (isPkgActive && isExistingActive && pkg.remainingClasses > existing.remainingClasses) {
@@ -323,10 +349,10 @@ export function EditScanRow({
     }
 
     return Array.from(byId.values());
-  }, [activeMember, targetCid, catalogPackages]);
+  }, [activeMember, targetCid, catalogPackages, isOpenGymSelected]);
 
-  // If a class is chosen that the previously chosen package isn't available for,
-  // show and auto-select other packages that ARE available for this newly chosen class.
+  // If a class or open gym is chosen that the previously chosen package isn't available for,
+  // show and auto-select other packages that ARE available.
   useEffect(() => {
     if (!activeMember || loadingInitial) return;
     if (isAlreadyBooked) return;
@@ -339,12 +365,14 @@ export function EditScanRow({
     const isCurrentPkgValid = eligiblePackages.some((p) => p._id === pkgId);
     if (!isCurrentPkgValid) {
       const candidate =
-        eligiblePackages.find(
-          (p) => p.status === "ACTIVE" && p.remainingClasses > 0
-        ) || eligiblePackages[0];
+        eligiblePackages.find((p) => {
+          const cat = catalogPackages.find((cp) => cp._id === p._id);
+          const isSpace = cat && isOpenGymPackage(cat.category);
+          return p.status === "ACTIVE" && (isSpace || p.remainingClasses > 0);
+        }) || eligiblePackages[0];
       setPkgId(candidate?._id ?? "");
     }
-  }, [eligiblePackages, activeMember, loadingInitial, isAlreadyBooked, pkgId]);
+  }, [eligiblePackages, activeMember, loadingInitial, isAlreadyBooked, pkgId, catalogPackages]);
 
   const handleSave = async () => {
     if (!scan.source || !scan.parentId || !scan.rowId) {
@@ -354,28 +382,45 @@ export function EditScanRow({
 
     const changes: ScanRowChanges = {};
 
-    // Class reassignment
-    const isMovingClass =
-      selectedScid &&
-      selectedScid !== "none" &&
-      selectedScid !== scan.parentId;
-    if (isMovingClass) {
-      changes.targetScid = selectedScid;
+    // Class / Open Gym reassignment
+    const isMovingToAnotherClass = Boolean(
+      selectedClass && selectedScid !== scan.parentId
+    );
+    const isMovingToOpenGym = Boolean(
+      isOpenGymSelected && scan.source !== "open-gym"
+    );
+    const isMoving = isMovingToAnotherClass || isMovingToOpenGym;
+
+    if (isMoving) {
+      changes.targetScid = isMovingToOpenGym ? "open-gym" : selectedScid;
     }
 
     // Package to charge
     if (activeMember) {
-      if (!isAlreadyBooked && (isMovingClass || selectedScid !== "none")) {
-        if (eligiblePackages.length === 0 && !isAlreadyBooked) {
-          toast.error("No eligible package found for this class");
+      if (!isAlreadyBooked && isMoving) {
+        if (
+          eligiblePackages.length === 0 &&
+          status !== "WILL_PAY" &&
+          status !== "FOC"
+        ) {
+          toast.error(
+            isMovingToOpenGym
+              ? "No eligible Open Gym package found (choose WILL_PAY or FOC if paying at desk)"
+              : "No eligible package found for this class"
+          );
           return;
         }
-        if (eligiblePackages.length > 0 && !pkgId) {
+        if (
+          eligiblePackages.length > 0 &&
+          !pkgId &&
+          status !== "WILL_PAY" &&
+          status !== "FOC"
+        ) {
           toast.error("Choose which package to charge");
           return;
         }
       }
-      if (pkgId && (pkgId !== scan.pkgId || isMovingClass)) {
+      if (pkgId && (pkgId !== scan.pkgId || isMoving)) {
         changes.pkgId = pkgId;
       }
     }
@@ -418,7 +463,13 @@ export function EditScanRow({
         { source: scan.source, parentId: scan.parentId, rowId: scan.rowId },
         changes,
       );
-      toast.success(isMovingClass ? "Check-in moved to class" : "Check-in updated");
+      toast.success(
+        isMovingToOpenGym
+          ? "Check-in moved to Open Gym"
+          : isMovingToAnotherClass
+          ? "Check-in moved to class"
+          : "Check-in updated"
+      );
       setOpen(false);
       onSaved?.();
     } catch (err) {
@@ -541,17 +592,17 @@ export function EditScanRow({
                       onValueChange={setClassSearch}
                     />
                     <CommandList style={{ maxHeight: "260px", overflowY: "auto" }}>
-                      {visibleClasses.length === 0 && !matchesNoClass ? (
+                      {visibleClasses.length === 0 && !matchesOpenGym && !matchesPt ? (
                         <CommandEmpty>
                           No classes found matching &ldquo;{classSearch}&rdquo;
                         </CommandEmpty>
                       ) : null}
                       <CommandGroup>
-                        {matchesNoClass && (
+                        {matchesOpenGym && (
                           <CommandItem
-                            value="none"
+                            value="open-gym"
                             onSelect={() => {
-                              setSelectedScid("none");
+                              setSelectedScid("open-gym");
                               setClassPopoverOpen(false);
                               setClassSearch("");
                             }}
@@ -560,11 +611,32 @@ export function EditScanRow({
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4 shrink-0",
-                                selectedScid === "none" ? "opacity-100 text-primary" : "opacity-0"
+                                isOpenGymSelected ? "opacity-100 text-primary" : "opacity-0"
                               )}
                             />
-                            <span className="line-clamp-2 break-words whitespace-normal text-left text-sm">
-                              {noClassLabel}
+                            <span className="line-clamp-2 break-words whitespace-normal text-left text-sm font-normal">
+                              Open Gym{scan.source === "open-gym" ? " (Current)" : ""}
+                            </span>
+                          </CommandItem>
+                        )}
+                        {matchesPt && (
+                          <CommandItem
+                            value="pt"
+                            onSelect={() => {
+                              setSelectedScid("pt");
+                              setClassPopoverOpen(false);
+                              setClassSearch("");
+                            }}
+                            className="cursor-pointer py-2"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4 shrink-0",
+                                isPtSelected ? "opacity-100 text-primary" : "opacity-0"
+                              )}
+                            />
+                            <span className="line-clamp-2 break-words whitespace-normal text-left text-sm font-normal">
+                              Personal Training (No class){scan.source === "pt" ? " (Current)" : ""}
                             </span>
                           </CommandItem>
                         )}
@@ -619,7 +691,7 @@ export function EditScanRow({
           </div>
 
           {/* Package selection & booking status */}
-          {activeMember && selectedScid !== "none" ? (
+          {activeMember && selectedClass ? (
             isAlreadyBooked ? (
               <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-2.5 text-xs text-green-800 dark:border-green-800/40 dark:bg-green-950/30 dark:text-green-300">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
@@ -655,7 +727,36 @@ export function EditScanRow({
                 )}
               </div>
             )
-          ) : activeMember && selectedScid === "none" && eligiblePackages.length > 0 ? (
+          ) : activeMember && isOpenGymSelected ? (
+            eligiblePackages.length === 0 ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-300">
+                No Open Gym packages available in {activeMember.name}&apos;s account.
+              </div>
+            ) : (
+              <div className="space-y-1.5 min-w-0">
+                <Label>Package to charge</Label>
+                <Select value={pkgId} onValueChange={setPkgId}>
+                  <SelectTrigger className="w-full min-w-0 h-auto min-h-9 py-2 text-left whitespace-normal leading-snug *:data-[slot=select-value]:line-clamp-2 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:text-left *:data-[slot=select-value]:break-words">
+                    <SelectValue placeholder="Select a package" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px]">
+                    {eligiblePackages.map((p) => (
+                      <SelectItem key={p._id} value={p._id}>
+                        <span className="line-clamp-2 break-words whitespace-normal text-left">
+                          {p.name} — {p.remainingClasses} left{p.status !== "ACTIVE" ? ` (${p.status})` : ""}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {scan.source !== "open-gym" && (
+                  <p className="text-xs text-muted-foreground">
+                    Check-in will be moved to Open Gym and 1 session will be returned from the previous class.
+                  </p>
+                )}
+              </div>
+            )
+          ) : activeMember && isPtSelected && eligiblePackages.length > 0 ? (
             <div className="space-y-1.5 min-w-0">
               <Label>Package to charge</Label>
               <Select value={pkgId} onValueChange={setPkgId}>
