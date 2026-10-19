@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { MemberPackage } from "@/components/ui/members/columns";
 import { recordPreviousSessionsAction } from "@/lib/actions/member-actions";
+import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 
 function toLocalTodayString(): string {
   const now = new Date();
@@ -126,6 +127,7 @@ export default function RecordPastSessionsDialog({
     }
 
     setSelectedDates((prev) => [...prev, dateInput].sort());
+    setDateInput("");
   };
 
   const handleRemoveDate = (dateToRemove: string) => {
@@ -280,21 +282,31 @@ export default function RecordPastSessionsDialog({
               <Label className="text-sm font-medium">
                 Add Previous Session Date
               </Label>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={dateInput}
-                  max={toLocalTodayString()}
-                  onChange={(e) => setDateInput(e.target.value)}
-                  disabled={isPending || !selectedPkg}
-                  className="flex-1"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddDate();
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 min-w-0">
+                  <PopoverDatePicker
+                    className="w-full"
+                    selectedDate={
+                      dateInput ? new Date(dateInput + "T00:00:00") : undefined
                     }
-                  }}
-                />
+                    handleDateChange={(dateStr) => {
+                      if (!dateStr) {
+                        setDateInput("");
+                        return;
+                      }
+                      const d = new Date(dateStr);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, "0");
+                      const day = String(d.getDate()).padStart(2, "0");
+                      setDateInput(`${y}-${m}-${day}`);
+                      setErrorMsg("");
+                    }}
+                    disabled={isPending || !selectedPkg}
+                    disableFutureDates
+                    hidePastWarning
+                    placeholder="Pick past session date"
+                  />
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -305,7 +317,7 @@ export default function RecordPastSessionsDialog({
                     !dateInput ||
                     selectedDates.length >= (selectedPkg?.remainingClasses ?? 0)
                   }
-                  className="gap-1 shrink-0"
+                  className="gap-1 shrink-0 h-10 px-3"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add Date</span>

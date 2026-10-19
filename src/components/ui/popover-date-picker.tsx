@@ -24,11 +24,19 @@ export function PopoverDatePicker({
   handleDateChange,
   selectedDate,
   disabled,
+  placeholder = "Pick a date",
+  hidePastWarning = false,
+  disableFutureDates = false,
+  disabledDays,
 }: {
   className?: string;
   handleDateChange?: (date: string) => void;
   selectedDate?: Date;
   disabled?: boolean;
+  placeholder?: string;
+  hidePastWarning?: boolean;
+  disableFutureDates?: boolean;
+  disabledDays?: (date: Date) => boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(selectedDate);
@@ -52,8 +60,16 @@ export function PopoverDatePicker({
     setOpen(false);
     if (newDate) {
       handleDateChange?.(newDate.toISOString());
+    } else {
+      handleDateChange?.("");
     }
   };
+
+  const effectiveDisabled =
+    disabledDays ||
+    (disableFutureDates
+      ? (d: Date) => startOfDay(d) > startOfDay(new Date())
+      : undefined);
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -61,6 +77,7 @@ export function PopoverDatePicker({
       <Input
         type="date"
         disabled={disabled}
+        max={disableFutureDates ? format(new Date(), "yyyy-MM-dd") : undefined}
         value={date ? format(date, "yyyy-MM-dd") : ""}
         onChange={(event) => {
           const value = event.target.value;
@@ -68,7 +85,7 @@ export function PopoverDatePicker({
             const parsed = parseDateInputValue(value);
             handleSelect(parsed);
           } else {
-            setDate(undefined);
+            handleSelect(undefined);
           }
         }}
         className="min-h-[40px] w-full touch-manipulation text-sm md:hidden"
@@ -88,10 +105,10 @@ export function PopoverDatePicker({
             disabled={disabled}
           >
             <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-            {date ? format(date, "PPP") : <span>Pick a date</span>}
+            {date ? format(date, "PPP") : <span>{placeholder}</span>}
           </Button>
         </PopoverTrigger>
-        {date && date < startOfDay(new Date()) && (
+        {!hidePastWarning && date && date < startOfDay(new Date()) && (
           <span className="text-xs text-yellow-500 block">
             Warning: Selected a past date
           </span>
@@ -108,6 +125,7 @@ export function PopoverDatePicker({
             selected={date}
             onSelect={handleSelect}
             initialFocus
+            disabled={effectiveDisabled}
             className="rounded-md border"
           />
         </PopoverContent>

@@ -323,31 +323,38 @@ export default function SubPackage({
                     Record dates of past sessions already taken. These will be deducted from the package without affecting today&apos;s scans monitor.
                   </p>
 
-                  <div className="flex gap-2">
-                    <Input
-                      type="date"
-                      value={dateToAdd}
-                      max={toLocalTodayString()}
-                      onChange={(e) => {
-                        setDateToAdd(e.target.value);
-                        setDateError("");
-                      }}
-                      disabled={pending || !pkg}
-                      className="flex-1 text-sm bg-background"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddPreviousDate();
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1 min-w-0">
+                      <PopoverDatePicker
+                        className="w-full"
+                        selectedDate={
+                          dateToAdd ? new Date(dateToAdd + "T00:00:00") : undefined
                         }
-                      }}
-                    />
+                        handleDateChange={(dateStr) => {
+                          if (!dateStr) {
+                            setDateToAdd("");
+                            return;
+                          }
+                          const d = new Date(dateStr);
+                          const y = d.getFullYear();
+                          const m = String(d.getMonth() + 1).padStart(2, "0");
+                          const day = String(d.getDate()).padStart(2, "0");
+                          setDateToAdd(`${y}-${m}-${day}`);
+                          setDateError("");
+                        }}
+                        disabled={pending || !pkg}
+                        disableFutureDates
+                        hidePastWarning
+                        placeholder="Pick past session date"
+                      />
+                    </div>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
                       onClick={handleAddPreviousDate}
                       disabled={pending || !pkg || !dateToAdd}
-                      className="gap-1 shrink-0"
+                      className="gap-1 shrink-0 h-10 px-3"
                     >
                       <Plus className="h-4 w-4" />
                       <span>Add</span>
