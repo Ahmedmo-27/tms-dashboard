@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PackageSearchSelect } from "@/components/ui/package-search-select";
+import { ClassSearchSelect } from "@/components/ui/class-search-select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "../../checkbox";
@@ -401,22 +402,14 @@ export default function SubPackage({
                       {packageHasClasses && (
                         <div>
                           <Label className="text-xs font-medium text-muted-foreground mb-1 block">Class Attended</Label>
-                          <Select
+                          <ClassSearchSelect
+                            classes={openClasses}
                             value={selectedClassId}
-                            onValueChange={setSelectedClassId}
+                            onChange={setSelectedClassId}
                             disabled={pending || !pkg}
-                          >
-                            <SelectTrigger className="w-full h-10">
-                              <SelectValue placeholder="Select class" />
-                            </SelectTrigger>
-                            <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[320px]">
-                              {openClasses.map((cls) => (
-                                <SelectItem key={cls._id} value={cls._id}>
-                                  {cls.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder="Select class"
+                            searchPlaceholder="Search class..."
+                          />
                         </div>
                       )}
                     </div>

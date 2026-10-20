@@ -27,6 +27,7 @@ import { MemberPackage } from "@/components/ui/members/columns";
 import { recordPreviousSessionsAction } from "@/lib/actions/member-actions";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import { getPackages } from "@/lib/data/package";
+import { ClassSearchSelect } from "@/components/ui/class-search-select";
 import type { Package } from "@/components/ui/packages/columns";
 
 function toLocalTodayString(): string {
@@ -366,22 +367,14 @@ export default function RecordPastSessionsDialog({
                 {packageHasClasses && (
                   <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1 block">Class Attended</Label>
-                    <Select
+                    <ClassSearchSelect
+                      classes={openClasses}
                       value={selectedClassId}
-                      onValueChange={setSelectedClassId}
+                      onChange={setSelectedClassId}
                       disabled={isPending || !selectedPkg}
-                    >
-                      <SelectTrigger className="w-full h-10">
-                        <SelectValue placeholder="Select class" />
-                      </SelectTrigger>
-                      <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[320px]">
-                        {openClasses.map((cls) => (
-                          <SelectItem key={cls._id} value={cls._id}>
-                            {cls.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select class"
+                      searchPlaceholder="Search class..."
+                    />
                   </div>
                 )}
               </div>
