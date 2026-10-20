@@ -87,10 +87,29 @@ export default function SubPackage({
   const [priceChanged, setPriceChanged] = useState(false);
   const [pendingDeduction, setPendingDeduction] = useState(false);
 
+  interface PreviousSessionEntry {
+    date: string;
+    classId?: string;
+    className?: string;
+    scid?: string;
+  }
+
   const [hasPreviousSessions, setHasPreviousSessions] = useState(false);
-  const [previousSessionDates, setPreviousSessionDates] = useState<string[]>([]);
+  const [previousSessions, setPreviousSessions] = useState<PreviousSessionEntry[]>([]);
   const [dateToAdd, setDateToAdd] = useState<string>("");
   const [dateError, setDateError] = useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+
+  const packageHasClasses = Boolean(pkg?.opensClasses && pkg.opensClasses.length > 0);
+  const openClasses = pkg?.opensClasses || [];
+
+  useEffect(() => {
+    if (packageHasClasses && openClasses.length > 0) {
+      setSelectedClassId(openClasses[0]._id);
+    } else {
+      setSelectedClassId("");
+    }
+  }, [pkg]);
 
   const handleAddPreviousDate = () => {
     if (!dateToAdd || !pkg) return;
@@ -99,21 +118,45 @@ export default function SubPackage({
       setDateError("Session date cannot be in the future");
       return;
     }
-    if (previousSessionDates.includes(dateToAdd)) {
-      setDateError("Date already added");
+
+    const matchedClass = packageHasClasses
+      ? openClasses.find((c) => c._id === selectedClassId) || openClasses[0]
+      : undefined;
+
+    const isDuplicate = previousSessions.some((item) =>
+      packageHasClasses
+        ? item.date === dateToAdd && item.classId === matchedClass?._id
+        : item.date === dateToAdd
+    );
+    if (isDuplicate) {
+      setDateError(
+        packageHasClasses
+          ? "This class on this date has already been added"
+          : "Date already added"
+      );
       return;
     }
-    if (previousSessionDates.length >= Number(pkg.numberOfSessions)) {
+
+    if (previousSessions.length >= Number(pkg.numberOfSessions)) {
       setDateError(`Cannot exceed package total sessions (${pkg.numberOfSessions})`);
       return;
     }
-    setPreviousSessionDates((prev) => [...prev, dateToAdd].sort());
+
+    const newEntry: PreviousSessionEntry = {
+      date: dateToAdd,
+      ...(matchedClass
+        ? { classId: matchedClass._id, className: matchedClass.title }
+        : {}),
+    };
+    setPreviousSessions((prev) =>
+      [...prev, newEntry].sort((a, b) => a.date.localeCompare(b.date))
+    );
     setDateToAdd("");
     setDateError("");
   };
 
-  const handleRemovePreviousDate = (toRemove: string) => {
-    setPreviousSessionDates((prev) => prev.filter((d) => d !== toRemove));
+  const handleRemovePreviousSession = (indexToRemove: number) => {
+    setPreviousSessions((prev) => prev.filter((_, idx) => idx !== indexToRemove));
     setDateError("");
   };
 
@@ -129,7 +172,8 @@ export default function SubPackage({
     setPriceChanged(false);
     setPendingDeduction(false);
     setHasPreviousSessions(false);
-    setPreviousSessionDates([]);
+    setPreviousSessions([]);
+    setSelectedClassId("");
     setDateToAdd("");
     setDateError("");
   };
@@ -221,7 +265,7 @@ export default function SubPackage({
             <input
               type="hidden"
               name="previousSessionDates"
-              value={JSON.stringify(previousSessionDates)}
+              value={JSON.stringify(previousSessions)}
             />
 
             <div className="space-y-2 mt-4">
@@ -303,7 +347,8 @@ export default function SubPackage({
                     const val = Boolean(checked);
                     setHasPreviousSessions(val);
                     if (!val) {
-                      setPreviousSessionDates([]);
+                      setPreviousSessions([]);
+    setSelectedClassId("");
                       setDateError("");
                     }
                   }}
@@ -320,65 +365,99 @@ export default function SubPackage({
               {hasPreviousSessions && (
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
                   <p className="text-xs text-muted-foreground">
-                    Record dates of past sessions already taken. These will be deducted from the package without affecting today&apos;s scans monitor.
+                    {packageHasClasses
+                      ? "Record past sessions and choose which class was attended. Attendance will be recorded under that class on the scans monitor."
+                      : "Record dates of past sessions already taken. The default scan will be recorded on the scans monitor for the chosen dates."}
                   </p>
 
-                  <div className="flex gap-2 items-center">
-                    <div className="flex-1 min-w-0">
-                      <PopoverDatePicker
-                        className="w-full"
-                        selectedDate={
-                          dateToAdd ? new Date(dateToAdd + "T00:00:00") : undefined
-                        }
-                        handleDateChange={(dateStr) => {
-                          if (!dateStr) {
-                            setDateToAdd("");
-                            return;
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs font-medium text-muted-foreground mb-1 block">Session Date</Label>
+                        <PopoverDatePicker
+                          className="w-full"
+                          selectedDate={
+                            dateToAdd ? new Date(dateToAdd + "T00:00:00") : undefined
                           }
-                          const d = new Date(dateStr);
-                          const y = d.getFullYear();
-                          const m = String(d.getMonth() + 1).padStart(2, "0");
-                          const day = String(d.getDate()).padStart(2, "0");
-                          setDateToAdd(`${y}-${m}-${day}`);
-                          setDateError("");
-                        }}
-                        disabled={pending || !pkg}
-                        disableFutureDates
-                        hidePastWarning
-                        placeholder="Pick past session date"
-                      />
+                          handleDateChange={(dateStr) => {
+                            if (!dateStr) {
+                              setDateToAdd("");
+                              return;
+                            }
+                            const d = new Date(dateStr);
+                            const y = d.getFullYear();
+                            const m = String(d.getMonth() + 1).padStart(2, "0");
+                            const day = String(d.getDate()).padStart(2, "0");
+                            setDateToAdd(`${y}-${m}-${day}`);
+                            setDateError("");
+                          }}
+                          disabled={pending || !pkg}
+                          disableFutureDates
+                          hidePastWarning
+                          placeholder="Pick past session date"
+                        />
+                      </div>
+
+                      {packageHasClasses && (
+                        <div>
+                          <Label className="text-xs font-medium text-muted-foreground mb-1 block">Class Attended</Label>
+                          <Select
+                            value={selectedClassId}
+                            onValueChange={setSelectedClassId}
+                            disabled={pending || !pkg}
+                          >
+                            <SelectTrigger className="w-full h-10">
+                              <SelectValue placeholder="Select class" />
+                            </SelectTrigger>
+                            <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[320px]">
+                              {openClasses.map((cls) => (
+                                <SelectItem key={cls._id} value={cls._id}>
+                                  {cls.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={handleAddPreviousDate}
-                      disabled={pending || !pkg || !dateToAdd}
-                      className="gap-1 shrink-0 h-10 px-3"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Add</span>
-                    </Button>
+
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleAddPreviousDate}
+                        disabled={pending || !pkg || !dateToAdd || (packageHasClasses && !selectedClassId)}
+                        className="gap-1 h-9 px-3"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Add Session</span>
+                      </Button>
+                    </div>
                   </div>
 
                   {dateError && (
                     <p className="text-xs text-destructive">{dateError}</p>
                   )}
 
-                  {previousSessionDates.length > 0 ? (
+                  {previousSessions.length > 0 ? (
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-1.5 rounded-md border bg-background">
-                        {previousSessionDates.map((dStr) => (
+                        {previousSessions.map((session, idx) => (
                           <Badge
-                            key={dStr}
+                            key={`${session.date}-${session.classId || idx}`}
                             variant="secondary"
                             className="gap-1 text-xs py-0.5 px-2 font-normal"
                           >
-                            <span>{dStr}</span>
+                            <span>
+                              {session.date}
+                              {session.className ? ` · ${session.className}` : ""}
+                            </span>
                             <button
                               type="button"
-                              onClick={() => handleRemovePreviousDate(dStr)}
+                              onClick={() => handleRemovePreviousSession(idx)}
                               className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                              aria-label={`Remove session ${session.date}`}
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -389,14 +468,14 @@ export default function SubPackage({
                       {pkg && (
                         <div className="flex items-center justify-between text-xs px-1">
                           <span className="text-muted-foreground">
-                            Sessions deducted: <strong>{previousSessionDates.length}</strong>
+                            Sessions deducted: <strong>{previousSessions.length}</strong>
                           </span>
                           <span className="text-foreground">
                             Remaining sessions:{" "}
                             <strong>
                               {Math.max(
                                 0,
-                                Number(pkg.numberOfSessions) - previousSessionDates.length
+                                Number(pkg.numberOfSessions) - previousSessions.length
                               )}
                             </strong>{" "}
                             of {pkg.numberOfSessions}
@@ -406,7 +485,7 @@ export default function SubPackage({
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">
-                      No dates added yet. Pick a past date and click &quot;Add&quot;.
+                      No dates added yet. Pick a past date {packageHasClasses ? "and class " : ""}and click &quot;Add Session&quot;.
                     </p>
                   )}
                 </div>

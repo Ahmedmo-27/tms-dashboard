@@ -1,3 +1,12 @@
+export type PreviousSessionDateInput =
+  | string
+  | {
+      date: string;
+      classId?: string;
+      className?: string;
+      scid?: string;
+    };
+
 import { tms } from "@/lib/tms-api";
 import { parseMembers } from "../utils/parsers/members-parser";
 
@@ -165,7 +174,7 @@ export const subscribeMemberToPackage = async (
   amount?: string,
   locationId?: string,
   pendingDeduction = false,
-  previousSessionDates?: string[],
+  previousSessionDates?: PreviousSessionDateInput[],
 ) => {
   try {
     type RequestBody = {
@@ -176,7 +185,7 @@ export const subscribeMemberToPackage = async (
       paymentDate: string | undefined;
       amount: string | undefined;
       pendingDeduction?: boolean;
-      previousSessionDates?: string[];
+      previousSessionDates?: PreviousSessionDateInput[];
       locationId?: string;
     };
     const requestBody: RequestBody = {
@@ -204,7 +213,7 @@ export const recordMemberPreviousSessions = async (
   uid: string,
   pkgId: string,
   pkgStartDate: string,
-  previousSessionDates: string[],
+  previousSessionDates: PreviousSessionDateInput[],
   reason?: string
 ) => {
   try {

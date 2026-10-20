@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar, Plus, X, History, AlertCircle, Info } from "lucide-react";
 import toast from "react-hot-toast";
@@ -26,6 +26,8 @@ import {
 import { MemberPackage } from "@/components/ui/members/columns";
 import { recordPreviousSessionsAction } from "@/lib/actions/member-actions";
 import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
+import { getPackages } from "@/lib/data/package";
+import type { Package } from "@/components/ui/packages/columns";
 
 function toLocalTodayString(): string {
   const now = new Date();
@@ -42,6 +44,13 @@ interface RecordPastSessionsDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
+}
+
+interface SessionEntry {
+  date: string;
+  classId?: string;
+  className?: string;
+  scid?: string;
 }
 
 export default function RecordPastSessionsDialog({
@@ -86,15 +95,46 @@ export default function RecordPastSessionsDialog({
     eligiblePackages[0] ||
     null;
 
-  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [catalogPackages, setCatalogPackages] = useState<Package[]>([]);
+  const [selectedSessions, setSelectedSessions] = useState<SessionEntry[]>([]);
   const [dateInput, setDateInput] = useState<string>(toLocalTodayString());
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [reason, setReason] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [isPending, startTransition] = useTransition();
 
+  useEffect(() => {
+    let isCancelled = false;
+    getPackages()
+      .then((pkgs) => {
+        if (!isCancelled && Array.isArray(pkgs)) {
+          setCatalogPackages(pkgs);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const currentCatalog = catalogPackages.find((cp) => cp._id === selectedPkg?._id);
+  const packageHasClasses = Boolean(
+    currentCatalog?.opensClasses && currentCatalog.opensClasses.length > 0
+  );
+  const openClasses = currentCatalog?.opensClasses || [];
+
+  useEffect(() => {
+    if (packageHasClasses && openClasses.length > 0) {
+      setSelectedClassId(openClasses[0]._id);
+    } else {
+      setSelectedClassId("");
+    }
+  }, [selectedPkgKey, packageHasClasses, currentCatalog]);
+
   const resetForm = () => {
-    setSelectedDates([]);
+    setSelectedSessions([]);
     setDateInput(toLocalTodayString());
+    setSelectedClassId("");
     setReason("");
     setErrorMsg("");
   };
@@ -114,24 +154,45 @@ export default function RecordPastSessionsDialog({
       return;
     }
 
-    if (selectedDates.includes(dateInput)) {
-      setErrorMsg("This date has already been added.");
+    const matchedClass = packageHasClasses
+      ? openClasses.find((c) => c._id === selectedClassId) || openClasses[0]
+      : undefined;
+
+    const isDuplicate = selectedSessions.some((item) =>
+      packageHasClasses
+        ? item.date === dateInput && item.classId === matchedClass?._id
+        : item.date === dateInput
+    );
+    if (isDuplicate) {
+      setErrorMsg(
+        packageHasClasses
+          ? "This class on this date has already been added."
+          : "This date has already been added."
+      );
       return;
     }
 
-    if (selectedDates.length >= selectedPkg.remainingClasses) {
+    if (selectedSessions.length >= selectedPkg.remainingClasses) {
       setErrorMsg(
         `Cannot record more sessions than remaining classes (${selectedPkg.remainingClasses}).`
       );
       return;
     }
 
-    setSelectedDates((prev) => [...prev, dateInput].sort());
+    const newEntry: SessionEntry = {
+      date: dateInput,
+      ...(matchedClass
+        ? { classId: matchedClass._id, className: matchedClass.title }
+        : {}),
+    };
+    setSelectedSessions((prev) =>
+      [...prev, newEntry].sort((a, b) => a.date.localeCompare(b.date))
+    );
     setDateInput("");
   };
 
-  const handleRemoveDate = (dateToRemove: string) => {
-    setSelectedDates((prev) => prev.filter((d) => d !== dateToRemove));
+  const handleRemoveSession = (indexToRemove: number) => {
+    setSelectedSessions((prev) => prev.filter((_, idx) => idx !== indexToRemove));
     setErrorMsg("");
   };
 
@@ -144,14 +205,14 @@ export default function RecordPastSessionsDialog({
       return;
     }
 
-    if (selectedDates.length === 0) {
+    if (selectedSessions.length === 0) {
       setErrorMsg("Please add at least one previous session date.");
       return;
     }
 
-    if (selectedDates.length > selectedPkg.remainingClasses) {
+    if (selectedSessions.length > selectedPkg.remainingClasses) {
       setErrorMsg(
-        `Cannot record ${selectedDates.length} sessions. Only ${selectedPkg.remainingClasses} remaining.`
+        `Cannot record ${selectedSessions.length} sessions. Only ${selectedPkg.remainingClasses} remaining.`
       );
       return;
     }
@@ -160,7 +221,7 @@ export default function RecordPastSessionsDialog({
     formData.append("uid", uid);
     formData.append("pkgId", selectedPkg._id);
     formData.append("pkgStartDate", selectedPkg.pkgStartDate);
-    formData.append("previousSessionDates", JSON.stringify(selectedDates));
+    formData.append("previousSessionDates", JSON.stringify(selectedSessions));
     if (reason.trim()) {
       formData.append("reason", reason.trim());
     }
@@ -170,8 +231,8 @@ export default function RecordPastSessionsDialog({
         const res = await recordPreviousSessionsAction(null, formData);
         if (res.success) {
           toast.success(
-            `Recorded ${selectedDates.length} previous session${
-              selectedDates.length > 1 ? "s" : ""
+            `Recorded ${selectedSessions.length} previous session${
+              selectedSessions.length > 1 ? "s" : ""
             } successfully!`
           );
           setOpen(false);
@@ -191,7 +252,7 @@ export default function RecordPastSessionsDialog({
   };
 
   const remainingAfter = selectedPkg
-    ? selectedPkg.remainingClasses - selectedDates.length
+    ? selectedPkg.remainingClasses - selectedSessions.length
     : 0;
 
   return (
@@ -203,22 +264,18 @@ export default function RecordPastSessionsDialog({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          onClick={(e) => e.stopPropagation()}
-          className="sm:max-w-md max-h-[90vh] overflow-y-auto"
-        >
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History className="h-5 w-5 text-primary" />
               <span>Record Past Sessions</span>
             </DialogTitle>
             <DialogDescription>
-              Record previous sessions attended by this member before package registration.
-              These will be logged under their actual dates without affecting today&apos;s scans monitor.
+              Record dates of sessions a member has already attended before their package was recorded at the front desk.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             {/* Package Selection */}
             {!defaultPkg && (
               <div className="space-y-1.5">
@@ -232,7 +289,7 @@ export default function RecordPastSessionsDialog({
                     value={selectedPkgKey}
                     onValueChange={(val) => {
                       setSelectedPkgKey(val);
-                      setSelectedDates([]);
+                      setSelectedSessions([]);
                       setErrorMsg("");
                     }}
                     disabled={isPending}
@@ -277,13 +334,11 @@ export default function RecordPastSessionsDialog({
               </div>
             )}
 
-            {/* Date Input Stepper */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Add Previous Session Date
-              </Label>
-              <div className="flex gap-2 items-center">
-                <div className="flex-1 min-w-0">
+            {/* Session Date & Class Controls */}
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground mb-1 block">Session Date</Label>
                   <PopoverDatePicker
                     className="w-full"
                     selectedDate={
@@ -307,6 +362,31 @@ export default function RecordPastSessionsDialog({
                     placeholder="Pick past session date"
                   />
                 </div>
+
+                {packageHasClasses && (
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground mb-1 block">Class Attended</Label>
+                    <Select
+                      value={selectedClassId}
+                      onValueChange={setSelectedClassId}
+                      disabled={isPending || !selectedPkg}
+                    >
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="Select class" />
+                      </SelectTrigger>
+                      <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[320px]">
+                        {openClasses.map((cls) => (
+                          <SelectItem key={cls._id} value={cls._id}>
+                            {cls.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-1">
                 <Button
                   type="button"
                   variant="outline"
@@ -315,29 +395,32 @@ export default function RecordPastSessionsDialog({
                     isPending ||
                     !selectedPkg ||
                     !dateInput ||
-                    selectedDates.length >= (selectedPkg?.remainingClasses ?? 0)
+                    (packageHasClasses && !selectedClassId) ||
+                    selectedSessions.length >= (selectedPkg?.remainingClasses ?? 0)
                   }
-                  className="gap-1 shrink-0 h-10 px-3"
+                  className="gap-1 h-9 px-3"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Add Date</span>
+                  <span>Add Session</span>
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Pick a past date and click &quot;Add Date&quot;. You can add multiple dates.
+                {packageHasClasses
+                  ? "Pick a past date, choose which class was attended, and click \"Add Session\"."
+                  : "Pick a past date and click \"Add Session\". The default scan will be recorded on the scans monitor."}
               </p>
             </div>
 
-            {/* List of Added Dates */}
+            {/* List of Added Sessions */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  Sessions to Record ({selectedDates.length})
+                  Sessions to Record ({selectedSessions.length})
                 </Label>
-                {selectedDates.length > 0 && (
+                {selectedSessions.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setSelectedDates([])}
+                    onClick={() => setSelectedSessions([])}
                     className="text-xs text-destructive hover:underline cursor-pointer"
                   >
                     Clear all
@@ -345,30 +428,33 @@ export default function RecordPastSessionsDialog({
                 )}
               </div>
 
-              {selectedDates.length === 0 ? (
+              {selectedSessions.length === 0 ? (
                 <div className="rounded-md border border-dashed p-3 text-center text-xs text-muted-foreground">
-                  No previous session dates added yet. Add at least one above.
+                  No previous sessions added yet. Add at least one above.
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-2 rounded-md border bg-background">
-                  {selectedDates.map((dateStr) => {
-                    let formatted = dateStr;
+                  {selectedSessions.map((session, idx) => {
+                    let formatted = session.date;
                     try {
-                      formatted = format(new Date(dateStr + "T00:00:00"), "EEE, d MMM yyyy");
+                      formatted = format(new Date(session.date + "T00:00:00"), "EEE, d MMM yyyy");
                     } catch {}
                     return (
                       <Badge
-                        key={dateStr}
+                        key={`${session.date}-${session.classId || idx}`}
                         variant="secondary"
                         className="gap-1 text-xs py-1 px-2.5 font-normal"
                       >
                         <Calendar className="h-3 w-3 opacity-70" />
-                        <span>{formatted}</span>
+                        <span>
+                          {formatted}
+                          {session.className ? ` · ${session.className}` : ""}
+                        </span>
                         <button
                           type="button"
-                          onClick={() => handleRemoveDate(dateStr)}
+                          onClick={() => handleRemoveSession(idx)}
                           className="ml-1 rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                          aria-label={`Remove ${dateStr}`}
+                          aria-label={`Remove session ${session.date}`}
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -380,11 +466,11 @@ export default function RecordPastSessionsDialog({
             </div>
 
             {/* Live calculation banner */}
-            {selectedPkg && selectedDates.length > 0 && (
+            {selectedPkg && selectedSessions.length > 0 && (
               <div className="rounded-md bg-primary/5 border border-primary/20 p-2.5 text-xs space-y-1">
                 <div className="flex items-center justify-between font-medium">
                   <span className="text-foreground">Classes to deduct:</span>
-                  <span className="font-semibold">{selectedDates.length}</span>
+                  <span className="font-semibold">{selectedSessions.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Classes left after save:</span>
@@ -414,8 +500,9 @@ export default function RecordPastSessionsDialog({
             <div className="flex items-start gap-2 rounded-md bg-blue-50 dark:bg-blue-950/30 p-2.5 text-xs text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
               <Info className="h-4 w-4 shrink-0 mt-0.5" />
               <span>
-                These sessions are backdated to their respective historical dates. They will{" "}
-                <strong>not</strong> increase today&apos;s scan count on the Scans Monitor.
+                {packageHasClasses
+                  ? "These sessions will be backdated under their chosen classes on the Scans Monitor without increasing today's scan count."
+                  : "These sessions will record the default scan on the Scans Monitor for their historical dates without increasing today's scan count."}
               </span>
             </div>
 
@@ -440,14 +527,14 @@ export default function RecordPastSessionsDialog({
                 disabled={
                   isPending ||
                   !selectedPkg ||
-                  selectedDates.length === 0 ||
-                  selectedDates.length > (selectedPkg?.remainingClasses ?? 0)
+                  selectedSessions.length === 0 ||
+                  selectedSessions.length > (selectedPkg?.remainingClasses ?? 0)
                 }
               >
                 {isPending
                   ? "Saving..."
-                  : `Record ${selectedDates.length} Session${
-                      selectedDates.length === 1 ? "" : "s"
+                  : `Record ${selectedSessions.length} Session${
+                      selectedSessions.length === 1 ? "" : "s"
                     }`}
               </Button>
             </div>

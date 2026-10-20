@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import {
+  PreviousSessionDateInput,
   editMemberPackage,
   adjustMemberPackage,
   recordMemberPreviousSessions,
@@ -175,7 +176,7 @@ export const subscribePackageAction = async (
       (formData.get("pendingDeduction") as string) === "true";
     const rawPreviousDates = formData.get("previousSessionDates") as string;
 
-    let previousSessionDates: string[] | undefined = undefined;
+    let previousSessionDates: PreviousSessionDateInput[] | undefined = undefined;
     if (rawPreviousDates) {
       try {
         const parsed = JSON.parse(rawPreviousDates);
@@ -233,7 +234,7 @@ export const recordPreviousSessionsAction = async (
       };
     }
 
-    let dates: string[] = [];
+    let dates: PreviousSessionDateInput[] = [];
     if (rawDates) {
       try {
         const parsed = JSON.parse(rawDates);
