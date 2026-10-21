@@ -137,9 +137,12 @@ function RankingBody({ rows, onSelect }: { rows: CoachHoursRow[]; onSelect: (id:
               cell: (r) => (
                 <div className="whitespace-nowrap">
                   <p>{formatNumber(r.sessions + r.ptSessions)}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {formatNumber(r.soloClassSessions + r.ptSessions)} individual · {formatNumber(r.groupClassSessions)} group
-                  </p>
+                  {r.soloClassSessions !== undefined && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {formatNumber(r.soloClassSessions + r.ptSessions)} individual ·{" "}
+                      {formatNumber(r.groupClassSessions)} group
+                    </p>
+                  )}
                 </div>
               ),
             },
@@ -185,8 +188,8 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
       { header: "Date", value: (r) => formatDateTime(r.date) },
       { header: "Session", value: (r) => r.classTitle },
       { header: "Session type", value: (r) => segmentLabel(r.category) },
-      { header: "Coaches on session", value: (r) => r.coachCount },
-      { header: "Session format", value: (r) => (r.coachCount > 1 ? "Group" : "Individual") },
+      { header: "Coaches on session", value: (r) => r.coachCount ?? 1 },
+      { header: "Session format", value: (r) => ((r.coachCount ?? 1) > 1 ? "Group" : "Individual") },
       { header: "Source", value: (r) => r.source },
       { header: "Member", value: (r) => r.memberName },
       { header: "Phone", value: (r) => r.phone },
@@ -203,10 +206,11 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
       { header: "Branch", value: (r) => r.branch },
     ]);
 
+  const coCoaches = data.coCoaches ?? [];
   const coCoachSummary =
-    data.coCoaches.length <= 2
-      ? data.coCoaches.map((c) => c.name).join(" & ")
-      : `${data.coCoaches.slice(0, 2).map((c) => c.name).join(", ")} +${data.coCoaches.length - 2} more`;
+    coCoaches.length <= 2
+      ? coCoaches.map((c) => c.name).join(" & ")
+      : `${coCoaches.slice(0, 2).map((c) => c.name).join(", ")} +${coCoaches.length - 2} more`;
 
   const selectedMember = memberFilter
     ? data.byMember.find((m) => (m.memberId ?? `${m.phone}|${m.memberName}`) === memberFilter)
@@ -224,7 +228,7 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
         source: e.source,
         type: e.type,
         branch: e.branch,
-        coachCount: e.coachCount,
+        coachCount: e.coachCount ?? 1,
         rows: [],
         attended: 0,
         value: 0,
@@ -257,7 +261,7 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
     );
 
   const valueMark = (r: CoachUsageEntry) =>
-    r.sessionValue === null ? (
+    r.sessionValue == null ? (
       <span className="text-muted-foreground">—</span>
     ) : (
       <span className="whitespace-nowrap">
@@ -267,7 +271,7 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
     );
 
   const priceMark = (r: CoachUsageEntry) =>
-    r.packagePrice === null ? (
+    r.packagePrice == null ? (
       <span className="text-muted-foreground">—</span>
     ) : (
       <span className="whitespace-nowrap">
@@ -384,13 +388,13 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
         <StatTile
           label="Individual sessions"
           value={formatNumber(s.individualSessions)}
-          hint={`coach alone · ${s.soloClassSessions} classes (${formatNumber(s.soloClassHours)} h) · ${s.ptSessions} PT`}
+          hint={`coach alone · ${formatNumber(s.soloClassSessions)} classes (${formatNumber(s.soloClassHours)} h) · ${s.ptSessions} PT`}
         />
         <StatTile
           label="Group sessions"
           value={formatNumber(s.groupSessions)}
           hint={
-            data.coCoaches.length
+            coCoaches.length
               ? `shared with ${coCoachSummary} · ${formatNumber(s.groupClassHours)} h`
               : "none shared with another coach"
           }
