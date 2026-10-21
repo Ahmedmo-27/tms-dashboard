@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../dropdown-menu";
-import { Calendar, Package, MoreHorizontal, Clock, Snowflake, Play } from "lucide-react";
+import { Calendar, Package, MoreHorizontal, Clock, Snowflake, Play, History } from "lucide-react";
 import { useState } from "react";
 import { MemberPackage } from "../members/columns";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import AddClasses from "../dialogs/member package/add-classes";
 import ExtendPackage from "../dialogs/member package/extend-package";
 import CancelPackageDialog from "../dialogs/member package/cancel-package";
+import RecordPastSessionsDialog from "../dialogs/member package/record-past-sessions-dialog";
 import { FreezePackageDialog } from "../dialogs/freeze/freeze-package-dialog";
 import { adminUnfreezePackageAction } from "@/lib/actions/freeze-actions";
 import toast from "react-hot-toast";
@@ -29,7 +30,7 @@ interface MobilePackageCardProps {
 export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
   const [isNameExpanded, setIsNameExpanded] = useState(false);
   const [activeModal, setActiveModal] = useState<
-    "adjust" | "extend" | "freeze" | "cancel" | null
+    "adjust" | "extend" | "freeze" | "cancel" | "record-previous" | null
   >(null);
   const isFrozen = pkg.status === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
 
@@ -107,6 +108,14 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
                   className="cursor-pointer"
                 >
                   Adjust classes
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setActiveModal("record-previous")}
+                  disabled={isFrozen || pkg.remainingClasses <= 0}
+                  className="cursor-pointer"
+                >
+                  <History className="h-4 w-4 mr-2" />
+                  Record past sessions
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => setActiveModal("extend")}
@@ -223,6 +232,17 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
           <CancelPackageDialog
             pkg={pkg}
             uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal === "record-previous" && (
+          <RecordPastSessionsDialog
+            uid={uid}
+            packages={[pkg]}
+            defaultPkg={pkg}
             open={true}
             onOpenChange={(open) => {
               if (!open) setActiveModal(null);

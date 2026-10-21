@@ -17,6 +17,7 @@ import {
   Dumbbell,
   UserCheck,
   SlidersHorizontal,
+  History,
 } from "lucide-react";
 import { Member } from "@/components/ui/members/columns";
 import { Package as CatalogPackage } from "@/components/ui/packages/columns";
@@ -27,6 +28,7 @@ import PTAttendance from "@/components/ui/cards/ptAttendance";
 import Deductions from "@/components/ui/cards/deductions";
 import SubPackage from "@/components/ui/dialogs/member package/sub-package";
 import AddClasses from "@/components/ui/dialogs/member package/add-classes";
+import RecordPastSessionsDialog from "@/components/ui/dialogs/member package/record-past-sessions-dialog";
 import BookClass from "@/components/ui/dialogs/member-bookings/book-class";
 import { OpenGymDropInDialog } from "@/components/ui/dialogs/open-gym/open-gym-drop-in-dialog";
 import { PtDropInDialog } from "@/components/ui/dialogs/pt/pt-drop-in-dialog";
@@ -54,6 +56,7 @@ export function MemberWorkspace({
   const [tab, setTab] = useState("packages");
   const [subPackageOpen, setSubPackageOpen] = useState(false);
   const [addClassesOpen, setAddClassesOpen] = useState(false);
+  const [recordPastOpen, setRecordPastOpen] = useState(false);
   const [bookClassOpen, setBookClassOpen] = useState(false);
   const [openGymDropInOpen, setOpenGymDropInOpen] = useState(false);
   const [ptDropInOpen, setPtDropInOpen] = useState(false);
@@ -118,7 +121,7 @@ export function MemberWorkspace({
                   <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuItem
                   onSelect={() => setSubPackageOpen(true)}
                   className="cursor-pointer"
@@ -133,6 +136,14 @@ export function MemberWorkspace({
                 >
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   <span>Adjust Classes</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setRecordPastOpen(true)}
+                  disabled={!activePackage}
+                  className="cursor-pointer"
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  <span>Record Past Sessions</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -190,6 +201,16 @@ export function MemberWorkspace({
                 variant="none"
                 open={addClassesOpen}
                 onOpenChange={setAddClassesOpen}
+              />
+            )}
+
+            {activePackage && (
+              <RecordPastSessionsDialog
+                uid={member.id}
+                packages={member.packages || []}
+                defaultPkg={activePackage}
+                open={recordPastOpen}
+                onOpenChange={setRecordPastOpen}
               />
             )}
 

@@ -20,11 +20,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Calendar, MoreHorizontal, ChevronDown, ChevronUp, Snowflake, Play } from "lucide-react";
+import { Calendar, MoreHorizontal, ChevronDown, ChevronUp, Snowflake, Play, History } from "lucide-react";
 import AddClasses from "@/components/ui/dialogs/member package/add-classes";
 import ExtendPackage from "@/components/ui/dialogs/member package/extend-package";
 import SubPackage from "@/components/ui/dialogs/member package/sub-package";
 import CancelPackageDialog from "@/components/ui/dialogs/member package/cancel-package";
+import RecordPastSessionsDialog from "@/components/ui/dialogs/member package/record-past-sessions-dialog";
 import { FreezePackageDialog } from "@/components/ui/dialogs/freeze/freeze-package-dialog";
 import { adminUnfreezePackageAction } from "@/lib/actions/freeze-actions";
 import toast from "react-hot-toast";
@@ -318,7 +319,7 @@ export default function Packages({
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null);
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
   const [activeModal, setActiveModal] = useState<{
-    type: "adjust" | "extend" | "freeze" | "cancel";
+    type: "adjust" | "extend" | "freeze" | "cancel" | "record-previous";
     pkg: MemberPackage;
   } | null>(null);
 
@@ -563,6 +564,14 @@ export default function Packages({
                                   Adjust classes
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                  onSelect={() => setActiveModal({ type: "record-previous", pkg })}
+                                  disabled={isFrozen || pkg.remainingClasses <= 0}
+                                  className="cursor-pointer"
+                                >
+                                  <History className="h-4 w-4 mr-2" />
+                                  Record past sessions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   onSelect={() => setActiveModal({ type: "extend", pkg })}
                                   className="cursor-pointer"
                                 >
@@ -648,6 +657,17 @@ export default function Packages({
           <CancelPackageDialog
             pkg={activeModal.pkg}
             uid={uid}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setActiveModal(null);
+            }}
+          />
+        )}
+        {activeModal?.type === "record-previous" && (
+          <RecordPastSessionsDialog
+            uid={uid}
+            packages={memberPackages}
+            defaultPkg={activeModal.pkg}
             open={true}
             onOpenChange={(open) => {
               if (!open) setActiveModal(null);
