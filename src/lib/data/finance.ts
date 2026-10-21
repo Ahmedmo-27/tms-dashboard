@@ -89,6 +89,10 @@ export type CoachHoursRow = {
   coachId: string;
   name: string;
   sessions: number;
+  /** Class sessions this coach ran alone. */
+  soloClassSessions: number;
+  /** Class sessions shared with at least one other coach. */
+  groupClassSessions: number;
   hours: number;
   hoursByCategory: Record<string, number>;
   sessionsByCategory: Record<string, number>;
@@ -149,9 +153,18 @@ export type CoachUsageEntry = {
   phone: string;
   packageName: string;
   packageCategory: string | null;
+  /** Coaches assigned to the session (1 = this coach alone, PT is always 1). */
+  coachCount: number;
   isDropIn: boolean;
   attended: boolean;
+  /** What the member paid per session, or the amount paid for a drop-in. */
   sessionValue: number | null;
+  /** "paid" = from the member's own purchase, "list" = the package's current price. */
+  valueSource: "paid" | "list" | null;
+  /** What the package cost when this member bought it. */
+  packagePrice: number | null;
+  /** Sessions that purchase included. */
+  packageSessions: number | null;
   branch: string;
 };
 
@@ -163,15 +176,26 @@ export type CoachUsageData = {
     ptSessions: number;
     totalSessions: number;
     classHours: number;
+    /** Sessions the coach ran alone: solo classes + PT. */
+    individualSessions: number;
+    /** Class sessions shared with at least one other coach. */
+    groupSessions: number;
+    soloClassSessions: number;
+    groupClassSessions: number;
+    soloClassHours: number;
+    groupClassHours: number;
     totalBookings: number;
     packageUses: number;
     attendedPackageUses: number;
     dropIns: number;
     attendedDropIns: number;
+    /** Money taken for drop-ins in this coach's sessions. */
+    dropInRevenue: number;
     uniqueMembers: number;
     uniquePackages: number;
     estimatedValue: number;
   };
+  coCoaches: { coachId: string; name: string; sessions: number }[];
   byPackage: { packageName: string; category: string | null; uses: number; attended: number; members: number; value: number }[];
   byMember: {
     memberId: string | null;

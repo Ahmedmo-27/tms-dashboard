@@ -32,6 +32,24 @@ import { useFinanceData, useFinanceFilters } from "../use-finance-data";
 
 type EntryFilter = "all" | "packages" | "pt" | "dropins";
 
+/** Packages with this many sessions or more are unlimited, so a per-session split is meaningless. */
+const UNLIMITED_SESSIONS = 1000;
+
+/** One session with every member row that belongs to it. */
+type SessionGroup = {
+  key: string;
+  date: string;
+  classTitle: string;
+  category: string;
+  source: string;
+  type: CoachUsageEntry["type"];
+  branch: string;
+  coachCount: number;
+  rows: CoachUsageEntry[];
+  attended: number;
+  value: number;
+};
+
 export function CoachPackagesView() {
   const { searchParams, setParams } = useFinanceFilters();
   const coachId = searchParams.get("coachId") ?? "";
@@ -111,7 +129,20 @@ function RankingBody({ rows, onSelect }: { rows: CoachHoursRow[]; onSelect: (id:
                 </button>
               ),
             },
-            { key: "sessions", header: "Sessions", align: "right", sortValue: (r) => r.sessions + r.ptSessions, cell: (r) => formatNumber(r.sessions + r.ptSessions) },
+            {
+              key: "sessions",
+              header: "Sessions",
+              align: "right",
+              sortValue: (r) => r.sessions + r.ptSessions,
+              cell: (r) => (
+                <div className="whitespace-nowrap">
+                  <p>{formatNumber(r.sessions + r.ptSessions)}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatNumber(r.soloClassSessions + r.ptSessions)} individual · {formatNumber(r.groupClassSessions)} group
+                  </p>
+                </div>
+              ),
+            },
             { key: "booked", header: "Package uses (booked)", align: "right", sortValue: (r) => r.packageUses, cell: (r) => formatNumber(r.packageUses) },
             { key: "attended", header: "Package uses (attended)", align: "right", sortValue: (r) => r.attendedPackageUses, cell: (r) => <span className="font-medium">{formatNumber(r.attendedPackageUses)}</span> },
             { key: "dropins", header: "Drop-ins", align: "right", sortValue: (r) => r.dropIns, cell: (r) => formatNumber(r.dropIns) },
@@ -130,6 +161,7 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
   const [attendedOnly, setAttendedOnly] = useState(false);
   const [query, setQuery] = useState("");
   const [memberFilter, setMemberFilter] = useState<string | null>(null);
+  const [openSessions, setOpenSessions] = useState<Set<string>>(new Set());
 
   const entries = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -153,63 +185,191 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
       { header: "Date", value: (r) => formatDateTime(r.date) },
       { header: "Session", value: (r) => r.classTitle },
       { header: "Session type", value: (r) => segmentLabel(r.category) },
+      { header: "Coaches on session", value: (r) => r.coachCount },
+      { header: "Session format", value: (r) => (r.coachCount > 1 ? "Group" : "Individual") },
       { header: "Source", value: (r) => r.source },
       { header: "Member", value: (r) => r.memberName },
       { header: "Phone", value: (r) => r.phone },
       { header: "Package", value: (r) => r.packageName },
       { header: "Attended", value: (r) => (r.attended ? "Yes" : "No") },
+      { header: "Package price paid (EGP)", value: (r) => r.packagePrice ?? "" },
+      { header: "Sessions in package", value: (r) => r.packageSessions ?? "" },
       { header: "Session value (EGP)", value: (r) => r.sessionValue ?? "" },
+      {
+        header: "Value basis",
+        value: (r) =>
+          r.valueSource === "paid" ? (r.isDropIn ? "Drop-in paid" : "Price the member paid") : r.valueSource === "list" ? "Package list price" : "",
+      },
       { header: "Branch", value: (r) => r.branch },
     ]);
+
+  const coCoachSummary =
+    data.coCoaches.length <= 2
+      ? data.coCoaches.map((c) => c.name).join(" & ")
+      : `${data.coCoaches.slice(0, 2).map((c) => c.name).join(", ")} +${data.coCoaches.length - 2} more`;
 
   const selectedMember = memberFilter
     ? data.byMember.find((m) => (m.memberId ?? `${m.phone}|${m.memberName}`) === memberFilter)
     : null;
 
-  const entryColumns: DataColumn<CoachUsageEntry>[] = [
-    { key: "date", header: "Date", cell: (r) => <span className="whitespace-nowrap">{formatDateTime(r.date)}</span> },
+  const sessionGroups = useMemo(() => {
+    const groups = new Map<string, SessionGroup>();
+    for (const e of entries) {
+      const key = e.sessionId ?? e.id;
+      const group = groups.get(key) ?? {
+        key,
+        date: e.date,
+        classTitle: e.classTitle,
+        category: e.category,
+        source: e.source,
+        type: e.type,
+        branch: e.branch,
+        coachCount: e.coachCount,
+        rows: [],
+        attended: 0,
+        value: 0,
+      };
+      group.rows.push(e);
+      if (e.attended) group.attended += 1;
+      group.value += e.sessionValue ?? 0;
+      groups.set(key, group);
+    }
+    return [...groups.values()];
+  }, [entries]);
+
+  const toggleSession = (key: string) =>
+    setOpenSessions((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const attendedMark = (r: CoachUsageEntry) =>
+    r.attended ? (
+      <span className="inline-flex items-center gap-1" style={{ color: "var(--viz-good)" }}>
+        <CheckCircle2 className="h-3.5 w-3.5" /> Yes
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1 text-muted-foreground">
+        <XCircle className="h-3.5 w-3.5" /> No
+      </span>
+    );
+
+  const valueMark = (r: CoachUsageEntry) =>
+    r.sessionValue === null ? (
+      <span className="text-muted-foreground">—</span>
+    ) : (
+      <span className="whitespace-nowrap">
+        {formatMoney(r.sessionValue)}
+        {r.isDropIn && <span className="ml-1 text-[11px] text-muted-foreground">paid</span>}
+      </span>
+    );
+
+  const priceMark = (r: CoachUsageEntry) =>
+    r.packagePrice === null ? (
+      <span className="text-muted-foreground">—</span>
+    ) : (
+      <span className="whitespace-nowrap">
+        {formatMoney(r.packagePrice)}
+        {r.packageSessions && r.packageSessions < UNLIMITED_SESSIONS ? (
+          <span className="ml-1 text-[11px] text-muted-foreground">
+            / {formatNumber(r.packageSessions)} sessions
+          </span>
+        ) : null}
+        {r.valueSource === "list" && (
+          <span className="ml-1 text-[11px] text-muted-foreground">list price</span>
+        )}
+      </span>
+    );
+
+  const sessionColumns: DataColumn<SessionGroup>[] = [
+    {
+      key: "date",
+      header: "Date",
+      sortValue: (g) => new Date(g.date).getTime(),
+      cell: (g) => <span className="whitespace-nowrap">{formatDateTime(g.date)}</span>,
+    },
     {
       key: "session",
       header: "Session",
-      cell: (r) => (
-        <div className="min-w-[130px]">
-          <p>{r.classTitle}</p>
-          <p className="text-[11px] text-muted-foreground">{r.type === "PT" ? r.source : segmentLabel(r.category)}</p>
+      sortValue: (g) => g.classTitle,
+      cell: (g) => (
+        <div className="min-w-[150px]">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="font-medium">{g.classTitle}</p>
+            {g.coachCount > 1 && (
+              <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
+                Group · {g.coachCount} coaches
+              </Badge>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {g.type === "PT" ? g.source : segmentLabel(g.category)}
+          </p>
         </div>
       ),
     },
     {
-      key: "member",
-      header: "Member",
-      cell: (r) => (
-        <div className="min-w-[130px]">
-          <p className="font-medium">{r.memberName}</p>
-          {r.phone && <p className="text-[11px] text-muted-foreground">{r.phone}</p>}
-        </div>
-      ),
-    },
-    {
-      key: "package",
-      header: "Package used",
-      cell: (r) => (r.isDropIn ? <Badge variant="outline">{r.packageName}</Badge> : r.packageName),
+      key: "members",
+      header: "Members",
+      align: "right",
+      sortValue: (g) => g.rows.length,
+      cell: (g) => formatNumber(g.rows.length),
     },
     {
       key: "attended",
       header: "Attended",
-      cell: (r) =>
-        r.attended ? (
-          <span className="inline-flex items-center gap-1" style={{ color: "var(--viz-good)" }}>
-            <CheckCircle2 className="h-3.5 w-3.5" /> Yes
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-muted-foreground">
-            <XCircle className="h-3.5 w-3.5" /> No
-          </span>
-        ),
+      align: "right",
+      sortValue: (g) => g.attended,
+      cell: (g) => (
+        <span className="whitespace-nowrap">
+          {formatNumber(g.attended)}
+          <span className="text-muted-foreground"> of {formatNumber(g.rows.length)}</span>
+        </span>
+      ),
     },
-    { key: "value", header: "Session value", align: "right", cell: (r) => (r.sessionValue ? formatMoney(r.sessionValue) : "—") },
-    { key: "branch", header: "Branch", cell: (r) => r.branch },
+    {
+      key: "value",
+      header: "Session value",
+      align: "right",
+      sortValue: (g) => g.value,
+      cell: (g) => (g.value ? formatMoney(g.value) : <span className="text-muted-foreground">—</span>),
+    },
+    { key: "branch", header: "Branch", sortValue: (g) => g.branch, cell: (g) => g.branch },
   ];
+
+  const sessionDetail = (g: SessionGroup) => (
+    <div className="px-3 py-2">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-left text-muted-foreground">
+            <th className="py-1 font-medium">Member</th>
+            <th className="py-1 font-medium">Package used</th>
+            <th className="py-1 text-right font-medium">Package price</th>
+            <th className="py-1 pl-3 font-medium">Attended</th>
+            <th className="py-1 text-right font-medium">Session value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {g.rows.map((r) => (
+            <tr key={r.id} className="border-t border-border/60">
+              <td className="py-1.5 pr-3">
+                <span className="font-medium">{r.memberName}</span>
+                {r.phone && <span className="ml-2 text-[11px] text-muted-foreground">{r.phone}</span>}
+              </td>
+              <td className="py-1.5 pr-3">
+                {r.isDropIn ? <Badge variant="outline">{r.packageName}</Badge> : r.packageName}
+              </td>
+              <td className="py-1.5 pr-3 text-right tabular-nums">{priceMark(r)}</td>
+              <td className="py-1.5 pl-3 pr-3">{attendedMark(r)}</td>
+              <td className="py-1.5 text-right tabular-nums">{valueMark(r)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -221,10 +381,28 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
           emphasis
           className="col-span-2"
         />
+        <StatTile
+          label="Individual sessions"
+          value={formatNumber(s.individualSessions)}
+          hint={`coach alone · ${s.soloClassSessions} classes (${formatNumber(s.soloClassHours)} h) · ${s.ptSessions} PT`}
+        />
+        <StatTile
+          label="Group sessions"
+          value={formatNumber(s.groupSessions)}
+          hint={
+            data.coCoaches.length
+              ? `shared with ${coCoachSummary} · ${formatNumber(s.groupClassHours)} h`
+              : "none shared with another coach"
+          }
+        />
         <StatTile label="Package uses" value={formatNumber(s.attendedPackageUses)} hint={`attended · ${s.packageUses} booked`} />
         <StatTile label="Different packages" value={formatNumber(s.uniquePackages)} />
         <StatTile label="Members" value={formatNumber(s.uniqueMembers)} />
-        <StatTile label="Drop-ins" value={formatNumber(s.attendedDropIns)} hint={`attended · ${s.dropIns} booked`} />
+        <StatTile
+          label="Drop-ins"
+          value={formatNumber(s.attendedDropIns)}
+          hint={`attended · ${s.dropIns} booked · ${formatMoney(s.dropInRevenue)} paid`}
+        />
         <StatTile label="Package session value" value={formatMoney(s.estimatedValue)} hint="Attended uses × price per session" className="col-span-2 xl:col-span-1" />
       </StatGrid>
 
@@ -304,10 +482,12 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
         <CardHeader className="flex flex-col gap-3 space-y-0 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
             <CardTitle className="text-sm font-semibold">
-              Every entry <span className="ml-1 font-normal text-muted-foreground">{formatNumber(entries.length)}</span>
+              Sessions <span className="ml-1 font-normal text-muted-foreground">{formatNumber(sessionGroups.length)}</span>
             </CardTitle>
             <CardDescription className="text-xs">
-              One row per member per session.
+              One row per session · open a session to see its {formatNumber(entries.length)} entries.
+              Package price is what the member paid when they bought it; session value splits that
+              over the package's sessions.
               {selectedMember && (
                 <>
                   {" "}Showing {selectedMember.memberName} only.{" "}
@@ -363,7 +543,19 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
         </CardHeader>
         <CardContent>
           {data.entries.length ? (
-            <DataTable columns={entryColumns} rows={entries} rowKey={(r) => r.id} pageSize={25} />
+            <DataTable
+              columns={sessionColumns}
+              rows={sessionGroups}
+              rowKey={(g) => g.key}
+              pageSize={15}
+              emptyText="No sessions match these filters."
+              expandable={{
+                isExpanded: (g) => openSessions.has(g.key),
+                onToggle: (g) => toggleSession(g.key),
+                render: sessionDetail,
+                label: (g) => `Show the members in ${g.classTitle}`,
+              }}
+            />
           ) : (
             <EmptyState title="No sessions for this coach in this period" description="Try a wider date range." />
           )}

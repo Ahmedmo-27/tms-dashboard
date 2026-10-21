@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,13 @@ type DataTableProps<T> = {
   /** Server-side paging: when set, rows are already one page. */
   serverPaging?: { page: number; totalPages: number; total: number; pageSize: number; onPageChange: (page: number) => void };
   rowClassName?: (row: T) => string | undefined;
+  /** Turns each row into an accordion: clicking it reveals `render` underneath. */
+  expandable?: {
+    isExpanded: (row: T) => boolean;
+    onToggle: (row: T) => void;
+    render: (row: T) => ReactNode;
+    label?: (row: T) => string;
+  };
 };
 
 export function DataTable<T>({
@@ -39,6 +46,7 @@ export function DataTable<T>({
   initialSort,
   serverPaging,
   rowClassName,
+  expandable,
 }: DataTableProps<T>) {
   const [sort, setSort] = useState(initialSort ?? null);
   const [page, setPage] = useState(0);
@@ -79,6 +87,7 @@ export function DataTable<T>({
         <Table>
           <TableHeader className="bg-muted/40">
             <TableRow className="hover:bg-transparent">
+              {expandable && <TableHead className="w-8" aria-label="Expand" />}
               {columns.map((column) => {
                 const active = sort?.key === column.key;
                 const SortIcon = !active ? ArrowUpDown : sort!.dir === "asc" ? ArrowUp : ArrowDown;
@@ -115,28 +124,69 @@ export function DataTable<T>({
           <TableBody>
             {visible.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-xs text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length + (expandable ? 1 : 0)}
+                  className="h-24 text-center text-xs text-muted-foreground"
+                >
                   {emptyText}
                 </TableCell>
               </TableRow>
             ) : (
-              visible.map((row, i) => (
-                <TableRow key={rowKey ? rowKey(row, i) : i} className={rowClassName?.(row)}>
-                  {columns.map((column) => (
-                    <TableCell
-                      key={column.key}
-                      className={cn(
-                        "text-xs sm:text-sm",
-                        dense ? "py-1.5" : "py-2.5",
-                        column.align === "right" && "text-right tabular-nums",
-                        column.className,
-                      )}
+              visible.map((row, i) => {
+                const key = rowKey ? rowKey(row, i) : String(i);
+                const expanded = expandable ? expandable.isExpanded(row) : false;
+                const cells = columns.map((column) => (
+                  <TableCell
+                    key={column.key}
+                    className={cn(
+                      "text-xs sm:text-sm",
+                      dense ? "py-1.5" : "py-2.5",
+                      column.align === "right" && "text-right tabular-nums",
+                      column.className,
+                    )}
+                  >
+                    {column.cell(row)}
+                  </TableCell>
+                ));
+                if (!expandable) {
+                  return (
+                    <TableRow key={key} className={rowClassName?.(row)}>
+                      {cells}
+                    </TableRow>
+                  );
+                }
+                return (
+                  <Fragment key={key}>
+                    <TableRow
+                      className={cn("cursor-pointer", expanded && "bg-muted/30", rowClassName?.(row))}
+                      onClick={() => expandable.onToggle(row)}
                     >
-                      {column.cell(row)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+                      <TableCell className={cn("w-8 pr-0", dense ? "py-1.5" : "py-2.5")}>
+                        <button
+                          type="button"
+                          aria-expanded={expanded}
+                          aria-label={expandable.label?.(row) ?? "Show details"}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            expandable.onToggle(row);
+                          }}
+                          className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                        >
+                          <ChevronRight className={cn("h-4 w-4 transition-transform", expanded && "rotate-90")} />
+                        </button>
+                      </TableCell>
+                      {cells}
+                    </TableRow>
+                    {expanded && (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={columns.length + 1} className="bg-muted/20 p-0">
+                          {expandable.render(row)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                );
+              })
             )}
           </TableBody>
         </Table>
