@@ -66,7 +66,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           title: "Scans Monitor",
           url: "/dashboard/scans-monitor",
           icon: ScanBarcode,
-          roles: ["management", "branch_admin"],
+          roles: ["management", "branch_admin", "accountant"],
         },
         {
           title: "QR Codes",
@@ -89,7 +89,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           title: "Our Members",
           url: "/dashboard/our-members",
           icon: Users,
-          roles: ["management", "branch_admin"],
+          roles: ["management", "branch_admin", "accountant"],
         },
         {
           title: "Member Requests",
