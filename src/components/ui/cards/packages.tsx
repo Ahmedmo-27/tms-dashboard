@@ -318,6 +318,21 @@ export default function Packages({
 }) {
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null);
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
+  const enrichedMemberPackages = memberPackages.map((pkg) => {
+    let price = pkg.price;
+    if (price === undefined || price === null || isNaN(price)) {
+      const match = packages.find(
+        (p) =>
+          p._id === pkg._id ||
+          (p.name && pkg.name && p.name.trim().toLowerCase() === pkg.name.trim().toLowerCase())
+      );
+      if (match?.price !== undefined && match?.price !== null && !isNaN(Number(match.price))) {
+        price = Number(match.price);
+      }
+    }
+    return { ...pkg, price };
+  });
+
   const [activeModal, setActiveModal] = useState<{
     type: "adjust" | "extend" | "freeze" | "cancel" | "record-previous";
     pkg: MemberPackage;
@@ -362,13 +377,13 @@ export default function Packages({
       <CardContent className="p-4 sm:p-6">
         {/* Mobile view */}
         <div className="block lg:hidden">
-          {memberPackages.length === 0 ? (
+          {enrichedMemberPackages.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No active packages found.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {memberPackages.map((pkg, index) => {
+              {enrichedMemberPackages.map((pkg, index) => {
                 const key = `${pkg._id}-${pkg.pkgStartDate}`;
                 return (
                   <div key={index}>
@@ -403,6 +418,7 @@ export default function Packages({
             <TableHeader>
               <TableRow>
                 <TableHead className="text-xs sm:text-sm">Package Name</TableHead>
+                <TableHead className="text-xs sm:text-sm">Price</TableHead>
                 <TableHead className="text-xs sm:text-sm">Start Date</TableHead>
                 <TableHead className="text-xs sm:text-sm">End Date</TableHead>
                 <TableHead className="text-xs sm:text-sm">Status</TableHead>
@@ -411,14 +427,14 @@ export default function Packages({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {memberPackages.length === 0 ? (
+              {enrichedMemberPackages.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                     No active packages found.
                   </TableCell>
                 </TableRow>
               ) : (
-                memberPackages.map((pkg, index) => {
+                enrichedMemberPackages.map((pkg, index) => {
                   const key = `${pkg._id}-${pkg.pkgStartDate}`;
                   const isExpanded = expandedPkg === key;
                   const isFrozen = pkg.status === "FROZEN" || Boolean(pkg.freezeInfo?.isFrozen);
@@ -451,6 +467,13 @@ export default function Packages({
                               </TooltipContent>
                             )}
                           </Tooltip>
+                        </TableCell>
+                        <TableCell className="py-3 px-2 sm:px-4">
+                          <span className="font-medium text-xs sm:text-sm tabular-nums whitespace-nowrap">
+                            {pkg.price !== undefined && pkg.price !== null
+                              ? `EGP ${Number(pkg.price).toLocaleString()}`
+                              : "—"}
+                          </span>
                         </TableCell>
                         <TableCell className="py-3 px-2 sm:px-4">
                           <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
@@ -609,7 +632,7 @@ export default function Packages({
                       </TableRow>
                       {isExpanded && (
                         <TableRow key={`${key}-history`}>
-                          <TableCell colSpan={6} className="bg-muted/30 px-4 py-3">
+                          <TableCell colSpan={7} className="bg-muted/30 px-4 py-3">
                             <PackageHistoryPanel pkg={pkg} />
                           </TableCell>
                         </TableRow>
