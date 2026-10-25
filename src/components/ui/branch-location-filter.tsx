@@ -38,7 +38,17 @@ export function BranchLocationFilter({
     return null;
   }
 
-  const current = searchParams.get("locationId") ?? "all";
+  const cairoLocation = locations.find(
+    (l) =>
+      /^cairo$/i.test(l.branchName.trim()) ||
+      /cairo/i.test(l.branchName) ||
+      /cairo/i.test(l.location)
+  );
+  const defaultLocationId = requireSelection
+    ? (cairoLocation?._id ?? locations[0]?._id ?? "all")
+    : "all";
+
+  const current = searchParams.get("locationId") ?? defaultLocationId;
 
   const onChange = (value: string) => {
     if (value === current) return;

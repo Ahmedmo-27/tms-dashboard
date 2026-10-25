@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PaymentDatePicker } from "@/components/ui/payments/date-picker";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import { isAccountantRole } from "@/lib/config/roles";
 import { parseSheetAmount } from "@/lib/utils/daily-sheet-csv";
 import {
   commitSheetRows,
@@ -205,8 +206,9 @@ export function DailySheetContainer({
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isViewingAllBranches, canActAsBranchAdmin, effectiveLocationId } =
+  const { isViewingAllBranches, canActAsBranchAdmin, effectiveLocationId, role } =
     useBranchContext();
+  const isAccountant = isAccountantRole(role);
   const branchId = locationId || effectiveLocationId;
   const [day, setDay] = useState(initialDay);
   const [date, setDate] = useState(() => new Date(`${initialDate}T12:00:00`));
@@ -589,7 +591,11 @@ export function DailySheetContainer({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {pendingCount > 0 ? (
+          {isAccountant ? (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              View only
+            </span>
+          ) : pendingCount > 0 ? (
             <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
               {pendingCount} unsaved
             </span>
@@ -601,14 +607,16 @@ export function DailySheetContainer({
             onDateChange={handleDateChange}
             className="h-9 w-[12.5rem]"
           />
-          <Button
-            variant="outline"
-            onClick={() => setImportOpen(true)}
-            disabled={saving || loading}
-          >
-            <Upload className="h-4 w-4" />
-            Import
-          </Button>
+          {!isAccountant && (
+            <Button
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              disabled={saving || loading}
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => setExportOpen(true)}
@@ -617,17 +625,19 @@ export function DailySheetContainer({
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Button
-            onClick={() => void handleSave()}
-            disabled={saving || pendingCount === 0 || loading || isViewingAllBranches}
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Save to system
-          </Button>
+          {!isAccountant && (
+            <Button
+              onClick={() => void handleSave()}
+              disabled={saving || pendingCount === 0 || loading || isViewingAllBranches}
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Save to system
+            </Button>
+          )}
         </div>
       </div>
 
@@ -659,6 +669,7 @@ export function DailySheetContainer({
             onPatch={patchClassRow}
             onRemove={removeClassRow}
             onMemberPicked={handleMemberPicked}
+            readOnly={isAccountant}
           />
           <div className="w-2 shrink-0 self-stretch bg-muted" />
           <SheetPaneTable
@@ -677,6 +688,7 @@ export function DailySheetContainer({
             onPatch={patchSpaceRow}
             onRemove={removeSpaceRow}
             onMemberPicked={handleMemberPicked}
+            readOnly={isAccountant}
           />
         </div>
       </div>

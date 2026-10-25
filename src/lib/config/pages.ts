@@ -74,12 +74,12 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           icon: QrCode,
           roles: ["management", "branch_admin"],
         },
-        // {
-        //   title: "Sheet",
-        //   url: "/dashboard/sheet",
-        //   icon: Table2,
-        //   roles: ["management", "branch_admin"],
-        // },
+        {
+          title: "Sheet",
+          url: "/dashboard/sheet",
+          icon: Table2,
+          roles: ["management", "branch_admin", "accountant"],
+        },
       ],
     },
     {

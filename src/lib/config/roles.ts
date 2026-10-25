@@ -4,7 +4,7 @@
  * - management: same branch abilities as branch_admin when a branch is selected
  *   (?locationId= in URL / locationId in request body); plus global-only actions
  *   (location CRUD, ticket category CRUD). Our Members is shared across branches.
- * - accountant: strictly read-only. Sees finance analytics, payments, members, and
+ * - accountant: strictly read-only. Sees finance analytics, payments, sheet, members, and
  *   scans monitor across all branches, and can read (never send) mail. Never listed in ACTION_ROLES.
  */
 
@@ -203,7 +203,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard": ["management", "branch_admin", "mailer", "accountant"],
   "/dashboard/scans-monitor": ["management", "branch_admin", "accountant"],
   "/dashboard/qr-codes": ["management", "branch_admin"],
-  "/dashboard/sheet": ["management", "branch_admin"],
+  "/dashboard/sheet": ["management", "branch_admin", "accountant"],
   "/dashboard/our-members": ["management", "branch_admin", "accountant"],
   "/dashboard/member-requests": ["management", "branch_admin"],
   "/dashboard/package-freezes": ["management", "branch_admin"],
