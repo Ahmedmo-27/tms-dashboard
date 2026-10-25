@@ -218,6 +218,12 @@ export const parseMembers = (members: any): Member[] => {
         }
       }
 
+      const rawPrice = pkg.pkgId?.price ?? pkg.price;
+      const parsedPrice =
+        rawPrice !== undefined && rawPrice !== null && !isNaN(Number(rawPrice))
+          ? Number(rawPrice)
+          : undefined;
+
       const parsedPackage = {
         _id: pkgIdStr,
         name: pkgName,
@@ -228,6 +234,7 @@ export const parseMembers = (members: any): Member[] => {
         adjustmentHistory,
         attendance: bundledAttendance,
         freezeInfo: pkg.freezeInfo,
+        price: parsedPrice,
       };
       parsedPackages.push(parsedPackage);
     });

@@ -163,7 +163,13 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
               {isFrozen && <Snowflake className="h-3 w-3" />}
               {isFrozen ? "Frozen" : pkg.status.charAt(0).toUpperCase() + pkg.status.slice(1)}
             </Badge>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              {pkg.price !== undefined && pkg.price !== null && (
+                <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                  EGP {Number(pkg.price).toLocaleString()}
+                </span>
+              )}
+              <div className="flex items-center gap-1">
               <Clock className="h-3 w-3 text-muted-foreground" />
               <span className={cn(
                 "text-sm font-medium",
@@ -171,6 +177,7 @@ export function MobilePackageCard({ pkg, uid }: MobilePackageCardProps) {
               )}>
                 {pkg.remainingClasses} left
               </span>
+              </div>
             </div>
           </div>
 

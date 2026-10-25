@@ -64,6 +64,7 @@ export type MemberPackage = {
   adjustmentHistory: AdjustmentRecord[];
   attendance: { className: string; attendanceDate: string }[];
   freezeInfo?: FreezeInfo;
+  price?: number;
 };
 
 export type Booking = {
