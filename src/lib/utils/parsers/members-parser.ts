@@ -218,7 +218,12 @@ export const parseMembers = (members: any): Member[] => {
         }
       }
 
-      const rawPrice = pkg.pkgId?.price ?? pkg.price;
+      // Prefer the actual paid amount recorded at subscription time;
+      // fall back to catalog price if no payment record was attached by the API.
+      const rawPrice =
+        pkg.paidAmount !== undefined && pkg.paidAmount !== null
+          ? pkg.paidAmount
+          : pkg.pkgId?.price ?? pkg.price;
       const parsedPrice =
         rawPrice !== undefined && rawPrice !== null && !isNaN(Number(rawPrice))
           ? Number(rawPrice)

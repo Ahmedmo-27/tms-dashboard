@@ -318,9 +318,12 @@ export default function Packages({
 }) {
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null);
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
+  // pkg.price comes from the API as the actual paid amount (paidAmount).
+  // If absent (e.g. legacy subscriptions with no payment record), fall back
+  // to the catalog package price as a best-effort display.
   const enrichedMemberPackages = memberPackages.map((pkg) => {
     let price = pkg.price;
-    if (price === undefined || price === null || isNaN(price)) {
+    if (price === undefined || price === null || isNaN(price as number)) {
       const match = packages.find(
         (p) =>
           p._id === pkg._id ||
