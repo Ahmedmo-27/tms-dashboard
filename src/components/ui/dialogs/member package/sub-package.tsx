@@ -35,6 +35,10 @@ import { Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
+import { useSalesAccounts } from "@/lib/hooks/use-sales-accounts";
+
+/** Sentinel for "no salesperson" — Select cannot hold an empty value. */
+const NO_SALES_ACCOUNT = "__none__";
 
 function toLocalTodayString(): string {
   const now = new Date();
@@ -77,6 +81,8 @@ export default function SubPackage({
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const [pkg, setPkg] = useState<Package | null>(null);
+  const { accounts: salesAccounts, isLoading: salesAccountsLoading } =
+    useSalesAccounts(open);
 
   const [selectedStartDate, setSelectedStartDate] = useState<string>("");
   const [selectedEndDate, setSelectedEndDate] = useState<string>("");
@@ -87,6 +93,7 @@ export default function SubPackage({
   const [showEdits, setShowEdits] = useState(false);
   const [priceChanged, setPriceChanged] = useState(false);
   const [pendingDeduction, setPendingDeduction] = useState(false);
+  const [soldBy, setSoldBy] = useState(NO_SALES_ACCOUNT);
 
   interface PreviousSessionEntry {
     date: string;
@@ -177,6 +184,7 @@ export default function SubPackage({
     setSelectedClassId("");
     setDateToAdd("");
     setDateError("");
+    setSoldBy(NO_SALES_ACCOUNT);
   };
 
   const toggleOpen = (value: boolean) => {
@@ -267,6 +275,11 @@ export default function SubPackage({
               type="hidden"
               name="previousSessionDates"
               value={JSON.stringify(previousSessions)}
+            />
+            <input
+              type="hidden"
+              name="soldBy"
+              value={soldBy === NO_SALES_ACCOUNT ? "" : soldBy}
             />
 
             <div className="space-y-2 mt-4">
@@ -483,6 +496,35 @@ export default function SubPackage({
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Sales attribution — optional here, editable later from the sales dashboard */}
+            <div className="space-y-2 mt-4">
+              <Label className="text-sm font-medium">Sold by (salesperson)</Label>
+              <Select
+                value={soldBy}
+                disabled={pending || salesAccountsLoading}
+                onValueChange={setSoldBy}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      salesAccountsLoading
+                        ? "Loading sales accounts..."
+                        : "No salesperson"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_SALES_ACCOUNT}>No salesperson</SelectItem>
+                  {salesAccounts.map((account) => (
+                    <SelectItem key={account._id} value={account._id}>
+                      {account.name}
+                      {account.role === "sales_manager" ? " (Sales Manager)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Edit payment details */}

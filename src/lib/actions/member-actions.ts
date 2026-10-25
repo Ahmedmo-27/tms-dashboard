@@ -188,6 +188,8 @@ export const subscribePackageAction = async (
           .filter(Boolean);
       }
     }
+    // Optional at the point of sale — the sales dashboard can set it later.
+    const soldBy = (formData.get("soldBy") as string) || undefined;
 
     const response = await subscribeMemberToPackage(
       uid,
@@ -199,6 +201,7 @@ export const subscribePackageAction = async (
       locationId,
       pendingDeduction,
       previousSessionDates,
+      soldBy,
     );
 
     revalidatePath(`/dashboard/our-members/${uid}`);
