@@ -17,6 +17,8 @@ import {
   Download,
   DollarSign,
   TrendingUp,
+  RotateCcw,
+  Banknote,
   Calendar,
   Users,
   X,
@@ -129,21 +131,31 @@ export default function PaymentsContainer({
 
   // Calculate payment statistics
   const stats = useMemo(() => {
-    const totalAmount = payments.reduce((sum, payment) => {
-      // Exclude package deductions from revenue as no cash is collected
+    let grossPayments = 0;
+    let totalRefunds = 0;
+    let totalCashouts = 0;
+
+    payments.forEach((payment) => {
       if (isDeducted(payment)) {
-        return sum;
+        return;
       }
 
       const amountStr = typeof payment.amount === 'string' ? payment.amount : String(payment.amount);
       const numericAmount = parseFloat(amountStr.replace(/[^0-9.-]+/g, ""));
       const val = isNaN(numericAmount) ? 0 : Math.abs(numericAmount);
-      
+
       if (isOutflow(payment)) {
-        return sum - val;
+        if (payment.isCashOut) {
+          totalCashouts += val;
+        } else {
+          totalRefunds += val;
+        }
+      } else {
+        grossPayments += val;
       }
-      return sum + val;
-    }, 0);
+    });
+
+    const totalRevenue = grossPayments - totalRefunds - totalCashouts;
 
     const todayPayments = payments.filter((payment) => {
       const timeZone = "Africa/Cairo";
@@ -161,12 +173,19 @@ export default function PaymentsContainer({
 
     const outflows = payments.filter((p) => isOutflow(p));
     const deductions = payments.filter((p) => isDeducted(p));
+    const refundCount = payments.filter((p) => isOutflow(p) && !p.isCashOut).length;
+    const cashoutCount = payments.filter((p) => isOutflow(p) && p.isCashOut).length;
 
     return {
-      totalAmount,
+      totalAmount: totalRevenue,
+      grossPayments,
+      totalRefunds,
+      totalCashouts,
       totalPayments: payments.filter((p) => !isOutflow(p) && !isDeducted(p)).length,
       todayPayments: todayPayments.length,
       totalOutflows: outflows.length,
+      refundCount,
+      cashoutCount,
       totalDeductions: deductions.length,
       uniqueMembers,
       paymentMethods,
@@ -317,9 +336,14 @@ export default function PaymentsContainer({
                   Total Payments
                 </p>
                 {isPending ? (
-                  <Skeleton className="h-7 w-16 mt-1 rounded" />
+                  <Skeleton className="h-7 w-28 mt-1 rounded" />
                 ) : (
-                  <p className="text-lg sm:text-2xl font-bold">{stats.totalPayments}</p>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <p className="text-lg sm:text-2xl font-bold truncate">
+                      EGP {stats.grossPayments.toLocaleString()}
+                    </p>
+                    <span className="text-xs text-muted-foreground">({stats.totalPayments})</span>
+                  </div>
                 )}
               </div>
               <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0" />
@@ -332,17 +356,20 @@ export default function PaymentsContainer({
             <div className="flex items-center">
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
-                  {isViewingToday ? "Today's Payments" : "Refunds & Outflows"}
+                  Refunds
                 </p>
                 {isPending ? (
-                  <Skeleton className="h-7 w-16 mt-1 rounded" />
+                  <Skeleton className="h-7 w-28 mt-1 rounded" />
                 ) : (
-                  <p className="text-lg sm:text-2xl font-bold">
-                    {isViewingToday ? stats.todayPayments : stats.totalOutflows}
-                  </p>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <p className="text-lg sm:text-2xl font-bold truncate text-destructive">
+                      EGP {stats.totalRefunds.toLocaleString()}
+                    </p>
+                    <span className="text-xs text-muted-foreground">({stats.refundCount})</span>
+                  </div>
                 )}
               </div>
-              <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0" />
+              <RotateCcw className="h-6 w-6 sm:h-8 sm:w-8 text-red-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -352,15 +379,20 @@ export default function PaymentsContainer({
             <div className="flex items-center">
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
-                  Unique Members
+                  Cash Outs
                 </p>
                 {isPending ? (
-                  <Skeleton className="h-7 w-16 mt-1 rounded" />
+                  <Skeleton className="h-7 w-28 mt-1 rounded" />
                 ) : (
-                  <p className="text-lg sm:text-2xl font-bold">{stats.uniqueMembers}</p>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <p className="text-lg sm:text-2xl font-bold truncate text-orange-600 dark:text-orange-400">
+                      EGP {stats.totalCashouts.toLocaleString()}
+                    </p>
+                    <span className="text-xs text-muted-foreground">({stats.cashoutCount})</span>
+                  </div>
                 )}
               </div>
-              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 flex-shrink-0" />
+              <Banknote className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
