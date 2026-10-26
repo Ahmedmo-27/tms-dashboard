@@ -203,7 +203,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard": ["management", "branch_admin", "mailer", "accountant"],
   "/dashboard/scans-monitor": ["management", "branch_admin", "accountant"],
   "/dashboard/qr-codes": ["management", "branch_admin"],
-  "/dashboard/sheet": ["management", "branch_admin", "accountant"],
+  "/dashboard/sheet": ["management", "accountant"],
   "/dashboard/our-members": ["management", "branch_admin", "accountant"],
   "/dashboard/member-requests": ["management", "branch_admin"],
   "/dashboard/package-freezes": ["management", "branch_admin"],
