@@ -78,7 +78,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
           title: "Sheet",
           url: "/dashboard/sheet",
           icon: Table2,
-          roles: ["management", "branch_admin", "accountant"],
+          roles: ["management", "accountant"],
         },
       ],
     },

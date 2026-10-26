@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { Download, Loader2, Save, Table2, Upload } from "lucide-react";
+import { Download, Loader2, Save, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PaymentDatePicker } from "@/components/ui/payments/date-picker";
@@ -19,7 +19,6 @@ import {
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 import { SheetPaneTable, type SheetSection } from "./sheet-grid";
 import { ExportSheetDialog } from "./export-sheet-dialog";
-import { ImportSheetDialog } from "./import-sheet-dialog";
 import type {
   LocalSheetRow,
   SheetCommitRow,
@@ -221,7 +220,6 @@ export function DailySheetContainer({
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
   const loadGeneration = useRef(0);
 
   useEffect(() => {
@@ -277,16 +275,6 @@ export function DailySheetContainer({
     if (!branchId || initialDay.locationId === branchId) return;
     void loadDay(new Date(`${initialDate}T12:00:00`));
   }, [branchId, initialDay.locationId, initialDate, loadDay]);
-
-  const handleImported = (importedDate: string, importedLocationId: string) => {
-    const currentDate = format(date, "yyyy-MM-dd");
-    if (
-      importedDate === currentDate &&
-      importedLocationId === (branchId || "")
-    ) {
-      void loadDay(date);
-    }
-  };
 
   const handleDateChange = (next?: Date) => {
     if (!next) return;
@@ -607,16 +595,6 @@ export function DailySheetContainer({
             onDateChange={handleDateChange}
             className="h-9 w-[12.5rem]"
           />
-          {!isAccountant && (
-            <Button
-              variant="outline"
-              onClick={() => setImportOpen(true)}
-              disabled={saving || loading}
-            >
-              <Upload className="h-4 w-4" />
-              Import
-            </Button>
-          )}
           <Button
             variant="outline"
             onClick={() => setExportOpen(true)}
@@ -698,13 +676,6 @@ export function DailySheetContainer({
         onOpenChange={setExportOpen}
         sheetDate={date}
         locationId={branchId}
-      />
-      <ImportSheetDialog
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        sheetDate={date}
-        locationId={branchId}
-        onImported={handleImported}
       />
     </div>
   );
