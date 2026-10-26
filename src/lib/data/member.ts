@@ -175,6 +175,7 @@ export const subscribeMemberToPackage = async (
   locationId?: string,
   pendingDeduction = false,
   previousSessionDates?: PreviousSessionDateInput[],
+  soldBy?: string,
 ) => {
   try {
     type RequestBody = {
@@ -187,6 +188,7 @@ export const subscribeMemberToPackage = async (
       pendingDeduction?: boolean;
       previousSessionDates?: PreviousSessionDateInput[];
       locationId?: string;
+      soldBy?: string;
     };
     const requestBody: RequestBody = {
       uid,
@@ -200,6 +202,7 @@ export const subscribeMemberToPackage = async (
         : {}),
       ...(pendingDeduction ? { pendingDeduction: true } : {}),
       ...(locationId ? { locationId } : {}),
+      ...(soldBy ? { soldBy } : {}),
     };
     const response = await tms.post("admin/member-packages", requestBody);
     return response.data;
