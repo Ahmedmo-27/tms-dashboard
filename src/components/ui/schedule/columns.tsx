@@ -37,6 +37,9 @@ export type WaitlistMember = {
   position?: number;
   addedAt?: string;
   isManual?: boolean;
+  reservationExpiresAt?: string;
+  notifiedAt?: string;
+  hasEligiblePackage?: boolean;
 };
 
 export type ScheduledClass = {

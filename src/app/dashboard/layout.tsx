@@ -16,6 +16,7 @@ import { HelpScenariosDialog } from "@/components/tutorials/help-scenarios-dialo
 import { WalkthroughOverlay } from "@/components/tutorials/walkthrough-overlay";
 import { WalkthroughProvider } from "@/lib/tutorials/walkthrough-context";
 import { MailNotificationListener } from "@/components/mailing/MailNotificationListener";
+import { WaitlistNotificationListener } from "@/components/schedule/WaitlistNotificationListener";
 import { MailNotificationBell } from "@/components/mailing/MailNotificationBell";
 import { Suspense } from "react";
 
@@ -26,6 +27,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <RequirePageAccess>
           <WalkthroughProvider>
             <MailNotificationListener />
+            <WaitlistNotificationListener />
             <SidebarProvider>
               <AppSidebar />
               <SidebarInset className="min-h-0">
