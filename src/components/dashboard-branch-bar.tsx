@@ -22,12 +22,16 @@ export function DashboardBranchBar() {
 
   if (!showBar) return null;
 
+  const isSheet =
+    pathname === "/dashboard/sheet" || pathname.startsWith("/dashboard/sheet/");
+
   return (
     <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2" data-walkthrough="branch-bar">
       <BranchActionBanner />
       <div data-walkthrough="branch-select-dropdown" className="shrink-0">
         <BranchLocationFilter
           locations={locations}
+          requireSelection={isSheet}
           className="h-8 w-[105px] sm:w-[135px] md:w-[165px]"
         />
       </div>

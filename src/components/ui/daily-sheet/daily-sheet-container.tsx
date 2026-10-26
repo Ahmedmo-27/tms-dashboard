@@ -4,11 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { Download, Loader2, Save, Table2, Upload } from "lucide-react";
+import { Download, Loader2, Save, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PaymentDatePicker } from "@/components/ui/payments/date-picker";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
+import { isAccountantRole } from "@/lib/config/roles";
 import { parseSheetAmount } from "@/lib/utils/daily-sheet-csv";
 import {
   commitSheetRows,
@@ -18,7 +19,6 @@ import {
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 import { SheetPaneTable, type SheetSection } from "./sheet-grid";
 import { ExportSheetDialog } from "./export-sheet-dialog";
-import { ImportSheetDialog } from "./import-sheet-dialog";
 import type {
   LocalSheetRow,
   SheetCommitRow,
@@ -205,8 +205,9 @@ export function DailySheetContainer({
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isViewingAllBranches, canActAsBranchAdmin, effectiveLocationId } =
+  const { isViewingAllBranches, canActAsBranchAdmin, effectiveLocationId, role } =
     useBranchContext();
+  const isAccountant = isAccountantRole(role);
   const branchId = locationId || effectiveLocationId;
   const [day, setDay] = useState(initialDay);
   const [date, setDate] = useState(() => new Date(`${initialDate}T12:00:00`));
@@ -219,7 +220,6 @@ export function DailySheetContainer({
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
   const loadGeneration = useRef(0);
 
   useEffect(() => {
@@ -275,16 +275,6 @@ export function DailySheetContainer({
     if (!branchId || initialDay.locationId === branchId) return;
     void loadDay(new Date(`${initialDate}T12:00:00`));
   }, [branchId, initialDay.locationId, initialDate, loadDay]);
-
-  const handleImported = (importedDate: string, importedLocationId: string) => {
-    const currentDate = format(date, "yyyy-MM-dd");
-    if (
-      importedDate === currentDate &&
-      importedLocationId === (branchId || "")
-    ) {
-      void loadDay(date);
-    }
-  };
 
   const handleDateChange = (next?: Date) => {
     if (!next) return;
@@ -589,7 +579,11 @@ export function DailySheetContainer({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {pendingCount > 0 ? (
+          {isAccountant ? (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              View only
+            </span>
+          ) : pendingCount > 0 ? (
             <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
               {pendingCount} unsaved
             </span>
@@ -603,31 +597,25 @@ export function DailySheetContainer({
           />
           <Button
             variant="outline"
-            onClick={() => setImportOpen(true)}
-            disabled={saving || loading}
-          >
-            <Upload className="h-4 w-4" />
-            Import
-          </Button>
-          <Button
-            variant="outline"
             onClick={() => setExportOpen(true)}
             disabled={saving || loading}
           >
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Button
-            onClick={() => void handleSave()}
-            disabled={saving || pendingCount === 0 || loading || isViewingAllBranches}
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Save to system
-          </Button>
+          {!isAccountant && (
+            <Button
+              onClick={() => void handleSave()}
+              disabled={saving || pendingCount === 0 || loading || isViewingAllBranches}
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Save to system
+            </Button>
+          )}
         </div>
       </div>
 
@@ -659,6 +647,7 @@ export function DailySheetContainer({
             onPatch={patchClassRow}
             onRemove={removeClassRow}
             onMemberPicked={handleMemberPicked}
+            readOnly={isAccountant}
           />
           <div className="w-2 shrink-0 self-stretch bg-muted" />
           <SheetPaneTable
@@ -677,6 +666,7 @@ export function DailySheetContainer({
             onPatch={patchSpaceRow}
             onRemove={removeSpaceRow}
             onMemberPicked={handleMemberPicked}
+            readOnly={isAccountant}
           />
         </div>
       </div>
@@ -686,13 +676,6 @@ export function DailySheetContainer({
         onOpenChange={setExportOpen}
         sheetDate={date}
         locationId={branchId}
-      />
-      <ImportSheetDialog
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        sheetDate={date}
-        locationId={branchId}
-        onImported={handleImported}
       />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { eachDayOfInterval, format, formatDate, isAfter, startOfDay } from "date-fns";
-import { Download, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,10 @@ import {
   serializeDailySheetCsv,
   toSerializableSheetDay,
 } from "@/lib/utils/daily-sheet-csv";
+import {
+  downloadSheetExcel,
+  type SheetExportItem,
+} from "@/lib/utils/export-sheet";
 import { isRateLimitError, withRetry } from "@/lib/utils/retry-request";
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
 
@@ -47,40 +51,48 @@ export function ExportSheetDialog({
 }: ExportSheetDialogProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
+  const [formatType, setFormatType] = useState<"excel" | "csv">("excel");
   const [activeDateField, setActiveDateField] = useState<"from" | "to" | null>(null);
   const { locations, isLoading: isLoadingLocations } = useLocations(true);
-  const { isManagement, userLocationId } = useBranchContext();
+  const { canViewAllBranches, userLocationId } = useBranchContext();
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(
     null
   );
 
-  const availableLocations = useMemo(
-    () =>
-      isManagement
-        ? locations
-        : locations.filter((location) => location._id === userLocationId),
-    [isManagement, locations, userLocationId]
-  );
+  const availableLocations = useMemo(() => {
+    if (canViewAllBranches) return locations;
+    if (userLocationId) {
+      const filtered = locations.filter((loc) => loc._id === userLocationId);
+      if (filtered.length > 0) return filtered;
+    }
+    return locations;
+  }, [canViewAllBranches, locations, userLocationId]);
 
   useEffect(() => {
     if (!open) return;
     setFromDate(sheetDate);
     setToDate(sheetDate);
     setProgress(null);
+  }, [open, sheetDate]);
+
+  useEffect(() => {
+    if (!open || availableLocations.length === 0) return;
+
     setSelectedBranchIds((current) => {
       if (current.length > 0) {
-        return current.filter((id) =>
-          availableLocations.some((location) => location._id === id)
+        const valid = current.filter((id) =>
+          availableLocations.some((loc) => loc._id === id)
         );
+        if (valid.length > 0) return valid;
       }
       if (locationId && availableLocations.some((l) => l._id === locationId)) {
         return [locationId];
       }
       return availableLocations.map((location) => location._id);
     });
-  }, [open, sheetDate, locationId, availableLocations]);
+  }, [open, locationId, availableLocations]);
 
   const resetForm = () => {
     setActiveDateField(null);
@@ -144,43 +156,72 @@ export function ExportSheetDialog({
     setProgress({ completed: 0, total });
 
     try {
-      const files: Array<{ name: string; content: string }> = [];
-      let completed = 0;
+      if (formatType === "excel") {
+        const items: SheetExportItem[] = [];
+        let completed = 0;
 
-      for (const day of days) {
-        const dateKey = format(day, "yyyy-MM-dd");
-        for (const branch of branches) {
-          const dayData = await withRetry(() =>
-            getSheetDay(dateKey, branch._id)
-          );
-          files.push({
-            name: dailySheetCsvFilename(dateKey, branch.branchName),
-            content: serializeDailySheetCsv(toSerializableSheetDay(dayData)),
-          });
-          completed += 1;
-          setProgress({ completed, total });
-          if (completed < total) await sleep(400);
+        for (const day of days) {
+          const dateKey = format(day, "yyyy-MM-dd");
+          for (const branch of branches) {
+            const dayData = await withRetry(() =>
+              getSheetDay(dateKey, branch._id)
+            );
+            items.push({
+              day: toSerializableSheetDay(dayData),
+              branchName: branch.branchName,
+            });
+            completed += 1;
+            setProgress({ completed, total });
+            if (completed < total) await sleep(200);
+          }
         }
-      }
 
-      if (files.length === 1) {
-        downloadBlob(
-          new Blob([files[0].content], { type: "text/csv;charset=utf-8" }),
-          files[0].name
+        downloadSheetExcel(items, dates.from, dates.to);
+        toast.success(
+          items.length === 1
+            ? "Exported 1 sheet to Excel."
+            : `Exported ${items.length} sheets to Excel.`
         );
+        handleOpenChange(false);
       } else {
-        downloadBlob(
-          buildUncompressedZip(files),
-          `DAILY CHECK INS - ${dates.from} to ${dates.to}.zip`
-        );
-      }
+        const files: Array<{ name: string; content: string }> = [];
+        let completed = 0;
 
-      toast.success(
-        files.length === 1
-          ? "Downloaded 1 sheet CSV."
-          : `Downloaded ${files.length} sheet CSVs.`
-      );
-      handleOpenChange(false);
+        for (const day of days) {
+          const dateKey = format(day, "yyyy-MM-dd");
+          for (const branch of branches) {
+            const dayData = await withRetry(() =>
+              getSheetDay(dateKey, branch._id)
+            );
+            files.push({
+              name: dailySheetCsvFilename(dateKey, branch.branchName),
+              content: serializeDailySheetCsv(toSerializableSheetDay(dayData)),
+            });
+            completed += 1;
+            setProgress({ completed, total });
+            if (completed < total) await sleep(200);
+          }
+        }
+
+        if (files.length === 1) {
+          downloadBlob(
+            new Blob([files[0].content], { type: "text/csv;charset=utf-8" }),
+            files[0].name
+          );
+        } else {
+          downloadBlob(
+            buildUncompressedZip(files),
+            `DAILY CHECK INS - ${dates.from} to ${dates.to}.zip`
+          );
+        }
+
+        toast.success(
+          files.length === 1
+            ? "Downloaded 1 sheet CSV."
+            : `Downloaded ${files.length} sheet CSVs.`
+        );
+        handleOpenChange(false);
+      }
     } catch (error) {
       if (isRateLimitError(error)) {
         toast.error(
@@ -215,9 +256,9 @@ export function ExportSheetDialog({
       >
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
           <DialogHeader className="pr-8 text-left">
-            <DialogTitle>Export sheet CSV</DialogTitle>
+            <DialogTitle>Export Sheet</DialogTitle>
             <DialogDescription>
-              Download the daily check-in layout for the branches and dates you pick.
+              Choose branches and a date range to export the daily check-in layout.
             </DialogDescription>
           </DialogHeader>
 
@@ -248,6 +289,34 @@ export function ExportSheetDialog({
               onOpenChange={(isOpen) => setActiveDateField(isOpen ? "to" : null)}
             />
 
+            <div className="space-y-1.5">
+              <span className="text-sm font-medium">Format</span>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={formatType === "excel" ? "default" : "outline"}
+                  size="sm"
+                  className="h-9 justify-center gap-1.5"
+                  onClick={() => setFormatType("excel")}
+                  disabled={isExporting}
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Excel (.xls)
+                </Button>
+                <Button
+                  type="button"
+                  variant={formatType === "csv" ? "default" : "outline"}
+                  size="sm"
+                  className="h-9 justify-center gap-1.5"
+                  onClick={() => setFormatType("csv")}
+                  disabled={isExporting}
+                >
+                  <FileText className="h-4 w-4" />
+                  CSV (.csv)
+                </Button>
+              </div>
+            </div>
+
             {rangeSummary && branchSummary && (
               <p className="text-sm text-muted-foreground rounded-md border bg-muted/40 p-3">
                 Exporting sheets from{" "}
@@ -258,7 +327,7 @@ export function ExportSheetDialog({
 
             {isExporting && progress && (
               <p className="text-sm text-muted-foreground">
-                Fetching {progress.completed} of {progress.total}…
+                Fetching day {progress.completed} of {progress.total}…
               </p>
             )}
           </div>
@@ -291,7 +360,7 @@ export function ExportSheetDialog({
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Download
+                {formatType === "excel" ? "Download Excel" : "Download CSV"}
               </>
             )}
           </Button>

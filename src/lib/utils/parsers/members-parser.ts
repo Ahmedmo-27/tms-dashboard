@@ -218,6 +218,17 @@ export const parseMembers = (members: any): Member[] => {
         }
       }
 
+      // Prefer the actual paid amount recorded at subscription time;
+      // fall back to catalog price if no payment record was attached by the API.
+      const rawPrice =
+        pkg.paidAmount !== undefined && pkg.paidAmount !== null
+          ? pkg.paidAmount
+          : pkg.pkgId?.price ?? pkg.price;
+      const parsedPrice =
+        rawPrice !== undefined && rawPrice !== null && !isNaN(Number(rawPrice))
+          ? Number(rawPrice)
+          : undefined;
+
       const parsedPackage = {
         _id: pkgIdStr,
         name: pkgName,
@@ -228,6 +239,7 @@ export const parseMembers = (members: any): Member[] => {
         adjustmentHistory,
         attendance: bundledAttendance,
         freezeInfo: pkg.freezeInfo,
+        price: parsedPrice,
       };
       parsedPackages.push(parsedPackage);
     });

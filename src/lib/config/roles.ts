@@ -5,9 +5,9 @@
  *   (?locationId= in URL / locationId in request body); plus global-only actions
  *   (location CRUD, ticket category CRUD). Our Members is shared across branches.
  * - accountant: read-only apart from one write — the sales attribution. Sees
- *   finance analytics, payments, members and scans monitor across all branches,
- *   can read (never send) mail, and may set who sold a package. Never listed in
- *   ACTION_ROLES.
+ *   finance analytics, payments, sheet, members and scans monitor across all
+ *   branches, can read (never send) mail, and may set who sold a package.
+ *   Never listed in ACTION_ROLES.
  * - sales_manager: owns the sales dashboard. Reads sold packages across branches
  *   and its only write is the sales attribution (who sold a package to a member).
  * - sales: a sales account a sold package is credited to. It has no dashboard
@@ -247,7 +247,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   ],
   "/dashboard/scans-monitor": ["management", "branch_admin", "accountant"],
   "/dashboard/qr-codes": ["management", "branch_admin"],
-  "/dashboard/sheet": ["management", "branch_admin"],
+  "/dashboard/sheet": ["management", "accountant"],
   "/dashboard/our-members": ["management", "branch_admin", "accountant"],
   "/dashboard/member-requests": ["management", "branch_admin"],
   "/dashboard/package-freezes": ["management", "branch_admin"],

@@ -36,6 +36,15 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {},
   },
+  async redirects() {
+    return [
+      {
+        source: "/sheet",
+        destination: "/dashboard/sheet",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

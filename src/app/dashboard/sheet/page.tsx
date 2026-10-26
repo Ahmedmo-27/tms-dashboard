@@ -1,7 +1,9 @@
 export const dynamic = "force-dynamic";
 
+import { redirect } from "next/navigation";
 import { DailySheetContainer } from "@/components/ui/daily-sheet/daily-sheet-container";
 import { getSheetDay } from "@/lib/data/daily-sheet";
+import { getLocations } from "@/lib/data/locations";
 import NetworkErrorPage from "@/components/ui/error-pages/network-error-fullpage";
 import { NetworkError, UnauthorizedError } from "@/core/api-error";
 import UnauthorizedPage from "@/components/ui/error-pages/UnauthorizedPage";
@@ -21,7 +23,21 @@ export default async function SheetPage({
 }) {
   const params = await searchParams;
   const date = sheetDateParam(params.date);
-  const locationId = params.locationId;
+  let locationId = params.locationId;
+
+  if (!locationId) {
+    const locations = await getLocations().catch(() => []);
+    const cairo =
+      locations.find((l) => /^cairo$/i.test(l.branchName.trim())) ||
+      locations.find((l) => /cairo/i.test(l.branchName)) ||
+      locations.find((l) => /cairo/i.test(l.location));
+    if (cairo) {
+      const query = new URLSearchParams();
+      if (params.date) query.set("date", params.date);
+      query.set("locationId", cairo._id);
+      redirect(`/dashboard/sheet?${query.toString()}`);
+    }
+  }
 
   try {
     const day = await getSheetDay(date, locationId);

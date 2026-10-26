@@ -263,6 +263,7 @@ function PersonRow({
   memberListId,
   purposeListId,
   methodListId,
+  readOnly = false,
   onPatch,
   onRemove,
   onMemberPicked,
@@ -272,11 +273,12 @@ function PersonRow({
   memberListId: string;
   purposeListId: string;
   methodListId: string;
+  readOnly?: boolean;
   onPatch: (clientRowId: string, patch: Partial<LocalSheetRow>) => void;
   onRemove?: (clientRowId: string) => void;
   onMemberPicked?: (row: LocalSheetRow, memberId: string) => void;
 }) {
-  const locked = row.status === "in_app" || row.status === "saved";
+  const locked = readOnly || row.status === "in_app" || row.status === "saved";
   const empty = !row.name.trim() && row.status === "draft";
   const pending = Boolean(row.lookupPending) && !locked;
 
@@ -320,7 +322,7 @@ function PersonRow({
       <td className={cellClass("min-w-[10.5rem]")}>
         <SheetInput
           value={row.memberLabel}
-          disabled={locked && Boolean(row.memberLabel)}
+          disabled={readOnly || (locked && Boolean(row.memberLabel))}
           list={memberListId}
           pending={pending}
           pendingLabel="Finding membership"
@@ -339,6 +341,7 @@ function PersonRow({
         <SheetInput
           value={row.amount}
           align="right"
+          disabled={readOnly}
           onChange={(amount) =>
             onPatch(row.clientRowId, {
               amount,
@@ -353,6 +356,7 @@ function PersonRow({
         <SheetInput
           value={row.paymentMethod}
           list={methodListId}
+          disabled={readOnly}
           onChange={(paymentMethod) =>
             onPatch(row.clientRowId, {
               paymentMethod,
@@ -369,6 +373,7 @@ function PersonRow({
           list={purposeListId}
           pending={pending}
           pendingLabel="Finding purpose"
+          disabled={readOnly}
           onChange={(purpose) =>
             onPatch(row.clientRowId, {
               purpose,
@@ -383,7 +388,7 @@ function PersonRow({
       <td className={cellClass("w-[7.5rem]")}>
         <SheetInput
           value={row.phone}
-          disabled={locked && Boolean(row.phone)}
+          disabled={readOnly || (locked && Boolean(row.phone))}
           onChange={(phone) =>
             onPatch(row.clientRowId, {
               phone,
@@ -395,11 +400,12 @@ function PersonRow({
         />
       </td>
       <td className={cellClass("w-[6.5rem]")}>
-        <StatusCell row={row} onRemove={onRemove} />
+        <StatusCell row={row} onRemove={readOnly ? undefined : onRemove} />
       </td>
       <td className={cellClass("min-w-[10rem]")}>
         <SheetInput
           value={row.note || ""}
+          disabled={readOnly}
           onChange={(note) =>
             onPatch(row.clientRowId, {
               note,
@@ -423,6 +429,7 @@ export function SheetPaneTable({
   purposeOptions,
   paymentMethods,
   emptyMessage,
+  readOnly = false,
   onPatch,
   onRemove,
   onMemberPicked,
@@ -435,6 +442,7 @@ export function SheetPaneTable({
   purposeOptions: string[];
   paymentMethods: string[];
   emptyMessage?: string;
+  readOnly?: boolean;
   onPatch: (clientRowId: string, patch: Partial<LocalSheetRow>) => void;
   onRemove?: (clientRowId: string) => void;
   onMemberPicked?: (row: LocalSheetRow, memberId: string) => void;
@@ -443,7 +451,11 @@ export function SheetPaneTable({
   const purposeListId = `${pane}-purpose-list`;
   const methodListId = `${pane}-method-list`;
   let running = 1;
-  const hasRows = sections.some((section) => section.rows.length > 0);
+  const hasRows = sections.some((section) =>
+    readOnly
+      ? section.rows.filter((r) => r.name.trim()).length > 0
+      : section.rows.length > 0
+  );
 
   return (
     <section className="flex min-w-[68rem] flex-1 flex-col border-r border-border/80 bg-card last:border-r-0">
@@ -473,6 +485,12 @@ export function SheetPaneTable({
         </thead>
           <tbody>
             {sections.map((section) => {
+              const rowsToDisplay = readOnly
+                ? section.rows.filter((r) => r.name.trim())
+                : section.rows;
+              if (readOnly && rowsToDisplay.length === 0 && !section.headerLabel) {
+                return null;
+              }
               let filled = 0;
               const body = (
                 <>
@@ -496,7 +514,7 @@ export function SheetPaneTable({
                       </td>
                     </tr>
                   ) : null}
-                  {section.rows.map((row) => {
+                  {rowsToDisplay.map((row) => {
                     const hasName = Boolean(row.name.trim());
                     const number = hasName
                       ? pane === "space_pt"
@@ -511,6 +529,7 @@ export function SheetPaneTable({
                         memberListId={memberListId}
                         purposeListId={purposeListId}
                         methodListId={methodListId}
+                        readOnly={readOnly}
                         onPatch={onPatch}
                         onRemove={onRemove}
                         onMemberPicked={onMemberPicked}
