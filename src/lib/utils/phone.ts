@@ -41,7 +41,11 @@ export function telHref(phone: string | null | undefined): string | undefined {
   return isValidContactPhone(phone) ? `tel:${digits}` : undefined;
 }
 
-export function whatsAppHref(phone: string | null | undefined): string | undefined {
+export function whatsAppHref(phone: string | null | undefined, text?: string): string | undefined {
   const digits = digitsOnlyPhone(phone);
-  return isValidContactPhone(phone) ? `https://wa.me/${digits}` : undefined;
+  if (!isValidContactPhone(phone)) return undefined;
+  if (text) {
+    return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+  }
+  return `https://wa.me/${digits}`;
 }

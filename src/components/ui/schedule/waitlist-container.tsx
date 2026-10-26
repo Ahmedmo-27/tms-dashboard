@@ -27,6 +27,49 @@ import { toast } from "react-hot-toast";
 import { whatsAppHref } from "@/lib/utils/phone";
 import { AddToWaitlistDialog } from "../dialogs/schedule/add-to-waitlist-dialog";
 
+function WaitlistCountdown({ expiresAt }: { expiresAt?: string }) {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+
+    const update = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft("Expired");
+        setIsExpired(true);
+      } else {
+        const totalSec = Math.floor(diff / 1000);
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        setTimeLeft(`${m}:${s.toString().padStart(2, "0")}`);
+        setIsExpired(false);
+      }
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  if (!expiresAt || !timeLeft) return null;
+
+  return (
+    <span
+      className={`text-[9px] font-mono px-1 py-0.5 rounded border inline-flex items-center gap-0.5 ${
+        isExpired
+          ? "bg-red-100 text-red-700 border-red-300 dark:bg-red-950/60 dark:text-red-400 font-semibold"
+          : "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300"
+      }`}
+      title={`Reservation window expires at ${new Date(expiresAt).toLocaleTimeString()}`}
+    >
+      <span>⏳</span>
+      <span>${timeLeft}</span>
+    </span>
+  );
+}
+
 export function WaitlistContainer({
   waitlist,
   scid,
@@ -174,7 +217,7 @@ export function WaitlistContainer({
                             {member.phone}
                           </p>
                         )}
-                        <div className="flex items-center gap-1 mt-0.5">
+                        <div className="flex flex-wrap items-center gap-1 mt-0.5">
                           {isNotified ? (
                             <Badge
                               variant="secondary"
@@ -198,6 +241,18 @@ export function WaitlistContainer({
                               Manual
                             </Badge>
                           )}
+                          {isNotified && member.isManual && member.hasEligiblePackage === false && (
+                            <Badge
+                              variant="destructive"
+                              className="text-[9px] px-1 py-0 bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-300 font-medium"
+                              title="Member has no active package covering this class"
+                            >
+                              No Package
+                            </Badge>
+                          )}
+                          {isNotified && member.reservationExpiresAt && (
+                            <WaitlistCountdown expiresAt={member.reservationExpiresAt} />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -220,13 +275,28 @@ export function WaitlistContainer({
                               <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
                           </Button>
-                          {whatsAppHref(member.phone) && (
+                          {whatsAppHref(
+                            member.phone,
+                            isNotified && member.isManual && member.hasEligiblePackage === false
+                              ? `Hello ${member.name || ""}, a slot just opened up for you in class! Please let us know if you'd like to book so we can lock in your spot.`
+                              : undefined
+                          ) && (
                             <a
-                              href={whatsAppHref(member.phone)}
+                              href={whatsAppHref(
+                                member.phone,
+                                isNotified && member.isManual && member.hasEligiblePackage === false
+                                  ? `Hello ${member.name || ""}, a slot just opened up for you in class! Please let us know if you'd like to book so we can lock in your spot.`
+                                  : undefined
+                              )}
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label={`WhatsApp ${member.name ?? "member"}`}
                               className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-muted"
+                              title={
+                                isNotified && member.isManual && member.hasEligiblePackage === false
+                                  ? "Contact member on WhatsApp to lock spot"
+                                  : "Chat on WhatsApp"
+                              }
                             >
                               <MessageCircle className="h-3.5 w-3.5 text-green-500" />
                             </a>
