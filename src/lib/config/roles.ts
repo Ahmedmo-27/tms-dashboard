@@ -4,8 +4,13 @@
  * - management: same branch abilities as branch_admin when a branch is selected
  *   (?locationId= in URL / locationId in request body); plus global-only actions
  *   (location CRUD, ticket category CRUD). Our Members is shared across branches.
- * - accountant: strictly read-only. Sees finance analytics and payments across all
- *   branches, and can read (never send) mail. Never listed in ACTION_ROLES.
+ * - accountant: read-only apart from one write — the sales attribution. Sees
+ *   finance analytics and payments across all branches, can read (never send)
+ *   mail, and may set who sold a package. Never listed in ACTION_ROLES.
+ * - sales_manager: owns the sales dashboard. Reads sold packages across branches
+ *   and its only write is the sales attribution (who sold a package to a member).
+ * - sales: a sales account a sold package is credited to. It has no dashboard
+ *   access of its own, so it is not a staff role here.
  */
 
 export const STAFF_ROLES = [
@@ -14,6 +19,7 @@ export const STAFF_ROLES = [
   "admin",
   "mailer",
   "accountant",
+  "sales_manager",
 ] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
@@ -22,7 +28,8 @@ export type PermissionRole =
   | "management"
   | "branch_admin"
   | "mailer"
-  | "accountant";
+  | "accountant"
+  | "sales_manager";
 
 export function toPermissionRole(
   role: string | null | undefined
@@ -32,6 +39,7 @@ export function toPermissionRole(
   if (role === "branch_admin") return role;
   if (role === "mailer") return "mailer";
   if (role === "accountant") return "accountant";
+  if (role === "sales_manager") return "sales_manager";
   return null;
 }
 
@@ -55,10 +63,34 @@ export function isAccountantRole(role: string | null | undefined): boolean {
   return toPermissionRole(role) === "accountant";
 }
 
-/** Roles that can switch between branches to view data (accountant is view-only). */
+export function isSalesManagerRole(role: string | null | undefined): boolean {
+  return toPermissionRole(role) === "sales_manager";
+}
+
+/** Roles that may set or clear which sales account sold a package. */
+export function canAssignSalesAttribution(
+  role: string | null | undefined
+): boolean {
+  const permissionRole = toPermissionRole(role);
+  return (
+    permissionRole === "management" ||
+    permissionRole === "branch_admin" ||
+    permissionRole === "sales_manager" ||
+    permissionRole === "accountant"
+  );
+}
+
+/**
+ * Roles that can switch between branches to view data. The accountant is
+ * view-only; the sales_manager may only write the sales attribution.
+ */
 export function canViewAllBranches(role: string | null | undefined): boolean {
   const permissionRole = toPermissionRole(role);
-  return permissionRole === "management" || permissionRole === "accountant";
+  return (
+    permissionRole === "management" ||
+    permissionRole === "accountant" ||
+    permissionRole === "sales_manager"
+  );
 }
 
 /** Roles that may send mail, sync the mailbox or change read state. */
@@ -79,6 +111,7 @@ export const STAFF_DASHBOARD_HOME = "/dashboard/scans-monitor";
 export const COACH_DASHBOARD_HOME = "/coach/today";
 export const MAILER_DASHBOARD_HOME = "/dashboard/mailing";
 export const ACCOUNTANT_DASHBOARD_HOME = "/dashboard/finance";
+export const SALES_MANAGER_DASHBOARD_HOME = "/dashboard/sales";
 
 /**
  * Resolves the primary dashboard landing route for an authorized role.
@@ -97,10 +130,35 @@ export function getDashboardRouteForRole(
   if (isAccountantRole(role)) {
     return ACCOUNTANT_DASHBOARD_HOME;
   }
+  if (isSalesManagerRole(role)) {
+    return SALES_MANAGER_DASHBOARD_HOME;
+  }
   if (isStaffRole(role)) {
     return STAFF_DASHBOARD_HOME;
   }
   return null;
+}
+
+/**
+ * Why a signed-in account was turned away at the dashboard login.
+ *
+ * The role is named so the rejection is diagnosable: the credentials were
+ * already accepted by the API, so this leaks nothing the user cannot see on
+ * their own account. "sales" is called out because it is the one role that
+ * looks like dashboard staff but is deliberately credit-only.
+ */
+export function unauthorizedRoleMessage(
+  role: string | null | undefined
+): string {
+  if (role === "sales") {
+    return (
+      'This is a "Sales" account, which is only credited for package sales ' +
+      "and cannot sign in to the dashboard. Ask management to change the " +
+      'role to "Sales Manager" on the Accounts page.'
+    );
+  }
+  const named = role ? `role "${role}"` : "role";
+  return `Unauthorized ${named}. This account does not have dashboard access.`;
 }
 
 /** Pages that show cross-branch member data for all staff. */
@@ -109,6 +167,7 @@ export const SHARED_GLOBAL_PAGES = [
   "/dashboard/member-requests",
   "/dashboard/package-freezes",
   "/dashboard/tickets",
+  "/dashboard/sales",
 ] as const;
 
 /** Pages where management acts as branch_admin after selecting a branch. */
@@ -156,7 +215,13 @@ export function canActAsBranchAdmin(
 }
 
 export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
-  "/dashboard": ["management", "branch_admin", "mailer", "accountant"],
+  "/dashboard": [
+    "management",
+    "branch_admin",
+    "mailer",
+    "accountant",
+    "sales_manager",
+  ],
   "/dashboard/scans-monitor": ["management", "branch_admin"],
   "/dashboard/qr-codes": ["management", "branch_admin"],
   "/dashboard/sheet": ["management", "branch_admin"],
@@ -179,6 +244,12 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/mailing/received": ["management", "mailer", "accountant"],
   "/dashboard/accounts": ["management"],
   "/dashboard/finance": ["management", "accountant"],
+  "/dashboard/sales": [
+    "management",
+    "branch_admin",
+    "sales_manager",
+    "accountant",
+  ],
 };
 
 export function canAccessPage(

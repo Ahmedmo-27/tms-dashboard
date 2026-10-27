@@ -140,6 +140,7 @@ export const subscribeMemberToPackage = async (
   amount?: string,
   locationId?: string,
   pendingDeduction = false,
+  soldBy?: string,
 ) => {
   try {
     type RequestBody = {
@@ -151,6 +152,7 @@ export const subscribeMemberToPackage = async (
       amount: string | undefined;
       pendingDeduction?: boolean;
       locationId?: string;
+      soldBy?: string;
     };
     const requestBody: RequestBody = {
       uid,
@@ -161,6 +163,7 @@ export const subscribeMemberToPackage = async (
       amount,
       ...(pendingDeduction ? { pendingDeduction: true } : {}),
       ...(locationId ? { locationId } : {}),
+      ...(soldBy ? { soldBy } : {}),
     };
     const response = await tms.post("admin/member-packages", requestBody);
     return response.data;

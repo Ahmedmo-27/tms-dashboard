@@ -32,6 +32,10 @@ import {
 } from "@/lib/utils/open-gym";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
+import { useSalesAccounts } from "@/lib/hooks/use-sales-accounts";
+
+/** Sentinel for "no salesperson" — Select cannot hold an empty value. */
+const NO_SALES_ACCOUNT = "__none__";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -56,6 +60,8 @@ export default function SubPackage({
   } = useManagementBranchSelection();
   const [open, setOpen] = useState(false);
   const [pkg, setPkg] = useState<Package | null>(null);
+  const { accounts: salesAccounts, isLoading: salesAccountsLoading } =
+    useSalesAccounts(open);
 
   const [selectedStartDate, setSelectedStartDate] = useState<string>("");
   const [selectedEndDate, setSelectedEndDate] = useState<string>("");
@@ -66,6 +72,7 @@ export default function SubPackage({
   const [showEdits, setShowEdits] = useState(false);
   const [priceChanged, setPriceChanged] = useState(false);
   const [pendingDeduction, setPendingDeduction] = useState(false);
+  const [soldBy, setSoldBy] = useState(NO_SALES_ACCOUNT);
 
   // Reset state when modal opens
   const resetForm = () => {
@@ -78,6 +85,7 @@ export default function SubPackage({
     setShowEdits(false);
     setPriceChanged(false);
     setPendingDeduction(false);
+    setSoldBy(NO_SALES_ACCOUNT);
   };
 
   const toggleOpen = (value: boolean) => {
@@ -158,6 +166,11 @@ export default function SubPackage({
             <input type="hidden" name="paymentMethod" value={selectedPaymentMethod} />
             <input type="hidden" name="priceChanged" value={String(priceChanged)} />
             <input type="hidden" name="pendingDeduction" value={pendingDeduction.toString()} />
+            <input
+              type="hidden"
+              name="soldBy"
+              value={soldBy === NO_SALES_ACCOUNT ? "" : soldBy}
+            />
 
             <div className="space-y-2 mt-4">
               <ManagementBranchField
@@ -222,6 +235,35 @@ export default function SubPackage({
                   {paymentMethods.map((m) => (
                     <SelectItem key={m.value} value={m.value}>
                       {m.header}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sales attribution — optional here, editable later from the sales dashboard */}
+            <div className="space-y-2 mt-4">
+              <Label className="text-sm font-medium">Sold by (salesperson)</Label>
+              <Select
+                value={soldBy}
+                disabled={pending || salesAccountsLoading}
+                onValueChange={setSoldBy}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      salesAccountsLoading
+                        ? "Loading sales accounts..."
+                        : "No salesperson"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_SALES_ACCOUNT}>No salesperson</SelectItem>
+                  {salesAccounts.map((account) => (
+                    <SelectItem key={account._id} value={account._id}>
+                      {account.name}
+                      {account.role === "sales_manager" ? " (Sales Manager)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

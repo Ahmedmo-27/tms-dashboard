@@ -86,6 +86,14 @@ const ROLE_CONFIG: Record<
     label: "Accountant",
     badgeClass: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
   },
+  sales: {
+    label: "Sales",
+    badgeClass: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+  },
+  sales_manager: {
+    label: "Sales Manager",
+    badgeClass: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950 dark:text-fuchsia-300 border-fuchsia-200 dark:border-fuchsia-800",
+  },
   member: {
     label: "Member",
     badgeClass: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-200 dark:border-sky-800",
@@ -104,6 +112,8 @@ const ROLE_TABS = [
   { key: "managing_coach", label: "Managing Coaches" },
   { key: "mailer", label: "Mailers" },
   { key: "accountant", label: "Accountants" },
+  { key: "sales", label: "Sales" },
+  { key: "sales_manager", label: "Sales Managers" },
   { key: "member", label: "Members" },
   { key: "user", label: "App Users" },
 ];

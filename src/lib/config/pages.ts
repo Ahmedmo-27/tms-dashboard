@@ -24,6 +24,7 @@ import {
   Building2,
   Repeat,
   BookOpenCheck,
+  HandCoins,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -56,6 +57,17 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
         { title: "Branches", url: "/dashboard/finance/branches", icon: Building2, roles: FINANCE_ROLES },
         { title: "Retention", url: "/dashboard/finance/retention", icon: Repeat, roles: FINANCE_ROLES },
         { title: "Ledger & Refunds", url: "/dashboard/finance/ledger", icon: BookOpenCheck, roles: FINANCE_ROLES },
+      ],
+    },
+    {
+      title: "Sales",
+      items: [
+        {
+          title: "Package Attribution",
+          url: "/dashboard/sales",
+          icon: HandCoins,
+          roles: ["management", "branch_admin", "sales_manager", "accountant"],
+        },
       ],
     },
     {

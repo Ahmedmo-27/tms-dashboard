@@ -167,6 +167,8 @@ export const subscribePackageAction = async (
     const priceChanged = (formData.get("priceChanged") as string) === "true";
     const pendingDeduction =
       (formData.get("pendingDeduction") as string) === "true";
+    // Optional at the point of sale — the sales dashboard can set it later.
+    const soldBy = (formData.get("soldBy") as string) || undefined;
 
     const response = await subscribeMemberToPackage(
       uid,
@@ -177,6 +179,7 @@ export const subscribePackageAction = async (
       priceChanged ? amount : undefined,
       locationId,
       pendingDeduction,
+      soldBy,
     );
 
     revalidatePath(`/dashboard/our-members/${uid}`);
