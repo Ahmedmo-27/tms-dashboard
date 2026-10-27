@@ -12,4 +12,17 @@ export const classSchema = z.object({
   locations: z
     .array(z.string().min(1, "Location value cannot be blank"))
     .min(1, "At least one location is required"),
+  defaultDuration: z
+    .union([
+      z.string().trim().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) > 0), {
+        message: "Duration must be a positive number",
+      }),
+      z.number().positive("Duration must be a positive number"),
+    ])
+    .optional()
+    .nullable()
+    .transform((val) => {
+      if (val === undefined || val === null || val === "") return undefined;
+      return Number(val);
+    }),
 });

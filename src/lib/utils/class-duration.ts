@@ -1,14 +1,26 @@
 /**
- * Returns the default duration in minutes for a given class title.
- * Reformer classes default to 50 minutes; all other classes default to 60 minutes (1 hour).
+ * Returns the default duration in minutes for a given class or class title.
+ * If defaultDuration is set on the class, returns it.
+ * Otherwise Reformer classes default to 50 minutes; all other classes default to 60 minutes (1 hour).
  */
-export function getDefaultClassDurationMinutes(classTitle?: string | null): number {
-  if (!classTitle) return 60;
-  return /reformer/i.test(classTitle) ? 50 : 60;
+export function getDefaultClassDurationMinutes(
+  classOrTitle?: { title?: string; defaultDuration?: number | null } | string | null
+): number {
+  if (!classOrTitle) return 60;
+  if (typeof classOrTitle === "object") {
+    if (typeof classOrTitle.defaultDuration === "number" && classOrTitle.defaultDuration > 0) {
+      return classOrTitle.defaultDuration;
+    }
+    const title = classOrTitle.title || "";
+    return /reformer/i.test(title) ? 50 : 60;
+  }
+  return /reformer/i.test(classOrTitle) ? 50 : 60;
 }
 
-export function getDefaultClassDurationMs(classTitle?: string | null): number {
-  return getDefaultClassDurationMinutes(classTitle) * 60 * 1000;
+export function getDefaultClassDurationMs(
+  classOrTitle?: { title?: string; defaultDuration?: number | null } | string | null
+): number {
+  return getDefaultClassDurationMinutes(classOrTitle) * 60 * 1000;
 }
 
 export function formatDurationLabel(durationMinutes: number): string {

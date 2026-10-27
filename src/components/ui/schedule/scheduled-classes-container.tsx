@@ -14,6 +14,7 @@ export function ScheduledClassesContainer({
   scheduledClasses,
   allScheduledClasses,
   classIdsMap,
+  classDurationMap,
   date,
   isLoading = false,
   coaches,
@@ -24,6 +25,7 @@ export function ScheduledClassesContainer({
   scheduledClasses: ScheduledClass[];
   allScheduledClasses: ScheduledClass[];
   classIdsMap: Map<string, string>;
+  classDurationMap?: Map<string, number>;
   isLoading?: boolean;
   date: Date;
   coaches: any[];
@@ -66,6 +68,7 @@ export function ScheduledClassesContainer({
           <div data-walkthrough="schedule-add-class-btn">
             <ScheduleClass
               classIdsMap={classIdsMap}
+              classDurationMap={classDurationMap}
               date={date}
               coaches={coaches}
               locations={locations}

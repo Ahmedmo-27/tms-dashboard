@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 interface SchedulePageProps {
   scheduledClasses: ScheduledClass[];
   classIdsMap: Map<string, string>;
+  classDurationMap?: Map<string, number>;
   coaches: any[];
   locations: Location[];
   initialLocationId?: string;
@@ -29,6 +30,7 @@ interface SchedulePageProps {
 
 export function SchedulePage({
   classIdsMap,
+  classDurationMap,
   coaches,
   scheduledClasses: initialScheduledClasses,
   locations,
@@ -151,6 +153,7 @@ export function SchedulePage({
           scheduledClasses={selectedScheduledClasses}
           allScheduledClasses={classes}
           classIdsMap={classIdsMap}
+          classDurationMap={classDurationMap}
           date={date || new Date()}
           isLoading={isLoading}
           coaches={coaches}

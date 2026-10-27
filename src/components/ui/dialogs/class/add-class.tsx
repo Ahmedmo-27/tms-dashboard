@@ -32,6 +32,7 @@ interface ActionState {
     title: string;
     category: string;
     price: string;
+    defaultDuration?: string;
     locations: string[];
   };
 }
@@ -56,8 +57,8 @@ export function AddClass({
     data: null,
     defaultValues: {
       title: "",
-
       price: "",
+      defaultDuration: "60",
       category: "",
       locations: [],
     },
@@ -68,6 +69,7 @@ export function AddClass({
       const defaultValues = {
         title: formData.get("title") as string,
         price: formData.get("price") as string,
+        defaultDuration: formData.get("defaultDuration") as string,
         category: formData.get("category") as string,
         locations: formData.getAll("locations") as string[],
       };
@@ -138,6 +140,27 @@ export function AddClass({
                 {state?.errors && "price" in state.errors && (
                   <p className="text-destructive text-sm">
                     {state.errors.price}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="defaultDuration" className="text-sm font-medium">
+                  Default Duration (Minutes)
+                </Label>
+                <Input
+                  id="defaultDuration"
+                  name="defaultDuration"
+                  type="number"
+                  min={1}
+                  step={1}
+                  className="w-full"
+                  placeholder="60"
+                  defaultValue={state?.defaultValues?.defaultDuration ?? "60"}
+                />
+                {state?.errors && "defaultDuration" in state.errors && (
+                  <p className="text-destructive text-sm">
+                    {(state.errors as any).defaultDuration}
                   </p>
                 )}
               </div>

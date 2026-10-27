@@ -19,6 +19,7 @@ export const addClass = async (cls: Class) => {
       price: cls.price,
       category: cls.category,
       locations: cls.locations,
+      defaultDuration: cls.defaultDuration,
     };
     const response = await tms.post("admin/class", requestBody);
     return response.data;
@@ -35,6 +36,7 @@ export const editClass = async (cls: Class) => {
       price: cls.price,
       category: cls.category,
       locations: cls.locations,
+      defaultDuration: cls.defaultDuration,
     };
     const response = await tms.patch(`admin/class/${cls._id}`, requestBody);
     return response.data;
