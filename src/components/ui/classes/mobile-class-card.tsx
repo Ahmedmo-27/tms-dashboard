@@ -5,6 +5,7 @@ import {
   Dumbbell,
   MapPin,
   DollarSign,
+  Clock,
   Edit,
   Layers,
   Trash,
@@ -16,6 +17,7 @@ import EditClassDialog from "../dialogs/class/edit-class";
 import DeleteClassDialog from "../dialogs/class/delete-class";
 import ManagePackagesDialog from "../dialogs/class/manage-packages";
 import { formatCategory, getCategoryColor } from "@/lib/utils/catalog";
+import { formatDurationLabel, getDefaultClassDurationMinutes } from "@/lib/utils/class-duration";
 import type { Location } from "@/lib/data/locations";
 
 interface MobileClassCardProps {
@@ -84,7 +86,7 @@ export function MobileClassCard({
           <div
             className={cn(
               "grid gap-3 text-sm",
-              showLocation ? "grid-cols-2" : "grid-cols-1"
+              showLocation ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"
             )}
           >
             {showLocation && (
@@ -112,6 +114,18 @@ export function MobileClassCard({
                     {formatPrice(cls.price)}
                   </p>
                   <p className="text-xs">Price</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">
+                    {formatDurationLabel(getDefaultClassDurationMinutes(cls))}
+                  </p>
+                  <p className="text-xs">Duration</p>
                 </div>
               </div>
             </div>

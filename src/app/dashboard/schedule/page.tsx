@@ -51,12 +51,20 @@ export default async function Page({
       (classes as Class[]).map((cls) => [cls.title, cls._id])
     );
 
+    const classDurationMap: Map<string, number> = new Map(
+      (classes as Class[]).map((cls) => [
+        cls._id,
+        cls.defaultDuration ?? (/reformer/i.test(cls.title || "") ? 50 : 60),
+      ])
+    );
+
     return (
       <div className="flex flex-col gap-3">
         <SchedulePage
           key={`${dateParam}:${locationId ?? "all"}`}
           scheduledClasses={scheduledClasses}
           classIdsMap={classIdsMap}
+          classDurationMap={classDurationMap}
           coaches={coaches}
           locations={locationDocs}
           initialLocationId={locationId}

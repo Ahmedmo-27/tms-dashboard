@@ -1,4 +1,5 @@
 "use client";
+import { ExpiringPackagesModal, type ExpiringCategoryFilter } from '@/components/coach/reports/ExpiringPackagesModal';
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
@@ -45,6 +46,7 @@ import type {
   BoughtPackageItem,
   DeliveredSessionItem,
   ClientBalanceItem,
+  ExpiringPackageItem,
 } from "@/types/coach.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,6 +136,15 @@ export function CoachPtAchievementReport() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [drillTab, setDrillTab] = useState<string>("packages");
+  const [isExpiringModalOpen, setIsExpiringModalOpen] = useState<boolean>(false);
+  const [expiringFilterType, setExpiringFilterType] = useState<ExpiringCategoryFilter>("all");
+  const [expiringCoachFilter, setExpiringCoachFilter] = useState<string>("all");
+
+  const handleOpenExpiringModal = (category: ExpiringCategoryFilter = "all", coachId = "all") => {
+    setExpiringFilterType(category);
+    setExpiringCoachFilter(coachId);
+    setIsExpiringModalOpen(true);
+  };
 
   // Data state
   const [data, setData] = useState<PtAchievementReport | null>(null);
@@ -156,6 +167,34 @@ export function CoachPtAchievementReport() {
     const q = searchQuery.toLowerCase().trim();
     return data.coaches.filter((c) => c.coachName.toLowerCase().includes(q));
   }, [data?.coaches, searchQuery]);
+
+  // Aggregated expiring packages (from API or derived from active clients)
+  const allExpiringPackages: ExpiringPackageItem[] = useMemo(() => {
+    if (data?.expiringSoonPackages && data.expiringSoonPackages.length > 0) {
+      return data.expiringSoonPackages;
+    }
+    // Fallback: If viewing a single coach and drilldown activeClients has items
+    if (data?.selectedCoach?.activeClients) {
+      return data.selectedCoach.activeClients
+        .filter((c) => c.isLowBalance || c.isExpiringSoon)
+        .map((c) => ({
+          memberId: c.memberId,
+          memberName: c.memberName,
+          phone: c.phone,
+          coachId: data.selectedCoach!.coachId,
+          coachName: data.selectedCoach!.coachName,
+          packageName: c.packageName,
+          packageId: c.packageId,
+          remainingSessions: c.remainingSessions,
+          pkgEndDate: c.pkgEndDate,
+          daysUntilExpiry: c.daysUntilExpiry,
+          isLowBalance: c.isLowBalance,
+          isExpiringSoon: c.isExpiringSoon,
+          status: c.status,
+        }));
+    }
+    return [];
+  }, [data?.expiringSoonPackages, data?.selectedCoach]);
 
   // Suggestions list for the search bar dropdown
   const matchingSuggestions = useMemo(() => {
@@ -689,87 +728,72 @@ export function CoachPtAchievementReport() {
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       {/* Sticky Filter Bar */}
-      <div className="sticky top-0 z-20 -mx-4 -mt-4 border-b bg-background/95 px-3 py-2.5 backdrop-blur-sm sm:-mx-6 sm:-mt-6 sm:px-6 sm:py-3">
-        <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-          {/* Controls: Mode Switcher & Date Controls */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            {/* Top row on mobile: Mode switcher & Mobile Export */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="inline-flex w-full rounded-lg border bg-muted/40 p-1 text-xs sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setFilterType("weekly")}
-                  className={cn(
-                    "flex-1 rounded-md px-3 py-1 font-medium transition-colors sm:flex-initial",
-                    filterType === "weekly"
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Weekly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilterType("monthly")}
-                  className={cn(
-                    "flex-1 rounded-md px-3 py-1 font-medium transition-colors sm:flex-initial",
-                    filterType === "monthly"
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Monthly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilterType("date")}
-                  className={cn(
-                    "flex-1 rounded-md px-3 py-1 font-medium transition-colors sm:flex-initial",
-                    filterType === "date"
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  By Date
-                </button>
-              </div>
-
-              {/* Mobile Export CSV button (visible on mobile only, beside mode switcher) */}
-              <div className="flex items-center gap-1.5 lg:hidden">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1 px-2.5 text-xs shrink-0"
-                  disabled={loading || !data}
-                  onClick={handleExportCsv}
-                  title="Export CSV"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span className="hidden xs:inline">Export</span>
-                </Button>
-              </div>
+      <div className="sticky top-0 z-20 -mx-4 -mt-4 border-b bg-background/95 px-3 py-2.5 backdrop-blur-md sm:-mx-6 sm:-mt-6 sm:px-6 sm:py-3 shadow-xs">
+        <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
+          {/* Left Section: Mode Switcher & Date Controls */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Mode Switcher */}
+            <div className="inline-flex rounded-lg border bg-muted/40 p-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setFilterType("weekly")}
+                className={cn(
+                  "rounded-md px-3 py-1 font-medium transition-colors cursor-pointer",
+                  filterType === "weekly"
+                    ? "bg-background text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Weekly
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType("monthly")}
+                className={cn(
+                  "rounded-md px-3 py-1 font-medium transition-colors cursor-pointer",
+                  filterType === "monthly"
+                    ? "bg-background text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType("date")}
+                className={cn(
+                  "rounded-md px-3 py-1 font-medium transition-colors cursor-pointer",
+                  filterType === "date"
+                    ? "bg-background text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                By Date
+              </button>
             </div>
+
+            <div className="hidden h-5 w-px bg-border/60 sm:block" />
 
             {/* Date Pickers / Nav Controls */}
             {filterType === "weekly" && (
-              <div className="flex items-center justify-between gap-1 sm:justify-start">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 shrink-0"
+                  className="h-8 w-8 shrink-0 cursor-pointer"
                   onClick={handlePrevPeriod}
                   disabled={loading}
                   title="Previous week"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="flex-1 text-center text-xs font-semibold sm:min-w-[170px] sm:flex-initial sm:text-sm">
+                <span className="min-w-[145px] text-center text-xs font-semibold sm:min-w-[170px] sm:text-sm">
                   {weekInfo.label}
                 </span>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 shrink-0"
+                  className="h-8 w-8 shrink-0 cursor-pointer"
                   onClick={handleNextPeriod}
                   disabled={loading}
                   title="Next week"
@@ -779,7 +803,7 @@ export function CoachPtAchievementReport() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 shrink-0 px-2 text-xs text-muted-foreground"
+                  className="h-8 shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                   onClick={handleResetToCurrent}
                   disabled={loading}
                 >
@@ -789,24 +813,24 @@ export function CoachPtAchievementReport() {
             )}
 
             {filterType === "monthly" && (
-              <div className="flex items-center justify-between gap-1 sm:justify-start">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 shrink-0"
+                  className="h-8 w-8 shrink-0 cursor-pointer"
                   onClick={handlePrevPeriod}
                   disabled={loading}
                   title="Previous month"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="flex-1 text-center text-xs font-semibold sm:min-w-[140px] sm:flex-initial sm:text-sm">
+                <span className="min-w-[120px] text-center text-xs font-semibold sm:min-w-[140px] sm:text-sm">
                   {monthInfo.label}
                 </span>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 shrink-0"
+                  className="h-8 w-8 shrink-0 cursor-pointer"
                   onClick={handleNextPeriod}
                   disabled={loading}
                   title="Next month"
@@ -816,7 +840,7 @@ export function CoachPtAchievementReport() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 shrink-0 px-2 text-xs text-muted-foreground"
+                  className="h-8 shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                   onClick={handleResetToCurrent}
                   disabled={loading}
                 >
@@ -826,10 +850,10 @@ export function CoachPtAchievementReport() {
             )}
 
             {filterType === "date" && (
-              <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto">
+              <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
                 <Input
                   type="date"
-                  className="h-8 min-w-[110px] flex-1 text-xs sm:w-32"
+                  className="h-8 w-32 text-xs bg-background"
                   value={dateRangeInput.start}
                   onChange={(e) =>
                     setDateRangeInput((prev) => ({ ...prev, start: e.target.value }))
@@ -839,7 +863,7 @@ export function CoachPtAchievementReport() {
                 <span className="shrink-0 text-xs text-muted-foreground">to</span>
                 <Input
                   type="date"
-                  className="h-8 min-w-[110px] flex-1 text-xs sm:w-32"
+                  className="h-8 w-32 text-xs bg-background"
                   value={dateRangeInput.end}
                   onChange={(e) =>
                     setDateRangeInput((prev) => ({ ...prev, end: e.target.value }))
@@ -848,7 +872,7 @@ export function CoachPtAchievementReport() {
                 />
                 <Button
                   size="sm"
-                  className="h-8 shrink-0 gap-1.5 text-xs"
+                  className="h-8 shrink-0 gap-1.5 text-xs cursor-pointer"
                   onClick={handleApplyDateRange}
                   disabled={loading}
                 >
@@ -859,16 +883,17 @@ export function CoachPtAchievementReport() {
             )}
 
             {loading && (
-              <div className="hidden items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary sm:flex">
+              <div className="hidden items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary md:flex">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 <span>Loading...</span>
               </div>
             )}
           </div>
 
-          {/* Right Actions: Coach Search & Desktop Export */}
+          {/* Right Section: Coach Search & Action Buttons */}
           <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-64 lg:w-60">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-60 lg:w-64 sm:flex-initial">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
@@ -877,7 +902,7 @@ export function CoachPtAchievementReport() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                className="h-8 pl-8 pr-7 text-xs"
+                className="h-8 pl-8 pr-7 text-xs bg-background"
               />
               {searchQuery && (
                 <button
@@ -886,7 +911,7 @@ export function CoachPtAchievementReport() {
                     setSearchQuery("");
                     if (selectedCoachId !== "all") setSelectedCoachId("all");
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer"
                   title="Clear search"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -906,7 +931,7 @@ export function CoachPtAchievementReport() {
                           setSearchQuery(c.name);
                           setIsSearchFocused(false);
                         }}
-                        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+                        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer"
                       >
                         <span className="font-medium">{c.name}</span>
                         <span className="text-[10px] text-muted-foreground">View stats →</span>
@@ -921,15 +946,47 @@ export function CoachPtAchievementReport() {
               )}
             </div>
 
+            {/* Expiring Soon Action Button */}
             <Button
               variant="outline"
               size="sm"
-              className="hidden h-8 gap-1.5 text-xs lg:flex"
+              className="h-8 gap-1.5 text-xs border-orange-500/50 bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 dark:text-orange-400 font-semibold transition-all shrink-0 flex items-center cursor-pointer"
+              disabled={loading || !data}
+              onClick={() => handleOpenExpiringModal("all", isDrillDown ? selectedCoachId : "all")}
+              title="View all expiring soon packages"
+            >
+              <Clock className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+              <span className="hidden sm:inline">Expiring Soon</span>
+              <span className="sm:hidden">Expiring</span>
+              {allExpiringPackages.length > 0 ? (
+                <Badge
+                  variant="secondary"
+                  className="h-4 px-1.5 text-[10px] bg-orange-500/25 text-orange-700 dark:text-orange-300 font-bold"
+                >
+                  {allExpiringPackages.length}
+                </Badge>
+              ) : (data?.totals.lowBalanceClients || data?.totals.expiringSoon) ? (
+                <Badge
+                  variant="secondary"
+                  className="h-4 px-1.5 text-[10px] bg-orange-500/25 text-orange-700 dark:text-orange-300 font-bold"
+                >
+                  {(data?.totals.lowBalanceClients ?? 0) + (data?.totals.expiringSoon ?? 0)}
+                </Badge>
+              ) : null}
+            </Button>
+
+            {/* Export CSV Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs shrink-0 flex items-center cursor-pointer"
               disabled={loading || !data}
               onClick={handleExportCsv}
+              title="Export CSV report"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>Export CSV</span>
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">Export</span>
             </Button>
           </div>
         </div>
@@ -1044,30 +1101,44 @@ export function CoachPtAchievementReport() {
                   <p className="text-[11px] text-muted-foreground leading-tight sm:text-xs">Workload owed</p>
                 </Card>
 
-                <Card className="gap-1 border-amber-500/30 bg-amber-500/5 px-3 py-3 shadow-none sm:px-4 sm:py-4">
+                <Card
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenExpiringModal("sessions", "all")}
+                  className="cursor-pointer gap-1 border-amber-500/30 bg-amber-500/5 px-3 py-3 shadow-none sm:px-4 sm:py-4 transition-all hover:border-amber-500/60 hover:shadow-xs group"
+                  title="Click to view all packages expiring soon by low session balance (≤ 2 left)"
+                >
                   <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400 sm:text-xs">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">Low Balance</span>
+                    <span>Low Balance</span>
                   </div>
                   <p className="text-xl font-bold tracking-tight text-amber-600 dark:text-amber-400 sm:text-2xl">
                     {data.totals.lowBalanceClients}
                   </p>
-                  <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 leading-tight sm:text-xs">
-                    Clients with ≤ 2 left
-                  </p>
+                  <div className="flex items-center justify-between text-[11px] text-amber-600/80 dark:text-amber-400/80 leading-tight sm:text-xs">
+                    <span>≤ 2 sessions left</span>
+                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 opacity-80 group-hover:opacity-100 group-hover:underline">View →</span>
+                  </div>
                 </Card>
 
-                <Card className="gap-1 border-orange-500/30 bg-orange-500/5 px-3 py-3 shadow-none sm:px-4 sm:py-4">
+                <Card
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenExpiringModal("dates", "all")}
+                  className="cursor-pointer gap-1 border-orange-500/30 bg-orange-500/5 px-3 py-3 shadow-none sm:px-4 sm:py-4 transition-all hover:border-orange-500/60 hover:shadow-xs group"
+                  title="Click to view all packages expiring soon by upcoming expiration date (≤ 7 days)"
+                >
                   <div className="flex items-center gap-1.5 text-[11px] font-medium text-orange-600 dark:text-orange-400 sm:text-xs">
                     <Clock className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">Expiring in 7d</span>
+                    <span>Expiring in 7d</span>
                   </div>
                   <p className="text-xl font-bold tracking-tight text-orange-600 dark:text-orange-400 sm:text-2xl">
                     {data.totals.expiringSoon}
                   </p>
-                  <p className="text-[11px] text-orange-600/80 dark:text-orange-400/80 leading-tight sm:text-xs">
-                    Expiring soon
-                  </p>
+                  <div className="flex items-center justify-between text-[11px] text-orange-600/80 dark:text-orange-400/80 leading-tight sm:text-xs">
+                    <span>Expiring soon</span>
+                    <span className="text-[10px] font-semibold text-orange-600 dark:text-orange-400 opacity-80 group-hover:opacity-100 group-hover:underline">View →</span>
+                  </div>
                 </Card>
               </div>
 
@@ -1178,6 +1249,24 @@ export function CoachPtAchievementReport() {
                     </p>
                   </div>
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 font-semibold shrink-0"
+                    onClick={() => handleOpenExpiringModal("all", data.selectedCoach?.coachId)}
+                    title="View expiring soon packages for this coach"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Expiring Soon</span>
+                    {allExpiringPackages.filter((p) => p.coachId === data.selectedCoach?.coachId).length > 0 && (
+                      <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-orange-500/25 text-orange-700 dark:text-orange-300">
+                        {allExpiringPackages.filter((p) => p.coachId === data.selectedCoach?.coachId).length}
+                      </Badge>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {/* Tabs for Coach Drill-down */}
@@ -1247,6 +1336,16 @@ export function CoachPtAchievementReport() {
           </div>
         </div>
       )}
+
+      {/* Expiring Soon Packages Modal */}
+      <ExpiringPackagesModal
+        isOpen={isExpiringModalOpen}
+        onClose={() => setIsExpiringModalOpen(false)}
+        packages={allExpiringPackages}
+        coachesList={allCoachesList}
+        initialFilter={expiringFilterType}
+        initialCoachId={expiringCoachFilter}
+      />
     </div>
   );
 }

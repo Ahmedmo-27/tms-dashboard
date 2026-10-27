@@ -30,6 +30,7 @@ interface CoachState {
   scheduleLoading: boolean;
   hasPtSessions: boolean;
   hasScheduledClasses: boolean;
+  scansCategories: string[];
   capabilitiesLoaded: boolean;
 }
 
@@ -50,6 +51,7 @@ const initialState: CoachState = {
   scheduleLoading: false,
   hasPtSessions: false,
   hasScheduledClasses: false,
+  scansCategories: [],
   capabilitiesLoaded: false,
 };
 
@@ -69,6 +71,7 @@ const coachSlice = createSlice({
         branchName?: string | null;
         hasPtSessions?: boolean;
         hasScheduledClasses?: boolean;
+        scansCategories?: string[];
         capabilitiesLoaded?: boolean;
       }>
     ) => {
@@ -90,6 +93,9 @@ const coachSlice = createSlice({
       }
       if (action.payload.hasScheduledClasses !== undefined) {
         state.hasScheduledClasses = action.payload.hasScheduledClasses;
+      }
+      if (action.payload.scansCategories !== undefined) {
+        state.scansCategories = action.payload.scansCategories;
       }
       if (action.payload.capabilitiesLoaded !== undefined) {
         state.capabilitiesLoaded = action.payload.capabilitiesLoaded;

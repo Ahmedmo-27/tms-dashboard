@@ -47,7 +47,7 @@ import { useWalkthrough } from "@/lib/tutorials/walkthrough-context";
 import { MailNotificationListener } from "@/components/mailing/MailNotificationListener";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
-import { canAccessPtReport } from "@/lib/config/roles";
+import { canAccessPtReport, getCoachExtraScansCategories } from "@/lib/config/roles";
 
 import { logoutCoachAction } from "@/lib/actions/coach-auth-actions";
 
@@ -94,6 +94,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     notifications,
     hasPtSessions,
     hasScheduledClasses,
+    scansCategories,
     token,
     capabilitiesLoaded,
   } = useAppSelector((state: RootState) => state.coach);
@@ -105,6 +106,10 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     phoneNumber,
     coachId,
   });
+
+  const hasExtraCategoryScans = (scansCategories && scansCategories.length > 0) ||
+    getCoachExtraScansCategories({ role, name, email, phoneNumber, coachId }).length > 0;
+  const hasScansMonitorAccess = hasScheduledClasses || hasPtSessions || hasExtraCategoryScans;
 
   const [moreOpen, setMoreOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -131,8 +136,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       router.replace("/coach/today");
     } else if (
       pathname.startsWith("/coach/scans") &&
-      !hasScheduledClasses &&
-      !hasPtSessions
+      !hasScansMonitorAccess
     ) {
       toast.error("Scans monitor is not enabled for your account");
       router.replace("/coach/today");
@@ -229,7 +233,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
           },
         ]
       : []),
-    ...(hasPtSessions || hasScheduledClasses
+    ...(hasScansMonitorAccess
       ? [
           {
             href: "/coach/scans",

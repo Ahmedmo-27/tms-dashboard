@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useCoachApi } from "@/hooks/useCoachApi";
 import { useAppSelector } from "@/lib/hooks";
 import type { RootState } from "@/lib/store/store";
@@ -93,6 +93,14 @@ interface CoachClassScanData {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatCategoryLabel(cat: string): string {
+  if (cat === "FUNCTIONAL_TRAINING") return "Functional Training";
+  if (cat === "STUDIO") return "Studio";
+  if (cat === "PRE_POST_NATAL") return "Pre & Post Natal";
+  if (cat === "WORKSPACE") return "Workspace";
+  return cat.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+}
 
 function formatRemainingSessions(
   scan: Pick<CoachScan, "remainingClasses" | "totalClasses">
@@ -350,10 +358,21 @@ export function CoachScansMonitor() {
   const coachApi = useCoachApi();
   const hasPtSessions = useAppSelector((state: RootState) => state.coach.hasPtSessions);
   const hasScheduledClasses = useAppSelector((state: RootState) => state.coach.hasScheduledClasses);
+  const scansCategories = useAppSelector((state: RootState) => state.coach.scansCategories);
   const token = useAppSelector((state: RootState) => state.coach.token);
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [classes, setClasses] = useState<CoachClassScanData[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(classes.map((c) => c.category).filter(Boolean)));
+  }, [classes]);
+
+  const filteredClasses = useMemo(() => {
+    if (selectedCategory === "ALL") return classes;
+    return classes.filter((c) => c.category === selectedCategory);
+  }, [classes, selectedCategory]);
   const [ptScans, setPtScans] = useState<CoachScan[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -498,18 +517,48 @@ export function CoachScansMonitor() {
             </div>
           )}
 
-          {(hasScheduledClasses || classes.length > 0) && (
+          {(hasScheduledClasses || classes.length > 0 || (scansCategories && scansCategories.length > 0)) && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-                Scheduled Classes
-              </h3>
-              {classes.length === 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                  Scheduled Classes
+                </h3>
+                {availableCategories.length > 1 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant={selectedCategory === "ALL" ? "default" : "outline"}
+                      className="h-7 text-xs rounded-full px-2.5"
+                      onClick={() => setSelectedCategory("ALL")}
+                    >
+                      All ({classes.length})
+                    </Button>
+                    {availableCategories.map((cat) => {
+                      const count = classes.filter((c) => c.category === cat).length;
+                      return (
+                        <Button
+                          key={cat}
+                          size="sm"
+                          variant={selectedCategory === cat ? "default" : "outline"}
+                          className="h-7 text-xs rounded-full px-2.5"
+                          onClick={() => setSelectedCategory(cat)}
+                        >
+                          {formatCategoryLabel(cat)} ({count})
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {filteredClasses.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  No scheduled classes for this date.
+                  {classes.length === 0
+                    ? "No scheduled classes for this date."
+                    : "No scheduled classes found in this category."}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {classes.map((cls) => (
+                  {filteredClasses.map((cls) => (
                     <ClassScanCard
                       key={cls.scheduledClassId}
                       data={cls}

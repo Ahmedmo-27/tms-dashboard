@@ -60,12 +60,14 @@ interface ActionState {
 
 export function ScheduleClass({
   classIdsMap,
+  classDurationMap,
   date,
   coaches,
   locations = [],
   defaultLocationId = "",
 }: {
   classIdsMap: Map<string, string>;
+  classDurationMap?: Map<string, number>;
   date?: Date;
   coaches: any[];
   locations?: Location[];
@@ -124,8 +126,12 @@ export function ScheduleClass({
   }, [date]);
 
   const durationMinutes = useMemo(() => {
+    if (selectedClass && classDurationMap?.has(selectedClass)) {
+      const customDuration = classDurationMap.get(selectedClass);
+      if (customDuration && customDuration > 0) return customDuration;
+    }
     return getDefaultClassDurationMinutes(selectedClassTitle);
-  }, [selectedClassTitle]);
+  }, [selectedClass, selectedClassTitle, classDurationMap]);
 
   const { startDateTime, endDateTime } = useMemo(() => {
     const base = date ? new Date(date) : new Date();
@@ -169,8 +175,21 @@ export function ScheduleClass({
     initialState
   );
 
-  const coachOptions = coaches.map((c) => c.coachName);
-  const coachMap = new Map(coaches.map((c) => [c.coachName, c._id]));
+  const coachOptions = useMemo(() => {
+    return Array.from(new Set(coaches.map((c) => c.coachName?.trim()).filter(Boolean)));
+  }, [coaches]);
+
+  const coachMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const sorted = [...coaches].sort((a, b) => (b.userId ? 1 : 0) - (a.userId ? 1 : 0));
+    for (const c of sorted) {
+      const name = c.coachName?.trim();
+      if (name && !map.has(name)) {
+        map.set(name, c._id);
+      }
+    }
+    return map;
+  }, [coaches]);
 
   return (
     

@@ -63,6 +63,7 @@ export interface CoachMeDto {
   branchLocation: string | null;
   hasPtSessions: boolean;
   hasScheduledClasses: boolean;
+  scansCategories?: string[];
 }
 
 export interface TodaySessionSummaryDto {
@@ -190,6 +191,22 @@ export interface ClientBalanceItem {
   isExpiringSoon: boolean;
 }
 
+export interface ExpiringPackageItem {
+  memberId: string;
+  memberName: string;
+  phone: string;
+  coachId: string;
+  coachName: string;
+  packageName: string;
+  packageId: string;
+  remainingSessions: number;
+  pkgEndDate: string;
+  daysUntilExpiry: number;
+  isLowBalance: boolean;
+  isExpiringSoon: boolean;
+  status: string;
+}
+
 export interface PtAchievementReport {
   range: { startDate: string; endDate: string; filterType: string };
   totals: {
@@ -204,6 +221,7 @@ export interface PtAchievementReport {
     expiringSoon: number;
   };
   coaches: CoachAchievementRow[];
+  expiringSoonPackages?: ExpiringPackageItem[];
   selectedCoach?: {
     coachId: string;
     coachName: string;

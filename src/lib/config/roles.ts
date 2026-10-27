@@ -100,6 +100,64 @@ export function canAccessPtReport(coach: CoachIdentity | null | undefined): bool
   return isNourRashadCoach(coach);
 }
 
+export function isHanaAbazaCoach(coach: CoachIdentity | null | undefined): boolean {
+  if (!coach) return false;
+
+  const name = coach.name?.trim().toLowerCase().replace(/\s+/g, " ");
+  if (name === "hana abaza" || name?.includes("abaza")) return true;
+
+  const email = coach.email?.trim().toLowerCase();
+  if (email === "hhanaabaza@gmail.com") return true;
+
+  const phone = coach.phoneNumber?.replace(/\D/g, "");
+  if (phone === "01222161664" || phone === "201222161664") return true;
+
+  const id = coach.coachId || coach.userId;
+  if (
+    id === "6a2e4ab4df68bd7a2cf2163a" ||
+    id === "69e6764f28c5113f3b4e6f51" ||
+    id === "6aa83752f491eb785ab39653"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function isHanaRashwanCoach(coach: CoachIdentity | null | undefined): boolean {
+  if (!coach) return false;
+
+  const name = coach.name?.trim().toLowerCase().replace(/\s+/g, " ");
+  if (name === "hana rashwan" || name?.includes("rashwan")) return true;
+
+  const email = coach.email?.trim().toLowerCase();
+  if (email === "hanarashwan@aucegypt.edu") return true;
+
+  const phone = coach.phoneNumber?.replace(/\D/g, "");
+  if (phone === "01001061010" || phone === "201001061010") return true;
+
+  const id = coach.coachId || coach.userId;
+  if (id === "69e88f6554d83d6549339c53" || id === "69e6765128c5113f3b4e6f69") {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Returns extra category access in the scans monitor for managing coaches:
+ * - Hana Abaza: Functional Training ("FUNCTIONAL_TRAINING")
+ * - Hana Rashwan: Studio ("STUDIO")
+ */
+export function getCoachExtraScansCategories(
+  coach: CoachIdentity | null | undefined
+): string[] {
+  if (!coach) return [];
+  if (isHanaAbazaCoach(coach)) return ["FUNCTIONAL_TRAINING"];
+  if (isHanaRashwanCoach(coach)) return ["STUDIO"];
+  return [];
+}
+
 export function isMailerRole(role: string | null | undefined): boolean {
   return toPermissionRole(role) === "mailer";
 }

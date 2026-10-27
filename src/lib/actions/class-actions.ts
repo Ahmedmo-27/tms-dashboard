@@ -12,6 +12,7 @@ export async function addClassAction(_prevState: any, formData: FormData) {
       price: formData.get("price") as string,
       category: formData.get("category") as string,
       locations: (formData.getAll("locations") as string[]).filter((l) => l.trim() !== ""),
+      defaultDuration: formData.get("defaultDuration") as string,
     });
     await addClass(cls);
     revalidatePath("/dashboard/catalog");
@@ -28,6 +29,7 @@ export const editClassAction = async (_prevState: any, formData: FormData) => {
     price: formData.get("price") as string,
     category: formData.get("category") as string,
     locations: (formData.getAll("locations") as string[]).filter((l) => l.trim() !== ""),
+    defaultDuration: formData.get("defaultDuration") ? Number(formData.get("defaultDuration")) : undefined,
   };
 
   try {

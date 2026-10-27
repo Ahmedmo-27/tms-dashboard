@@ -22,6 +22,7 @@ import { Class, ClassLocation } from "../../classes/columns";
 import { Edit } from "lucide-react";
 import { ApiError } from "@/core/api-error";
 import { formatCategory, CLASS_CATEGORIES } from "@/lib/utils/catalog";
+import { getDefaultClassDurationMinutes } from "@/lib/utils/class-duration";
 import type { Location } from "@/lib/data/locations";
 import { cn } from "@/lib/utils";
 import {
@@ -37,6 +38,7 @@ interface ActionState {
   defaultValues?: {
     title: string;
     price: string;
+    defaultDuration?: string;
     category: string;
     locations: string[];
   };
@@ -100,6 +102,7 @@ function EditClassForm({
       const defaultValues = {
         title: formData.get("title") as string,
         price: formData.get("price") as string,
+        defaultDuration: formData.get("defaultDuration") as string,
         category: formData.get("category") as string,
         locations: formData.getAll("locations") as string[],
       };
@@ -152,6 +155,28 @@ function EditClassForm({
           {state.errors && "price" in state.errors && (
             <div className="text-destructive text-sm">
               {state.errors.price}
+            </div>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="defaultDuration" className="text-sm font-medium">
+            Default Duration (Minutes)
+          </Label>
+          <Input
+            id="defaultDuration"
+            name="defaultDuration"
+            type="number"
+            min={1}
+            step={1}
+            placeholder="60"
+            defaultValue={
+              state?.defaultValues?.defaultDuration ??
+              (cls.defaultDuration ? String(cls.defaultDuration) : String(getDefaultClassDurationMinutes(cls)))
+            }
+          />
+          {state.errors && "defaultDuration" in state.errors && (
+            <div className="text-destructive text-sm">
+              {(state.errors as any).defaultDuration}
             </div>
           )}
         </div>

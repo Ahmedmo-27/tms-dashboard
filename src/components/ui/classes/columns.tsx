@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatCategory, getCategoryColor } from "@/lib/utils/catalog";
+import { formatDurationLabel, getDefaultClassDurationMinutes } from "@/lib/utils/class-duration";
 import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/data/locations";
 
@@ -23,6 +24,7 @@ export type Class = {
   category: string;
   price: string | number;
   locations: ClassLocation[];
+  defaultDuration?: number;
 };
 
 const getLocationLabel = (
@@ -114,6 +116,19 @@ export function createColumns(
             )}
           >
             {price}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "defaultDuration",
+      header: "Duration",
+      size: 110,
+      cell: ({ row }) => {
+        const duration = getDefaultClassDurationMinutes(row.original);
+        return (
+          <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap font-medium">
+            {formatDurationLabel(duration)}
           </span>
         );
       },
