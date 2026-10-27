@@ -205,8 +205,21 @@ export function EditClassComponent({
     setSelectedEndDate(end.toString());
   };
 
-  const coachOptions = coaches.map((c) => c.coachName);
-  const coachMap = new Map(coaches.map((c) => [c.coachName, c._id]));
+  const coachOptions = useMemo(() => {
+    return Array.from(new Set(coaches.map((c) => c.coachName?.trim()).filter(Boolean)));
+  }, [coaches]);
+
+  const coachMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const sorted = [...coaches].sort((a, b) => (b.userId ? 1 : 0) - (a.userId ? 1 : 0));
+    for (const c of sorted) {
+      const name = c.coachName?.trim();
+      if (name && !map.has(name)) {
+        map.set(name, c._id);
+      }
+    }
+    return map;
+  }, [coaches]);
 
   return (
     <>

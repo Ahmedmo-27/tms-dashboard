@@ -1,4 +1,5 @@
 "use client";
+import { ExpiringPackagesModal, type ExpiringCategoryFilter } from '@/components/coach/reports/ExpiringPackagesModal';
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
@@ -45,6 +46,7 @@ import type {
   BoughtPackageItem,
   DeliveredSessionItem,
   ClientBalanceItem,
+  ExpiringPackageItem,
 } from "@/types/coach.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,6 +136,15 @@ export function CoachPtAchievementReport() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [drillTab, setDrillTab] = useState<string>("packages");
+  const [isExpiringModalOpen, setIsExpiringModalOpen] = useState<boolean>(false);
+  const [expiringFilterType, setExpiringFilterType] = useState<ExpiringCategoryFilter>("all");
+  const [expiringCoachFilter, setExpiringCoachFilter] = useState<string>("all");
+
+  const handleOpenExpiringModal = (category: ExpiringCategoryFilter = "all", coachId = "all") => {
+    setExpiringFilterType(category);
+    setExpiringCoachFilter(coachId);
+    setIsExpiringModalOpen(true);
+  };
 
   // Data state
   const [data, setData] = useState<PtAchievementReport | null>(null);
@@ -156,6 +167,34 @@ export function CoachPtAchievementReport() {
     const q = searchQuery.toLowerCase().trim();
     return data.coaches.filter((c) => c.coachName.toLowerCase().includes(q));
   }, [data?.coaches, searchQuery]);
+
+  // Aggregated expiring packages (from API or derived from active clients)
+  const allExpiringPackages: ExpiringPackageItem[] = useMemo(() => {
+    if (data?.expiringSoonPackages && data.expiringSoonPackages.length > 0) {
+      return data.expiringSoonPackages;
+    }
+    // Fallback: If viewing a single coach and drilldown activeClients has items
+    if (data?.selectedCoach?.activeClients) {
+      return data.selectedCoach.activeClients
+        .filter((c) => c.isLowBalance || c.isExpiringSoon)
+        .map((c) => ({
+          memberId: c.memberId,
+          memberName: c.memberName,
+          phone: c.phone,
+          coachId: data.selectedCoach!.coachId,
+          coachName: data.selectedCoach!.coachName,
+          packageName: c.packageName,
+          packageId: c.packageId,
+          remainingSessions: c.remainingSessions,
+          pkgEndDate: c.pkgEndDate,
+          daysUntilExpiry: c.daysUntilExpiry,
+          isLowBalance: c.isLowBalance,
+          isExpiringSoon: c.isExpiringSoon,
+          status: c.status,
+        }));
+    }
+    return [];
+  }, [data?.expiringSoonPackages, data?.selectedCoach]);
 
   // Suggestions list for the search bar dropdown
   const matchingSuggestions = useMemo(() => {

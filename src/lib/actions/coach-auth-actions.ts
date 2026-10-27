@@ -15,6 +15,7 @@ export interface CoachSessionResult {
   branchName?: string | null;
   hasPtSessions: boolean;
   hasScheduledClasses: boolean;
+  scansCategories?: string[];
 }
 
 export type CoachSessionResolution =
@@ -65,6 +66,7 @@ export async function getCoachSession(): Promise<CoachSessionResolution> {
         branchName: profile.branchName ?? null,
         hasPtSessions: Boolean(profile.hasPtSessions),
         hasScheduledClasses: Boolean(profile.hasScheduledClasses),
+        scansCategories: profile.scansCategories ?? [],
       },
     };
   } catch {
