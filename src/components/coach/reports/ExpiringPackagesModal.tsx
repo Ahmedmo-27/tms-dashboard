@@ -13,12 +13,18 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { DataTable, type DataColumn } from "@/components/finance/data-table";
 import { downloadCsv, type CsvColumn } from "@/components/finance/csv";
 import { formatDate } from "@/components/finance/format";
@@ -32,6 +38,8 @@ import {
   Search,
   X,
   Phone,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +64,7 @@ export function ExpiringPackagesModal({
 }: ExpiringPackagesModalProps) {
   const [filterType, setFilterType] = useState<ExpiringCategoryFilter>(initialFilter);
   const [selectedCoachId, setSelectedCoachId] = useState<string>(initialCoachId);
+  const [coachSearchOpen, setCoachSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
@@ -77,6 +86,11 @@ export function ExpiringPackagesModal({
     }
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [coachesList, packages]);
+
+  const selectedCoachName = useMemo(() => {
+    if (selectedCoachId === "all") return "All Coaches";
+    return availableCoaches.find((c) => c.id === selectedCoachId)?.name || "All Coaches";
+  }, [selectedCoachId, availableCoaches]);
 
   // Counts across all packages (or filtered by selected coach)
   const coachScopedPackages = useMemo(() => {
@@ -390,20 +404,90 @@ export function ExpiringPackagesModal({
             {/* Coach Selector, Search & Export */}
             <div className="flex flex-wrap items-center gap-2">
               {availableCoaches.length > 1 && (
-                <div className="w-[145px] sm:w-[165px]">
-                  <Select value={selectedCoachId} onValueChange={setSelectedCoachId}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="All Coaches" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Coaches</SelectItem>
-                      {availableCoaches.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="w-[150px] sm:w-[175px]">
+                  <Popover open={coachSearchOpen} onOpenChange={setCoachSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={coachSearchOpen}
+                        className="h-8 w-full justify-between px-2.5 text-xs font-normal border-input bg-transparent shadow-xs hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <span className="truncate text-left font-medium">
+                          {selectedCoachName}
+                        </span>
+                        <ChevronsUpDown className="ml-1.5 h-3.5 w-3.5 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="z-[100] w-[230px] p-0"
+                      align="start"
+                      sideOffset={4}
+                    >
+                      <Command>
+                        <CommandInput placeholder="Search coach..." className="h-8 text-xs" />
+                        <CommandList className="max-h-[240px] overflow-y-auto">
+                          <CommandEmpty className="py-2.5 text-center text-xs text-muted-foreground">
+                            No coach found.
+                          </CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              value="All Coaches"
+                              onSelect={() => {
+                                setSelectedCoachId("all");
+                                setCoachSearchOpen(false);
+                              }}
+                              className="text-xs cursor-pointer flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Check
+                                  className={cn(
+                                    "h-3.5 w-3.5 shrink-0",
+                                    selectedCoachId === "all" ? "opacity-100 text-primary" : "opacity-0"
+                                  )}
+                                />
+                                <span className="font-semibold truncate">All Coaches</span>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground shrink-0 font-medium ml-1">
+                                ({packages.length})
+                              </span>
+                            </CommandItem>
+                            {availableCoaches.map((c) => {
+                              const isSelected = selectedCoachId === c.id;
+                              const coachPkgCount = packages.filter((p) => p.coachId === c.id).length;
+                              return (
+                                <CommandItem
+                                  key={c.id}
+                                  value={c.name}
+                                  onSelect={() => {
+                                    setSelectedCoachId(c.id);
+                                    setCoachSearchOpen(false);
+                                  }}
+                                  className="text-xs cursor-pointer flex items-center justify-between"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Check
+                                      className={cn(
+                                        "h-3.5 w-3.5 shrink-0",
+                                        isSelected ? "opacity-100 text-primary" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="truncate">{c.name}</span>
+                                  </div>
+                                  {coachPkgCount > 0 && (
+                                    <span className="text-[10px] text-muted-foreground shrink-0 font-medium ml-1">
+                                      ({coachPkgCount})
+                                    </span>
+                                  )}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
