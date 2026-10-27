@@ -32,8 +32,6 @@ import {
   Search,
   X,
   Phone,
-  Layers,
-  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -129,7 +127,7 @@ export function ExpiringPackagesModal({
   // CSV Export handler
   const handleExportCsv = () => {
     const columns: CsvColumn<ExpiringPackageItem>[] = [
-      { header: "Client Name", value: (r) => r.memberName },
+      { header: "Client Name", value: (r) => r.memberName || "Client" },
       { header: "Phone", value: (r) => r.phone },
       { header: "Coach", value: (r) => r.coachName },
       { header: "Package", value: (r) => r.packageName },
@@ -165,10 +163,14 @@ export function ExpiringPackagesModal({
         key: "memberName",
         header: "Client",
         cell: (row) => (
-          <div>
-            <p className="font-semibold text-foreground text-sm">{row.memberName || "Unknown"}</p>
-            {row.phone && (
-              <p className="text-xs text-muted-foreground">{formatDisplayPhone(row.phone)}</p>
+          <div className="min-w-[140px]">
+            <p className="font-semibold text-foreground text-sm leading-tight">
+              {row.memberName && row.memberName !== "Unknown" ? row.memberName : "Client"}
+            </p>
+            {row.phone ? (
+              <p className="text-xs text-muted-foreground font-mono mt-0.5">{formatDisplayPhone(row.phone)}</p>
+            ) : (
+              <span className="text-[10px] text-muted-foreground">No phone recorded</span>
             )}
           </div>
         ),
@@ -178,7 +180,9 @@ export function ExpiringPackagesModal({
         key: "coachName",
         header: "Coach",
         cell: (row) => (
-          <span className="font-medium text-xs text-muted-foreground">{row.coachName}</span>
+          <Badge variant="outline" className="text-xs font-medium bg-muted/40 whitespace-nowrap">
+            {row.coachName}
+          </Badge>
         ),
         sortValue: (r) => r.coachName,
       },
@@ -186,9 +190,11 @@ export function ExpiringPackagesModal({
         key: "packageName",
         header: "Package",
         cell: (row) => (
-          <span className="text-xs font-medium max-w-[200px] truncate block" title={row.packageName}>
-            {row.packageName}
-          </span>
+          <div className="max-w-[240px]">
+            <span className="text-xs font-medium text-foreground block truncate" title={row.packageName}>
+              {row.packageName}
+            </span>
+          </div>
         ),
         sortValue: (r) => r.packageName,
       },
@@ -196,12 +202,12 @@ export function ExpiringPackagesModal({
         key: "remainingSessions",
         header: "Sessions Left",
         cell: (row) => (
-          <div className="flex items-center justify-end gap-1.5">
+          <div className="flex items-center justify-end gap-1.5 min-w-[95px]">
             <span
               className={cn(
                 "text-sm font-bold",
                 row.isLowBalance
-                  ? "text-amber-600 dark:text-amber-400"
+                  ? "text-amber-600 dark:text-amber-400 font-extrabold"
                   : "text-foreground"
               )}
             >
@@ -210,7 +216,7 @@ export function ExpiringPackagesModal({
             {row.isLowBalance && (
               <Badge
                 variant="outline"
-                className="text-[10px] px-1.5 py-0 h-4 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium"
+                className="text-[10px] px-1.5 py-0 h-4 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold"
               >
                 ≤ 2 left
               </Badge>
@@ -224,13 +230,13 @@ export function ExpiringPackagesModal({
         key: "pkgEndDate",
         header: "Expiry Date",
         cell: (row) => (
-          <div>
+          <div className="min-w-[115px]">
             <p className="text-xs font-medium">{formatDate(row.pkgEndDate)}</p>
             <p
               className={cn(
-                "text-[11px] font-medium",
+                "text-[11px] font-medium mt-0.5",
                 row.isExpiringSoon
-                  ? "text-orange-600 dark:text-orange-400"
+                  ? "text-orange-600 dark:text-orange-400 font-semibold"
                   : "text-muted-foreground"
               )}
             >
@@ -250,11 +256,11 @@ export function ExpiringPackagesModal({
         key: "attention",
         header: "Expiring By",
         cell: (row) => (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 min-w-[130px]">
             {row.isLowBalance && (
               <Badge
                 variant="outline"
-                className="gap-1 text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium"
+                className="gap-1 text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold"
               >
                 <AlertTriangle className="h-3 w-3" />
                 <span>Low Sessions</span>
@@ -263,7 +269,7 @@ export function ExpiringPackagesModal({
             {row.isExpiringSoon && (
               <Badge
                 variant="outline"
-                className="gap-1 text-[10px] border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-400 font-medium"
+                className="gap-1 text-[10px] border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-400 font-semibold"
               >
                 <Clock className="h-3 w-3" />
                 <span>Upcoming Date</span>
@@ -274,28 +280,28 @@ export function ExpiringPackagesModal({
       },
       {
         key: "actions",
-        header: "Contact",
+        header: "Action",
         cell: (row) => {
           const wa = whatsAppHref(row.phone);
           return (
-            <div className="flex items-center justify-end gap-1.5">
+            <div className="flex items-center justify-end gap-1.5 min-w-[100px]">
               {wa && (
                 <a
                   href={wa}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Chat on WhatsApp"
-                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400 transition-colors"
+                  className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 transition-colors"
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">WhatsApp</span>
+                  <span>WhatsApp</span>
                 </a>
               )}
               {row.phone && (
                 <a
                   href={`tel:${row.phone}`}
                   title="Call client"
-                  className="inline-flex items-center rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  className="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5" />
                 </a>
@@ -311,13 +317,13 @@ export function ExpiringPackagesModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl p-0 max-h-[90vh] flex flex-col overflow-hidden sm:rounded-xl">
+      <DialogContent className="sm:max-w-5xl lg:max-w-6xl w-[96vw] max-h-[88vh] p-0 flex flex-col overflow-hidden sm:rounded-xl">
         {/* Header */}
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b shrink-0">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
                   <Clock className="h-4 w-4" />
                 </div>
                 <div>
@@ -333,58 +339,58 @@ export function ExpiringPackagesModal({
           </div>
 
           {/* Controls Bar: Category Filter, Coach Select, Search, Export */}
-          <div className="flex flex-col gap-2.5 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2.5 pt-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Filter Pills */}
-            <div className="inline-flex rounded-lg border bg-muted/40 p-1 text-xs shrink-0">
+            <div className="inline-flex rounded-lg border bg-muted/40 p-1 text-xs shrink-0 self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => setFilterType("all")}
                 className={cn(
-                  "rounded-md px-2.5 py-1 font-medium transition-colors gap-1.5 inline-flex items-center",
+                  "rounded-md px-3 py-1 font-medium transition-colors gap-1.5 inline-flex items-center",
                   filterType === "all"
-                    ? "bg-background text-foreground shadow-xs"
+                    ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <span>All</span>
-                <span className="text-[10px] font-semibold opacity-70">({counts.all})</span>
+                <span className="text-[10px] font-bold opacity-75">({counts.all})</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFilterType("sessions")}
                 className={cn(
-                  "rounded-md px-2.5 py-1 font-medium transition-colors gap-1.5 inline-flex items-center",
+                  "rounded-md px-3 py-1 font-medium transition-colors gap-1.5 inline-flex items-center",
                   filterType === "sessions"
-                    ? "bg-background text-foreground shadow-xs"
+                    ? "bg-background text-amber-600 dark:text-amber-400 shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <AlertTriangle className="h-3 w-3 text-amber-500" />
                 <span>Sessions (≤ 2)</span>
-                <span className="text-[10px] font-semibold opacity-70">({counts.sessions})</span>
+                <span className="text-[10px] font-bold opacity-75">({counts.sessions})</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFilterType("dates")}
                 className={cn(
-                  "rounded-md px-2.5 py-1 font-medium transition-colors gap-1.5 inline-flex items-center",
+                  "rounded-md px-3 py-1 font-medium transition-colors gap-1.5 inline-flex items-center",
                   filterType === "dates"
-                    ? "bg-background text-foreground shadow-xs"
+                    ? "bg-background text-orange-600 dark:text-orange-400 shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Clock className="h-3 w-3 text-orange-500" />
                 <span>Dates (≤ 7d)</span>
-                <span className="text-[10px] font-semibold opacity-70">({counts.dates})</span>
+                <span className="text-[10px] font-bold opacity-75">({counts.dates})</span>
               </button>
             </div>
 
             {/* Coach Selector, Search & Export */}
             <div className="flex flex-wrap items-center gap-2">
               {availableCoaches.length > 1 && (
-                <div className="w-[140px] sm:w-[160px]">
+                <div className="w-[145px] sm:w-[165px]">
                   <Select value={selectedCoachId} onValueChange={setSelectedCoachId}>
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="All Coaches" />
@@ -401,11 +407,11 @@ export function ExpiringPackagesModal({
                 </div>
               )}
 
-              <div className="relative flex-1 min-w-[130px] sm:w-44">
+              <div className="relative flex-1 min-w-[140px] sm:w-56">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Search client..."
+                  placeholder="Search client or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-8 pl-8 pr-7 text-xs"
@@ -431,7 +437,7 @@ export function ExpiringPackagesModal({
                 title="Export CSV"
               >
                 <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Export</span>
+                <span>Export</span>
               </Button>
             </div>
           </div>
@@ -448,7 +454,7 @@ export function ExpiringPackagesModal({
                   <Card key={`${pkg.memberId}-${pkg.packageId}-${idx}`} className="p-3.5 space-y-2.5 shadow-none border">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm truncate">{pkg.memberName || "Unknown"}</p>
+                        <p className="font-semibold text-sm truncate">{pkg.memberName && pkg.memberName !== "Unknown" ? pkg.memberName : "Client"}</p>
                         <p className="text-xs text-muted-foreground">{pkg.coachName} · {pkg.packageName}</p>
                       </div>
                       <div className="shrink-0 flex items-center gap-1">
@@ -457,7 +463,7 @@ export function ExpiringPackagesModal({
                             href={wa}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                           >
                             <MessageSquare className="h-3.5 w-3.5" />
                             <span>WhatsApp</span>
@@ -474,7 +480,7 @@ export function ExpiringPackagesModal({
                             className={cn(
                               "text-sm font-bold",
                               pkg.isLowBalance
-                                ? "text-amber-600 dark:text-amber-400"
+                                ? "text-amber-600 dark:text-amber-400 font-extrabold"
                                 : "text-foreground"
                             )}
                           >
@@ -483,7 +489,7 @@ export function ExpiringPackagesModal({
                           {pkg.isLowBalance && (
                             <Badge
                               variant="outline"
-                              className="text-[9px] px-1 py-0 h-4 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                              className="text-[9px] px-1 py-0 h-4 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold"
                             >
                               ≤ 2 left
                             </Badge>
@@ -498,7 +504,7 @@ export function ExpiringPackagesModal({
                           className={cn(
                             "text-[10px] font-medium",
                             pkg.isExpiringSoon
-                              ? "text-orange-600 dark:text-orange-400"
+                              ? "text-orange-600 dark:text-orange-400 font-semibold"
                               : "text-muted-foreground"
                           )}
                         >
@@ -552,9 +558,10 @@ export function ExpiringPackagesModal({
         {/* Footer */}
         <div className="flex items-center justify-between border-t bg-muted/20 px-4 py-2.5 sm:px-5 shrink-0">
           <div className="text-xs text-muted-foreground">
-            Showing <strong className="text-foreground font-semibold">{filteredPackages.length}</strong> expiring {filteredPackages.length === 1 ? "package" : "packages"}
+            Showing <strong className="text-foreground font-semibold">{filteredPackages.length}</strong> of{" "}
+            <strong className="text-foreground font-semibold">{packages.length}</strong> expiring packages
           </div>
-          <Button variant="outline" size="sm" onClick={onClose} className="h-8 text-xs">
+          <Button variant="outline" size="sm" onClick={onClose} className="h-8 text-xs font-medium px-4">
             Close
           </Button>
         </div>
