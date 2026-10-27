@@ -773,8 +773,24 @@ export function CoachPtAchievementReport() {
                 </button>
               </div>
 
-              {/* Mobile Export CSV button (visible on mobile only, beside mode switcher) */}
+              {/* Mobile Action buttons (visible on mobile only, beside mode switcher) */}
               <div className="flex items-center gap-1.5 lg:hidden">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1 px-2 text-xs shrink-0 border-orange-500/40 bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 dark:text-orange-400 font-medium"
+                  disabled={loading || !data}
+                  onClick={() => handleOpenExpiringModal("all", isDrillDown ? selectedCoachId : "all")}
+                  title="Expiring Soon Packages"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Expiring</span>
+                  {allExpiringPackages.length > 0 && (
+                    <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-orange-500/25 text-orange-700 dark:text-orange-300">
+                      {allExpiringPackages.length}
+                    </Badge>
+                  )}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -963,6 +979,33 @@ export function CoachPtAchievementReport() {
             <Button
               variant="outline"
               size="sm"
+              className="h-8 gap-1.5 text-xs border-orange-500/50 bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 dark:text-orange-400 font-semibold transition-all shrink-0 flex items-center"
+              disabled={loading || !data}
+              onClick={() => handleOpenExpiringModal("all", isDrillDown ? selectedCoachId : "all")}
+              title="View all expiring soon packages"
+            >
+              <Clock className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+              <span>Expiring Soon</span>
+              {allExpiringPackages.length > 0 ? (
+                <Badge
+                  variant="secondary"
+                  className="h-4 px-1.5 text-[10px] bg-orange-500/25 text-orange-700 dark:text-orange-300 font-bold"
+                >
+                  {allExpiringPackages.length}
+                </Badge>
+              ) : (data?.totals.lowBalanceClients || data?.totals.expiringSoon) ? (
+                <Badge
+                  variant="secondary"
+                  className="h-4 px-1.5 text-[10px] bg-orange-500/25 text-orange-700 dark:text-orange-300 font-bold"
+                >
+                  {(data?.totals.lowBalanceClients ?? 0) + (data?.totals.expiringSoon ?? 0)}
+                </Badge>
+              ) : null}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
               className="hidden h-8 gap-1.5 text-xs lg:flex"
               disabled={loading || !data}
               onClick={handleExportCsv}
@@ -1083,10 +1126,19 @@ export function CoachPtAchievementReport() {
                   <p className="text-[11px] text-muted-foreground leading-tight sm:text-xs">Workload owed</p>
                 </Card>
 
-                <Card className="gap-1 border-amber-500/30 bg-amber-500/5 px-3 py-3 shadow-none sm:px-4 sm:py-4">
-                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400 sm:text-xs">
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">Low Balance</span>
+                <Card
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenExpiringModal("sessions", "all")}
+                  className="cursor-pointer gap-1 border-amber-500/30 bg-amber-500/5 px-3 py-3 shadow-none sm:px-4 sm:py-4 transition-all hover:border-amber-500/60 hover:shadow-xs group"
+                  title="Click to view all packages expiring soon by low session balance (≤ 2 left)"
+                >
+                  <div className="flex items-center justify-between text-[11px] font-medium text-amber-600 dark:text-amber-400 sm:text-xs">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">Low Balance</span>
+                    </div>
+                    <span className="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">View →</span>
                   </div>
                   <p className="text-xl font-bold tracking-tight text-amber-600 dark:text-amber-400 sm:text-2xl">
                     {data.totals.lowBalanceClients}
@@ -1096,10 +1148,19 @@ export function CoachPtAchievementReport() {
                   </p>
                 </Card>
 
-                <Card className="gap-1 border-orange-500/30 bg-orange-500/5 px-3 py-3 shadow-none sm:px-4 sm:py-4">
-                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-orange-600 dark:text-orange-400 sm:text-xs">
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">Expiring in 7d</span>
+                <Card
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenExpiringModal("dates", "all")}
+                  className="cursor-pointer gap-1 border-orange-500/30 bg-orange-500/5 px-3 py-3 shadow-none sm:px-4 sm:py-4 transition-all hover:border-orange-500/60 hover:shadow-xs group"
+                  title="Click to view all packages expiring soon by upcoming expiration date (≤ 7 days)"
+                >
+                  <div className="flex items-center justify-between text-[11px] font-medium text-orange-600 dark:text-orange-400 sm:text-xs">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Clock className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">Expiring in 7d</span>
+                    </div>
+                    <span className="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">View →</span>
                   </div>
                   <p className="text-xl font-bold tracking-tight text-orange-600 dark:text-orange-400 sm:text-2xl">
                     {data.totals.expiringSoon}
@@ -1112,13 +1173,31 @@ export function CoachPtAchievementReport() {
 
               {/* All Coaches Section */}
               <div className="space-y-3">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-base font-semibold tracking-tight sm:text-lg">Coach Achievements</h2>
                     <p className="text-xs text-muted-foreground">
                       Click any coach to drill down into package sales, delivered sessions, and active clients.
                     </p>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenExpiringModal("all", "all")}
+                    className="h-8.5 gap-2 border-orange-500/50 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 font-semibold px-3 shadow-xs shrink-0 w-fit"
+                  >
+                    <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    <span>Expiring Soon Packages</span>
+                    {allExpiringPackages.length > 0 ? (
+                      <Badge variant="secondary" className="bg-orange-500/25 text-orange-700 dark:text-orange-300 font-bold px-1.5 text-xs">
+                        {allExpiringPackages.length}
+                      </Badge>
+                    ) : (data?.totals.lowBalanceClients || data?.totals.expiringSoon) ? (
+                      <Badge variant="secondary" className="bg-orange-500/25 text-orange-700 dark:text-orange-300 font-bold px-1.5 text-xs">
+                        {(data?.totals.lowBalanceClients ?? 0) + (data?.totals.expiringSoon ?? 0)}
+                      </Badge>
+                    ) : null}
+                  </Button>
                 </div>
 
                 {/* Mobile Card List View (< md) */}
@@ -1217,6 +1296,24 @@ export function CoachPtAchievementReport() {
                     </p>
                   </div>
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 font-semibold shrink-0"
+                    onClick={() => handleOpenExpiringModal("all", data.selectedCoach?.coachId)}
+                    title="View expiring soon packages for this coach"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Expiring Soon</span>
+                    {allExpiringPackages.filter((p) => p.coachId === data.selectedCoach?.coachId).length > 0 && (
+                      <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-orange-500/25 text-orange-700 dark:text-orange-300">
+                        {allExpiringPackages.filter((p) => p.coachId === data.selectedCoach?.coachId).length}
+                      </Badge>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {/* Tabs for Coach Drill-down */}
@@ -1286,6 +1383,16 @@ export function CoachPtAchievementReport() {
           </div>
         </div>
       )}
+
+      {/* Expiring Soon Packages Modal */}
+      <ExpiringPackagesModal
+        isOpen={isExpiringModalOpen}
+        onClose={() => setIsExpiringModalOpen(false)}
+        packages={allExpiringPackages}
+        coachesList={allCoachesList}
+        initialFilter={expiringFilterType}
+        initialCoachId={expiringCoachFilter}
+      />
     </div>
   );
 }
