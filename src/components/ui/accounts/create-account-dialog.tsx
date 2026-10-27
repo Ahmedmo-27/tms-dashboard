@@ -257,7 +257,9 @@ export function CreateAccountDialog({ onAccountCreated }: CreateAccountDialogPro
                 <SelectItem value="managing_coach">Managing Coach (Head Trainer)</SelectItem>
                 <SelectItem value="mailer">Mailer (Brevo Marketing & Inbox)</SelectItem>
                 <SelectItem value="accountant">Accountant (Read-only Finance & Inbox)</SelectItem>
-                <SelectItem value="sales">Sales (Credited for Package Sales)</SelectItem>
+                <SelectItem value="sales">
+                  Sales (Credited for Package Sales — No Dashboard Login)
+                </SelectItem>
                 <SelectItem value="sales_manager">
                   Sales Manager (Sets Who Sold What)
                 </SelectItem>

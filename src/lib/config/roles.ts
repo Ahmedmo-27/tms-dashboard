@@ -242,6 +242,28 @@ export function getDashboardRouteForRole(
   return null;
 }
 
+/**
+ * Why a signed-in account was turned away at the dashboard login.
+ *
+ * The role is named so the rejection is diagnosable: the credentials were
+ * already accepted by the API, so this leaks nothing the user cannot see on
+ * their own account. "sales" is called out because it is the one role that
+ * looks like dashboard staff but is deliberately credit-only.
+ */
+export function unauthorizedRoleMessage(
+  role: string | null | undefined
+): string {
+  if (role === "sales") {
+    return (
+      'This is a "Sales" account, which is only credited for package sales ' +
+      "and cannot sign in to the dashboard. Ask management to change the " +
+      'role to "Sales Manager" on the Accounts page.'
+    );
+  }
+  const named = role ? `role "${role}"` : "role";
+  return `Unauthorized ${named}. This account does not have dashboard access.`;
+}
+
 /** Pages that show cross-branch member data for all staff. */
 export const SHARED_GLOBAL_PAGES = [
   "/dashboard/our-members",
