@@ -181,33 +181,16 @@ async function main() {
   check("getDashboardRouteForRole user -> null", getDashboardRouteForRole("user") === null);
   check("getDashboardRouteForRole undefined -> null", getDashboardRouteForRole(undefined) === null);
 
-  // PT Reports route security (strictly restricted to managing_coach Nour Rashad only)
-  const isNourRashadCoach = (coach) => {
-    if (!coach) return false;
-    const name = coach.name?.trim().toLowerCase().replace(/\s+/g, " ");
-    if (name === "nour rashad") return true;
-    const email = coach.email?.trim().toLowerCase();
-    if (
-      email === "nour.rashad.space@gmail.com" ||
-      email === "nour.rashad@the-mind-space.com"
-    ) return true;
-    const phone = coach.phoneNumber?.replace(/\D/g, "");
-    if (phone === "01117878300" || phone === "201117878300") return true;
-    const id = coach.coachId || coach.userId;
-    if (id === "6aaa67fa3661ee212b0cdf28") return true;
-    return false;
-  };
-
+  // PT Reports route security (accessible to managing_coach, regular coaches denied)
   const canAccessPtReport = (coach) => {
     if (!coach || coach.role !== "managing_coach") return false;
-    return isNourRashadCoach(coach);
+    return true;
   };
 
-  check("PT Reports: managing_coach Nour Rashad can access /coach/reports", canAccessPtReport({ role: "managing_coach", name: "Nour Rashad" }) === true);
-  check("PT Reports: managing_coach Nour Rashad by email can access", canAccessPtReport({ role: "managing_coach", email: "nour.rashad.space@gmail.com" }) === true);
-  check("PT Reports: other managing_coach (Hana Abaza) cannot access /coach/reports", canAccessPtReport({ role: "managing_coach", name: "Hana Abaza" }) === false);
-  check("PT Reports: other managing_coach (Salma Ghazzawi) cannot access /coach/reports", canAccessPtReport({ role: "managing_coach", name: "Salma Ghazzawi" }) === false);
+  check("PT Reports: managing_coach can access /coach/reports", canAccessPtReport({ role: "managing_coach" }) === true);
+  check("PT Reports: managing_coach (Hana Abaza) can access /coach/reports", canAccessPtReport({ role: "managing_coach", name: "Hana Abaza" }) === true);
   check("PT Reports: regular coach named Nour Rashad cannot access /coach/reports", canAccessPtReport({ role: "coach", name: "Nour Rashad" }) === false);
+  check("PT Reports: regular coach cannot access /coach/reports", canAccessPtReport({ role: "coach" }) === false);
   check("PT Reports: getDashboardRouteForRole managing_coach -> /coach/today (not /coach/reports)",
     getDashboardRouteForRole("managing_coach") === "/coach/today");
 
