@@ -1,8 +1,23 @@
 "use client";
 
-import { Fragment } from "react";
+import {
+  Fragment,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  Suspense,
+} from "react";
+import { useSearchParams } from "next/navigation";
+import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
+import { Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 import QRTemplateGenerator from "@/components/ui/qrcode-template";
 import SpaceQRCode from "@/components/ui/space-qrcode";
+import { PaymentDatePicker } from "@/components/ui/payments/date-picker";
+import { getScheduledClasses } from "@/lib/data/schedule";
 import type { Location } from "@/lib/data/locations";
 import type { ScheduledClass } from "@/components/ui/schedule/columns";
 import { useBranchContext } from "@/lib/hooks/use-branch-context";
@@ -10,32 +25,126 @@ import { useBranchContext } from "@/lib/hooks/use-branch-context";
 interface QRCodesPageProps {
   locations: Location[];
   scheduledClasses: ScheduledClass[];
+  initialDate?: string;
 }
 
-export function QRCodesPage({
+function parseDateParam(value: string | null | undefined): Date {
+  if (!value) return new Date();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    return new Date(`${value.trim()}T00:00:00`);
+  }
+  return new Date(value);
+}
+
+function QRCodesPageInner({
   locations,
-  scheduledClasses,
+  scheduledClasses: initialScheduledClasses,
+  initialDate,
 }: QRCodesPageProps) {
+  const searchParams = useSearchParams();
   const { effectiveLocationId } = useBranchContext();
+
+  const [selectedDate, setSelectedDate] = useState<Date>(() =>
+    parseDateParam(searchParams?.get("date") ?? initialDate)
+  );
+  const [classes, setClasses] = useState<ScheduledClass[]>(
+    initialScheduledClasses
+  );
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setClasses(initialScheduledClasses);
+  }, [initialScheduledClasses]);
+
+  const fetchClassesForDate = useCallback(
+    async (targetDate: Date) => {
+      setIsLoading(true);
+      try {
+        const dateStr = formatInTimeZone(
+          targetDate,
+          "Africa/Cairo",
+          "yyyy-MM-dd"
+        );
+        const data = await getScheduledClasses(
+          effectiveLocationId || undefined,
+          dateStr
+        );
+        setClasses(data);
+      } catch (error) {
+        console.error("Failed to load scheduled classes for QR codes", error);
+        toast.error("Failed to load schedule for selected date");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [effectiveLocationId]
+  );
+
+  const handleDateChange = (newDate: Date | undefined) => {
+    if (!newDate) return;
+    setSelectedDate(newDate);
+    const dateStr = formatInTimeZone(newDate, "Africa/Cairo", "yyyy-MM-dd");
+    if (typeof window !== "undefined") {
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.set("date", dateStr);
+      window.history.replaceState(
+        null,
+        "",
+        `/dashboard/qr-codes?${currentParams.toString()}`
+      );
+    }
+    fetchClassesForDate(newDate);
+  };
+
+  const isFirstMount = useRef(true);
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    fetchClassesForDate(selectedDate);
+  }, [effectiveLocationId, fetchClassesForDate, selectedDate]);
 
   const visibleLocations = effectiveLocationId
     ? locations.filter((loc) => loc._id === effectiveLocationId)
     : locations;
 
-  const todaysClasses = scheduledClasses.filter((cls) => {
-    const clsDate = new Date(cls.startTime).toLocaleDateString();
-    return clsDate === new Date().toLocaleDateString();
-  });
+  const visibleLocationIds = useMemo(
+    () => new Set(visibleLocations.map((l) => l._id)),
+    [visibleLocations]
+  );
+  const visibleBranchNames = useMemo(
+    () => new Set(visibleLocations.map((l) => l.branchName)),
+    [visibleLocations]
+  );
 
-  const visibleLocationIds = new Set(visibleLocations.map((l) => l._id));
-  const visibleBranchNames = new Set(visibleLocations.map((l) => l.branchName));
+  const targetDateStr = formatInTimeZone(
+    selectedDate,
+    "Africa/Cairo",
+    "yyyy-MM-dd"
+  );
+  const todayCairoStr = formatInTimeZone(
+    new Date(),
+    "Africa/Cairo",
+    "yyyy-MM-dd"
+  );
+  const isTodayDate = targetDateStr === todayCairoStr;
 
-  const filteredClasses = todaysClasses.filter((cls) => {
-    return (
-      (cls.locationId && visibleLocationIds.has(cls.locationId)) ||
-      (cls.location && visibleBranchNames.has(cls.location))
-    );
-  });
+  const filteredClasses = useMemo(() => {
+    return classes.filter((cls) => {
+      const clsDateStr = formatInTimeZone(
+        new Date(cls.startTime),
+        "Africa/Cairo",
+        "yyyy-MM-dd"
+      );
+      if (clsDateStr !== targetDateStr) return false;
+
+      return (
+        (cls.locationId && visibleLocationIds.has(cls.locationId)) ||
+        (cls.location && visibleBranchNames.has(cls.location))
+      );
+    });
+  }, [classes, targetDateStr, visibleLocationIds, visibleBranchNames]);
 
   if (locations.length === 0) {
     return (
@@ -69,16 +178,41 @@ export function QRCodesPage({
         </div>
       </div>
 
-      <div data-walkthrough="qr-preview-card">
-        <h2 className="text-lg font-bold mb-4">
-          Today&apos;s Classes
-          {visibleLocations.length === 1
-            ? ` — ${visibleLocations[0].branchName}`
-            : ""}
-        </h2>
-        {filteredClasses.length === 0 ? (
+      <div data-walkthrough="qr-preview-card" className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">
+              {isTodayDate
+                ? "Today's Classes"
+                : `Classes for ${format(selectedDate, "EEE, MMM d, yyyy")}`}
+              {visibleLocations.length === 1
+                ? ` — ${visibleLocations[0].branchName}`
+                : ""}
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Select a date to view and download QR codes for scheduled classes
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <PaymentDatePicker
+              selectedDate={selectedDate}
+              onDateChange={handleDateChange}
+            />
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex min-h-[220px] w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/70 bg-card/40 p-8 text-center animate-in fade-in-50 duration-200">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Loading scheduled classes for {format(selectedDate, "MMM d, yyyy")}...
+            </p>
+          </div>
+        ) : filteredClasses.length === 0 ? (
           <p className="text-muted-foreground">
-            No classes scheduled for this location today.
+            {isTodayDate
+              ? "No classes scheduled for this location today."
+              : `No classes scheduled for this location on ${format(selectedDate, "EEE, MMM d, yyyy")}.`}
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -89,5 +223,13 @@ export function QRCodesPage({
         )}
       </div>
     </div>
+  );
+}
+
+export function QRCodesPage(props: QRCodesPageProps) {
+  return (
+    <Suspense>
+      <QRCodesPageInner {...props} />
+    </Suspense>
   );
 }
