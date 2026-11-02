@@ -98,6 +98,7 @@ export default function SubPackage({
   }
 
   const [hasPreviousSessions, setHasPreviousSessions] = useState(false);
+  const [pastSessionsModalOpen, setPastSessionsModalOpen] = useState(false);
   const [previousSessions, setPreviousSessions] = useState<PreviousSessionEntry[]>([]);
   const [dateToAdd, setDateToAdd] = useState<string>("");
   const [dateError, setDateError] = useState<string>("");
@@ -225,6 +226,7 @@ export default function SubPackage({
     setPriceChanged(false);
     setPendingDeduction(false);
     setHasPreviousSessions(false);
+    setPastSessionsModalOpen(false);
     setPreviousSessions([]);
     setSelectedClassId("");
     setDateToAdd("");
@@ -290,7 +292,7 @@ export default function SubPackage({
       )}
 
       <Dialog open={open} onOpenChange={toggleOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {pkg && isOpenGymPackage(pkg.category)
@@ -435,7 +437,7 @@ export default function SubPackage({
             </div>
 
             {/* Previous Sessions (already attended) */}
-            <div className="space-y-3 mt-4 pt-2 border-t">
+            <div className="space-y-2 mt-4 pt-2 border-t">
               <div className="flex gap-2 items-center">
                 <Checkbox
                   id="previous-sessions-check"
@@ -443,9 +445,12 @@ export default function SubPackage({
                   onCheckedChange={(checked) => {
                     const val = Boolean(checked);
                     setHasPreviousSessions(val);
-                    if (!val) {
+                    if (val) {
+                      setPastSessionsModalOpen(true);
+                    } else {
                       setPreviousSessions([]);
-    setSelectedClassId("");
+                      setSelectedClassId("");
+                      setDateToAdd("");
                       setDateError("");
                     }
                   }}
@@ -460,122 +465,58 @@ export default function SubPackage({
               </div>
 
               {hasPreviousSessions && (
-                <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    {packageHasClasses
-                      ? "Record past sessions and choose which class was attended. Attendance will be recorded under that class on the scans monitor."
-                      : "Record dates of past sessions already taken. The default scan will be recorded on the scans monitor for the chosen dates."}
-                  </p>
-
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <Label className="text-xs font-medium text-muted-foreground mb-1 block">Session Date</Label>
-                        <PopoverDatePicker
-                          className="w-full"
-                          selectedDate={
-                            dateToAdd ? new Date(dateToAdd + "T00:00:00") : undefined
-                          }
-                          handleDateChange={(dateStr) => {
-                            if (!dateStr) {
-                              setDateToAdd("");
-                              return;
-                            }
-                            const d = new Date(dateStr);
-                            const y = d.getFullYear();
-                            const m = String(d.getMonth() + 1).padStart(2, "0");
-                            const day = String(d.getDate()).padStart(2, "0");
-                            setDateToAdd(`${y}-${m}-${day}`);
-                            setDateError("");
-                          }}
-                          disabled={pending || !pkg}
-                          disableFutureDates
-                          hidePastWarning
-                          placeholder="Pick past session date"
-                        />
-                      </div>
-
-                      {packageHasClasses && (
-                        <div>
-                          <Label className="text-xs font-medium text-muted-foreground mb-1 block">Class Attended</Label>
-                          <ClassSearchSelect
-                            classes={openClasses}
-                            value={selectedClassId}
-                            onChange={setSelectedClassId}
-                            disabled={pending || !pkg}
-                            placeholder="Select class"
-                            searchPlaceholder="Search class..."
-                          />
-                        </div>
+                <div className="rounded-lg border bg-muted/20 p-2.5 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs">
+                      {previousSessions.length > 0 ? (
+                        <span>
+                          <strong>{previousSessions.length}</strong> past session{previousSessions.length > 1 ? "s" : ""} recorded
+                          {pkg ? (
+                            <span className="text-muted-foreground">
+                              {" "}· {Math.max(0, Number(pkg.numberOfSessions) - previousSessions.length)} remaining
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">
+                          No past sessions added yet
+                        </span>
                       )}
                     </div>
-
-                    <div className="flex justify-end pt-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={handleAddPreviousDate}
-                        disabled={pending || !pkg || !dateToAdd || (packageHasClasses && !selectedClassId)}
-                        className="gap-1 h-9 px-3"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>Add Session</span>
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs px-2.5"
+                      onClick={() => setPastSessionsModalOpen(true)}
+                    >
+                      {previousSessions.length > 0 ? "Edit Dates" : "Add Dates"}
+                    </Button>
                   </div>
 
-                  {dateError && (
-                    <p className="text-xs text-destructive">{dateError}</p>
-                  )}
-
-                  {previousSessions.length > 0 ? (
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-1.5 rounded-md border bg-background">
-                        {previousSessions.map((session, idx) => (
-                          <Badge
-                            key={`${session.date}-${session.classId || idx}`}
-                            variant="secondary"
-                            className="gap-1 text-xs py-0.5 px-2 font-normal"
+                  {previousSessions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {previousSessions.map((session, idx) => (
+                        <Badge
+                          key={`${session.date}-${session.classId || idx}`}
+                          variant="secondary"
+                          className="gap-1 text-xs py-0.5 px-2 font-normal"
+                        >
+                          <span>
+                            {session.date}
+                            {session.className ? ` · ${session.className}` : ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePreviousSession(idx)}
+                            className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                            aria-label={`Remove session ${session.date}`}
                           >
-                            <span>
-                              {session.date}
-                              {session.className ? ` · ${session.className}` : ""}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePreviousSession(idx)}
-                              className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                              aria-label={`Remove session ${session.date}`}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-
-                      {pkg && (
-                        <div className="flex items-center justify-between text-xs px-1">
-                          <span className="text-muted-foreground">
-                            Sessions deducted: <strong>{previousSessions.length}</strong>
-                          </span>
-                          <span className="text-foreground">
-                            Remaining sessions:{" "}
-                            <strong>
-                              {Math.max(
-                                0,
-                                Number(pkg.numberOfSessions) - previousSessions.length
-                              )}
-                            </strong>{" "}
-                            of {pkg.numberOfSessions}
-                          </span>
-                        </div>
-                      )}
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
                     </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">
-                      No dates added yet. Pick a past date {packageHasClasses ? "and class " : ""}and click &quot;Add Session&quot;.
-                    </p>
                   )}
                 </div>
               )}
@@ -644,6 +585,151 @@ export default function SubPackage({
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Record Past Sessions Sub-Modal */}
+      <Dialog open={pastSessionsModalOpen} onOpenChange={setPastSessionsModalOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Record Past Sessions</DialogTitle>
+            <DialogDescription>
+              {packageHasClasses
+                ? "Record past sessions and choose which class was attended. Attendance will be recorded under that class on the scans monitor."
+                : "Record dates of past sessions already taken. The default scan will be recorded on the scans monitor for the chosen dates."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Session Date
+                  </Label>
+                  <PopoverDatePicker
+                    className="w-full"
+                    selectedDate={
+                      dateToAdd ? new Date(dateToAdd + "T00:00:00") : undefined
+                    }
+                    handleDateChange={(dateStr) => {
+                      if (!dateStr) {
+                        setDateToAdd("");
+                        return;
+                      }
+                      const d = new Date(dateStr);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, "0");
+                      const day = String(d.getDate()).padStart(2, "0");
+                      setDateToAdd(`${y}-${m}-${day}`);
+                      setDateError("");
+                    }}
+                    disabled={pending || !pkg}
+                    disableFutureDates
+                    hidePastWarning
+                    placeholder="Pick past session date"
+                  />
+                </div>
+
+                {packageHasClasses && (
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      Class Attended
+                    </Label>
+                    <ClassSearchSelect
+                      classes={openClasses}
+                      value={selectedClassId}
+                      onChange={setSelectedClassId}
+                      disabled={pending || !pkg}
+                      placeholder="Select class"
+                      searchPlaceholder="Search class..."
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAddPreviousDate}
+                  disabled={
+                    pending ||
+                    !pkg ||
+                    !dateToAdd ||
+                    (packageHasClasses && !selectedClassId)
+                  }
+                  className="gap-1 h-9 px-3"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Session</span>
+                </Button>
+              </div>
+
+              {dateError && (
+                <p className="text-xs text-destructive">{dateError}</p>
+              )}
+            </div>
+
+            {previousSessions.length > 0 ? (
+              <div className="space-y-2 rounded-md border p-3 bg-muted/10">
+                <div className="flex items-center justify-between text-xs pb-1 border-b">
+                  <span className="font-medium text-foreground">
+                    Recorded Sessions ({previousSessions.length})
+                  </span>
+                  {pkg && (
+                    <span className="text-muted-foreground">
+                      Remaining:{" "}
+                      <strong>
+                        {Math.max(
+                          0,
+                          Number(pkg.numberOfSessions) - previousSessions.length
+                        )}
+                      </strong>{" "}
+                      of {pkg.numberOfSessions}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-1">
+                  {previousSessions.map((session, idx) => (
+                    <Badge
+                      key={`${session.date}-${session.classId || idx}`}
+                      variant="secondary"
+                      className="gap-1 text-xs py-0.5 px-2 font-normal"
+                    >
+                      <span>
+                        {session.date}
+                        {session.className ? ` · ${session.className}` : ""}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePreviousSession(idx)}
+                        className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                        aria-label={`Remove session ${session.date}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic text-center py-2">
+                No dates added yet. Pick a past date {packageHasClasses ? "and class " : ""}and click &quot;Add Session&quot;.
+              </p>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <Button
+                type="button"
+                onClick={() => setPastSessionsModalOpen(false)}
+              >
+                Done ({previousSessions.length} session{previousSessions.length === 1 ? "" : "s"})
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

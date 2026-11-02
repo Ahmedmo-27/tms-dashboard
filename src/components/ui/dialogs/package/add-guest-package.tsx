@@ -221,7 +221,7 @@ export default function AddGuestPackage({
       )}
 
       <Dialog open={open} onOpenChange={toggleOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {openGymOnly ? "Guest open gym package" : "Subscribe to a package"}
