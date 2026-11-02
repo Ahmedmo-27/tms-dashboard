@@ -26,13 +26,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const paymentMethods = [
+const standardPaymentMethods = [
   { value: "CASH", header: "Cash" },
   { value: "VISA", header: "Visa" },
   { value: "INSTAPAY", header: "Instapay" },
   { value: "VALU", header: "Valu" },
-  { value: "WILL_PAY", header: "Pay Later (Will Pay)" },
-  { value: "FOC", header: "FOC (Invitation / Complimentary)" },
+];
+
+const statusOptions = [
+  { value: "SUCCESS", header: "SUCCESS" },
+  { value: "WILL_PAY", header: "WILL_PAY" },
+  { value: "FOC", header: "FOC" },
 ];
 
 interface ActionState {
@@ -87,6 +91,7 @@ export function AddWalkIn({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
+  const [status, setStatus] = useState<"SUCCESS" | "WILL_PAY" | "FOC">("SUCCESS");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
 
   const handleDateChange = (date: string) => {
@@ -101,6 +106,7 @@ export function AddWalkIn({
       setPhoneNumber("");
       setAmount("");
       setPaymentDate("");
+      setStatus("SUCCESS");
       setPaymentMethod("CASH");
     }
   };
@@ -239,32 +245,74 @@ export function AddWalkIn({
                 )}
               </div>
 
+              {/* Status */}
               <div className="space-y-2">
-                <Label htmlFor={`walk-in-payment-method-${scid}`} className="text-sm font-medium">
-                  Payment Method / Status
+                <Label htmlFor={`walk-in-status-${scid}`} className="text-sm font-medium">
+                  Status
                 </Label>
                 <Select
-                  value={paymentMethod}
-                  onValueChange={setPaymentMethod}
+                  value={status}
+                  onValueChange={(val: "SUCCESS" | "WILL_PAY" | "FOC") => {
+                    setStatus(val);
+                    if (val === "WILL_PAY") {
+                      setPaymentMethod("WILL_PAY");
+                    } else if (val === "FOC") {
+                      setPaymentMethod("FOC");
+                    } else if (paymentMethod === "WILL_PAY" || paymentMethod === "FOC") {
+                      setPaymentMethod("CASH");
+                    }
+                  }}
                 >
-                  <SelectTrigger id={`walk-in-payment-method-${scid}`}>
-                    <SelectValue placeholder="Select payment method" />
+                  <SelectTrigger id={`walk-in-status-${scid}`}>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.value} value={method.value}>
-                        {method.header}
+                    {statusOptions.map((st) => (
+                      <SelectItem key={st.value} value={st.value}>
+                        {st.header}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {paymentMethod === "FOC" ? (
+              {/* Payment Method (when SUCCESS) */}
+              {status === "SUCCESS" && (
+                <div className="space-y-2">
+                  <Label htmlFor={`walk-in-payment-method-${scid}`} className="text-sm font-medium">
+                    Payment Method
+                  </Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                  >
+                    <SelectTrigger id={`walk-in-payment-method-${scid}`}>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {standardPaymentMethods.map((method) => (
+                        <SelectItem key={method.value} value={method.value}>
+                          {method.header}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {status === "WILL_PAY" && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                  Pay Later (Will Pay). Attendance will be recorded now and payment collected later.
+                </div>
+              )}
+
+              {status === "FOC" && (
                 <div className="rounded-md border border-indigo-200 bg-indigo-50/50 p-3 text-xs text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/20 dark:text-indigo-300">
                   This walk-in is Free of Charge (FOC / Invitation). No payment record will be created.
                 </div>
-              ) : (
+              )}
+
+              {status !== "FOC" && (
                 <>
                   <div className="space-y-2">
                     <Label htmlFor={`walk-in-amount-${scid}`} className="text-sm font-medium">
