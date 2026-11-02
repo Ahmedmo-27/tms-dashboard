@@ -18,6 +18,7 @@ import {
   UserCheck,
   SlidersHorizontal,
   History,
+  AlertTriangle,
 } from "lucide-react";
 import { Member } from "@/components/ui/members/columns";
 import { Package as CatalogPackage } from "@/components/ui/packages/columns";
@@ -32,6 +33,7 @@ import RecordPastSessionsDialog from "@/components/ui/dialogs/member package/rec
 import BookClass from "@/components/ui/dialogs/member-bookings/book-class";
 import { OpenGymDropInDialog } from "@/components/ui/dialogs/open-gym/open-gym-drop-in-dialog";
 import { PtDropInDialog } from "@/components/ui/dialogs/pt/pt-drop-in-dialog";
+import { PtSettleDialog } from "@/components/ui/dialogs/pt/pt-settle-dialog";
 import { EditMemberDialog } from "@/components/ui/dialogs/members/edit-member-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -242,6 +244,51 @@ export function MemberWorkspace({
           </div>
         </div>
       </div>
+
+      {/* Owed PT Sessions Banner */}
+      {member.owedPtSessions && member.owedPtSessions.length > 0 && (
+        <div className="mx-4 sm:mx-6 mt-4 p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-amber-900 dark:text-amber-200">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="font-semibold">
+                This member has {member.owedPtSessions.length} unpaid PT session
+                {member.owedPtSessions.length > 1 ? "s" : ""} (Will Pay)
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                Attended with Coach{" "}
+                {Array.from(new Set(member.owedPtSessions.map((s) => s.coachName || "PT"))).join(", ")}.
+                Can be settled now or will be deducted if a package with the same trainer is purchased.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {member.owedPtSessions.map((session) => (
+              <PtSettleDialog
+                key={session._id}
+                sessionId={session._id}
+                clientName={member.name}
+                phoneNumber={member.phone}
+                coachName={session.coachName}
+                coachId={session.coachId}
+                initialAmount={session.amount}
+                attendanceDate={session.attendanceDate}
+                uid={member.id}
+                memberPackages={member.packages}
+                trigger={
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 text-xs bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+                  >
+                    Settle with Coach {session.coachName || "PT"}
+                  </Button>
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="p-4 sm:p-6">
         <Tabs value={tab} onValueChange={setTab}>

@@ -31,7 +31,9 @@ import {
   isOpenGymPackage,
   sortPackagesWithOpenGymFirst,
 } from "@/lib/utils/open-gym";
-import { Plus, X } from "lucide-react";
+import { Plus, X, AlertTriangle, Info } from "lucide-react";
+import { getOwedPtSessions, type OwedPtSession } from "@/lib/data/pt";
+import { PtSettleDialog } from "@/components/ui/dialogs/pt/pt-settle-dialog";
 import { Badge } from "@/components/ui/badge";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
@@ -100,6 +102,37 @@ export default function SubPackage({
   const [dateToAdd, setDateToAdd] = useState<string>("");
   const [dateError, setDateError] = useState<string>("");
   const [selectedClassId, setSelectedClassId] = useState<string>("");
+
+  const [owedPtSessions, setOwedPtSessions] = useState<OwedPtSession[]>([]);
+
+  const fetchOwedSessions = () => {
+    if (!uid) return;
+    getOwedPtSessions(undefined, uid)
+      .then((list) => setOwedPtSessions(list.filter((s) => s.status === "PENDING")))
+      .catch(() => setOwedPtSessions([]));
+  };
+
+  useEffect(() => {
+    if (open && uid) {
+      fetchOwedSessions();
+    } else {
+      setOwedPtSessions([]);
+    }
+  }, [open, uid]);
+
+  const selectedPkgCoachId = pkg?.coachId
+    ? typeof pkg.coachId === "object"
+      ? (pkg.coachId as any)._id
+      : String(pkg.coachId)
+    : null;
+
+  const sameCoachDebt = pkg && selectedPkgCoachId
+    ? owedPtSessions.filter((s) => s.coachId && String(s.coachId) === String(selectedPkgCoachId))
+    : [];
+
+  const otherCoachDebt = pkg
+    ? owedPtSessions.filter((s) => !selectedPkgCoachId || !s.coachId || String(s.coachId) !== String(selectedPkgCoachId))
+    : [];
 
   const packageHasClasses = Boolean(pkg?.opensClasses && pkg.opensClasses.length > 0);
   const openClasses = pkg?.opensClasses || [];
@@ -294,6 +327,50 @@ export default function SubPackage({
                 disabled={pending}
               />
             </div>
+
+            {/* Owed PT Debt Notices */}
+            {otherCoachDebt.length > 0 && (
+              <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                  <div>
+                    <span className="font-semibold">Unpaid PT Session Alert: </span>
+                    This member has {otherCoachDebt.length} unpaid session(s) with Coach{" "}
+                    {Array.from(new Set(otherCoachDebt.map((s) => s.coachName || "another trainer"))).join(", ")}.
+                    You must settle these sessions before subscribing to this package.
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {otherCoachDebt.map((s) => (
+                    <PtSettleDialog
+                      key={s._id}
+                      sessionId={s._id}
+                      clientName={s.clientName}
+                      phoneNumber={s.phoneNumber}
+                      coachName={s.coachName}
+                      coachId={s.coachId}
+                      initialAmount={s.amount}
+                      attendanceDate={s.attendanceDate}
+                      uid={uid}
+                      onSuccess={fetchOwedSessions}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sameCoachDebt.length > 0 && otherCoachDebt.length === 0 && (
+              <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200 flex items-start gap-2">
+                <Info className="h-4 w-4 shrink-0 mt-0.5 text-blue-600" />
+                <div>
+                  <span className="font-semibold">Auto-Deduction Notice: </span>
+                  This member has {sameCoachDebt.length} unpaid session(s) with Coach{" "}
+                  {sameCoachDebt[0].coachName || "this trainer"}.
+                  {" "}
+                  {sameCoachDebt.length === 1 ? "1 session" : `${sameCoachDebt.length} sessions`} will automatically be deducted from this new package upon purchase.
+                </div>
+              </div>
+            )}
 
             {/* Dates */}
             <div className="grid grid-cols-2 gap-6 mt-4">
@@ -540,8 +617,11 @@ export default function SubPackage({
               <Button type="button" variant="outline" onClick={() => toggleOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={pending || !hasLocationId}>
-                Save changes
+              <Button
+                type="submit"
+                disabled={pending || !hasLocationId || otherCoachDebt.length > 0}
+              >
+                {otherCoachDebt.length > 0 ? "Settle Unpaid PT First" : "Save changes"}
               </Button>
             </div>
           </form>

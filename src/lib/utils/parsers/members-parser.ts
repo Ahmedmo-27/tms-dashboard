@@ -299,6 +299,7 @@ export const parseMembers = (members: any): Member[] => {
       ).length,
       ptAttendance: parsedPtAttendance,
       deductions: allDeductions,
+      owedPtSessions: member.owedPtSessions || [],
     };
     parsedMembers.push(parsedMember);
   });

@@ -42,6 +42,7 @@ const paymentMethods = [
   { value: "VALU", header: "Valu" },
   { value: "INSTAPAY", header: "Instapay" },
   { value: "CASH", header: "Cash" },
+  { value: "WILL_PAY", header: "Pay Later (Will Pay)" },
 ];
 
 type MemberSearchHit = {
@@ -453,6 +454,12 @@ export function PtDropInDialog({
                   </Select>
                 </div>
 
+                {memberPaymentMethod === "WILL_PAY" && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                    Member will attend now and pay later. An unpaid PT session record will be created and can be settled or deducted from their next package with this trainer.
+                  </div>
+                )}
+
                 {/* Price Display / Edit Toggle */}
                 <div className="rounded-lg border p-3 space-y-3 bg-muted/40">
                   <div className="flex items-center justify-between">
@@ -531,7 +538,11 @@ export function PtDropInDialog({
                   className="w-full"
                   disabled={memberPending || !selectedUid || !hasLocationId || !selectedCoachId}
                 >
-                  {memberPending ? "Recording..." : "Record PT Drop-In"}
+                  {memberPending
+                    ? "Recording..."
+                    : memberPaymentMethod === "WILL_PAY"
+                    ? "Record PT Drop-In (Will Pay)"
+                    : "Record PT Drop-In"}
                 </Button>
               </form>
             </TabsContent>
@@ -621,6 +632,12 @@ export function PtDropInDialog({
                     </SelectContent>
                   </Select>
                 </div>
+
+                {guestPaymentMethod === "WILL_PAY" && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                    Guest will attend now and pay later. An unpaid PT session record will be linked to this phone number ({guestPhone || "enter phone above"}) to be settled or deducted upon registration.
+                  </div>
+                )}
 
                 {/* Price Display / Edit Toggle */}
                 <div className="rounded-lg border p-3 space-y-3 bg-muted/40">
@@ -724,7 +741,11 @@ export function PtDropInDialog({
                     !selectedCoachId
                   }
                 >
-                  {guestPending ? "Recording..." : "Record Guest PT Drop-In"}
+                  {guestPending
+                    ? "Recording..."
+                    : guestPaymentMethod === "WILL_PAY"
+                    ? "Record Guest PT Drop-In (Will Pay)"
+                    : "Record Guest PT Drop-In"}
                 </Button>
               </form>
             </TabsContent>

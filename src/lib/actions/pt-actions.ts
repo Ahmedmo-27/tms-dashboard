@@ -6,6 +6,8 @@ import {
   getPtDropInPrice,
   recordPtGuestDropIn,
   recordPtMemberDropIn,
+  settleOwedPtSession,
+  getOwedPtSessions,
 } from "../data/pt";
 import { ApiError, BadRequestError } from "@/core/api-error";
 import { nonUserDataSchema } from "../schemas/newUserSchema";
@@ -102,4 +104,47 @@ export const ptGuestDropInAction = async (
   }
 };
 
-export { getPtDropInPrice };
+export const settleOwedPtSessionAction = async (
+  _prevState: any,
+  formData: FormData
+) => {
+  try {
+    const sessionId = formData.get("sessionId") as string;
+    const settlementType = formData.get("settlementType") as
+      | "PAYMENT"
+      | "DEDUCTED"
+      | "FOC";
+    const paymentMethod =
+      (formData.get("paymentMethod") as string) || undefined;
+    const pkgId = (formData.get("pkgId") as string) || undefined;
+    const amountRaw = formData.get("amount") as string;
+    const paymentDate = (formData.get("paymentDate") as string) || undefined;
+    const note = (formData.get("note") as string) || undefined;
+
+    if (!sessionId) {
+      throw new BadRequestError("Session ID is required");
+    }
+    if (!settlementType) {
+      throw new BadRequestError("Settlement type is required");
+    }
+
+    const response = await settleOwedPtSession({
+      sessionId,
+      settlementType,
+      paymentMethod,
+      pkgId,
+      amount: amountRaw ? Number(amountRaw) : undefined,
+      paymentDate,
+      note,
+    });
+
+    revalidatePath("/dashboard/scans-monitor");
+    revalidatePath("/dashboard/our-members");
+    revalidatePath("/dashboard/payments");
+    return { success: true, errors: null, data: response };
+  } catch (error) {
+    return parseStateError(error as Error);
+  }
+};
+
+export { getPtDropInPrice, getOwedPtSessions, settleOwedPtSession };

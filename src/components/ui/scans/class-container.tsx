@@ -54,6 +54,8 @@ export interface ClassScan {
   /** Package the visit was charged to, when the row records it. */
   pkgId?: string;
   isGuest?: boolean;
+  coachId?: string;
+  coachName?: string;
 }
 
 export interface ClassContainerProps {
