@@ -102,26 +102,38 @@ export default function AddGuestPackage({
     return () => clearTimeout(timer);
   }, [phoneNumber, open]);
 
-  const selectedPkgCoachId = pkg?.coachId
-    ? typeof pkg.coachId === "object"
-      ? (pkg.coachId as any)._id
-      : String(pkg.coachId)
-    : null;
+  const extractCoachId = (coach: any): string | null => {
+    if (!coach) return null;
+    if (typeof coach === "string") return coach.trim();
+    if (typeof coach === "object") {
+      if (coach._id) return String(coach._id).trim();
+      if (coach.id) return String(coach.id).trim();
+    }
+    return String(coach).trim();
+  };
+
+  const getSessionCoachName = (s: OwedPtSession) => {
+    if (typeof s.coachId === "object" && s.coachId) {
+      return (s.coachId as any).coachName || (s.coachId as any).name || s.coachName || "this trainer";
+    }
+    return s.coachName || "this trainer";
+  };
+
+  const selectedPkgCoachId = extractCoachId(pkg?.coachId);
 
   const sameCoachDebt =
     pkg && selectedPkgCoachId
-      ? owedPtSessions.filter(
-          (s) => s.coachId && String(s.coachId) === String(selectedPkgCoachId)
-        )
+      ? owedPtSessions.filter((s) => {
+          const sCoachId = extractCoachId(s.coachId);
+          return Boolean(sCoachId && sCoachId === selectedPkgCoachId);
+        })
       : [];
 
   const otherCoachDebt = pkg
-    ? owedPtSessions.filter(
-        (s) =>
-          !selectedPkgCoachId ||
-          !s.coachId ||
-          String(s.coachId) !== String(selectedPkgCoachId)
-      )
+    ? owedPtSessions.filter((s) => {
+        const sCoachId = extractCoachId(s.coachId);
+        return !selectedPkgCoachId || !sCoachId || sCoachId !== selectedPkgCoachId;
+      })
     : [];
 
   // Reset state when modal opens
@@ -311,11 +323,7 @@ export default function AddGuestPackage({
                   <div>
                     <span className="font-semibold">Unpaid PT Session Alert: </span>
                     This client has {otherCoachDebt.length} unpaid session(s) with Coach{" "}
-                    {Array.from(
-                      new Set(
-                        otherCoachDebt.map((s) => s.coachName || "another trainer")
-                      )
-                    ).join(", ")}.
+                    {Array.from(new Set(otherCoachDebt.map(getSessionCoachName))).join(", ")}.
                     You must settle these sessions before purchasing this package.
                   </div>
                 </div>
@@ -326,8 +334,8 @@ export default function AddGuestPackage({
                       sessionId={s._id}
                       clientName={s.clientName || name}
                       phoneNumber={s.phoneNumber || phoneNumber}
-                      coachName={s.coachName}
-                      coachId={s.coachId}
+                      coachName={getSessionCoachName(s)}
+                      coachId={extractCoachId(s.coachId) || undefined}
                       initialAmount={s.amount}
                       attendanceDate={s.attendanceDate}
                       onSuccess={fetchOwedSessions}
@@ -343,7 +351,7 @@ export default function AddGuestPackage({
                 <div>
                   <span className="font-semibold">Auto-Deduction Notice: </span>
                   This client has {sameCoachDebt.length} unpaid session(s) with Coach{" "}
-                  {sameCoachDebt[0].coachName || "this trainer"}.
+                  {getSessionCoachName(sameCoachDebt[0])}.
                   {" "}
                   {sameCoachDebt.length === 1 ? "1 session" : `${sameCoachDebt.length} sessions`} will automatically be deducted from this package upon purchase.
                 </div>
