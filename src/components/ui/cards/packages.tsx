@@ -72,14 +72,21 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
 
   const sortedHistory = [...(pkg.adjustmentHistory ?? [])].sort(
     (a, b) =>
-      new Date(b.attendanceDate ?? b.date).getTime() -
-      new Date(a.attendanceDate ?? a.date).getTime()
+      new Date(b.date ?? b.attendanceDate).getTime() -
+      new Date(a.date ?? a.attendanceDate).getTime()
   );
-  const sortedAttendance = [...(pkg.attendance ?? [])].sort(
-    (a, b) =>
-      new Date(b.attendanceDate).getTime() -
-      new Date(a.attendanceDate).getTime()
-  );
+  const nowMs = Date.now();
+  const sortedAttendance = [...(pkg.attendance ?? [])]
+    .filter(
+      (a) =>
+        !a.attendanceDate ||
+        new Date(a.attendanceDate).getTime() <= nowMs
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.attendanceDate).getTime() -
+        new Date(a.attendanceDate).getTime()
+    );
   const freezeHistory = [...(pkg.freezeInfo?.freezeHistory ?? [])].sort(
     (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
   );
@@ -185,13 +192,27 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
               </TableHeader>
               <TableBody>
                 {pagedHistory.map((rec, i) => {
-                  const displayDate = rec.attendanceDate ?? rec.date;
+                  const txDate = rec.date ?? rec.attendanceDate;
+                  const sessionDate = rec.attendanceDate;
+                  const showSessionSubtext = Boolean(
+                    sessionDate &&
+                    txDate &&
+                    format(new Date(sessionDate), "yyyy-MM-dd") !==
+                      format(new Date(txDate), "yyyy-MM-dd")
+                  );
                   return (
                     <TableRow key={i}>
                       <TableCell className="text-xs text-muted-foreground py-2 whitespace-nowrap">
-                        {displayDate
-                          ? format(new Date(displayDate), "dd MMM yyyy")
-                          : "—"}
+                        <div>
+                          {txDate
+                            ? format(new Date(txDate), "dd MMM yyyy")
+                            : "—"}
+                        </div>
+                        {showSessionSubtext && sessionDate && (
+                          <div className="text-[10px] text-muted-foreground/70">
+                            Session: {format(new Date(sessionDate), "dd MMM yyyy")}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="py-2">
                         <span

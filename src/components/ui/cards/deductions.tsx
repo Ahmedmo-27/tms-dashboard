@@ -74,8 +74,8 @@ export default function Deductions({
     if (Array.isArray(deductions) && deductions.length > 0) {
       return [...deductions].sort(
         (a, b) =>
-          new Date(b.attendanceDate ?? b.date).getTime() -
-          new Date(a.attendanceDate ?? a.date).getTime()
+          new Date(b.date ?? b.attendanceDate).getTime() -
+          new Date(a.date ?? a.attendanceDate).getTime()
       );
     }
     const flat: AdjustmentRecord[] = [];
@@ -90,8 +90,8 @@ export default function Deductions({
     }
     return flat.sort(
       (a, b) =>
-        new Date(b.attendanceDate ?? b.date).getTime() -
-        new Date(a.attendanceDate ?? a.date).getTime()
+        new Date(b.date ?? b.attendanceDate).getTime() -
+        new Date(a.date ?? a.attendanceDate).getTime()
     );
   }, [deductions, memberPackages]);
 
@@ -111,7 +111,7 @@ export default function Deductions({
       if (!matchesSourceFilter(rec, sourceFilter)) return false;
       if (pkgFilter !== "ALL" && rec.packageName !== pkgFilter) return false;
       if (!fromDate && !toDate) return true;
-      const targetDateStr = rec.attendanceDate ?? rec.date;
+      const targetDateStr = rec.date ?? rec.attendanceDate;
       const d = new Date(targetDateStr).getTime();
       if (isNaN(d)) return false;
       const from = fromDate ? new Date(fromDate).getTime() : -Infinity;
@@ -260,7 +260,14 @@ export default function Deductions({
           ) : (
             <div className="space-y-3">
               {pagedRecords.map((rec, index) => {
-                const displayDate = rec.attendanceDate ?? rec.date;
+                const txDate = rec.date ?? rec.attendanceDate;
+                const sessionDate = rec.attendanceDate;
+                const showSessionSubtext = Boolean(
+                  sessionDate &&
+                  txDate &&
+                  format(new Date(sessionDate), "yyyy-MM-dd") !==
+                    format(new Date(txDate), "yyyy-MM-dd")
+                );
                 return (
                   <Card
                     key={index}
@@ -301,11 +308,18 @@ export default function Deductions({
                       </p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5 shrink-0" />
-                        <span>
-                          {displayDate
-                            ? format(new Date(displayDate), "dd MMM yyyy, hh:mm a")
-                            : "—"}
-                        </span>
+                        <div>
+                          <span>
+                            {txDate
+                              ? format(new Date(txDate), "dd MMM yyyy, hh:mm a")
+                              : "—"}
+                          </span>
+                          {showSessionSubtext && sessionDate && (
+                            <span className="block text-[10px] text-muted-foreground/70">
+                              Session: {format(new Date(sessionDate), "dd MMM yyyy, hh:mm a")}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -354,16 +368,30 @@ export default function Deductions({
                 </TableRow>
               ) : (
                 pagedRecords.map((rec, index) => {
-                  const displayDate = rec.attendanceDate ?? rec.date;
+                  const txDate = rec.date ?? rec.attendanceDate;
+                  const sessionDate = rec.attendanceDate;
+                  const showSessionSubtext = Boolean(
+                    sessionDate &&
+                    txDate &&
+                    format(new Date(sessionDate), "yyyy-MM-dd") !==
+                      format(new Date(txDate), "yyyy-MM-dd")
+                  );
                   return (
                     <TableRow
                       key={index}
                       className="hover:bg-muted/40 transition-colors"
                     >
                       <TableCell className="py-2.5 px-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {displayDate
-                          ? format(new Date(displayDate), "dd MMM yyyy, hh:mm a")
-                          : "—"}
+                        <div>
+                          {txDate
+                            ? format(new Date(txDate), "dd MMM yyyy, hh:mm a")
+                            : "—"}
+                        </div>
+                        {showSessionSubtext && sessionDate && (
+                          <div className="text-[10px] text-muted-foreground/70">
+                            Session: {format(new Date(sessionDate), "dd MMM yyyy, hh:mm a")}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="py-2.5 px-3 text-sm font-medium">
                         {rec.packageName ?? "—"}
