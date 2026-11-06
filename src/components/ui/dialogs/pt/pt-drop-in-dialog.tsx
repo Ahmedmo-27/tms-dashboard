@@ -38,10 +38,16 @@ import { PtPricingDialog } from "./pt-pricing-dialog";
 import { CoachSearchSelect } from "@/components/ui/coach-search-select";
 
 const paymentMethods = [
-  { value: "VISA", header: "Visa" },
-  { value: "VALU", header: "Valu" },
-  { value: "INSTAPAY", header: "Instapay" },
   { value: "CASH", header: "Cash" },
+  { value: "VISA", header: "Visa" },
+  { value: "INSTAPAY", header: "Instapay" },
+  { value: "VALU", header: "Valu" },
+];
+
+const statusOptions = [
+  { value: "SUCCESS", header: "SUCCESS" },
+  { value: "WILL_PAY", header: "WILL_PAY" },
+  { value: "FOC", header: "FOC" },
 ];
 
 type MemberSearchHit = {
@@ -119,6 +125,8 @@ export function PtDropInDialog({
   const [amount, setAmount] = useState("750");
   const [paymentDate, setPaymentDate] = useState("");
   const [note, setNote] = useState("");
+  const [memberStatus, setMemberStatus] = useState<"SUCCESS" | "WILL_PAY" | "FOC">("SUCCESS");
+  const [guestStatus, setGuestStatus] = useState<"SUCCESS" | "WILL_PAY" | "FOC">("SUCCESS");
   const [memberPaymentMethod, setMemberPaymentMethod] = useState("CASH");
   const [guestPaymentMethod, setGuestPaymentMethod] = useState("CASH");
   const [showEdits, setShowEdits] = useState(false);
@@ -136,6 +144,8 @@ export function PtDropInDialog({
     setPaymentDate("");
     setNote("");
     setSelectedCoachId("");
+    setMemberStatus("SUCCESS");
+    setGuestStatus("SUCCESS");
     setMemberPaymentMethod("CASH");
     setGuestPaymentMethod("CASH");
     setShowEdits(false);
@@ -433,90 +443,138 @@ export function PtDropInDialog({
                   )}
                 </div>
 
-                {/* Payment Method */}
+                {/* Status Selection */}
                 <div className="space-y-1.5">
-                  <Label>Payment Method</Label>
+                  <Label>Status</Label>
                   <Select
-                    value={memberPaymentMethod}
-                    onValueChange={setMemberPaymentMethod}
+                    value={memberStatus}
+                    onValueChange={(val: "SUCCESS" | "WILL_PAY" | "FOC") => {
+                      setMemberStatus(val);
+                      if (val === "WILL_PAY") {
+                        setMemberPaymentMethod("WILL_PAY");
+                      } else if (val === "FOC") {
+                        setMemberPaymentMethod("FOC");
+                      } else if (
+                        memberPaymentMethod === "WILL_PAY" ||
+                        memberPaymentMethod === "FOC"
+                      ) {
+                        setMemberPaymentMethod("CASH");
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {paymentMethods.map((pm) => (
-                        <SelectItem key={pm.value} value={pm.value}>
-                          {pm.header}
+                      {statusOptions.map((st) => (
+                        <SelectItem key={st.value} value={st.value}>
+                          {st.header}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Price Display / Edit Toggle */}
-                <div className="rounded-lg border p-3 space-y-3 bg-muted/40">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium">Price</span>
-                      <PtPricingDialog
-                        triggerLabel="Edit fixed price"
-                        variant="ghost"
-                        size="sm"
-                        triggerClassName="text-xs h-6 px-1.5 text-primary hover:underline font-normal"
-                        onPriceUpdated={fetchPrice}
-                      />
-                    </div>
-                    <span className="text-sm font-bold">
-                      {amount ? `${amount} EGP` : `${defaultPrice || "750"} EGP`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="pt-member-show-edits"
-                      checked={showEdits}
-                      onCheckedChange={(c) => setShowEdits(Boolean(c))}
-                    />
-                    <Label
-                      htmlFor="pt-member-show-edits"
-                      className="text-xs font-normal cursor-pointer"
+                {/* Payment Method (when SUCCESS) */}
+                {memberStatus === "SUCCESS" && (
+                  <div className="space-y-1.5">
+                    <Label>Payment Method</Label>
+                    <Select
+                      value={memberPaymentMethod}
+                      onValueChange={setMemberPaymentMethod}
                     >
-                      Show custom price / payment date / note
-                    </Label>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((pm) => (
+                          <SelectItem key={pm.value} value={pm.value}>
+                            {pm.header}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                )}
 
-                  {showEdits && (
-                    <div className="space-y-3 pt-1 border-t">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Amount (EGP)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
+                {memberStatus === "WILL_PAY" && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                    Member will attend now and pay later. An unpaid PT session record will be created and can be settled or deducted from their next package with this trainer.
+                  </div>
+                )}
+
+                {memberStatus === "FOC" && (
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                    This session is Free of Charge (FOC / Complimentary). No payment or debt will be recorded.
+                  </div>
+                )}
+
+                {/* Price Display / Edit Toggle */}
+                {memberStatus !== "FOC" && (
+                  <div className="rounded-lg border p-3 space-y-3 bg-muted/40">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium">Price</span>
+                        <PtPricingDialog
+                          triggerLabel="Edit fixed price"
+                          variant="ghost"
+                          size="sm"
+                          triggerClassName="text-xs h-6 px-1.5 text-primary hover:underline font-normal"
+                          onPriceUpdated={fetchPrice}
                         />
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Payment Date</Label>
-                        <PopoverDatePicker
-                          className="w-full"
-                          selectedDate={
-                            paymentDate ? new Date(paymentDate) : undefined
-                          }
-                          handleDateChange={setPaymentDate}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Note</Label>
-                        <Input
-                          placeholder="Optional note"
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                        />
-                      </div>
+                      <span className="text-sm font-bold">
+                        {amount ? `${amount} EGP` : `${defaultPrice || "750"} EGP`}
+                      </span>
                     </div>
-                  )}
-                </div>
+
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="pt-member-show-edits"
+                        checked={showEdits}
+                        onCheckedChange={(c) => setShowEdits(Boolean(c))}
+                      />
+                      <Label
+                        htmlFor="pt-member-show-edits"
+                        className="text-xs font-normal cursor-pointer"
+                      >
+                        Show custom price / payment date / note
+                      </Label>
+                    </div>
+
+                    {showEdits && (
+                      <div className="space-y-3 pt-1 border-t">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Amount (EGP)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Payment Date</Label>
+                          <PopoverDatePicker
+                            className="w-full"
+                            selectedDate={
+                              paymentDate ? new Date(paymentDate) : undefined
+                            }
+                            handleDateChange={setPaymentDate}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Note</Label>
+                          <Input
+                            placeholder="Optional note"
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {memberState?.errors && (
                   <p className="text-sm text-red-500">
@@ -531,7 +589,13 @@ export function PtDropInDialog({
                   className="w-full"
                   disabled={memberPending || !selectedUid || !hasLocationId || !selectedCoachId}
                 >
-                  {memberPending ? "Recording..." : "Record PT Drop-In"}
+                  {memberPending
+                    ? "Recording..."
+                    : memberStatus === "WILL_PAY"
+                    ? "Record PT Drop-In (Will Pay)"
+                    : memberStatus === "FOC"
+                    ? "Record PT Drop-In (FOC)"
+                    : "Record PT Drop-In"}
                 </Button>
               </form>
             </TabsContent>
@@ -602,90 +666,138 @@ export function PtDropInDialog({
                   )}
                 </div>
 
-                {/* Payment Method */}
+                {/* Status Selection */}
                 <div className="space-y-1.5">
-                  <Label>Payment Method</Label>
+                  <Label>Status</Label>
                   <Select
-                    value={guestPaymentMethod}
-                    onValueChange={setGuestPaymentMethod}
+                    value={guestStatus}
+                    onValueChange={(val: "SUCCESS" | "WILL_PAY" | "FOC") => {
+                      setGuestStatus(val);
+                      if (val === "WILL_PAY") {
+                        setGuestPaymentMethod("WILL_PAY");
+                      } else if (val === "FOC") {
+                        setGuestPaymentMethod("FOC");
+                      } else if (
+                        guestPaymentMethod === "WILL_PAY" ||
+                        guestPaymentMethod === "FOC"
+                      ) {
+                        setGuestPaymentMethod("CASH");
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {paymentMethods.map((pm) => (
-                        <SelectItem key={pm.value} value={pm.value}>
-                          {pm.header}
+                      {statusOptions.map((st) => (
+                        <SelectItem key={st.value} value={st.value}>
+                          {st.header}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Price Display / Edit Toggle */}
-                <div className="rounded-lg border p-3 space-y-3 bg-muted/40">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium">Price</span>
-                      <PtPricingDialog
-                        triggerLabel="Edit fixed price"
-                        variant="ghost"
-                        size="sm"
-                        triggerClassName="text-xs h-6 px-1.5 text-primary hover:underline font-normal"
-                        onPriceUpdated={fetchPrice}
-                      />
-                    </div>
-                    <span className="text-sm font-bold">
-                      {amount ? `${amount} EGP` : `${defaultPrice || "750"} EGP`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="pt-guest-show-edits"
-                      checked={showEdits}
-                      onCheckedChange={(c) => setShowEdits(Boolean(c))}
-                    />
-                    <Label
-                      htmlFor="pt-guest-show-edits"
-                      className="text-xs font-normal cursor-pointer"
+                {/* Payment Method (when SUCCESS) */}
+                {guestStatus === "SUCCESS" && (
+                  <div className="space-y-1.5">
+                    <Label>Payment Method</Label>
+                    <Select
+                      value={guestPaymentMethod}
+                      onValueChange={setGuestPaymentMethod}
                     >
-                      Show custom price / payment date / note
-                    </Label>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((pm) => (
+                          <SelectItem key={pm.value} value={pm.value}>
+                            {pm.header}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                )}
 
-                  {showEdits && (
-                    <div className="space-y-3 pt-1 border-t">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Amount (EGP)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
+                {guestStatus === "WILL_PAY" && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                    Guest will attend now and pay later. An unpaid PT session record will be linked to this phone number ({guestPhone || "enter phone above"}) to be settled or deducted upon registration.
+                  </div>
+                )}
+
+                {guestStatus === "FOC" && (
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                    This session is Free of Charge (FOC / Complimentary). No payment or debt will be recorded.
+                  </div>
+                )}
+
+                {/* Price Display / Edit Toggle */}
+                {guestStatus !== "FOC" && (
+                  <div className="rounded-lg border p-3 space-y-3 bg-muted/40">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium">Price</span>
+                        <PtPricingDialog
+                          triggerLabel="Edit fixed price"
+                          variant="ghost"
+                          size="sm"
+                          triggerClassName="text-xs h-6 px-1.5 text-primary hover:underline font-normal"
+                          onPriceUpdated={fetchPrice}
                         />
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Payment Date</Label>
-                        <PopoverDatePicker
-                          className="w-full"
-                          selectedDate={
-                            paymentDate ? new Date(paymentDate) : undefined
-                          }
-                          handleDateChange={setPaymentDate}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Note</Label>
-                        <Input
-                          placeholder="Optional note"
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                        />
-                      </div>
+                      <span className="text-sm font-bold">
+                        {amount ? `${amount} EGP` : `${defaultPrice || "750"} EGP`}
+                      </span>
                     </div>
-                  )}
-                </div>
+
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="pt-guest-show-edits"
+                        checked={showEdits}
+                        onCheckedChange={(c) => setShowEdits(Boolean(c))}
+                      />
+                      <Label
+                        htmlFor="pt-guest-show-edits"
+                        className="text-xs font-normal cursor-pointer"
+                      >
+                        Show custom price / payment date / note
+                      </Label>
+                    </div>
+
+                    {showEdits && (
+                      <div className="space-y-3 pt-1 border-t">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Amount (EGP)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Payment Date</Label>
+                          <PopoverDatePicker
+                            className="w-full"
+                            selectedDate={
+                              paymentDate ? new Date(paymentDate) : undefined
+                            }
+                            handleDateChange={setPaymentDate}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Note</Label>
+                          <Input
+                            placeholder="Optional note"
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Member already exists prompt */}
                 {guestState?.errors?.userExists && (
@@ -724,7 +836,13 @@ export function PtDropInDialog({
                     !selectedCoachId
                   }
                 >
-                  {guestPending ? "Recording..." : "Record Guest PT Drop-In"}
+                  {guestPending
+                    ? "Recording..."
+                    : guestStatus === "WILL_PAY"
+                    ? "Record Guest PT Drop-In (Will Pay)"
+                    : guestStatus === "FOC"
+                    ? "Record Guest PT Drop-In (FOC)"
+                    : "Record Guest PT Drop-In"}
                 </Button>
               </form>
             </TabsContent>

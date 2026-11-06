@@ -575,6 +575,14 @@ export function PackageDetail({ memberId }: PackageDetailProps) {
                         </div>
                       </div>
 
+                      {item.status === "WILL_PAY" ? (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 text-xs font-semibold border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                        >
+                          Will Pay
+                        </Badge>
+                      ) : (
                       <Badge
                         variant="outline"
                         className="shrink-0 text-xs font-normal"
@@ -583,6 +591,7 @@ export function PackageDetail({ memberId }: PackageDetailProps) {
                           ? "Class"
                           : item.method || "PT"}
                       </Badge>
+                      )}
                     </div>
                   );
                 })}

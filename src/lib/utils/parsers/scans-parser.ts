@@ -147,6 +147,9 @@ export const parseDailyAttendance = (scans: any) => {
       parentId: dayId,
       rowId: getId(scan._id),
       pkgId: getId(scan.pkgId),
+      isGuest: !scan.uid && Boolean(scan.guestName || scan.guestPhone),
+      coachId: scan.coachId ? String(scan.coachId) : undefined,
+      coachName: scan.coachName || undefined,
     };
     output.pt.push(parsedScan);
   });

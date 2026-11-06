@@ -33,6 +33,9 @@ import {
   sortPackagesWithOpenGymFirst,
 } from "@/lib/utils/open-gym";
 import { ApiError } from "@/core/api-error";
+import { AlertTriangle, Info } from "lucide-react";
+import { getOwedPtSessions, type OwedPtSession } from "@/lib/data/pt";
+import { PtSettleDialog } from "@/components/ui/dialogs/pt/pt-settle-dialog";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -79,6 +82,59 @@ export default function AddGuestPackage({
   const [priceChanged, setPriceChanged] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [owedPtSessions, setOwedPtSessions] = useState<OwedPtSession[]>([]);
+
+  const fetchOwedSessions = () => {
+    const trimmed = phoneNumber.trim();
+    if (!trimmed || trimmed.length < 10) {
+      setOwedPtSessions([]);
+      return;
+    }
+    getOwedPtSessions(trimmed)
+      .then((list) => setOwedPtSessions(list.filter((s) => s.status === "PENDING")))
+      .catch(() => setOwedPtSessions([]));
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchOwedSessions();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [phoneNumber, open]);
+
+  const extractCoachId = (coach: any): string | null => {
+    if (!coach) return null;
+    if (typeof coach === "string") return coach.trim();
+    if (typeof coach === "object") {
+      if (coach._id) return String(coach._id).trim();
+      if (coach.id) return String(coach.id).trim();
+    }
+    return String(coach).trim();
+  };
+
+  const getSessionCoachName = (s: OwedPtSession) => {
+    if (typeof s.coachId === "object" && s.coachId) {
+      return (s.coachId as any).coachName || (s.coachId as any).name || s.coachName || "this trainer";
+    }
+    return s.coachName || "this trainer";
+  };
+
+  const selectedPkgCoachId = extractCoachId(pkg?.coachId);
+
+  const sameCoachDebt =
+    pkg && selectedPkgCoachId
+      ? owedPtSessions.filter((s) => {
+          const sCoachId = extractCoachId(s.coachId);
+          return Boolean(sCoachId && sCoachId === selectedPkgCoachId);
+        })
+      : [];
+
+  const otherCoachDebt = pkg
+    ? owedPtSessions.filter((s) => {
+        const sCoachId = extractCoachId(s.coachId);
+        return !selectedPkgCoachId || !sCoachId || sCoachId !== selectedPkgCoachId;
+      })
+    : [];
 
   // Reset state when modal opens
   const resetForm = () => {
@@ -92,6 +148,7 @@ export default function AddGuestPackage({
     setSelectedPaymentMethod("CASH");
     setShowEdits(false);
     setPriceChanged(false);
+    setOwedPtSessions([]);
   };
 
   const toggleOpen = (value: boolean) => {
@@ -164,7 +221,7 @@ export default function AddGuestPackage({
       )}
 
       <Dialog open={open} onOpenChange={toggleOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {openGymOnly ? "Guest open gym package" : "Subscribe to a package"}
@@ -257,6 +314,49 @@ export default function AddGuestPackage({
                 disabled={pending}
               />
             </div>
+
+            {/* Owed PT Debt Notices */}
+            {otherCoachDebt.length > 0 && (
+              <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                  <div>
+                    <span className="font-semibold">Unpaid PT Session Alert: </span>
+                    This client has {otherCoachDebt.length} unpaid session(s) with Coach{" "}
+                    {Array.from(new Set(otherCoachDebt.map(getSessionCoachName))).join(", ")}.
+                    You must settle these sessions before purchasing this package.
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {otherCoachDebt.map((s) => (
+                    <PtSettleDialog
+                      key={s._id}
+                      sessionId={s._id}
+                      clientName={s.clientName || name}
+                      phoneNumber={s.phoneNumber || phoneNumber}
+                      coachName={getSessionCoachName(s)}
+                      coachId={extractCoachId(s.coachId) || undefined}
+                      initialAmount={s.amount}
+                      attendanceDate={s.attendanceDate}
+                      onSuccess={fetchOwedSessions}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sameCoachDebt.length > 0 && otherCoachDebt.length === 0 && (
+              <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200 flex items-start gap-2">
+                <Info className="h-4 w-4 shrink-0 mt-0.5 text-blue-600" />
+                <div>
+                  <span className="font-semibold">Auto-Deduction Notice: </span>
+                  This client has {sameCoachDebt.length} unpaid session(s) with Coach{" "}
+                  {getSessionCoachName(sameCoachDebt[0])}.
+                  {" "}
+                  {sameCoachDebt.length === 1 ? "1 session" : `${sameCoachDebt.length} sessions`} will automatically be deducted from this package upon purchase.
+                </div>
+              </div>
+            )}
 
             {/* Dates */}
             <div className="grid grid-cols-2 gap-6 mt-4">
@@ -379,8 +479,13 @@ export default function AddGuestPackage({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={pending || !hasLocationId}>
-                Save changes
+              <Button
+                type="submit"
+                disabled={pending || !hasLocationId || otherCoachDebt.length > 0}
+              >
+                {otherCoachDebt.length > 0
+                  ? "Settle Unpaid PT First"
+                  : "Save changes"}
               </Button>
             </div>
           </form>

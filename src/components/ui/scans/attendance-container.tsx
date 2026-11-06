@@ -22,6 +22,7 @@ import { BranchPill } from "../branch-pill";
 import { CopyAttendanceForSheetButton } from "./copy-attendance-for-sheet-button";
 import { ScanMemberLink } from "./scan-member-link";
 import { EditScanRow } from "../dialogs/scans/edit-scan-row";
+import { PtSettleDialog } from "../dialogs/pt/pt-settle-dialog";
 import { Button } from "@/components/ui/button";
 import { deleteScanRow } from "@/lib/data/scan-rows";
 import { getApiErrorMessage } from "@/lib/utils/api-error-message";
@@ -188,7 +189,7 @@ export const AttendanceContainer = ({
                   {showBranch ? <TableHead>Branch</TableHead> : null}
                   <TableHead>Check-in Time</TableHead>
                   <TableHead className="text-right">Status</TableHead>
-                  <TableHead className="w-[72px] text-right">Actions</TableHead>
+                  <TableHead className="w-[110px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -301,11 +302,23 @@ export const AttendanceContainer = ({
                       <TableCell className="text-right">
                         {scan.rowId && scan.parentId ? (
                           <div
-                            className="flex items-center justify-end"
+                            className="flex items-center justify-end gap-1"
                             // The row itself is clickable now; a correction
                             // must not also trigger its onSelect.
                             onClick={(e) => e.stopPropagation()}
                           >
+                            {scan.source === "pt" && scan.status === "WILL_PAY" && (
+                              <PtSettleDialog
+                                sessionId={scan.rowId}
+                                clientName={scan.member}
+                                phoneNumber={scan.phone}
+                                coachName={scan.coachName}
+                                coachId={scan.coachId}
+                                attendanceDate={scan.time}
+                                uid={scan.memberId}
+                                onSuccess={onRefresh}
+                              />
+                            )}
                             <EditScanRow
                               scan={scan}
                               availableClasses={availableClasses}

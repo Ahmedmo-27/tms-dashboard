@@ -18,11 +18,42 @@ import { MobilePTAttendanceCard } from "./mobile-pt-attendance-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TablePagination } from "@/components/ui/table-pagination";
+import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
 
-interface PTAttendanceRecord {
+export interface PTAttendanceRecord {
   package: string;
   attendanceTime: string;
+  status?: string;
+}
+
+function renderPtStatusBadge(status?: string) {
+  const norm = (status || "COMPLETED").toUpperCase();
+  if (norm === "WILL_PAY" || norm === "PENDING") {
+    return (
+      <Badge
+        variant="outline"
+        className="text-xs font-semibold border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+      >
+        Will Pay
+      </Badge>
+    );
+  }
+  if (norm === "FOC") {
+    return (
+      <Badge
+        variant="outline"
+        className="text-xs font-semibold border-purple-400 bg-purple-50 text-purple-800 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
+      >
+        FOC
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="text-xs font-medium">
+      Completed
+    </Badge>
+  );
 }
 
 interface PTAttendanceProps {
@@ -168,13 +199,16 @@ export default function PTAttendance({
                 <TableHead className="text-xs font-medium text-muted-foreground">
                   Attendance Time
                 </TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground text-right pr-4">
+                  Status
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAttendance.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={2}
+                    colSpan={3}
                     className="h-20 text-center text-muted-foreground text-sm"
                   >
                     {hasFilter
@@ -202,6 +236,9 @@ export default function PTAttendance({
                           <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                           <span>{t.time}</span>
                         </div>
+                      </TableCell>
+                      <TableCell className="py-2 px-3 text-right pr-4">
+                        {renderPtStatusBadge(record.status)}
                       </TableCell>
                     </TableRow>
                   );

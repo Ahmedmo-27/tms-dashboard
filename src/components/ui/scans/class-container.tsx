@@ -54,6 +54,8 @@ export interface ClassScan {
   /** Package the visit was charged to, when the row records it. */
   pkgId?: string;
   isGuest?: boolean;
+  coachId?: string;
+  coachName?: string;
 }
 
 export interface ClassContainerProps {
@@ -497,6 +499,8 @@ export const ClassContainer = ({
                               <PaymentSelectorDialog
                                 bookingId={scan.bookingId}
                                 initialPhone={scan.phone && scan.phone !== "No Phone" ? scan.phone : ""}
+                                clientName={scan.member}
+                                checkInTime={scan.time}
                                 scid={scan.parentId || classData._id}
                                 targetCid={classData.cid}
                                 className={classData.className}

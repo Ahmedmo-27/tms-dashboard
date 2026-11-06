@@ -75,6 +75,22 @@ export type Booking = {
   classTime: Date;
 }
 
+export type OwedPtSessionItem = {
+  _id: string;
+  phoneNumber: string;
+  uid?: string;
+  clientName?: string;
+  coachId?: string;
+  coachName?: string;
+  locationId?: string;
+  dailyAttendanceId?: string;
+  attendanceRowId?: string;
+  attendanceDate: string;
+  amount: number;
+  status: "PENDING" | "DEDUCTED" | "PAID" | "WAIVED" | "FOC";
+  note?: string;
+};
+
 export type Member = {
   id: string;
   name: string;
@@ -86,6 +102,7 @@ export type Member = {
   ptAttendance: any[];
   deductions?: AdjustmentRecord[];
   nationalId?: string;
+  owedPtSessions?: OwedPtSessionItem[];
 };
 
 function soonestActiveExpiry(packages: MemberPackage[]): Date | null {

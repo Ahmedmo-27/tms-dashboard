@@ -112,3 +112,49 @@ export const recordPtGuestDropIn = async (
   revalidatePath("/dashboard/scans-monitor");
   return response.data;
 };
+
+export type OwedPtSession = {
+  _id: string;
+  phoneNumber: string;
+  uid?: string;
+  clientName?: string;
+  coachId?: string;
+  coachName?: string;
+  locationId?: string;
+  dailyAttendanceId?: string;
+  attendanceRowId?: string;
+  attendanceDate: string;
+  amount: number;
+  status: "PENDING" | "DEDUCTED" | "PAID" | "WAIVED" | "FOC";
+  note?: string;
+};
+
+export const getOwedPtSessions = async (
+  phone?: string,
+  uid?: string
+): Promise<OwedPtSession[]> => {
+  const params: Record<string, string> = {};
+  if (phone) params.phone = phone;
+  if (uid) params.uid = uid;
+  const response = await tms.get("/admin/pt/owed-sessions", {
+    params: Object.keys(params).length > 0 ? params : undefined,
+  });
+  return response.data?.data ?? [];
+};
+
+export const settleOwedPtSession = async (payload: {
+  sessionId: string;
+  settlementType: "PAYMENT" | "DEDUCTED" | "FOC";
+  paymentMethod?: string;
+  pkgId?: string;
+  amount?: number;
+  paymentDate?: string;
+  note?: string;
+}) => {
+  const response = await tms.post("/admin/pt/settle-session", payload);
+  revalidatePath("/dashboard/scans-monitor");
+  revalidatePath("/dashboard/our-members");
+  revalidatePath("/dashboard/payments");
+  return response.data;
+};
+

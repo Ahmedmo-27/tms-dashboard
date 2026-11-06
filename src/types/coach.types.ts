@@ -125,6 +125,7 @@ export interface ClientAttendanceItemDto {
   location?: string | null;
   pkgId?: string;
   scheduledClassId?: string;
+  status?: string;
 }
 
 export type PtAchievementFilterType = "weekly" | "monthly" | "date";

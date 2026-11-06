@@ -23,6 +23,8 @@ export interface ScanRowChanges {
   phoneNumber?: string;
   /** Move this scan to a new scheduled class. */
   targetScid?: string;
+  /** Coach for PT rows */
+  coachId?: string;
 }
 
 function path({ source, parentId, rowId }: ScanRowRef): string {

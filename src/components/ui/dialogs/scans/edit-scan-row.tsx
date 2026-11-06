@@ -52,6 +52,8 @@ import {
 import { getMembers } from "@/lib/data/member";
 import { getPackages } from "@/lib/data/package";
 import { getScheduledClasses } from "@/lib/data/schedule";
+import { getCoaches } from "@/lib/data/coaches";
+import { CoachSearchSelect } from "@/components/ui/coach-search-select";
 import { updateScanRow, deleteScanRow, type ScanRowChanges } from "@/lib/data/scan-rows";
 import { packageOpensClass } from "@/lib/utils/package-eligibility";
 import { isOpenGymPackage } from "@/lib/utils/open-gym";
@@ -61,6 +63,7 @@ import type { Member, MemberPackage } from "@/components/ui/members/columns";
 import type { ClassScan } from "@/components/ui/scans/class-container";
 import type { ScheduledClass } from "@/components/ui/schedule/columns";
 import type { Package } from "@/components/ui/packages/columns";
+import type { Coach } from "@/components/ui/coaches/columns";
 
 export function EditScanRow({
   scan,
@@ -109,12 +112,16 @@ export function EditScanRow({
     scan.status ?? "SUCCESS",
   );
 
+  // Coaches
+  const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [selectedCoachId, setSelectedCoachId] = useState<string>(scan.coachId ?? "");
+
   // Guest
   const isGuestRow = Boolean(scan.isGuest || !scan.memberId);
   const [guestName, setGuestName] = useState(isGuestRow ? scan.member : "");
   const [guestPhone, setGuestPhone] = useState(isGuestRow ? scan.phone : "");
 
-  const canEditGuest = isGuestRow && scan.source !== "pt";
+  const canEditGuest = isGuestRow;
 
   // Delete
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -136,6 +143,7 @@ export function EditScanRow({
     setClassPopoverOpen(false);
     setClassSearch("");
     setPkgId(scan.pkgId ?? "");
+    setSelectedCoachId(scan.coachId ?? "");
     const initialDate = new Date(scan.time);
     setSelectedDateTime(isNaN(initialDate.getTime()) ? new Date() : initialDate);
     setOpenCalendar(false);
@@ -182,13 +190,14 @@ export function EditScanRow({
           availableClasses && availableClasses.length > 0
             ? Promise.resolve(availableClasses)
             : getScheduledClasses(undefined, scan.time),
+          getCoaches(),
         ];
 
         if (scan.memberId) {
           promises.push(getMembers("", 1, 1, scan.memberId));
         }
 
-        const [pkgsRes, classesRes, memberRes] = await Promise.all(promises);
+        const [pkgsRes, classesRes, coachesRes, memberRes] = await Promise.all(promises);
 
         if (!cancelled) {
           if (Array.isArray(pkgsRes)) {
@@ -196,6 +205,9 @@ export function EditScanRow({
           }
           if (Array.isArray(classesRes)) {
             setClasses(classesRes);
+          }
+          if (Array.isArray(coachesRes)) {
+            setCoaches(coachesRes);
           }
           if (memberRes?.data && memberRes.data.length > 0) {
             setCurrentMember(memberRes.data[0]);
@@ -451,6 +463,11 @@ export function EditScanRow({
       }
     }
 
+    // PT Coach
+    if ((isPtSelected || scan.source === "pt") && selectedCoachId && selectedCoachId !== scan.coachId) {
+      changes.coachId = selectedCoachId;
+    }
+
     if (Object.keys(changes).length === 0) {
       toast("Nothing changed");
       setOpen(false);
@@ -689,6 +706,21 @@ export function EditScanRow({
               </Popover>
             )}
           </div>
+
+          {/* PT Trainer selection */}
+          {(isPtSelected || scan.source === "pt") && (
+            <div className="space-y-1.5 min-w-0">
+              <Label>Trainer</Label>
+              <CoachSearchSelect
+                coaches={coaches}
+                value={selectedCoachId}
+                onChange={setSelectedCoachId}
+                placeholder="Select trainer..."
+                searchPlaceholder="Search trainer..."
+                disabled={saving}
+              />
+            </div>
+          )}
 
           {/* Package selection & booking status */}
           {activeMember && selectedClass ? (
