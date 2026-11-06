@@ -18,18 +18,37 @@ export const parseMembers = (members: any): Member[] => {
     const seenMemberAttendance = new Set<string>();
     const parsedPtAttendance: any = [];
 
-    const pushMemberAttendance = (packageLabel: string, attendanceTime: any) => {
+    const pushMemberAttendance = (
+      packageLabel: string,
+      attendanceTime: any,
+      status?: string
+    ) => {
       if (!attendanceTime) return;
       const d = new Date(attendanceTime);
       if (isNaN(d.getTime())) return;
       const dayKey = toDayKey(d);
       const label = (packageLabel || "Attendance").trim();
       const key = `${dayKey}:${label.toLowerCase()}`;
-      if (seenMemberAttendance.has(key)) return;
+      if (seenMemberAttendance.has(key)) {
+        if (status === "WILL_PAY") {
+          const existing = parsedPtAttendance.find((rec: any) => {
+            const recDay = toDayKey(rec.attendanceTime);
+            return (
+              recDay === dayKey &&
+              rec.package?.toLowerCase() === label.toLowerCase()
+            );
+          });
+          if (existing) {
+            existing.status = "WILL_PAY";
+          }
+        }
+        return;
+      }
       seenMemberAttendance.add(key);
       parsedPtAttendance.push({
         attendanceTime: d.toISOString(),
         package: label,
+        status: status || "COMPLETED",
       });
     };
 
@@ -268,7 +287,21 @@ export const parseMembers = (members: any): Member[] => {
       if (!record || record.type === "CLASS") return;
       pushMemberAttendance(
         record.pkgId?.name ?? record.packageName ?? record.className ?? "PT Attendance",
-        record.attendanceTime ?? record.date
+        record.attendanceTime ?? record.date,
+        record.status || "COMPLETED"
+      );
+    });
+
+    (member.owedPtSessions || []).forEach((session: any) => {
+      if (!session) return;
+      const coachName = session.coachName || session.coachId?.coachName;
+      const label = coachName ? `PT with Coach ${coachName}` : "PT Session";
+      const sessionStatus =
+        session.status === "PENDING" ? "WILL_PAY" : session.status || "WILL_PAY";
+      pushMemberAttendance(
+        label,
+        session.attendanceDate,
+        sessionStatus
       );
     });
 

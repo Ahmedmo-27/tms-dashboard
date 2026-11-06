@@ -56,6 +56,7 @@ export default async function Page({
       bookings: memberData.bookings,
       ptAttendance: memberData.ptAttendance,
       deductions: memberData.deductions,
+      owedPtSessions: memberData.owedPtSessions || [],
     };
     return (
       <MemberPage
