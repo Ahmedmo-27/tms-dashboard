@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { AdjustmentRecord, MemberPackage } from "../members/columns";
 import { SOURCE_COLORS, SOURCE_LABELS } from "./packages";
 import { TablePagination } from "@/components/ui/table-pagination";
+import { getAdjustmentDisplayDates } from "@/lib/utils/adjustment-session-date";
 
 const DEDUCTIONS_PAGE_SIZE = 10;
 
@@ -260,14 +261,8 @@ export default function Deductions({
           ) : (
             <div className="space-y-3">
               {pagedRecords.map((rec, index) => {
-                const txDate = rec.date ?? rec.attendanceDate;
-                const sessionDate = rec.attendanceDate;
-                const showSessionSubtext = Boolean(
-                  sessionDate &&
-                  txDate &&
-                  format(new Date(sessionDate), "yyyy-MM-dd") !==
-                    format(new Date(txDate), "yyyy-MM-dd")
-                );
+                const { txDate, sessionDate, showSessionSubtext } =
+                  getAdjustmentDisplayDates(rec);
                 return (
                   <Card
                     key={index}
@@ -368,14 +363,8 @@ export default function Deductions({
                 </TableRow>
               ) : (
                 pagedRecords.map((rec, index) => {
-                  const txDate = rec.date ?? rec.attendanceDate;
-                  const sessionDate = rec.attendanceDate;
-                  const showSessionSubtext = Boolean(
-                    sessionDate &&
-                    txDate &&
-                    format(new Date(sessionDate), "yyyy-MM-dd") !==
-                      format(new Date(txDate), "yyyy-MM-dd")
-                  );
+                  const { txDate, sessionDate, showSessionSubtext } =
+                    getAdjustmentDisplayDates(rec);
                   return (
                     <TableRow
                       key={index}
