@@ -36,6 +36,10 @@ import { ApiError } from "@/core/api-error";
 import { AlertTriangle, Info } from "lucide-react";
 import { getOwedPtSessions, type OwedPtSession } from "@/lib/data/pt";
 import { PtSettleDialog } from "@/components/ui/dialogs/pt/pt-settle-dialog";
+import {
+  getOwedSessionCoachName,
+  groupOwedSessionsByCoach,
+} from "@/lib/utils/owed-pt-sessions";
 
 const paymentMethods = [
   { value: "VISA", header: "Visa" },
@@ -110,13 +114,6 @@ export default function AddGuestPackage({
       if (coach.id) return String(coach.id).trim();
     }
     return String(coach).trim();
-  };
-
-  const getSessionCoachName = (s: OwedPtSession) => {
-    if (typeof s.coachId === "object" && s.coachId) {
-      return (s.coachId as any).coachName || (s.coachId as any).name || s.coachName || "this trainer";
-    }
-    return s.coachName || "this trainer";
   };
 
   const selectedPkgCoachId = extractCoachId(pkg?.coachId);
@@ -323,21 +320,27 @@ export default function AddGuestPackage({
                   <div>
                     <span className="font-semibold">Unpaid PT Session Alert: </span>
                     This client has {otherCoachDebt.length} unpaid session(s) with Coach{" "}
-                    {Array.from(new Set(otherCoachDebt.map(getSessionCoachName))).join(", ")}.
+                    {Array.from(new Set(otherCoachDebt.map(getOwedSessionCoachName))).join(", ")}.
                     You must settle these sessions before purchasing this package.
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {otherCoachDebt.map((s) => (
+                  {groupOwedSessionsByCoach(otherCoachDebt).map((group) => (
                     <PtSettleDialog
-                      key={s._id}
-                      sessionId={s._id}
-                      clientName={s.clientName || name}
-                      phoneNumber={s.phoneNumber || phoneNumber}
-                      coachName={getSessionCoachName(s)}
-                      coachId={extractCoachId(s.coachId) || undefined}
-                      initialAmount={s.amount}
-                      attendanceDate={s.attendanceDate}
+                      key={group.coachKey}
+                      sessions={group.sessions.map((s) => ({
+                        sessionId: s._id,
+                        amount: s.amount,
+                        attendanceDate: s.attendanceDate,
+                      }))}
+                      clientName={group.sessions[0]?.clientName || name}
+                      phoneNumber={group.sessions[0]?.phoneNumber || phoneNumber}
+                      coachName={group.coachName}
+                      coachId={group.coachId}
+                      initialAmount={group.sessions.reduce(
+                        (total, s) => total + (Number(s.amount) || 0),
+                        0
+                      )}
                       onSuccess={fetchOwedSessions}
                     />
                   ))}
@@ -351,7 +354,7 @@ export default function AddGuestPackage({
                 <div>
                   <span className="font-semibold">Auto-Deduction Notice: </span>
                   This client has {sameCoachDebt.length} unpaid session(s) with Coach{" "}
-                  {getSessionCoachName(sameCoachDebt[0])}.
+                  {getOwedSessionCoachName(sameCoachDebt[0])}.
                   {" "}
                   {sameCoachDebt.length === 1 ? "1 session" : `${sameCoachDebt.length} sessions`} will automatically be deducted from this package upon purchase.
                 </div>

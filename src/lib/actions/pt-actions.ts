@@ -109,7 +109,16 @@ export const settleOwedPtSessionAction = async (
   formData: FormData
 ) => {
   try {
-    const sessionId = formData.get("sessionId") as string;
+    const sessionIdsRaw = (formData.get("sessionIds") as string) || "";
+    const sessionId = (formData.get("sessionId") as string) || "";
+    const sessionIds = [
+      ...sessionIdsRaw
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+      ...(sessionId ? [sessionId] : []),
+    ].filter((id, index, all) => all.indexOf(id) === index);
+
     const settlementType = formData.get("settlementType") as
       | "PAYMENT"
       | "DEDUCTED"
@@ -121,22 +130,37 @@ export const settleOwedPtSessionAction = async (
     const paymentDate = (formData.get("paymentDate") as string) || undefined;
     const note = (formData.get("note") as string) || undefined;
 
-    if (!sessionId) {
+    if (sessionIds.length === 0) {
       throw new BadRequestError("Session ID is required");
     }
     if (!settlementType) {
       throw new BadRequestError("Settlement type is required");
     }
 
-    const response = await settleOwedPtSession({
-      sessionId,
-      settlementType,
-      paymentMethod,
-      pkgId,
-      amount: amountRaw ? Number(amountRaw) : undefined,
-      paymentDate,
-      note,
-    });
+    const totalAmount = amountRaw ? Number(amountRaw) : undefined;
+    const perSessionAmounts =
+      settlementType === "PAYMENT" &&
+      totalAmount != null &&
+      !Number.isNaN(totalAmount) &&
+      sessionIds.length > 1
+        ? splitAmountAcrossSessions(totalAmount, sessionIds.length)
+        : null;
+
+    let response = null;
+    for (let i = 0; i < sessionIds.length; i++) {
+      response = await settleOwedPtSession({
+        sessionId: sessionIds[i],
+        settlementType,
+        paymentMethod,
+        pkgId,
+        amount:
+          perSessionAmounts != null
+            ? perSessionAmounts[i]
+            : totalAmount,
+        paymentDate,
+        note,
+      });
+    }
 
     revalidatePath("/dashboard/scans-monitor");
     revalidatePath("/dashboard/our-members");
@@ -146,5 +170,14 @@ export const settleOwedPtSessionAction = async (
     return parseStateError(error as Error);
   }
 };
+
+function splitAmountAcrossSessions(total: number, count: number): number[] {
+  const base = Math.floor((total / count) * 100) / 100;
+  const amounts = Array.from({ length: count }, () => base);
+  const allocated = base * count;
+  const remainder = Math.round((total - allocated) * 100) / 100;
+  amounts[count - 1] = Math.round((amounts[count - 1] + remainder) * 100) / 100;
+  return amounts;
+}
 
 export { getPtDropInPrice, getOwedPtSessions, settleOwedPtSession };

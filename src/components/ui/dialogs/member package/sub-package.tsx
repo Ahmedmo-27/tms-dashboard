@@ -37,6 +37,10 @@ import { PtSettleDialog } from "@/components/ui/dialogs/pt/pt-settle-dialog";
 import { Badge } from "@/components/ui/badge";
 import { ManagementBranchField } from "@/components/ui/management-branch-field";
 import { useManagementBranchSelection } from "@/lib/hooks/use-management-branch-selection";
+import {
+  getOwedSessionCoachName,
+  groupOwedSessionsByCoach,
+} from "@/lib/utils/owed-pt-sessions";
 
 function toLocalTodayString(): string {
   const now = new Date();
@@ -129,13 +133,6 @@ export default function SubPackage({
       if (coach.id) return String(coach.id).trim();
     }
     return String(coach).trim();
-  };
-
-  const getSessionCoachName = (s: OwedPtSession) => {
-    if (typeof s.coachId === "object" && s.coachId) {
-      return (s.coachId as any).coachName || (s.coachId as any).name || s.coachName || "this trainer";
-    }
-    return s.coachName || "this trainer";
   };
 
   const selectedPkgCoachId = extractCoachId(pkg?.coachId);
@@ -357,21 +354,27 @@ export default function SubPackage({
                   <div>
                     <span className="font-semibold">Unpaid PT Session Alert: </span>
                     This member has {otherCoachDebt.length} unpaid session(s) with Coach{" "}
-                    {Array.from(new Set(otherCoachDebt.map(getSessionCoachName))).join(", ")}.
+                    {Array.from(new Set(otherCoachDebt.map(getOwedSessionCoachName))).join(", ")}.
                     You must settle these sessions before subscribing to this package.
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {otherCoachDebt.map((s) => (
+                  {groupOwedSessionsByCoach(otherCoachDebt).map((group) => (
                     <PtSettleDialog
-                      key={s._id}
-                      sessionId={s._id}
-                      clientName={s.clientName}
-                      phoneNumber={s.phoneNumber}
-                      coachName={getSessionCoachName(s)}
-                      coachId={extractCoachId(s.coachId) || undefined}
-                      initialAmount={s.amount}
-                      attendanceDate={s.attendanceDate}
+                      key={group.coachKey}
+                      sessions={group.sessions.map((s) => ({
+                        sessionId: s._id,
+                        amount: s.amount,
+                        attendanceDate: s.attendanceDate,
+                      }))}
+                      clientName={group.sessions[0]?.clientName}
+                      phoneNumber={group.sessions[0]?.phoneNumber}
+                      coachName={group.coachName}
+                      coachId={group.coachId}
+                      initialAmount={group.sessions.reduce(
+                        (total, s) => total + (Number(s.amount) || 0),
+                        0
+                      )}
                       uid={uid}
                       onSuccess={fetchOwedSessions}
                     />
@@ -386,7 +389,7 @@ export default function SubPackage({
                 <div>
                   <span className="font-semibold">Auto-Deduction Notice: </span>
                   This member has {sameCoachDebt.length} unpaid session(s) with Coach{" "}
-                  {getSessionCoachName(sameCoachDebt[0])}.
+                  {getOwedSessionCoachName(sameCoachDebt[0])}.
                   {" "}
                   {sameCoachDebt.length === 1 ? "1 session" : `${sameCoachDebt.length} sessions`} will automatically be deducted from this new package upon purchase.
                 </div>
