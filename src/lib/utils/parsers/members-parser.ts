@@ -1,4 +1,8 @@
 import { Member, AdjustmentRecord } from "@/components/ui/members/columns";
+import {
+  enrichCancellationSessionDates,
+  resolveAdjustmentSessionDate,
+} from "@/lib/utils/adjustment-session-date";
 
 const toDayKey = (val: any): string => {
   if (!val) return "";
@@ -107,24 +111,34 @@ export const parseMembers = (members: any): Member[] => {
         }
       });
 
-      const adjustmentHistory: AdjustmentRecord[] = rawAdjustments
-        .filter(Boolean)
-        .map((adj: any) => ({
-          date: adj.date ?? adj.attendanceDate ?? new Date().toISOString(),
-          attendanceDate: adj.attendanceDate,
-          className: adj.className,
-          packageName: pkgName,
-          pkgId: pkgIdStr,
-          amount: typeof adj.amount === "number" ? adj.amount : Number(adj.amount) || 0,
-          type: (adj.type === "ADD" ? "ADD" : "DEDUCT") as "ADD" | "DEDUCT",
-          source: adj.source ?? "ADMIN",
-          reason: adj.reason ?? adj.className ?? pkgName,
-        }))
-        .sort(
-          (a, b) =>
-            new Date(b.attendanceDate ?? b.date).getTime() -
-            new Date(a.attendanceDate ?? a.date).getTime()
-        );
+      const adjustmentHistory: AdjustmentRecord[] = enrichCancellationSessionDates(
+        rawAdjustments
+          .filter(Boolean)
+          .map((adj: any) => {
+            const sessionDate = resolveAdjustmentSessionDate(adj);
+            return {
+              date:
+                adj.date ??
+                sessionDate ??
+                new Date().toISOString(),
+              attendanceDate: sessionDate,
+              className: adj.className,
+              packageName: pkgName,
+              pkgId: pkgIdStr,
+              amount:
+                typeof adj.amount === "number"
+                  ? adj.amount
+                  : Number(adj.amount) || 0,
+              type: (adj.type === "ADD" ? "ADD" : "DEDUCT") as "ADD" | "DEDUCT",
+              source: adj.source ?? "ADMIN",
+              reason: adj.reason ?? adj.className ?? pkgName,
+            };
+          })
+      ).sort(
+        (a, b) =>
+          new Date(b.attendanceDate ?? b.date).getTime() -
+          new Date(a.attendanceDate ?? a.date).getTime()
+      );
 
       allDeductions.push(...adjustmentHistory);
 

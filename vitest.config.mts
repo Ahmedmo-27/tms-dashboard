@@ -1,11 +1,19 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
+
 export default defineConfig({
   plugins: [react()],
-  // Resolves the "@/*" -> "./src/*" alias straight from tsconfig.json, so the
-  // alias is declared in exactly one place.
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    // Vitest 5's resolve.tsconfigPaths can miss aliases depending on Vite
+    // version; keep an explicit @ -> src mapping so unit tests resolve.
+    alias: {
+      "@": path.resolve(rootDir, "./src"),
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,
