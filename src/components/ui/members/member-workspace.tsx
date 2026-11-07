@@ -23,6 +23,7 @@ import {
 import { Member } from "@/components/ui/members/columns";
 import { Package as CatalogPackage } from "@/components/ui/packages/columns";
 import { ScheduledClass } from "@/components/ui/schedule/columns";
+import { groupOwedSessionsByCoach } from "@/lib/utils/owed-pt-sessions";
 import Packages from "@/components/ui/cards/packages";
 import Bookings from "@/components/ui/cards/bookings";
 import PTAttendance from "@/components/ui/cards/ptAttendance";
@@ -263,16 +264,22 @@ export function MemberWorkspace({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {member.owedPtSessions.map((session) => (
+            {groupOwedSessionsByCoach(member.owedPtSessions).map((group) => (
               <PtSettleDialog
-                key={session._id}
-                sessionId={session._id}
+                key={group.coachKey}
+                sessions={group.sessions.map((session) => ({
+                  sessionId: session._id,
+                  amount: session.amount,
+                  attendanceDate: session.attendanceDate,
+                }))}
                 clientName={member.name}
                 phoneNumber={member.phone}
-                coachName={session.coachName}
-                coachId={session.coachId}
-                initialAmount={session.amount}
-                attendanceDate={session.attendanceDate}
+                coachName={group.coachName}
+                coachId={group.coachId}
+                initialAmount={group.sessions.reduce(
+                  (total, session) => total + (Number(session.amount) || 0),
+                  0
+                )}
                 uid={member.id}
                 memberPackages={member.packages}
                 trigger={
@@ -281,7 +288,10 @@ export function MemberWorkspace({
                     size="sm"
                     className="h-8 text-xs bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
                   >
-                    Settle with Coach {session.coachName || "PT"}
+                    Settle with Coach {group.coachName}
+                    {group.sessions.length > 1
+                      ? ` (${group.sessions.length})`
+                      : ""}
                   </Button>
                 }
               />

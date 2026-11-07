@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +26,7 @@ import { getMembers } from "@/lib/data/member";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, CreditCard, DollarSign } from "lucide-react";
+import { AlertCircle, DollarSign } from "lucide-react";
 import type { MemberPackage } from "@/components/ui/members/columns";
 
 const paymentMethods = [
@@ -43,8 +42,16 @@ type FormState = {
   data: any;
 };
 
+export type PtSettleSessionInput = {
+  sessionId: string;
+  amount?: number;
+  attendanceDate?: string;
+};
+
 export interface PtSettleDialogProps {
   sessionId?: string; // owedPtSession._id or attendanceRowId
+  /** Settle multiple owed sessions in one confirmation (e.g. same coach). */
+  sessions?: PtSettleSessionInput[];
   clientName?: string;
   phoneNumber?: string;
   coachName?: string;
@@ -61,6 +68,7 @@ export interface PtSettleDialogProps {
 
 export function PtSettleDialog({
   sessionId,
+  sessions,
   clientName,
   phoneNumber,
   coachName,
@@ -79,9 +87,36 @@ export function PtSettleDialog({
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
 
+  const resolvedSessions = useMemo<PtSettleSessionInput[]>(() => {
+    if (sessions && sessions.length > 0) {
+      return sessions.filter((s) => Boolean(s.sessionId));
+    }
+    if (sessionId) {
+      return [
+        {
+          sessionId,
+          amount: initialAmount,
+          attendanceDate,
+        },
+      ];
+    }
+    return [];
+  }, [sessions, sessionId, initialAmount, attendanceDate]);
+
+  const sessionCount = resolvedSessions.length;
+  const defaultAmount = useMemo(() => {
+    if (sessionCount === 0) return initialAmount || 750;
+    const sum = resolvedSessions.reduce(
+      (total, session) => total + (Number(session.amount) || 0),
+      0
+    );
+    if (sum > 0) return sum;
+    return (initialAmount || 750) * Math.max(sessionCount, 1);
+  }, [resolvedSessions, sessionCount, initialAmount]);
+
   const [settlementType, setSettlementType] = useState<"PAYMENT" | "DEDUCTED" | "FOC">("PAYMENT");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
-  const [amount, setAmount] = useState<string>(String(initialAmount || 750));
+  const [amount, setAmount] = useState<string>(String(defaultAmount));
   const [paymentDate, setPaymentDate] = useState<string>("");
   const [note, setNote] = useState<string>("");
   const [selectedPkgId, setSelectedPkgId] = useState<string>("");
@@ -98,12 +133,18 @@ export function PtSettleDialog({
     if (!nextOpen) {
       setSettlementType("PAYMENT");
       setPaymentMethod("CASH");
-      setAmount(String(initialAmount || 750));
+      setAmount(String(defaultAmount));
       setPaymentDate("");
       setNote("");
       setSelectedPkgId("");
     }
   };
+
+  useEffect(() => {
+    if (open) {
+      setAmount(String(defaultAmount));
+    }
+  }, [open, defaultAmount]);
 
   // Fetch member packages if not passed and uid is available
   useEffect(() => {
@@ -130,12 +171,20 @@ export function PtSettleDialog({
     return isPt;
   });
 
+  const selectedPackage = matchingPackages.find((p) => p._id === selectedPkgId);
+  const hasEnoughSessionsForDeduction =
+    !selectedPackage || selectedPackage.remainingClasses >= sessionCount;
+
   const initialState: FormState = { success: false, errors: null, data: null };
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     async (currentState: FormState, formData: FormData) => {
       const result = await settleOwedPtSessionAction(currentState, formData);
       if (result.success) {
-        toast.success("Owed PT session settled successfully");
+        toast.success(
+          sessionCount > 1
+            ? `${sessionCount} owed PT sessions settled successfully`
+            : "Owed PT session settled successfully"
+        );
         handleOpenChange(false);
         onSuccess?.();
         router.refresh();
@@ -145,6 +194,9 @@ export function PtSettleDialog({
     },
     initialState
   );
+
+  const sessionIdsValue = resolvedSessions.map((s) => s.sessionId).join(",");
+  const primarySession = resolvedSessions[0];
 
   return (
     <>
@@ -166,9 +218,15 @@ export function PtSettleDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Settle Owed PT Session</DialogTitle>
+            <DialogTitle>
+              {sessionCount > 1
+                ? `Settle ${sessionCount} Owed PT Sessions`
+                : "Settle Owed PT Session"}
+            </DialogTitle>
             <DialogDescription>
-              Record payment, deduct from an active package, or waive this unpaid session.
+              {sessionCount > 1
+                ? "Record payment, deduct from an active package, or waive these unpaid sessions with this trainer."
+                : "Record payment, deduct from an active package, or waive this unpaid session."}
             </DialogDescription>
           </DialogHeader>
 
@@ -179,13 +237,38 @@ export function PtSettleDialog({
               <span className="text-xs text-muted-foreground">{phoneNumber || "No phone"}</span>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Trainer: <strong className="text-foreground">{coachName || "Coach"}</strong></span>
-              {attendanceDate && (
+              <span>
+                Trainer:{" "}
+                <strong className="text-foreground">{coachName || "Coach"}</strong>
+              </span>
+              {sessionCount === 1 && primarySession?.attendanceDate && (
                 <span>
-                  Date: {format(new Date(attendanceDate), "dd MMM yyyy")}
+                  Date:{" "}
+                  {format(new Date(primarySession.attendanceDate), "dd MMM yyyy")}
+                </span>
+              )}
+              {sessionCount > 1 && (
+                <span>
+                  {sessionCount} unpaid sessions
                 </span>
               )}
             </div>
+            {sessionCount > 1 && (
+              <ul className="pt-1 space-y-0.5 text-xs text-muted-foreground">
+                {resolvedSessions.map((session) => (
+                  <li key={session.sessionId} className="flex justify-between gap-2">
+                    <span>
+                      {session.attendanceDate
+                        ? format(new Date(session.attendanceDate), "dd MMM yyyy")
+                        : "Unknown date"}
+                    </span>
+                    <span>
+                      {Number(session.amount || 0).toLocaleString()} EGP
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <Tabs
@@ -200,7 +283,8 @@ export function PtSettleDialog({
             </TabsList>
 
             <form action={formAction} className="space-y-4 pt-3">
-              <input type="hidden" name="sessionId" value={sessionId || ""} />
+              <input type="hidden" name="sessionId" value={primarySession?.sessionId || ""} />
+              <input type="hidden" name="sessionIds" value={sessionIdsValue} />
               <input type="hidden" name="settlementType" value={settlementType} />
 
               {/* PAYMENT TAB */}
@@ -228,7 +312,9 @@ export function PtSettleDialog({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Amount (EGP)</Label>
+                    <Label>
+                      {sessionCount > 1 ? "Total Amount (EGP)" : "Amount (EGP)"}
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -287,8 +373,16 @@ export function PtSettleDialog({
                     </Select>
                   )}
                   <p className="text-[11px] text-muted-foreground">
-                    1 session will be deducted from this package to cover the owed visit.
+                    {sessionCount > 1
+                      ? `${sessionCount} sessions will be deducted from this package to cover the owed visits.`
+                      : "1 session will be deducted from this package to cover the owed visit."}
                   </p>
+                  {selectedPackage && !hasEnoughSessionsForDeduction && (
+                    <div className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+                      Selected package only has {selectedPackage.remainingClasses} session
+                      {selectedPackage.remainingClasses === 1 ? "" : "s"} left, but {sessionCount} are owed.
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -296,7 +390,9 @@ export function PtSettleDialog({
               <TabsContent value="FOC" className="space-y-3 m-0">
                 <input type="hidden" name="note" value={note} />
                 <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
-                  This session will be marked as Free of Charge (FOC) / complimentary. No payment or package deduction will be recorded.
+                  {sessionCount > 1
+                    ? `These ${sessionCount} sessions will be marked as Free of Charge (FOC) / complimentary. No payment or package deduction will be recorded.`
+                    : "This session will be marked as Free of Charge (FOC) / complimentary. No payment or package deduction will be recorded."}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Reason / Note</Label>
@@ -321,12 +417,17 @@ export function PtSettleDialog({
                 className="w-full"
                 disabled={
                   pending ||
-                  !sessionId ||
-                  (settlementType === "DEDUCTED" && !selectedPkgId) ||
+                  sessionCount === 0 ||
+                  (settlementType === "DEDUCTED" &&
+                    (!selectedPkgId || !hasEnoughSessionsForDeduction)) ||
                   (settlementType === "PAYMENT" && (!amount || Number(amount) < 0))
                 }
               >
-                {pending ? "Settling..." : "Confirm Settlement"}
+                {pending
+                  ? "Settling..."
+                  : sessionCount > 1
+                    ? `Confirm Settlement (${sessionCount})`
+                    : "Confirm Settlement"}
               </Button>
             </form>
           </Tabs>
