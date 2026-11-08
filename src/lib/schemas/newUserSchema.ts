@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+// A member name is two or three parts, each starting with a capital letter.
+// Three parts are allowed because older accounts were created with a middle name.
+export const PERSON_NAME_REGEX = /^[A-Z][a-z]+(?: [A-Z][a-z]+){1,2}$/;
+
+export const personNameSchema = z
+  .string()
+  .trim()
+  .min(3, "Username must be at least 3 characters")
+  .regex(PERSON_NAME_REGEX, {
+    message:
+      "Username must be 2 or 3 names with capitalized initials (e.g., Abdelrahman Tolan or Habiba Nabil Elsayed)",
+  });
+
 export const nonUserDataSchema = z.object({
   name: z
     .string()
@@ -30,13 +43,7 @@ export const addNonMemberPackageSchema = z.object({
 });
 
 export const newUserSchema = z.object({
-  name: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .regex(/^[A-Z][a-z]+ [A-Z][a-z]+$/, {
-      message:
-        "Username must contain first and last names with capitalized initials (e.g., Abdelrahman Tolan)",
-    }),
+  name: personNameSchema,
   phoneNumber: z
     .string()
     .trim()
@@ -59,13 +66,7 @@ export const newUserSchema = z.object({
 });
 
 export const editMemberSchema = z.object({
-  name: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .regex(/^[A-Z][a-z]+ [A-Z][a-z]+$/, {
-      message:
-        "Username must contain first and last names with capitalized initials (e.g., Abdelrahman Tolan)",
-    }),
+  name: personNameSchema,
   phoneNumber: z
     .string()
     .trim()
@@ -87,13 +88,7 @@ export const editMemberSchema = z.object({
 });
 
 export const nonUserBookingSchema = z.object({
-  name: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .regex(/^[A-Z][a-z]+ [A-Z][a-z]+$/, {
-      message:
-        "Username must contain first and last names with capitalized initials (e.g., Abdelrahman Tolan)",
-    }),
+  name: personNameSchema,
   phoneNumber: z
     .string()
     .trim()
@@ -102,13 +97,7 @@ export const nonUserBookingSchema = z.object({
 });
 
 export const walkInSchema = z.object({
-  name: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .regex(/^[A-Z][a-z]+ [A-Z][a-z]+$/, {
-      message:
-        "Username must contain first and last names with capitalized initials (e.g., Abdelrahman Tolan)",
-    }),
+  name: personNameSchema,
   phoneNumber: z
     .string()
     .trim()

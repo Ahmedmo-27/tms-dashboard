@@ -2,6 +2,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   FUNCTIONAL_TRAINING: "Functional Training",
   STUDIO: "Studio",
   PERSONAL_TRAINING: "Personal Training",
+  ONLINE_PERSONAL_TRAINING: "Online Personal Training",
   PRE_POST_NATAL: "Pre/Post Natal",
   MIXED: "Mixed",
   SPACE_MEMBERSHIP: "Space Membership",

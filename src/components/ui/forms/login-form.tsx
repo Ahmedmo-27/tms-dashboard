@@ -25,6 +25,7 @@ import {
   isCoachRole,
   isStaffRole,
   getDashboardRouteForRole,
+  unauthorizedRoleMessage,
 } from "@/lib/config/roles";
 
 type LoginRole = "coach" | "management" | "branch_admin" | "admin" | string;
@@ -86,10 +87,7 @@ export function LoginForm({
         if (!targetDashboard) {
           return {
             success: false,
-            errors: {
-              message:
-                "Unauthorized role. This account does not have dashboard access.",
-            },
+            errors: { message: unauthorizedRoleMessage(loginData.role) },
             data: null,
             defaultValues,
           };
@@ -130,7 +128,7 @@ export function LoginForm({
 
         return {
           success: false,
-          errors: { message: "Unauthorized role" },
+          errors: { message: unauthorizedRoleMessage(loginData.role) },
           data: null,
           defaultValues,
         };

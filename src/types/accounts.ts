@@ -6,6 +6,8 @@ export type AccountRole =
   | "managing_coach"
   | "mailer"
   | "accountant"
+  | "sales"
+  | "sales_manager"
   | "member"
   | "user";
 

@@ -40,6 +40,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getAdjustmentDisplayDates } from "@/lib/utils/adjustment-session-date";
 
 export const SOURCE_LABELS: Record<AdjustmentRecord["source"], string> = {
   BOOKING: "Booking",
@@ -192,14 +193,8 @@ function PackageHistoryPanel({ pkg }: { pkg: MemberPackage }) {
               </TableHeader>
               <TableBody>
                 {pagedHistory.map((rec, i) => {
-                  const txDate = rec.date ?? rec.attendanceDate;
-                  const sessionDate = rec.attendanceDate;
-                  const showSessionSubtext = Boolean(
-                    sessionDate &&
-                    txDate &&
-                    format(new Date(sessionDate), "yyyy-MM-dd") !==
-                      format(new Date(txDate), "yyyy-MM-dd")
-                  );
+                  const { txDate, sessionDate, showSessionSubtext } =
+                    getAdjustmentDisplayDates(rec);
                   return (
                     <TableRow key={i}>
                       <TableCell className="text-xs text-muted-foreground py-2 whitespace-nowrap">
