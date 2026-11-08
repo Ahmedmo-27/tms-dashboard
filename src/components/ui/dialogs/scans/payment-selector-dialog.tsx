@@ -94,7 +94,6 @@ export function PaymentSelectorDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [settlementType, setSettlementType] = useState<"PAYMENT" | "DEDUCTED" | "FOC">("PAYMENT");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("CASH");
-  const [amount, setAmount] = useState<string>("");
   const [paymentDate, setPaymentDate] = useState<string>("");
 
   // Deducted package matching state
@@ -129,7 +128,6 @@ export function PaymentSelectorDialog({
       setIsLoading(false);
       setSettlementType("PAYMENT");
       setSelectedPaymentMethod("CASH");
-      setAmount("");
       setPaymentDate("");
       setPhone(initialPhone || "");
       setMatchedMember(null);
@@ -398,8 +396,7 @@ export function PaymentSelectorDialog({
     (searchStatus !== "found" || !matchedMember || !selectedPkgId);
 
   const isPaymentInvalid =
-    settlementType === "PAYMENT" &&
-    (!amount || Number(amount) < 0 || !selectedPaymentMethod);
+    settlementType === "PAYMENT" && !selectedPaymentMethod;
 
   const canSubmit =
     !pending && !isLoading && hasLocationId && !isDeductedInvalid && !isPaymentInvalid;
@@ -518,35 +515,18 @@ export function PaymentSelectorDialog({
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="amount" className="text-sm font-medium">
-                      Amount (EGP)
-                    </Label>
-                    <Input
-                      id="amount"
-                      name="amount"
-                      type="number"
-                      min="0"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="e.g., 500"
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Payment Date</Label>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <PopoverDatePicker
+                      className="w-full"
+                      selectedDate={
+                        paymentDate === "" ? undefined : new Date(paymentDate)
+                      }
+                      handleDateChange={handleDateChange}
                     />
                   </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Payment Date</Label>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <PopoverDatePicker
-                        className="w-full"
-                        selectedDate={
-                          paymentDate === "" ? undefined : new Date(paymentDate)
-                        }
-                        handleDateChange={handleDateChange}
-                      />
-                    </div>
-                    <input type="hidden" name="paymentDate" value={paymentDate} />
-                  </div>
+                  <input type="hidden" name="paymentDate" value={paymentDate} />
                 </div>
               </TabsContent>
 
