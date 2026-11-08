@@ -29,6 +29,7 @@ import { PopoverDatePicker } from "@/components/ui/popover-date-picker";
 import { getPackages } from "@/lib/data/package";
 import { ClassSearchSelect } from "@/components/ui/class-search-select";
 import type { Package } from "@/components/ui/packages/columns";
+import { isOpenGymPackage } from "@/lib/utils/open-gym";
 
 function toLocalTodayString(): string {
   const now = new Date();
@@ -52,6 +53,7 @@ interface SessionEntry {
   classId?: string;
   className?: string;
   scid?: string;
+  isOpenGym?: boolean;
 }
 
 export default function RecordPastSessionsDialog({
@@ -124,13 +126,41 @@ export default function RecordPastSessionsDialog({
   );
   const openClasses = currentCatalog?.opensClasses || [];
 
+  const isPtPackage =
+    currentCatalog?.category === "PERSONAL_TRAINING" ||
+    Boolean(currentCatalog?.coachId);
+
+  const packageSupportsOpenGym = Boolean(
+    (currentCatalog?.category && isOpenGymPackage(currentCatalog.category)) ||
+    selectedPkg?.name?.toLowerCase().includes("ultimate") ||
+    selectedPkg?.name?.toLowerCase().includes("open gym") ||
+    selectedPkg?.name?.toLowerCase().includes("space") ||
+    (!packageHasClasses && !isPtPackage)
+  );
+
+  const OPEN_GYM_OPTION = { _id: "OPEN_GYM", title: "Open Gym" };
+
+  const selectableActivities: { _id: string; title: string }[] = [
+    ...(packageSupportsOpenGym ? [OPEN_GYM_OPTION] : []),
+    ...openClasses,
+  ];
+
+  const hasActivityChoice = selectableActivities.length > 0;
+
   useEffect(() => {
-    if (packageHasClasses && openClasses.length > 0) {
-      setSelectedClassId(openClasses[0]._id);
+    if (selectableActivities.length > 0) {
+      if (selectedClassId && selectableActivities.some((a) => a._id === selectedClassId)) {
+        return;
+      }
+      if (openClasses.length > 0) {
+        setSelectedClassId(openClasses[0]._id);
+      } else {
+        setSelectedClassId(selectableActivities[0]._id);
+      }
     } else {
       setSelectedClassId("");
     }
-  }, [selectedPkgKey, packageHasClasses, currentCatalog]);
+  }, [selectedPkgKey, packageHasClasses, currentCatalog, selectableActivities.length]);
 
   const resetForm = () => {
     setSelectedSessions([]);
@@ -155,19 +185,17 @@ export default function RecordPastSessionsDialog({
       return;
     }
 
-    const matchedClass = packageHasClasses
-      ? openClasses.find((c) => c._id === selectedClassId) || openClasses[0]
-      : undefined;
+    const matchedActivity = selectableActivities.find((c) => c._id === selectedClassId);
 
     const isDuplicate = selectedSessions.some((item) =>
-      packageHasClasses
-        ? item.date === dateInput && item.classId === matchedClass?._id
+      matchedActivity
+        ? item.date === dateInput && item.classId === matchedActivity._id
         : item.date === dateInput
     );
     if (isDuplicate) {
       setErrorMsg(
-        packageHasClasses
-          ? "This class on this date has already been added."
+        matchedActivity
+          ? `This activity (${matchedActivity.title}) on this date has already been added.`
           : "This date has already been added."
       );
       return;
@@ -180,10 +208,24 @@ export default function RecordPastSessionsDialog({
       return;
     }
 
+    const isOg =
+      matchedActivity?._id === "OPEN_GYM" ||
+      (!packageHasClasses && packageSupportsOpenGym);
+
     const newEntry: SessionEntry = {
       date: dateInput,
-      ...(matchedClass
-        ? { classId: matchedClass._id, className: matchedClass.title }
+      ...(matchedActivity
+        ? {
+            classId: matchedActivity._id,
+            className: matchedActivity.title,
+            isOpenGym: isOg,
+          }
+        : isOg
+        ? {
+            classId: "OPEN_GYM",
+            className: "Open Gym",
+            isOpenGym: true,
+          }
         : {}),
     };
     setSelectedSessions((prev) =>
@@ -272,7 +314,7 @@ export default function RecordPastSessionsDialog({
               <span>Record Past Sessions</span>
             </DialogTitle>
             <DialogDescription>
-              Record dates of sessions a member has already attended before their package was recorded at the front desk.
+              Record dates of sessions or Open Gym visits a member has already attended before their package was recorded at the front desk.
             </DialogDescription>
           </DialogHeader>
 
@@ -364,16 +406,26 @@ export default function RecordPastSessionsDialog({
                   />
                 </div>
 
-                {packageHasClasses && (
+                {hasActivityChoice && (
                   <div>
-                    <Label className="text-xs font-medium text-muted-foreground mb-1 block">Class Attended</Label>
+                    <Label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      {packageHasClasses && packageSupportsOpenGym
+                        ? "Class or Open Gym"
+                        : packageHasClasses
+                        ? "Class Attended"
+                        : "Activity Attended"}
+                    </Label>
                     <ClassSearchSelect
-                      classes={openClasses}
+                      classes={selectableActivities}
                       value={selectedClassId}
                       onChange={setSelectedClassId}
                       disabled={isPending || !selectedPkg}
-                      placeholder="Select class"
-                      searchPlaceholder="Search class..."
+                      placeholder={
+                        packageSupportsOpenGym
+                          ? "Select class or Open Gym"
+                          : "Select class"
+                      }
+                      searchPlaceholder="Search class or Open Gym..."
                     />
                   </div>
                 )}
@@ -388,7 +440,7 @@ export default function RecordPastSessionsDialog({
                     isPending ||
                     !selectedPkg ||
                     !dateInput ||
-                    (packageHasClasses && !selectedClassId) ||
+                    (hasActivityChoice && !selectedClassId) ||
                     selectedSessions.length >= (selectedPkg?.remainingClasses ?? 0)
                   }
                   className="gap-1 h-9 px-3"
@@ -398,9 +450,13 @@ export default function RecordPastSessionsDialog({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {packageHasClasses
-                  ? "Pick a past date, choose which class was attended, and click \"Add Session\"."
-                  : "Pick a past date and click \"Add Session\". The default scan will be recorded on the scans monitor."}
+                {packageHasClasses && packageSupportsOpenGym
+                  ? 'Pick a past date, choose class or "Open Gym", and click "Add Session".'
+                  : packageHasClasses
+                  ? 'Pick a past date, choose which class was attended, and click "Add Session".'
+                  : packageSupportsOpenGym
+                  ? 'Pick a past date and click "Add Session" to record Open Gym attendance.'
+                  : 'Pick a past date and click "Add Session". The default scan will be recorded on the scans monitor.'}
               </p>
             </div>
 
@@ -493,9 +549,11 @@ export default function RecordPastSessionsDialog({
             <div className="flex items-start gap-2 rounded-md bg-blue-50 dark:bg-blue-950/30 p-2.5 text-xs text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
               <Info className="h-4 w-4 shrink-0 mt-0.5" />
               <span>
-                {packageHasClasses
+                {packageHasClasses && packageSupportsOpenGym
+                  ? "These sessions will be backdated under their chosen classes or Open Gym on the Scans Monitor without increasing today's scan count."
+                  : packageHasClasses
                   ? "These sessions will be backdated under their chosen classes on the Scans Monitor without increasing today's scan count."
-                  : "These sessions will record the default scan on the Scans Monitor for their historical dates without increasing today's scan count."}
+                  : "These sessions will record the attendance on the Scans Monitor for their historical dates without increasing today's scan count."}
               </span>
             </div>
 

@@ -6,6 +6,7 @@ export interface SessionItem {
   classId?: string;
   className?: string;
   scid?: string;
+  isOpenGym?: boolean;
 }
 
 // Helper functions mirroring the logic in RecordPastSessionsDialog and SubPackage
@@ -223,6 +224,31 @@ export function buildPreviousSessionsPayload(
     "Same class on a different date should be allowed"
   );
 
+  // For combo package (e.g. Ultimate Mindspacer / Spacer Mix):
+  // A member can attend a scheduled class AND Open Gym on the same date!
+  const comboSessions: SessionItem[] = [
+    { date: "2026-10-10", classId: "class_pilates", className: "Reformer Pilates" },
+  ];
+  assert.equal(
+    isSessionDuplicate(comboSessions, "2026-10-10", "OPEN_GYM", true),
+    false,
+    "Open gym on the same date as a class should be allowed on combo packages"
+  );
+  assert.equal(
+    isSessionDuplicate(comboSessions, "2026-10-10", "class_pilates", true),
+    true,
+    "Duplicate class on the same date must be rejected"
+  );
+  const comboWithOg: SessionItem[] = [
+    { date: "2026-10-10", classId: "class_pilates", className: "Reformer Pilates" },
+    { date: "2026-10-10", classId: "OPEN_GYM", className: "Open Gym", isOpenGym: true },
+  ];
+  assert.equal(
+    isSessionDuplicate(comboWithOg, "2026-10-10", "OPEN_GYM", true),
+    true,
+    "Duplicate Open Gym on the same date must be rejected"
+  );
+
   // For non-class package (Open Gym / PT): same date is duplicate regardless of class
   const openGymSessions: SessionItem[] = [
     { date: "2026-10-10" },
@@ -261,4 +287,4 @@ export function buildPreviousSessionsPayload(
   assert.equal(payloadWithClasses.reason, "Backdated classes");
 }
 
-console.log("record-past-sessions.test.ts: all 24 assertions passed successfully!");
+console.log("record-past-sessions.test.ts: all assertions passed successfully!");

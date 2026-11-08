@@ -99,6 +99,7 @@ export default function SubPackage({
     classId?: string;
     className?: string;
     scid?: string;
+    isOpenGym?: boolean;
   }
 
   const [hasPreviousSessions, setHasPreviousSessions] = useState(false);
@@ -154,13 +155,40 @@ export default function SubPackage({
   const packageHasClasses = Boolean(pkg?.opensClasses && pkg.opensClasses.length > 0);
   const openClasses = pkg?.opensClasses || [];
 
+  const isPtPackage =
+    pkg?.category === "PERSONAL_TRAINING" || Boolean(pkg?.coachId);
+
+  const packageSupportsOpenGym = Boolean(
+    (pkg?.category && isOpenGymPackage(pkg.category)) ||
+    pkg?.name?.toLowerCase().includes("ultimate") ||
+    pkg?.name?.toLowerCase().includes("open gym") ||
+    pkg?.name?.toLowerCase().includes("space") ||
+    (!packageHasClasses && !isPtPackage)
+  );
+
+  const OPEN_GYM_OPTION = { _id: "OPEN_GYM", title: "Open Gym" };
+
+  const selectableActivities: { _id: string; title: string }[] = [
+    ...(packageSupportsOpenGym ? [OPEN_GYM_OPTION] : []),
+    ...openClasses,
+  ];
+
+  const hasActivityChoice = selectableActivities.length > 0;
+
   useEffect(() => {
-    if (packageHasClasses && openClasses.length > 0) {
-      setSelectedClassId(openClasses[0]._id);
+    if (selectableActivities.length > 0) {
+      if (selectedClassId && selectableActivities.some((a) => a._id === selectedClassId)) {
+        return;
+      }
+      if (openClasses.length > 0) {
+        setSelectedClassId(openClasses[0]._id);
+      } else {
+        setSelectedClassId(selectableActivities[0]._id);
+      }
     } else {
       setSelectedClassId("");
     }
-  }, [pkg]);
+  }, [pkg, selectableActivities.length]);
 
   const handleAddPreviousDate = () => {
     if (!dateToAdd || !pkg) return;
@@ -170,19 +198,17 @@ export default function SubPackage({
       return;
     }
 
-    const matchedClass = packageHasClasses
-      ? openClasses.find((c) => c._id === selectedClassId) || openClasses[0]
-      : undefined;
+    const matchedActivity = selectableActivities.find((c) => c._id === selectedClassId);
 
     const isDuplicate = previousSessions.some((item) =>
-      packageHasClasses
-        ? item.date === dateToAdd && item.classId === matchedClass?._id
+      matchedActivity
+        ? item.date === dateToAdd && item.classId === matchedActivity._id
         : item.date === dateToAdd
     );
     if (isDuplicate) {
       setDateError(
-        packageHasClasses
-          ? "This class on this date has already been added"
+        matchedActivity
+          ? `This activity (${matchedActivity.title}) on this date has already been added`
           : "Date already added"
       );
       return;
@@ -193,10 +219,24 @@ export default function SubPackage({
       return;
     }
 
+    const isOg =
+      matchedActivity?._id === "OPEN_GYM" ||
+      (!packageHasClasses && packageSupportsOpenGym);
+
     const newEntry: PreviousSessionEntry = {
       date: dateToAdd,
-      ...(matchedClass
-        ? { classId: matchedClass._id, className: matchedClass.title }
+      ...(matchedActivity
+        ? {
+            classId: matchedActivity._id,
+            className: matchedActivity.title,
+            isOpenGym: isOg,
+          }
+        : isOg
+        ? {
+            classId: "OPEN_GYM",
+            className: "Open Gym",
+            isOpenGym: true,
+          }
         : {}),
     };
     setPreviousSessions((prev) =>
@@ -634,18 +674,26 @@ export default function SubPackage({
                   />
                 </div>
 
-                {packageHasClasses && (
+                {hasActivityChoice && (
                   <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1 block">
-                      Class Attended
+                      {packageHasClasses && packageSupportsOpenGym
+                        ? "Class or Open Gym"
+                        : packageHasClasses
+                        ? "Class Attended"
+                        : "Activity Attended"}
                     </Label>
                     <ClassSearchSelect
-                      classes={openClasses}
+                      classes={selectableActivities}
                       value={selectedClassId}
                       onChange={setSelectedClassId}
                       disabled={pending || !pkg}
-                      placeholder="Select class"
-                      searchPlaceholder="Search class..."
+                      placeholder={
+                        packageSupportsOpenGym
+                          ? "Select class or Open Gym"
+                          : "Select class"
+                      }
+                      searchPlaceholder="Search class or Open Gym..."
                     />
                   </div>
                 )}
@@ -661,7 +709,7 @@ export default function SubPackage({
                     pending ||
                     !pkg ||
                     !dateToAdd ||
-                    (packageHasClasses && !selectedClassId)
+                    (hasActivityChoice && !selectedClassId)
                   }
                   className="gap-1 h-9 px-3"
                 >
