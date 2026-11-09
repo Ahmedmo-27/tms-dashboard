@@ -53,6 +53,7 @@ const initialState: CoachState = {
   hasPtSessions: false,
   hasScheduledClasses: false,
   scansCategories: [],
+  canViewPtReports: false,
   capabilitiesLoaded: false,
 };
 
