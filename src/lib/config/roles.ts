@@ -63,14 +63,16 @@ export interface CoachIdentity {
   phoneNumber?: string | null;
   coachId?: string | null;
   userId?: string | null;
+  canViewPtReports?: boolean | null;
 }
 
 /**
- * PT Report page is restricted to managing coaches.
+ * PT Report page is restricted to managing coaches who have been assigned
+ * the extra privilege of viewing PT reports.
  */
 export function canAccessPtReport(coach: CoachIdentity | null | undefined): boolean {
   if (!coach || coach.role !== "managing_coach") return false;
-  return true;
+  return Boolean(coach.canViewPtReports);
 }
 
 export function isHanaAbazaCoach(coach: CoachIdentity | null | undefined): boolean {

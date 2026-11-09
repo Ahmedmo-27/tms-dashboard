@@ -95,6 +95,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     hasPtSessions,
     hasScheduledClasses,
     scansCategories,
+    canViewPtReports: hasPtPrivilege,
     token,
     capabilitiesLoaded,
   } = useAppSelector((state: RootState) => state.coach);
@@ -105,6 +106,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     email,
     phoneNumber,
     coachId,
+    canViewPtReports: hasPtPrivilege,
   });
 
   const hasExtraCategoryScans = (scansCategories && scansCategories.length > 0) ||

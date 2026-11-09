@@ -181,15 +181,16 @@ async function main() {
   check("getDashboardRouteForRole user -> null", getDashboardRouteForRole("user") === null);
   check("getDashboardRouteForRole undefined -> null", getDashboardRouteForRole(undefined) === null);
 
-  // PT Reports route security (accessible to managing_coach, regular coaches denied)
+  // PT Reports route security (restricted to managing coaches with explicit canViewPtReports privilege)
   const canAccessPtReport = (coach) => {
     if (!coach || coach.role !== "managing_coach") return false;
-    return true;
+    return Boolean(coach.canViewPtReports);
   };
 
-  check("PT Reports: managing_coach can access /coach/reports", canAccessPtReport({ role: "managing_coach" }) === true);
-  check("PT Reports: managing_coach (Hana Abaza) can access /coach/reports", canAccessPtReport({ role: "managing_coach", name: "Hana Abaza" }) === true);
-  check("PT Reports: regular coach named Nour Rashad cannot access /coach/reports", canAccessPtReport({ role: "coach", name: "Nour Rashad" }) === false);
+  check("PT Reports: managing_coach with canViewPtReports=true can access /coach/reports", canAccessPtReport({ role: "managing_coach", canViewPtReports: true }) === true);
+  check("PT Reports: managing_coach with canViewPtReports=false cannot access /coach/reports", canAccessPtReport({ role: "managing_coach", canViewPtReports: false }) === false);
+  check("PT Reports: managing_coach without canViewPtReports privilege cannot access /coach/reports", canAccessPtReport({ role: "managing_coach" }) === false);
+  check("PT Reports: regular coach with canViewPtReports=true cannot access /coach/reports", canAccessPtReport({ role: "coach", canViewPtReports: true }) === false);
   check("PT Reports: regular coach cannot access /coach/reports", canAccessPtReport({ role: "coach" }) === false);
   check("PT Reports: getDashboardRouteForRole managing_coach -> /coach/today (not /coach/reports)",
     getDashboardRouteForRole("managing_coach") === "/coach/today");
