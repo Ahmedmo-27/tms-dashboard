@@ -30,6 +30,7 @@ import {
 } from "@/types/accounts";
 import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   UserCog,
   Eye,
@@ -41,6 +42,7 @@ import {
   Loader2,
   ShieldAlert,
   Mail,
+  Award,
 } from "lucide-react";
 
 interface EditAccountDialogProps {
@@ -78,6 +80,7 @@ export function EditAccountDialog({
   const [locationId, setLocationId] = useState<string>("");
   const [tmsEmail, setTmsEmail] = useState("");
   const [sendAsName, setSendAsName] = useState("");
+  const [canViewPtReports, setCanViewPtReports] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const { locations, isLoading: locationsLoading } = useLocations(true);
@@ -98,6 +101,7 @@ export function EditAccountDialog({
 
       setTmsEmail(account.tmsEmail || "");
       setSendAsName(account.sendAsName || "");
+      setCanViewPtReports(Boolean(account.canViewPtReports));
     }
   }, [account]);
 
@@ -187,6 +191,7 @@ export function EditAccountDialog({
             ? sendAsName.trim()
             : null
           : null,
+        canViewPtReports: role === "managing_coach" ? canViewPtReports : false,
       });
 
       toast.success(`Account for ${name} updated successfully!`);
@@ -287,6 +292,46 @@ export function EditAccountDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Managing Coach Privileges */}
+          {role === "managing_coach" && (
+            <div className="space-y-3 rounded-lg border border-purple-200 bg-purple-50/40 p-3.5 dark:border-purple-900/50 dark:bg-purple-950/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  <span className="font-semibold text-xs text-purple-900 dark:text-purple-200 uppercase tracking-wider">
+                    Managing Coach Privileges
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-2 py-0 border-purple-300 text-purple-800 dark:text-purple-300 dark:border-purple-800 font-normal"
+                >
+                  Extra Privileges
+                </Badge>
+              </div>
+
+              <div className="flex items-start space-x-3 pt-1">
+                <Checkbox
+                  id="edit-pt-reports"
+                  checked={canViewPtReports}
+                  onCheckedChange={(checked) => setCanViewPtReports(Boolean(checked))}
+                  className="mt-0.5"
+                />
+                <div className="space-y-0.5">
+                  <Label
+                    htmlFor="edit-pt-reports"
+                    className="text-xs font-medium cursor-pointer"
+                  >
+                    Allow Viewing PT Reports
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Grants access to the PT achievement reports page in the coach portal.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Conditional Branch Selection for branch_admin */}
           {role === "branch_admin" && (

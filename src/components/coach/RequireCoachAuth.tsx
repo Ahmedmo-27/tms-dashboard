@@ -58,6 +58,7 @@ const RequireCoachAuth = ({ children }: { children: ReactNode }) => {
             hasPtSessions: session.hasPtSessions,
             hasScheduledClasses: session.hasScheduledClasses,
             scansCategories: session.scansCategories,
+            canViewPtReports: session.canViewPtReports ?? false,
             capabilitiesLoaded: true,
           })
         );

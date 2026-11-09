@@ -112,6 +112,7 @@ export function LoginForm({
               role: loginData.role,
               hasPtSessions: loginData.hasPtSessions as boolean | undefined,
               hasScheduledClasses: loginData.hasScheduledClasses as boolean | undefined,
+              canViewPtReports: loginData.canViewPtReports as boolean | undefined,
               capabilitiesLoaded: false,
             })
           );

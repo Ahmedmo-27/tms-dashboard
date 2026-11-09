@@ -91,7 +91,7 @@ export function CoachPtAchievementReport() {
   const router = useRouter();
   const coachApi = useCoachApi();
 
-  const { role, name, email, phoneNumber, coachId, capabilitiesLoaded } =
+  const { role, name, email, phoneNumber, coachId, canViewPtReports, capabilitiesLoaded } =
     useAppSelector((state: RootState) => state.coach);
 
   const isAuthorized = canAccessPtReport({
@@ -100,6 +100,7 @@ export function CoachPtAchievementReport() {
     email,
     phoneNumber,
     coachId,
+    canViewPtReports,
   });
 
   useEffect(() => {

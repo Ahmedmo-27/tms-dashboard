@@ -39,6 +39,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useLocations } from "@/lib/hooks/use-locations";
+import { cn } from "@/lib/utils";
 import {
   Search,
   RefreshCw,
@@ -424,10 +425,27 @@ export function AccountsContainer() {
                             {acc.tmsEmail}
                           </span>
                         </div>
-                      ) : (acc.role === "coach" || acc.role === "managing_coach") && acc.coach ? (
-                        <div className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
-                          <Dumbbell className="h-3.5 w-3.5 shrink-0" />
-                          <span>Profile: {acc.coach.coachName}</span>
+                      ) : (acc.role === "coach" || acc.role === "managing_coach") ? (
+                        <div className="flex flex-col gap-1 text-xs">
+                          {acc.coach && (
+                            <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                              <Dumbbell className="h-3.5 w-3.5 shrink-0" />
+                              <span>Profile: {acc.coach.coachName}</span>
+                            </div>
+                          )}
+                          {acc.role === "managing_coach" && (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] px-1.5 py-0 w-fit font-normal",
+                                acc.canViewPtReports
+                                  ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                  : "border-muted text-muted-foreground"
+                              )}
+                            >
+                              PT Reports: {acc.canViewPtReports ? "Enabled" : "Disabled"}
+                            </Badge>
+                          )}
                         </div>
                       ) : (
                         <span className="text-muted-foreground/50">—</span>

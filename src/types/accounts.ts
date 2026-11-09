@@ -47,6 +47,7 @@ export interface UserAccount {
   tmsEmail?: string;
   sendAsName?: string;
   coach?: LinkedCoach | null;
+  canViewPtReports?: boolean;
   createdAt: string;
 }
 
@@ -76,6 +77,7 @@ export interface CreateAccountPayload {
   tmsEmail?: string;
   sendAsName?: string;
   coachId?: string;
+  canViewPtReports?: boolean;
 }
 
 export interface UpdateAccountPayload {
@@ -89,5 +91,6 @@ export interface UpdateAccountPayload {
   tmsEmail?: string | null;
   sendAsName?: string | null;
   coachId?: string;
+  canViewPtReports?: boolean;
 }
 

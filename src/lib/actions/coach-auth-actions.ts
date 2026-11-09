@@ -16,6 +16,7 @@ export interface CoachSessionResult {
   hasPtSessions: boolean;
   hasScheduledClasses: boolean;
   scansCategories?: string[];
+  canViewPtReports?: boolean;
 }
 
 export type CoachSessionResolution =
@@ -67,6 +68,7 @@ export async function getCoachSession(): Promise<CoachSessionResolution> {
         hasPtSessions: Boolean(profile.hasPtSessions),
         hasScheduledClasses: Boolean(profile.hasScheduledClasses),
         scansCategories: profile.scansCategories ?? [],
+        canViewPtReports: Boolean(profile.canViewPtReports),
       },
     };
   } catch {
