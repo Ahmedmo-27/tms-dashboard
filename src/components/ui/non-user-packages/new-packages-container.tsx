@@ -29,11 +29,6 @@ export default function NewPackagesContainer() {
   const debouncedTerm = useDebounce(searchTerm, 500);
 
   const fetchData = useCallback(async () => {
-    if (!debouncedTerm) {
-      setData([]);
-      setIsLoading(false);
-      return;
-    }
     setIsLoading(true);
     try {
       const response = await getNonUserPackages(debouncedTerm, page, 10); // Get Packages
@@ -43,7 +38,7 @@ export default function NewPackagesContainer() {
         renderedPkgs.push({
           name: (pkg as any).name,
           phone: (pkg as any).phoneNumber,
-          pkgName: (pkg as any).pkgId.name,
+          pkgName: (pkg as any).pkgId?.name ?? "—",
           remainingClasses: (pkg as any).remainingClasses,
         });
       }
@@ -150,14 +145,6 @@ export default function NewPackagesContainer() {
         <div className="mt-4">
           {isLoading ? (
             <Loading />
-          ) : !debouncedTerm ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Search className="h-12 w-12 text-muted-foreground/50" />
-              <h3 className="mt-4 text-lg font-semibold">Search to see results</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Enter a name or phone number to find packages
-              </p>
-            </div>
           ) : (
             <div className="relative">
               <DataTable columns={columns} data={data} />
@@ -224,14 +211,6 @@ export default function NewPackagesContainer() {
           <div className="mt-6 rounded-md border">
             {isLoading ? (
               <Loading />
-            ) : !debouncedTerm ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Search className="h-12 w-12 text-muted-foreground/50" />
-                <h3 className="mt-4 text-lg font-semibold">Search to see results</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Enter a name or phone number to find packages
-                </p>
-              </div>
             ) : (
               <div className="relative">
                 <DataTable columns={columns} data={data} />
