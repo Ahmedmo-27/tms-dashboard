@@ -112,6 +112,31 @@ export type CoachHoursRow = {
   attendanceRate: number | null;
 };
 
+export type CoachHoursClassRow = {
+  classTitle: string;
+  category: string;
+  sessions: number;
+  hours: number;
+  booked: number;
+  attended: number;
+  capacity: number;
+  /** Bookings made with a package (booked / attended), and what the attended ones were worth. */
+  packageUses: number;
+  attendedPackageUses: number;
+  packageValue: number;
+  /** Member drop-ins plus non-member bookings. */
+  dropIns: number;
+  attendedDropIns: number;
+  dropInRevenue: number;
+  /** Package bookings by package name, most used first. */
+  packages: { name: string; uses: number }[];
+  /** Coaches who taught this class in the range, with how many of its sessions each taught. */
+  coaches: { coachId: string; name: string; sessions: number }[];
+  unassignedSessions: number;
+  fillRate: number | null;
+  attendanceRate: number | null;
+};
+
 export type CoachHoursData = {
   range: RangeInfo;
   totals: {
@@ -125,18 +150,7 @@ export type CoachHoursData = {
   };
   categories: { category: string; hours: number; sessions: number }[];
   coaches: CoachHoursRow[];
-  byClass: {
-    classTitle: string;
-    category: string;
-    sessions: number;
-    hours: number;
-    booked: number;
-    attended: number;
-    capacity: number;
-    dropInRevenue: number;
-    fillRate: number | null;
-    attendanceRate: number | null;
-  }[];
+  byClass: CoachHoursClassRow[];
   trend: ({ bucket: string } & Record<string, number | string>)[];
 };
 

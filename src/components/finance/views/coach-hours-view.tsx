@@ -1,10 +1,12 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Download, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { financeApi, type CoachHoursData, type CoachHoursRow } from "@/lib/data/finance";
+import { Input } from "@/components/ui/input";
+import { financeApi, type CoachHoursClassRow, type CoachHoursData, type CoachHoursRow } from "@/lib/data/finance";
 import { ChartCard } from "../chart-card";
 import { ColumnChart, type Series } from "../charts";
 import { downloadCsv } from "../csv";
@@ -214,28 +216,131 @@ function CoachHoursBody({ data }: { data: CoachHoursData }) {
         </CardContent>
       </Card>
 
-      <Card className="gap-3 shadow-none">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">Classes</CardTitle>
-          <CardDescription className="text-xs">How full each class was and what drop-ins paid.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            rows={data.byClass}
-            rowKey={(r) => r.classTitle}
-            initialSort={{ key: "sessions", dir: "desc" }}
-            columns={[
-              { key: "title", header: "Class", sortValue: (r) => r.classTitle, cell: (r) => r.classTitle },
-              { key: "category", header: "Type", sortValue: (r) => r.category, cell: (r) => segmentLabel(r.category) },
-              { key: "sessions", header: "Sessions", align: "right", sortValue: (r) => r.sessions, cell: (r) => formatNumber(r.sessions) },
-              { key: "hours", header: "Hours", align: "right", sortValue: (r) => r.hours, cell: (r) => hoursFormat(r.hours) },
-              { key: "attendance", header: "Show-up", align: "right", sortValue: (r) => r.attendanceRate, cell: (r) => formatPercent(r.attendanceRate) },
-              { key: "fill", header: "Fill rate", align: "right", sortValue: (r) => r.fillRate, cell: (r) => formatPercent(r.fillRate) },
-              { key: "dropin", header: "Drop-in revenue", align: "right", sortValue: (r) => r.dropInRevenue, cell: (r) => formatMoney(r.dropInRevenue) },
-            ]}
-          />
-        </CardContent>
-      </Card>
+      <ClassesCard rows={data.byClass} startDate={data.range.startDate} endDate={data.range.endDate} />
     </div>
+  );
+}
+
+const coachNames = (r: CoachHoursClassRow) =>
+  r.coaches.length ? r.coaches.map((c) => c.name).join(", ") : "No coach assigned";
+
+/** Every class in the range, searchable, with package bookings, drop-ins and who taught it. */
+function ClassesCard({ rows, startDate, endDate }: { rows: CoachHoursClassRow[]; startDate: string; endDate: string }) {
+  const [query, setQuery] = useState("");
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) =>
+      [r.classTitle, segmentLabel(r.category), ...r.coaches.map((c) => c.name)].some((v) => v.toLowerCase().includes(q)),
+    );
+  }, [rows, query]);
+
+  const exportCsv = () =>
+    downloadCsv(`classes-${startDate}-to-${endDate}`, visible, [
+      { header: "Class", value: (r) => r.classTitle },
+      { header: "Type", value: (r) => segmentLabel(r.category) },
+      { header: "Coaches", value: (r) => r.coaches.map((c) => `${c.name} (${c.sessions})`).join("; ") },
+      { header: "Sessions", value: (r) => r.sessions },
+      { header: "Sessions without a coach", value: (r) => r.unassignedSessions },
+      { header: "Hours", value: (r) => r.hours },
+      { header: "Package bookings", value: (r) => r.packageUses },
+      { header: "Package bookings attended", value: (r) => r.attendedPackageUses },
+      { header: "Packages used", value: (r) => r.packages.map((p) => `${p.name} (${p.uses})`).join("; ") },
+      { header: "Package session value (EGP)", value: (r) => r.packageValue },
+      { header: "Drop-ins", value: (r) => r.dropIns },
+      { header: "Drop-ins attended", value: (r) => r.attendedDropIns },
+      { header: "Drop-in revenue (EGP)", value: (r) => r.dropInRevenue },
+      { header: "Booked", value: (r) => r.booked },
+      { header: "Attended", value: (r) => r.attended },
+      { header: "Show-up %", value: (r) => r.attendanceRate ?? "" },
+      { header: "Fill %", value: (r) => r.fillRate ?? "" },
+    ]);
+
+  return (
+    <Card className="gap-3 shadow-none">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1.5">
+          <CardTitle className="text-sm font-semibold">Classes</CardTitle>
+          <CardDescription className="text-xs">
+            Every class held in this period: who taught it, how many bookings used a paid package, and how many were
+            drop-ins. Hover a number for the breakdown.
+          </CardDescription>
+        </div>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search class or coach"
+            aria-label="Search classes"
+            className="h-9 w-full sm:w-56"
+          />
+          <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportCsv} disabled={!visible.length}>
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <DataTable
+          rows={visible}
+          rowKey={(r) => r.classTitle}
+          initialSort={{ key: "sessions", dir: "desc" }}
+          pageSize={50}
+          columns={[
+            { key: "title", header: "Class", sortValue: (r) => r.classTitle, cell: (r) => <span className="font-medium">{r.classTitle}</span> },
+            { key: "category", header: "Type", sortValue: (r) => r.category, cell: (r) => segmentLabel(r.category) },
+            {
+              key: "coaches",
+              header: "Coach",
+              sortValue: (r) => coachNames(r),
+              cell: (r) => (
+                <span
+                  title={r.coaches.map((c) => `${c.name}: ${c.sessions} session${c.sessions === 1 ? "" : "s"}`).join("\n")}
+                  className={r.coaches.length ? undefined : "text-muted-foreground"}
+                >
+                  {coachNames(r)}
+                  {r.unassignedSessions > 0 && r.coaches.length > 0 ? ` (+${r.unassignedSessions} without coach)` : ""}
+                </span>
+              ),
+            },
+            { key: "sessions", header: "Sessions", align: "right", sortValue: (r) => r.sessions, cell: (r) => formatNumber(r.sessions) },
+            {
+              key: "packages",
+              header: "Paid packages",
+              align: "right",
+              sortValue: (r) => r.packageUses,
+              cell: (r) => (
+                <span
+                  title={
+                    r.packages.length
+                      ? `${r.attendedPackageUses} of ${r.packageUses} attended\n` + r.packages.map((p) => `${p.name}: ${p.uses}`).join("\n")
+                      : "No package bookings"
+                  }
+                >
+                  {formatNumber(r.packageUses)}
+                </span>
+              ),
+            },
+            {
+              key: "dropins",
+              header: "Drop-ins",
+              align: "right",
+              sortValue: (r) => r.dropIns,
+              cell: (r) => (
+                <span title={`${r.attendedDropIns} of ${r.dropIns} attended ? ${formatMoney(r.dropInRevenue)} paid`}>
+                  {formatNumber(r.dropIns)}
+                </span>
+              ),
+            },
+            { key: "dropin", header: "Drop-in revenue", align: "right", sortValue: (r) => r.dropInRevenue, cell: (r) => formatMoney(r.dropInRevenue) },
+            { key: "attendance", header: "Show-up", align: "right", sortValue: (r) => r.attendanceRate, cell: (r) => formatPercent(r.attendanceRate) },
+            { key: "fill", header: "Fill rate", align: "right", sortValue: (r) => r.fillRate, cell: (r) => formatPercent(r.fillRate) },
+          ]}
+        />
+        {query && !visible.length ? (
+          <p className="pt-3 text-center text-xs text-muted-foreground">No classes match ?{query}? in this period.</p>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
