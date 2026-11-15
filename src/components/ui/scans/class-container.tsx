@@ -274,11 +274,19 @@ export const ClassContainer = ({
   // Recompute the actual discrepancy live (headcount vs scans) so stale DB
   // records from the old booking-based logic don't produce false alarms,
   // while honoring manual discrepancy flags when headcount differs from scans.
+  const isConfirmed = attendanceConfirmation?.confirmed === true;
+  const isUnderAttendance =
+    isConfirmed && attendanceConfirmation.confirmedCount < successScanCount;
+  const isOverAttendance =
+    isConfirmed && attendanceConfirmation.confirmedCount > successScanCount;
   const isActuallyMissing =
-    attendanceConfirmation?.confirmed === true &&
-    (attendanceConfirmation.confirmedCount < successScanCount ||
-      (Boolean(attendanceConfirmation.hasMissingPlace) &&
-        attendanceConfirmation.confirmedCount !== successScanCount));
+    isUnderAttendance ||
+    (Boolean(attendanceConfirmation?.hasMissingPlace) &&
+      attendanceConfirmation!.confirmedCount < successScanCount);
+  const isActuallyOver =
+    isOverAttendance ||
+    (Boolean(attendanceConfirmation?.hasMissingPlace) &&
+      attendanceConfirmation!.confirmedCount > successScanCount);
 
   return (
     <Card className="w-full">
@@ -294,7 +302,7 @@ export const ClassContainer = ({
           </Badge>
 
           {/* Attendance Confirmation Mark for Management & Branch Admin */}
-          {attendanceConfirmation?.confirmed ? (
+          {isConfirmed ? (
             isActuallyMissing ? (
               <Popover>
                 <PopoverTrigger asChild>
@@ -311,6 +319,54 @@ export const ClassContainer = ({
                 <PopoverContent className="w-64 p-3 text-xs space-y-1.5" align="start">
                   <p className="font-semibold text-sm flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
                     <AlertTriangle className="h-4 w-4" /> Missing Place
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {successScanCount - attendanceConfirmation.confirmedCount} scanned member(s) absent from room.
+                  </p>
+                  <p className="text-muted-foreground">
+                    Confirmed Headcount:{" "}
+                    <span className="font-medium text-foreground">
+                      {attendanceConfirmation.confirmedCount}
+                    </span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    Scanned In:{" "}
+                    <span className="font-medium text-foreground">
+                      {successScanCount}
+                    </span>
+                  </p>
+                  {attendanceConfirmation.confirmedAt ? (
+                    <p className="text-muted-foreground">
+                      Confirmed at:{" "}
+                      {format(new Date(attendanceConfirmation.confirmedAt), "hh:mm a")}
+                    </p>
+                  ) : null}
+                  {attendanceConfirmation.notes ? (
+                    <p className="text-muted-foreground border-t pt-1 mt-1 italic">
+                      "{attendanceConfirmation.notes}"
+                    </p>
+                  ) : null}
+                </PopoverContent>
+              </Popover>
+            ) : isActuallyOver ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="cursor-pointer">
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:border-amber-500/60 dark:text-amber-400 dark:bg-amber-950/40 font-medium"
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      Unscanned Attendee ({attendanceConfirmation.confirmedCount}/{successScanCount})
+                    </Badge>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3 text-xs space-y-1.5" align="start">
+                  <p className="font-semibold text-sm flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="h-4 w-4" /> Unscanned Attendee
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {attendanceConfirmation.confirmedCount - successScanCount} attendee(s) in studio not checked in.
                   </p>
                   <p className="text-muted-foreground">
                     Confirmed Headcount:{" "}
@@ -358,6 +414,12 @@ export const ClassContainer = ({
                     Confirmed Headcount:{" "}
                     <span className="font-medium text-foreground">
                       {attendanceConfirmation.confirmedCount}
+                    </span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    Scanned In:{" "}
+                    <span className="font-medium text-foreground">
+                      {successScanCount} (Matched)
                     </span>
                   </p>
                   {attendanceConfirmation.confirmedAt ? (
