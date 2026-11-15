@@ -85,7 +85,7 @@ export function ConfirmAttendanceDialog({
       // Default to checked-in count, or 0
       const initialCount = successCount;
       setCount(initialCount);
-      setHasMissingPlace(initialCount < successCount);
+      setHasMissingPlace(initialCount !== successCount);
       setUserToggledMissingPlace(false);
       setNotes("");
     }
@@ -95,7 +95,7 @@ export function ConfirmAttendanceDialog({
     const val = Math.max(0, newCount);
     setCount(val);
     if (!userToggledMissingPlace && session) {
-      setHasMissingPlace(val < successCount);
+      setHasMissingPlace(val !== successCount);
     }
   };
 
@@ -237,11 +237,11 @@ export function ConfirmAttendanceDialog({
                 htmlFor="missing-place"
                 className="text-sm font-medium leading-none cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Flag as Missing Place / Discrepancy
+                Flag as Headcount Discrepancy
               </label>
             </div>
             <p className="text-xs text-muted-foreground pl-6">
-              Notifies branch administration and management that attendance has an empty spot or absent member.
+              Notifies branch administration and management that attendance does not match checked-in members (missing spots or extra attendees).
             </p>
           </div>
 

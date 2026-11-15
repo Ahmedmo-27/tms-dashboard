@@ -191,11 +191,18 @@ function ClassScanCard({
   const isConfirmed = Boolean(data.attendanceConfirmation?.confirmed);
   // Recompute live so stale DB hasMissingPlace values don't produce false alerts,
   // while honoring manual discrepancy flags when headcount differs from scans.
+  const isUnderAttendance =
+    isConfirmed && data.attendanceConfirmation!.confirmedCount < successCount;
+  const isOverAttendance =
+    isConfirmed && data.attendanceConfirmation!.confirmedCount > successCount;
   const isActuallyMissing =
-    isConfirmed &&
-    (data.attendanceConfirmation!.confirmedCount < successCount ||
-      (Boolean(data.attendanceConfirmation!.hasMissingPlace) &&
-        data.attendanceConfirmation!.confirmedCount !== successCount));
+    isUnderAttendance ||
+    (Boolean(data.attendanceConfirmation?.hasMissingPlace) &&
+      data.attendanceConfirmation!.confirmedCount < successCount);
+  const isActuallyOver =
+    isOverAttendance ||
+    (Boolean(data.attendanceConfirmation?.hasMissingPlace) &&
+      data.attendanceConfirmation!.confirmedCount > successCount);
 
   return (
     <Card data-walkthrough="coach-class-scan-card" className="w-full">
@@ -209,10 +216,19 @@ function ClassScanCard({
                   <Badge
                     variant="outline"
                     className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 gap-1 text-xs font-normal"
-                    title={`Attendance confirmed with missing place (${data.attendanceConfirmation?.confirmedCount} present)`}
+                    title={`Attendance confirmed with missing place (${data.attendanceConfirmation?.confirmedCount} present vs ${successCount} scanned)`}
                   >
                     <AlertTriangle className="h-3 w-3" />
                     Missing Place
+                  </Badge>
+                ) : isActuallyOver ? (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 gap-1 text-xs font-normal"
+                    title={`Attendance confirmed with unscanned attendees (${data.attendanceConfirmation?.confirmedCount} present vs ${successCount} scanned)`}
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    Unscanned Attendee
                   </Badge>
                 ) : (
                   <Badge
