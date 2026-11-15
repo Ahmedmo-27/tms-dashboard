@@ -137,6 +137,100 @@ export type CoachHoursClassRow = {
   attendanceRate: number | null;
 };
 
+/** One coach's activity inside a single class. Co-taught sessions count fully for each coach; money is split. */
+export type ClassDetailCoach = {
+  coachId: string;
+  name: string;
+  sessions: number;
+  coTaughtSessions: number;
+  hours: number;
+  booked: number;
+  attended: number;
+  capacity: number;
+  attendanceRate: number | null;
+  fillRate: number | null;
+  packageUses: number;
+  attendedPackageUses: number;
+  packageValue: number;
+  dropIns: number;
+  attendedDropIns: number;
+  dropInRevenue: number;
+  /** Packages that open this class, bought by members after (or just before) this coach's session. */
+  packagesBought: number;
+  newPackages: number;
+  renewals: number;
+  packageRevenue: number;
+  uniqueMembers: number;
+  packages: { name: string; uses: number }[];
+};
+
+export type ClassDetailSession = {
+  id: string;
+  date: string;
+  branch: string;
+  coaches: string[];
+  hours: number;
+  booked: number;
+  attended: number;
+  capacity: number;
+  packageUses: number;
+  attendedPackageUses: number;
+  dropIns: number;
+  attendedDropIns: number;
+  dropInRevenue: number;
+  packageValue: number;
+};
+
+export type ClassDetailPurchase = {
+  id: string;
+  date: string;
+  memberName: string;
+  phone: string;
+  packageName: string;
+  amount: number;
+  type: "NEW" | "RENEWAL";
+  refunded: boolean;
+  paymentMethod: string;
+  /** Coaches of the session this purchase is credited to; empty when it could not be linked. */
+  coaches: string[];
+  creditedSessionDate: string | null;
+  creditedSessionId: string | null;
+};
+
+export type ClassDetailData = {
+  classTitle: string;
+  category: string;
+  range: RangeInfo;
+  attributionDays: number;
+  summary: {
+    sessions: number;
+    hours: number;
+    coaches: number;
+    unassignedSessions: number;
+    booked: number;
+    attended: number;
+    attendanceRate: number | null;
+    fillRate: number | null;
+    packageUses: number;
+    attendedPackageUses: number;
+    packageValue: number;
+    dropIns: number;
+    attendedDropIns: number;
+    dropInRevenue: number;
+    uniqueMembers: number;
+    packagesBought: number;
+    newPackages: number;
+    renewals: number;
+    packageRevenue: number;
+    uncreditedPurchases: number;
+    uncreditedRevenue: number;
+    refundedPurchases: number;
+  };
+  coaches: ClassDetailCoach[];
+  sessions: ClassDetailSession[];
+  purchases: ClassDetailPurchase[];
+};
+
 export type CoachHoursData = {
   range: RangeInfo;
   totals: {
@@ -439,6 +533,7 @@ export const financeApi = {
   sales: (p: FinanceParams) => get<SalesData>("/sales", p),
   coaches: () => get<{ id: string; name: string }[]>("/coaches", {}),
   coachHours: (p: FinanceParams) => get<CoachHoursData>("/coach-hours", p),
+  classDetail: (p: FinanceParams) => get<ClassDetailData>("/class-detail", p),
   coachUsage: (coachId: string, p: FinanceParams) =>
     get<CoachUsageData>(`/coaches/${encodeURIComponent(coachId)}/package-usage`, p),
   pt: (p: FinanceParams) => get<PtData>("/pt", p),

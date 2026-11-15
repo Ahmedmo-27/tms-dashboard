@@ -226,6 +226,7 @@ const coachNames = (r: CoachHoursClassRow) =>
 
 /** Every class in the range, searchable, with package bookings, drop-ins and who taught it. */
 function ClassesCard({ rows, startDate, endDate }: { rows: CoachHoursClassRow[]; startDate: string; endDate: string }) {
+  const href = useFinanceHref();
   const [query, setQuery] = useState("");
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -263,7 +264,7 @@ function ClassesCard({ rows, startDate, endDate }: { rows: CoachHoursClassRow[];
           <CardTitle className="text-sm font-semibold">Classes</CardTitle>
           <CardDescription className="text-xs">
             Every class held in this period: who taught it, how many bookings used a paid package, and how many were
-            drop-ins. Hover a number for the breakdown.
+            drop-ins. Hover a number for the breakdown; click a class to see what each coach did in it.
           </CardDescription>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -287,7 +288,20 @@ function ClassesCard({ rows, startDate, endDate }: { rows: CoachHoursClassRow[];
           initialSort={{ key: "sessions", dir: "desc" }}
           pageSize={50}
           columns={[
-            { key: "title", header: "Class", sortValue: (r) => r.classTitle, cell: (r) => <span className="font-medium">{r.classTitle}</span> },
+            {
+              key: "title",
+              header: "Class",
+              sortValue: (r) => r.classTitle,
+              cell: (r) => (
+                <Link
+                  href={href("/dashboard/finance/coach-hours/class", { classTitle: r.classTitle })}
+                  className="font-medium underline-offset-4 hover:underline"
+                  title={`See what each coach did in ${r.classTitle}`}
+                >
+                  {r.classTitle}
+                </Link>
+              ),
+            },
             { key: "category", header: "Type", sortValue: (r) => r.category, cell: (r) => segmentLabel(r.category) },
             {
               key: "coaches",
