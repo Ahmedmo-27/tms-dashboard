@@ -260,6 +260,7 @@ export const BRANCH_SCOPED_PAGES = [
   "/dashboard/checkout",
   "/dashboard/orders",
   "/dashboard/products",
+  "/dashboard/maintenance",
   "/dashboard/finance",
 ] as const;
 
@@ -316,6 +317,7 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/checkout": ["management", "branch_admin"],
   "/dashboard/orders": ["management", "branch_admin"],
   "/dashboard/products": ["management", "branch_admin"],
+  "/dashboard/maintenance": ["management", "branch_admin"],
   // Compose is write-only, so the accountant only gets the inbox and sent history.
   "/dashboard/mailing": ["management", "mailer"],
   "/dashboard/mailing/sent": ["management", "mailer", "accountant"],

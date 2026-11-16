@@ -18,6 +18,8 @@ import { WalkthroughProvider } from "@/lib/tutorials/walkthrough-context";
 import { MailNotificationListener } from "@/components/mailing/MailNotificationListener";
 import { WaitlistNotificationListener } from "@/components/schedule/WaitlistNotificationListener";
 import { MailNotificationBell } from "@/components/mailing/MailNotificationBell";
+import { MaintenanceReminderListener } from "@/components/maintenance/MaintenanceReminderListener";
+import { MaintenanceReminderPill } from "@/components/maintenance/MaintenanceReminderPill";
 import { Suspense } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -28,6 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <WalkthroughProvider>
             <MailNotificationListener />
             <WaitlistNotificationListener />
+            <MaintenanceReminderListener />
             <SidebarProvider>
               <AppSidebar />
               <SidebarInset className="min-h-0">
@@ -45,6 +48,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </Suspense>
                     <Separator orientation="vertical" className="h-4 shrink-0 hidden sm:block" />
                     <CommandPalette />
+                    <MaintenanceReminderPill />
                     <MailNotificationBell />
                     <HelpButton />
                   </div>
