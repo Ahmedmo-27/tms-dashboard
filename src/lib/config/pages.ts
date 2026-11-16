@@ -26,6 +26,7 @@ import {
   BookOpenCheck,
   Bell,
   HandCoins,
+  ClipboardCheck,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { PermissionRole } from "@/lib/config/roles";
@@ -120,6 +121,12 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
     {
       title: "Operations",
       items: [
+        {
+          title: "Space Checklist",
+          url: "/dashboard/maintenance",
+          icon: ClipboardCheck,
+          roles: ["management", "branch_admin"],
+        },
         {
           title: "Schedule",
           url: "/dashboard/schedule",
