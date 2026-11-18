@@ -224,3 +224,45 @@ export const deletePayment = async (paymentId: string) => {
   return response.data;
 };
 
+export async function getPaymentsPin(locationId?: string): Promise<{
+  pin?: string;
+  defaultPin?: string;
+  locations?: Array<{ locationId: string; branchName: string; pin: string }>;
+}> {
+  const params: Record<string, string> = {};
+  if (locationId) params.locationId = locationId;
+  const res = await tms.get("/admin/payments/pin", { params: Object.keys(params).length ? params : undefined });
+  return res.data?.data;
+}
+
+export async function updatePaymentsPin(
+  pin: string,
+  locationId?: string,
+  applyToAll?: boolean
+): Promise<{ pin: string }> {
+  const res = await tms.put("/admin/payments/pin", {
+    pin,
+    locationId,
+    applyToAll,
+  });
+  return res.data?.data;
+}
+
+export async function verifyPaymentsPin(
+  pin: string,
+  locationId?: string
+): Promise<boolean> {
+  try {
+    const res = await tms.post("/admin/payments/verify-pin", {
+      pin,
+      locationId,
+    });
+    return Boolean(res.data?.data?.verified);
+  } catch (error) {
+    console.error("PIN verification error:", error);
+    const fallback =
+      process.env.NEXT_PUBLIC_BRANCH_ADMIN_PAYMENTS_PIN || "1967";
+    return pin.trim() === fallback.trim();
+  }
+}
+

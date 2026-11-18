@@ -4,7 +4,7 @@ import {
   ClassContainerProps,
   ClassScan,
 } from "./class-container";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDate, isToday, isPast, startOfDay } from "date-fns";
@@ -22,6 +22,7 @@ import {
   mapPtMethodToSheetLabel,
 } from "@/lib/utils/copy-class-for-sheet";
 import { Class } from "../classes/columns";
+import { formatCategory } from "@/lib/utils/catalog";
 import {
   createTmsSocket,
   formatFailedScanToast,
@@ -182,6 +183,17 @@ export function ScanContainer({
       acc + (curr.classScans?.filter(isSuccessScan).length || 0),
     0
   );
+
+  const categorySuccessfulScans = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of scans) {
+      const rawCategory = item.classData?.category || "OTHER";
+      const successful =
+        item.classScans?.filter(isSuccessScan).length || 0;
+      counts[rawCategory] = (counts[rawCategory] || 0) + successful;
+    }
+    return Object.entries(counts).sort(([a], [b]) => a.localeCompare(b));
+  }, [scans]);
   const ptSuccessfulScans =
     dailyAttendance.pt?.filter(isSuccessScan).length || 0;
   const openGymSuccessfulScans =
@@ -288,6 +300,14 @@ export function ScanContainer({
           <span className="rounded-md bg-background/80 px-2.5 py-1 border shadow-2xs">
             Classes: <strong className="text-foreground">{classSuccessfulScans}</strong>
           </span>
+          {categorySuccessfulScans.map(([cat, count]) => (
+            <span
+              key={cat}
+              className="rounded-md bg-primary/10 text-primary px-2.5 py-1 border border-primary/20 shadow-2xs"
+            >
+              {formatCategory(cat)}: <strong className="text-foreground">{count}</strong>
+            </span>
+          ))}
           <span className="rounded-md bg-background/80 px-2.5 py-1 border shadow-2xs">
             Personal Training: <strong className="text-foreground">{ptSuccessfulScans}</strong>
           </span>
