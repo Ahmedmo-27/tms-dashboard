@@ -23,6 +23,8 @@ import {
   Users,
   X,
   Loader2,
+  Lock,
+  KeyRound,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -44,6 +46,7 @@ import {
 } from "@/lib/utils/parsers/payments-parser";
 import { ExportPaymentsDialog } from "./export-payments-dialog";
 import { CopyPaymentsForSheetButton } from "./copy-payments-for-sheet-button";
+import { ManagePaymentsPinDialog } from "../dialogs/payments/manage-pin-dialog";
 import type { DateRange } from "react-day-picker";
 
 export default function PaymentsContainer({
@@ -51,11 +54,13 @@ export default function PaymentsContainer({
   initialDate,
   initialStartDate,
   initialEndDate,
+  onLock,
 }: {
   payments: Payment[];
   initialDate?: string;
   initialStartDate?: string;
   initialEndDate?: string;
+  onLock?: () => void;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,6 +75,7 @@ export default function PaymentsContainer({
   const isOutflow = (payment: Payment) => isOutflowTransaction(payment);
   const isDeducted = (payment: Payment) => isDeductedTransaction(payment);
   const [exportOpen, setExportOpen] = useState(false);
+  const [managePinOpen, setManagePinOpen] = useState(false);
 
   const currentUser = useAppSelector((state) => state.auth.user);
   const isManagement = isManagementRole(currentUser?.role);
@@ -583,6 +589,34 @@ export default function PaymentsContainer({
                   <Download className="h-4 w-4 sm:mr-2" />
                   <span>Export</span>
                 </Button>
+
+                {isManagement && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 flex-1 sm:flex-none"
+                    onClick={() => setManagePinOpen(true)}
+                    disabled={isPending}
+                    title="Set Branch Admin Payments PIN"
+                  >
+                    <KeyRound className="h-4 w-4 sm:mr-2" />
+                    <span>Set PIN</span>
+                  </Button>
+                )}
+
+                {isBranchAdmin && onLock && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 flex-1 sm:flex-none text-muted-foreground hover:text-foreground"
+                    onClick={onLock}
+                    disabled={isPending}
+                    title="Lock Payments Screen"
+                  >
+                    <Lock className="h-4 w-4 sm:mr-2" />
+                    <span>Lock</span>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -594,6 +628,14 @@ export default function PaymentsContainer({
           initialFromDate={dateRange?.from}
           initialToDate={dateRange?.to ?? dateRange?.from}
         />
+
+        {isManagement && (
+          <ManagePaymentsPinDialog
+            open={managePinOpen}
+            onOpenChange={setManagePinOpen}
+            selectedLocationId={searchParams.get("locationId")}
+          />
+        )}
 
         <CardContent className="p-0 sm:p-6">
           <div className="rounded-md border overflow-hidden" data-walkthrough="payments-table">

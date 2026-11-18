@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import React from "react";
 import PaymentsContainer from "@/components/ui/payments/payments-container";
+import { PaymentsPinGate } from "@/components/ui/payments/payments-pin-gate";
 import { getPayments } from "@/lib/data/payments";
 import { CreditCard } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -83,12 +84,14 @@ export default async function Page({
 
         {/* Main Content */}
         <div className="flex-1" data-walkthrough="payments-container">
-          <PaymentsContainer
-            payments={payments}
-            initialDate={startDate === endDate ? startDate : undefined}
-            initialStartDate={startDate}
-            initialEndDate={endDate}
-          />
+          <PaymentsPinGate>
+            <PaymentsContainer
+              payments={payments}
+              initialDate={startDate === endDate ? startDate : undefined}
+              initialStartDate={startDate}
+              initialEndDate={endDate}
+            />
+          </PaymentsPinGate>
         </div>
       </div>
     );
