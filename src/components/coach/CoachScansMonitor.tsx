@@ -34,7 +34,12 @@ import {
   CheckCircle2,
   ClipboardCheck,
   AlertTriangle,
+  GraduationCap,
 } from "lucide-react";
+import { ShadowCoachChecklistModal } from "@/components/coach/ShadowCoachChecklistModal";
+import { AssignShadowCoachDialog } from "@/components/coach/AssignShadowCoachDialog";
+import { canManageShadowCoaches } from "@/lib/config/roles";
+import type { ShadowCoachRefDto } from "@/types/coach.types";
 import {
   Dialog,
   DialogContent,
@@ -88,6 +93,7 @@ interface CoachClassScanData {
   coachNames?: string;
   allCoachNames?: string;
   coaches?: { id: string; name: string }[];
+  shadowCoach?: ShadowCoachRefDto | null;
   scans: CoachScan[];
   attendanceConfirmation?: AttendanceConfirmationData | null;
 }
@@ -176,13 +182,20 @@ function ClassScanCard({
   currentTime,
   onSelect,
   onConfirmAttendance,
+  onAssignShadow,
+  onOpenChecklist,
 }: {
   data: CoachClassScanData;
   currentTime: number;
   onSelect: (scan: CoachScan) => void;
   onConfirmAttendance: (session: CoachClassScanData) => void;
+  onAssignShadow: (session: CoachClassScanData) => void;
+  onOpenChecklist: (session: CoachClassScanData) => void;
 }) {
   const currentCoachName = useAppSelector((state: RootState) => state.coach.name);
+  const coachRole = useAppSelector((state: RootState) => state.coach.role);
+  const authRole = useAppSelector((state: RootState) => state.auth?.user?.role);
+  const isManager = canManageShadowCoaches(coachRole) || canManageShadowCoaches(authRole);
   const displayCoach = data.allCoachNames || data.coachNames || data.coachName || currentCoachName;
   const successCount = data.scans.filter(
     (s) => s.status === "SUCCESS" || s.status === "WILL_PAY" || s.status === "FOC"
@@ -251,6 +264,15 @@ function ClassScanCard({
                   {displayCoach}
                 </Badge>
               )}
+              {data.shadowCoach && (
+                <Badge
+                  variant="outline"
+                  className="font-normal text-xs border-primary/30 text-primary bg-primary/5 flex items-center gap-1"
+                >
+                  <GraduationCap className="h-3 w-3" />
+                  Shadow: {data.shadowCoach.name} ({data.shadowCoach.currentPhase}/3)
+                </Badge>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -311,6 +333,32 @@ function ClassScanCard({
                 </Button>
               )
             ) : null}
+
+            {/* Shadow Coach Targets & Assignment */}
+            {data.shadowCoach && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs font-medium gap-1 cursor-pointer"
+                onClick={() => onOpenChecklist(data)}
+                title="View shadow coach targets checklist"
+              >
+                <UserCheck className="h-3.5 w-3.5 text-primary" />
+                Targets
+              </Button>
+            )}
+            {isManager && (
+              <Button
+                size="sm"
+                variant={data.shadowCoach ? "secondary" : "outline"}
+                className="h-7 text-xs font-medium gap-1 cursor-pointer border-primary/30"
+                onClick={() => onAssignShadow(data)}
+                title={data.shadowCoach ? "Change assigned shadow coach" : "Assign shadow coach to class"}
+              >
+                <GraduationCap className="h-3.5 w-3.5 text-primary" />
+                {data.shadowCoach ? "Change Shadow" : "Assign Shadow"}
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -396,6 +444,12 @@ export function CoachScansMonitor() {
   const [peek, setPeek] = useState<CoachScan | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
   const [confirmingSession, setConfirmingSession] = useState<CoachClassScanData | null>(null);
+  const [shadowModalSession, setShadowModalSession] = useState<{
+    scheduledClassId: string;
+    classTitle?: string;
+    shadowCoachName?: string;
+  } | null>(null);
+  const [assignModalSession, setAssignModalSession] = useState<CoachClassScanData | null>(null);
 
   // Periodic timer so halfway buttons appear dynamically without manual reload
   useEffect(() => {
@@ -581,6 +635,14 @@ export function CoachScansMonitor() {
                       currentTime={currentTime}
                       onSelect={setPeek}
                       onConfirmAttendance={setConfirmingSession}
+                      onAssignShadow={setAssignModalSession}
+                      onOpenChecklist={(session) =>
+                        setShadowModalSession({
+                          scheduledClassId: session.scheduledClassId,
+                          classTitle: session.classTitle,
+                          shadowCoachName: session.shadowCoach?.name,
+                        })
+                      }
                     />
                   ))}
                 </div>
@@ -642,6 +704,32 @@ export function CoachScansMonitor() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Shadow Coach Checklist Targets Modal */}
+      <ShadowCoachChecklistModal
+        scheduledClassId={shadowModalSession?.scheduledClassId ?? null}
+        classTitle={shadowModalSession?.classTitle}
+        shadowCoachName={shadowModalSession?.shadowCoachName}
+        open={Boolean(shadowModalSession)}
+        onClose={() => setShadowModalSession(null)}
+      />
+
+      {/* Assign / Change Shadow Coach Dialog */}
+      {assignModalSession && (
+        <AssignShadowCoachDialog
+          open={Boolean(assignModalSession)}
+          onClose={() => setAssignModalSession(null)}
+          scheduledClassId={assignModalSession.scheduledClassId}
+          classTitle={assignModalSession.classTitle}
+          startTime={assignModalSession.startTime}
+          endTime={assignModalSession.endTime}
+          location={assignModalSession.location}
+          leadCoachName={assignModalSession.coachName || assignModalSession.coachNames}
+          currentShadowCoachId={assignModalSession.shadowCoach?.id}
+          currentShadowCoachName={assignModalSession.shadowCoach?.name}
+          onAssigned={() => fetchAll(selectedDate)}
+        />
+      )}
     </div>
   );
 }

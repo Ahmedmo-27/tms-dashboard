@@ -45,6 +45,7 @@ import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { AssignCandidateToClassModal } from "./AssignCandidateToClassModal";
+import { ClassAssignmentsView } from "./ClassAssignmentsView";
 
 export function ShadowCoachesManagement() {
   const coachApi = useCoachApi();
@@ -53,6 +54,7 @@ export function ShadowCoachesManagement() {
   const [candidates, setCandidates] = useState<ShadowCoachSummaryDto[]>([]);
   const [search, setSearch] = useState("");
   const [filterTab, setFilterTab] = useState("all");
+  const [mainView, setMainView] = useState<"candidates" | "classes">("candidates");
 
   // Detail Modal State
   const [detailOpen, setDetailOpen] = useState(false);
@@ -270,7 +272,33 @@ export function ShadowCoachesManagement() {
         </div>
       </div>
 
-      {/* Metrics Row */}
+      {/* Primary View Switcher */}
+      <div className="flex items-center gap-2 border-b pb-3">
+        <Button
+          variant={mainView === "candidates" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMainView("candidates")}
+          className="gap-2 text-xs"
+        >
+          <GraduationCap className="h-4 w-4" />
+          Candidates Directory ({candidates.length})
+        </Button>
+        <Button
+          variant={mainView === "classes" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMainView("classes")}
+          className="gap-2 text-xs"
+        >
+          <Calendar className="h-4 w-4" />
+          Class Schedule Assignments
+        </Button>
+      </div>
+
+      {mainView === "classes" ? (
+        <ClassAssignmentsView />
+      ) : (
+        <>
+          {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card className="p-4 border-l-4 border-l-primary">
           <div className="text-xs font-medium text-muted-foreground">In Training</div>
@@ -572,6 +600,8 @@ export function ShadowCoachesManagement() {
           )}
         </CardContent>
       </Card>
+        </>
+      )}
 
       {/* Detail / Curriculum Modal */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
