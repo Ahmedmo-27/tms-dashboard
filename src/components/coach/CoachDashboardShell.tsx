@@ -231,6 +231,17 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       match: (p) => p.startsWith("/coach/today") || p === "/coach" || p === "/coach/dashboard",
       dataWalkthrough: "coach-nav-today",
     },
+    ...(role === "shadow_coach"
+      ? [
+          {
+            href: "/coach/my-checklist",
+            label: "My Checklist",
+            icon: GraduationCap,
+            match: (p: string) => p.startsWith("/coach/my-checklist"),
+            dataWalkthrough: "coach-nav-my-checklist",
+          },
+        ]
+      : []),
     ...(hasPtSessions
       ? [
           {

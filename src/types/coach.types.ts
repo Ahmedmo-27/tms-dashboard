@@ -54,19 +54,99 @@ export interface ShadowPhaseDto {
 }
 
 export interface ShadowCoachProgressDto {
-  _id: string;
+  _id?: string;
   coachId: string;
   coachName?: string;
+  phoneNumber?: string;
   currentPhase: number;
   phaseLabel: string;
-  status: "in_progress" | "completed_pending_review" | "promoted" | "retained";
+  status: "in_progress" | "completed_pending_review" | "promoted" | "graduated" | "retained";
   startDate: string;
   completedDate?: string;
-  phases: ShadowPhaseDto[];
+  phases: any[];
   reviewedBy?: string;
   reviewedAt?: string;
   reviewDecision?: "promoted" | "retained";
   reviewNotes?: string;
+}
+
+export interface CurrentMonthProgressDto {
+  phaseNumber: number;
+  title: string;
+  guidelines?: string;
+  isPhaseComplete: boolean;
+  totalCount: number;
+  completedCount: number;
+  progressPercent: number;
+  checkedItems: ShadowChecklistItemDto[];
+  remainingItems: ShadowChecklistItemDto[];
+}
+
+export interface MyShadowChecklistDto {
+  coachId: string;
+  coachName?: string;
+  phoneNumber?: string;
+  userId?: string | null;
+  currentPhase: number;
+  phaseLabel: string;
+  status: "in_progress" | "completed_pending_review" | "graduated" | "retained";
+  startDate: string;
+  completedDate?: string;
+  totalCount: number;
+  completedCount: number;
+  progressPercent: number;
+  isAllComplete: boolean;
+  canEvaluate: boolean;
+  reviewDecision?: "promoted" | "retained";
+  reviewedAt?: string;
+  reviewNotes?: string;
+  phases: {
+    phaseNumber: number;
+    title: string;
+    guidelines?: string;
+    total: number;
+    done: number;
+    isPhaseComplete: boolean;
+    checklist: {
+      key: string;
+      task?: string;
+      title?: string;
+      description?: string;
+      isDone: boolean;
+      completedAt?: string;
+      completedByCoachName?: string;
+      notes?: string;
+    }[];
+  }[];
+  currentMonth: {
+    phaseNumber: number;
+    title: string;
+    guidelines?: string;
+    isPhaseComplete: boolean;
+    totalCount: number;
+    completedCount: number;
+    progressPercent: number;
+    checkedItems: {
+      key: string;
+      task?: string;
+      title?: string;
+      description?: string;
+      isDone: boolean;
+      completedAt?: string;
+      completedByCoachName?: string;
+      notes?: string;
+    }[];
+    remainingItems: {
+      key: string;
+      task?: string;
+      title?: string;
+      description?: string;
+      isDone: boolean;
+      completedAt?: string;
+      completedByCoachName?: string;
+      notes?: string;
+    }[];
+  };
 }
 
 export interface ShadowCoachSummaryDto {

@@ -654,7 +654,7 @@ export function ShadowCoachesManagement() {
                           <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             Monthly Target Checklist
                           </h5>
-                          {phase.checklist?.map((item) => (
+                          {phase.checklist?.map((item: any) => (
                             <div
                               key={item.key}
                               className={cn(

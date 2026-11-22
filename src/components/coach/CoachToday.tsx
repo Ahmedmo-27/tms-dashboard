@@ -22,6 +22,8 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { setSchedule } from "@/lib/store/features/coachSlice";
 import { SessionClientsModal } from "@/components/coach/SessionClientsModal";
 import { ShadowCoachChecklistModal } from "@/components/coach/ShadowCoachChecklistModal";
+import { ShadowCoachDashboardTracker } from "@/components/coach/ShadowCoachDashboardTracker";
+import { isShadowCoachRole } from "@/lib/config/roles";
 import { CoachTodaySkeleton } from "@/components/ui/loading/coach-skeletons";
 import { startOfWeek, format } from "date-fns";
 
@@ -40,6 +42,8 @@ export function CoachToday() {
   const hasPtSessions = useAppSelector((s) => s.coach.hasPtSessions);
   const hasScheduledClasses = useAppSelector((s) => s.coach.hasScheduledClasses);
   const schedule = useAppSelector((s) => s.coach.schedule);
+  const role = useAppSelector((s) => s.coach.role);
+  const isShadowCoach = isShadowCoachRole(role);
 
   const [data, setData] = useState<TodaySummaryDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -155,6 +159,8 @@ export function CoachToday() {
 
   return (
     <div className="space-y-4">
+      {isShadowCoach && <ShadowCoachDashboardTracker />}
+
       <Card data-walkthrough="coach-today-next">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Next session</CardTitle>
