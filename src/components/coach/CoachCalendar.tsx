@@ -70,7 +70,6 @@ export function CoachCalendar() {
 
   const [clientsModalSession, setClientsModalSession] = useState<SessionDto | null>(null);
   const [assignSession, setAssignSession] = useState<SessionDto | null>(null);
-  const [scheduleScope, setScheduleScope] = useState<"mine" | "all">("all");
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     format(new Date(), "yyyy-MM-dd")
   );
@@ -83,8 +82,7 @@ export function CoachCalendar() {
       setScheduleError(null);
       try {
         const mondayISO = format(currentWeekStart, "yyyy-MM-dd");
-        const scopeParam = isManager && scheduleScope === "all" ? "&scope=all" : "";
-        const res = await coachApi.get(`/api/coach/schedule?weekStart=${mondayISO}${scopeParam}`);
+        const res = await coachApi.get(`/api/coach/schedule?weekStart=${mondayISO}`);
         dispatch(setSchedule(res.data.data));
       } catch (err: any) {
         const msg =
@@ -99,7 +97,7 @@ export function CoachCalendar() {
     };
 
     fetchSchedule();
-  }, [coachApi, currentWeekStart, dispatch, reloadKey, scheduleScope, isManager]);
+  }, [coachApi, currentWeekStart, dispatch, reloadKey]);
 
   useEffect(() => {
     if (!schedule?.days?.length) return;
@@ -320,35 +318,6 @@ export function CoachCalendar() {
         >
           Next session
         </Button>
-        {isManager && (
-          <div className="flex items-center rounded-lg border bg-muted/40 p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setScheduleScope("all")}
-              className={cn(
-                "px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1",
-                scheduleScope === "all"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <GraduationCap className="h-3.5 w-3.5" />
-              All Classes
-            </button>
-            <button
-              type="button"
-              onClick={() => setScheduleScope("mine")}
-              className={cn(
-                "px-2.5 py-1 rounded-md font-medium transition-all",
-                scheduleScope === "mine"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              My Classes
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
