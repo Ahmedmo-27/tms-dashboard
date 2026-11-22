@@ -27,6 +27,7 @@ import {
 import { useCoachApi } from "@/hooks/useCoachApi";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+import { PaymentDatePicker } from "@/components/ui/payments/date-picker";
 import type { ShadowCoachSummaryDto } from "@/types/coach.types";
 
 interface AssignCandidateToClassModalProps {
@@ -76,28 +77,46 @@ export function AssignCandidateToClassModal({
   const [classes, setClasses] = useState<ScheduledClassRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [assigningId, setAssigningId] = useState<string | null>(null);
+
+  const fetchClasses = async (dateParam?: Date | null) => {
+    setLoading(true);
+    try {
+      const effectiveDate =
+        dateParam === null
+          ? undefined
+          : dateParam !== undefined
+          ? dateParam
+          : selectedDate;
+
+      let url = "/api/coach/managing/classes/upcoming";
+      if (effectiveDate) {
+        url += `?date=${format(effectiveDate, "yyyy-MM-dd")}`;
+      }
+
+      const res = await coachApi.get(url);
+      const list = res.data?.data || res.data || [];
+      setClasses(Array.isArray(list) ? list : []);
+    } catch (err: any) {
+      console.error("Failed to load upcoming classes", err);
+      toast.error("Could not load upcoming classes");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
     setSearch("");
-
-    const fetchClasses = async () => {
-      try {
-        const res = await coachApi.get("/api/coach/managing/classes/upcoming");
-        const list = res.data?.data || res.data || [];
-        setClasses(Array.isArray(list) ? list : []);
-      } catch (err: any) {
-        console.error("Failed to load upcoming classes", err);
-        toast.error("Could not load upcoming classes");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClasses();
+    setSelectedDate(undefined);
+    fetchClasses(null);
   }, [open, coachApi]);
+
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+    fetchClasses(date || null);
+  };
 
   const filteredClasses = useMemo(() => {
     if (!search.trim()) return classes;
@@ -215,15 +234,35 @@ export function AssignCandidateToClassModal({
           </div>
         </DialogHeader>
 
-        {/* Search Input */}
-        <div className="relative my-2">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search upcoming classes by title, coach, or branch..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 text-xs h-9"
-          />
+        {/* Search and Date Filter Bar */}
+        <div className="flex flex-col sm:flex-row items-center gap-2 my-2">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search upcoming classes by title, coach, or branch..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 text-xs h-9"
+            />
+          </div>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
+            <PaymentDatePicker
+              selectedDate={selectedDate}
+              onDateChange={handleDateChange}
+              placeholder="Filter by date"
+              className="h-9 text-xs"
+            />
+            {selectedDate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 text-xs px-2 text-muted-foreground hover:text-foreground"
+                onClick={() => handleDateChange(undefined)}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Classes List */}

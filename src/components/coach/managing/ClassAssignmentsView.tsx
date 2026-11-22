@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { AssignShadowCoachDialog } from "@/components/coach/AssignShadowCoachDialog";
 import { ShadowCoachChecklistModal } from "@/components/coach/ShadowCoachChecklistModal";
+import { PaymentDatePicker } from "@/components/ui/payments/date-picker";
 import { cn } from "@/lib/utils";
 
 interface ScheduledClassItem {
@@ -64,32 +65,64 @@ export function ClassAssignmentsView() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "unassigned" | "assigned">("all");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   // Selected session for assignment modal
   const [assignClass, setAssignClass] = useState<ScheduledClassItem | null>(null);
   // Selected session for checklist modal
   const [checklistClass, setChecklistClass] = useState<ScheduledClassItem | null>(null);
 
-  const fetchUpcoming = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  const fetchUpcoming = useCallback(
+    async (isRefresh = false, dateOverride?: Date | null) => {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
 
-    try {
-      const res = await coachApi.get("/api/coach/managing/classes/upcoming");
-      const list = res.data?.data || res.data || [];
-      setClasses(Array.isArray(list) ? list : []);
-    } catch (err: any) {
-      console.error("Failed to load upcoming classes", err);
-      toast.error("Failed to load classes for assignment");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [coachApi]);
+      try {
+        const effectiveDate =
+          dateOverride === null
+            ? undefined
+            : dateOverride !== undefined
+            ? dateOverride
+            : selectedDate;
+
+        let url = "/api/coach/managing/classes/upcoming";
+        if (effectiveDate) {
+          url += `?date=${format(effectiveDate, "yyyy-MM-dd")}`;
+        }
+
+        const res = await coachApi.get(url);
+        const list = res.data?.data || res.data || [];
+        setClasses(Array.isArray(list) ? list : []);
+      } catch (err: any) {
+        console.error("Failed to load upcoming classes", err);
+        toast.error("Failed to load classes for assignment");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [coachApi, selectedDate]
+  );
 
   useEffect(() => {
     fetchUpcoming();
   }, [fetchUpcoming]);
+
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+    fetchUpcoming(false, date || null);
+  };
+
+  const handleToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    fetchUpcoming(false, today);
+  };
+
+  const handleClearDate = () => {
+    setSelectedDate(undefined);
+    fetchUpcoming(false, null);
+  };
 
   const counts = useMemo(() => {
     let unassigned = 0;
@@ -199,6 +232,56 @@ export function ClassAssignmentsView() {
         </div>
       </div>
 
+      {/* Date Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 bg-muted/20 border rounded-lg">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-xs font-semibold text-foreground">Filter by Date:</span>
+          {selectedDate ? (
+            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+              {format(selectedDate, "EEE, MMM d, yyyy")}
+            </Badge>
+          ) : (
+            <span className="text-xs text-muted-foreground">Showing all upcoming classes</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant={
+              selectedDate &&
+              format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                ? "default"
+                : "outline"
+            }
+            size="sm"
+            className="h-8 text-xs px-2.5"
+            onClick={handleToday}
+          >
+            Today
+          </Button>
+
+          <PaymentDatePicker
+            selectedDate={selectedDate}
+            onDateChange={handleDateChange}
+            placeholder="Pick a date"
+            className="h-8 text-xs min-h-[32px] px-2.5"
+          />
+
+          {selectedDate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground px-2"
+              onClick={handleClearDate}
+              title="Show all upcoming classes"
+            >
+              Clear Date
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Classes List */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-xs gap-2">
@@ -213,10 +296,22 @@ export function ClassAssignmentsView() {
             <p className="text-muted-foreground max-w-sm mt-1">
               {search
                 ? "No scheduled classes match your search query."
+                : selectedDate
+                ? `No scheduled classes found on ${format(selectedDate, "EEEE, MMMM d, yyyy")}.`
                 : filter === "unassigned"
                 ? "Great job! All upcoming classes currently have a shadow coach assigned."
                 : "No upcoming classes found on the schedule."}
             </p>
+            {selectedDate && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 text-xs"
+                onClick={handleClearDate}
+              >
+                Show All Upcoming Classes
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
