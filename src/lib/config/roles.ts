@@ -60,6 +60,10 @@ export function isManagingCoachRole(role: string | null | undefined): boolean {
   return role === "managing_coach";
 }
 
+export function canManageShadowCoaches(role: string | null | undefined): boolean {
+  return role === "managing_coach" || role === "management" || role === "branch_admin";
+}
+
 export interface CoachIdentity {
   role?: string | null;
   name?: string | null;

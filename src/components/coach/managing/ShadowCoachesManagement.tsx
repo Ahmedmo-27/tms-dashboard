@@ -44,6 +44,7 @@ import {
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { AssignCandidateToClassModal } from "./AssignCandidateToClassModal";
 
 export function ShadowCoachesManagement() {
   const coachApi = useCoachApi();
@@ -66,6 +67,15 @@ export function ShadowCoachesManagement() {
   const [evalDecision, setEvalDecision] = useState<"promote" | "retain">("promote");
   const [evalNotes, setEvalNotes] = useState("");
   const [submittingEval, setSubmittingEval] = useState(false);
+
+  // Assign to Class Modal State
+  const [assignClassOpen, setAssignClassOpen] = useState(false);
+  const [assignCandidate, setAssignCandidate] = useState<ShadowCoachSummaryDto | null>(null);
+
+  const handleOpenAssignClass = (candidate: ShadowCoachSummaryDto) => {
+    setAssignCandidate(candidate);
+    setAssignClassOpen(true);
+  };
 
   // Phase Changing State
   const [updatingPhaseId, setUpdatingPhaseId] = useState<string | null>(null);
@@ -517,6 +527,19 @@ export function ShadowCoachesManagement() {
                         Checklist
                       </Button>
 
+                      {/* Assign to Class Action */}
+                      {!isPromoted && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenAssignClass(c)}
+                          className="gap-1.5 text-xs h-8 border-primary/30 text-primary hover:bg-primary/5"
+                        >
+                          <Calendar className="h-3.5 w-3.5" />
+                          Assign to Class
+                        </Button>
+                      )}
+
                       {/* Evaluate Candidate Action */}
                       {isReady && !isPromoted && (
                         <Button
@@ -875,6 +898,13 @@ export function ShadowCoachesManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AssignCandidateToClassModal
+        open={assignClassOpen}
+        onClose={() => setAssignClassOpen(false)}
+        candidate={assignCandidate}
+        onSuccess={() => fetchCandidates(true)}
+      />
     </div>
   );
 }

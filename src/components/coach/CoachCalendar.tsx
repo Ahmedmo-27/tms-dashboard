@@ -18,8 +18,11 @@ import {
   Users,
   CalendarDays,
   MapPin,
+  GraduationCap,
 } from "lucide-react";
 import { SessionClientsModal } from "@/components/coach/SessionClientsModal";
+import { AssignShadowCoachDialog } from "@/components/coach/AssignShadowCoachDialog";
+import { canManageShadowCoaches } from "@/lib/config/roles";
 import type { RootState } from "@/lib/store/store";
 import type { DayDto, SessionDto } from "@/types/coach.types";
 import { cn } from "@/lib/utils";
@@ -55,15 +58,18 @@ function formatWeekRange(days: DayDto[]): string {
 export function CoachCalendar() {
   const coachApi = useCoachApi();
   const dispatch = useAppDispatch();
-  const { schedule, scheduleLoading } = useAppSelector(
+  const { schedule, scheduleLoading, role: coachRole } = useAppSelector(
     (state: RootState) => state.coach
   );
+  const authRole = useAppSelector((state: RootState) => state.auth?.user?.role);
+  const isManager = canManageShadowCoaches(coachRole) || canManageShadowCoaches(authRole);
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
 
   const [clientsModalSession, setClientsModalSession] = useState<SessionDto | null>(null);
+  const [assignSession, setAssignSession] = useState<SessionDto | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     format(new Date(), "yyyy-MM-dd")
   );
@@ -450,6 +456,11 @@ export function CoachCalendar() {
                           {session.coachName || session.coachNames}
                         </Badge>
                       )}
+                      {session.shadowCoach && (
+                        <Badge variant="outline" className="text-[10px] font-normal border-primary/30 text-primary bg-primary/5">
+                          Shadow: {session.shadowCoach.name} ({session.shadowCoach.currentPhase}/3)
+                        </Badge>
+                      )}
                       {isNext && (
                         <Badge className="text-[10px] font-normal">Up next</Badge>
                       )}
@@ -476,15 +487,28 @@ export function CoachCalendar() {
                       </span>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="shrink-0"
-                    data-walkthrough="coach-session-clients-btn"
-                    onClick={() => setClientsModalSession(session)}
-                  >
-                    Show clients
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isManager && (
+                      <Button
+                        size="sm"
+                        variant={session.shadowCoach ? "secondary" : "outline"}
+                        className="text-xs h-8"
+                        onClick={() => setAssignSession(session)}
+                      >
+                        <GraduationCap className="h-3.5 w-3.5 mr-1 text-primary" />
+                        {session.shadowCoach ? "Shadow Coach" : "Assign Shadow"}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs shrink-0"
+                      data-walkthrough="coach-session-clients-btn"
+                      onClick={() => setClientsModalSession(session)}
+                    >
+                      Show clients
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -495,7 +519,24 @@ export function CoachCalendar() {
       <SessionClientsModal
         session={clientsModalSession}
         onClose={() => setClientsModalSession(null)}
+        onUpdated={() => setReloadKey((k) => k + 1)}
       />
+
+      {assignSession && (
+        <AssignShadowCoachDialog
+          open={Boolean(assignSession)}
+          onClose={() => setAssignSession(null)}
+          scheduledClassId={assignSession.scheduledClassId}
+          classTitle={assignSession.classTitle}
+          startTime={assignSession.startTime}
+          endTime={assignSession.endTime}
+          location={assignSession.location}
+          leadCoachName={assignSession.coachName || assignSession.coachNames}
+          currentShadowCoachId={assignSession.shadowCoach?.id}
+          currentShadowCoachName={assignSession.shadowCoach?.name}
+          onAssigned={() => setReloadKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }
