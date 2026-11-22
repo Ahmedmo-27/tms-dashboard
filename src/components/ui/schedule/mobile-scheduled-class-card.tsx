@@ -139,11 +139,24 @@ export function MobileScheduledClassCard({
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <User className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate text-sm font-medium text-foreground">
-                  {scheduledClass.coachName}
-                </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <User className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {scheduledClass.coachName}
+                  </span>
+                </div>
+                {(scheduledClass.shadowCoach?.name || scheduledClass.shadowCoachName) && (
+                  <div className="flex items-center gap-1.5 pl-6 text-xs text-muted-foreground">
+                    <span className="rounded bg-primary/10 px-1 py-0.2 text-[10px] text-primary font-semibold">
+                      Shadow
+                    </span>
+                    <span className="truncate">
+                      {scheduledClass.shadowCoach?.name || scheduledClass.shadowCoachName}
+                      {scheduledClass.shadowCoach?.currentPhase ? ` (${scheduledClass.shadowCoach.currentPhase}/3)` : ""}
+                    </span>
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center gap-2">

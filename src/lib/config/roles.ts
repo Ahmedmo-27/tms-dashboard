@@ -49,7 +49,11 @@ export function isStaffRole(role: string | null | undefined): boolean {
 }
 
 export function isCoachRole(role: string | null | undefined): boolean {
-  return role === "coach" || role === "managing_coach";
+  return role === "coach" || role === "managing_coach" || role === "shadow_coach";
+}
+
+export function isShadowCoachRole(role: string | null | undefined): boolean {
+  return role === "shadow_coach";
 }
 
 export function isManagingCoachRole(role: string | null | undefined): boolean {

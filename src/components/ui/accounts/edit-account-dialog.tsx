@@ -279,6 +279,7 @@ export function EditAccountDialog({
                 </SelectItem>
                 <SelectItem value="coach">Coach (Trainer / Coach Portal)</SelectItem>
                 <SelectItem value="managing_coach">Managing Coach (Head Trainer)</SelectItem>
+                <SelectItem value="shadow_coach">Shadow Coach (Under Training — 3-Month Program)</SelectItem>
                 <SelectItem value="mailer">Mailer (Brevo Marketing & Inbox)</SelectItem>
                 <SelectItem value="accountant">Accountant (Read-only Finance & Inbox)</SelectItem>
                 <SelectItem value="sales">

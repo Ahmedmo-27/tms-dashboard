@@ -40,6 +40,7 @@ import {
   Mail,
   HelpCircle,
   Award,
+  GraduationCap,
 } from "lucide-react";
 import { NotificationPanel } from "@/components/coach/NotificationPanel";
 import { HelpButton } from "@/components/tutorials/help-button";
@@ -141,6 +142,12 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       !hasScansMonitorAccess
     ) {
       toast.error("Scans monitor is not enabled for your account");
+      router.replace("/coach/today");
+    } else if (
+      pathname.startsWith("/coach/managing/shadow-coaches") &&
+      role !== "managing_coach"
+    ) {
+      toast.error("Shadow coach management is not enabled for your account");
       router.replace("/coach/today");
     } else if (pathname.startsWith("/coach/mailing") && role !== "managing_coach") {
       toast.error("Mailing dashboard is not enabled for your account");
@@ -262,6 +269,13 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
   const moreItems: NavItem[] = [
     ...(role === "managing_coach"
       ? [
+          {
+            href: "/coach/managing/shadow-coaches",
+            label: "Shadow Coaches",
+            icon: GraduationCap,
+            match: (p: string) => p.startsWith("/coach/managing/shadow-coaches"),
+            dataWalkthrough: "coach-nav-shadow-coaches",
+          },
           {
             href: "/coach/mailing",
             label: "Mailing",

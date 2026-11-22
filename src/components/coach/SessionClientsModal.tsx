@@ -8,10 +8,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SessionDto, CalendarClientDto } from "@/types/coach.types";
-import { ChevronRight, Users } from "lucide-react";
+import { ChevronRight, Users, UserCheck } from "lucide-react";
 import { telHref } from "@/lib/utils/phone";
+import { useState } from "react";
+import { ShadowCoachChecklistModal } from "@/components/coach/ShadowCoachChecklistModal";
 import Link from "next/link";
 
 interface SessionClientsModalProps {
@@ -32,29 +35,57 @@ export function SessionClientsModal({
   session,
   onClose,
 }: SessionClientsModalProps) {
+  const [shadowChecklistOpen, setShadowChecklistOpen] = useState(false);
   if (!session) return null;
 
   const clients = session.clients;
 
   return (
-    <Dialog open={!!session} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span>{session.classTitle}</span>
-            <Badge variant="secondary" className="text-[10px]">
-              {session.category}
-            </Badge>
-          </DialogTitle>
-          <DialogDescription>
-            {formatTime12h(session.startTime)} – {formatTime12h(session.endTime)}
-            {session.location ? ` · ${session.location}` : ""}
-            &nbsp;•&nbsp;
-            {session.bookedCount} / {session.capacity} booked
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={!!session} onOpenChange={(v) => !v && onClose()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span>{session.classTitle}</span>
+              <Badge variant="secondary" className="text-[10px]">
+                {session.category}
+              </Badge>
+            </DialogTitle>
+            <DialogDescription>
+              {formatTime12h(session.startTime)} – {formatTime12h(session.endTime)}
+              {session.location ? ` · ${session.location}` : ""}
+              &nbsp;•&nbsp;
+              {session.bookedCount} / {session.capacity} booked
+            </DialogDescription>
+          </DialogHeader>
 
-        {clients.length > 0 && (
+          {session.shadowCoach && (
+            <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <UserCheck className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground truncate">
+                    {session.shadowCoach.name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {session.shadowCoach.phaseLabel}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="default"
+                className="h-8 text-xs shrink-0 cursor-pointer"
+                onClick={() => setShadowChecklistOpen(true)}
+              >
+                Checklist
+              </Button>
+            </div>
+          )}
+
+          {clients.length > 0 && (
           <div className="flex items-center gap-2 border-b pb-2 text-xs text-muted-foreground">
             <Users className="h-3.5 w-3.5" />
             <span>
@@ -120,5 +151,14 @@ export function SessionClientsModal({
         </ScrollArea>
       </DialogContent>
     </Dialog>
+
+    <ShadowCoachChecklistModal
+      scheduledClassId={session.scheduledClassId}
+      classTitle={session.classTitle}
+      shadowCoachName={session.shadowCoach?.name}
+      open={shadowChecklistOpen}
+      onClose={() => setShadowChecklistOpen(false)}
+    />
+  </>
   );
 }

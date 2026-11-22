@@ -26,6 +26,70 @@ export interface CalendarClientDto {
   activePackage: ActivePackageDto | null;
 }
 
+export interface ShadowCoachRefDto {
+  id: string;
+  name: string;
+  currentPhase: number;
+  phaseLabel: string;
+}
+
+export interface ShadowChecklistItemDto {
+  key: string;
+  title: string;
+  description: string;
+  isDone: boolean;
+  markedAt?: string;
+  markedByCoachName?: string;
+  notes?: string;
+}
+
+export interface ShadowPhaseDto {
+  phaseNumber: number;
+  title: string;
+  guideline: string;
+  isUnlocked: boolean;
+  isCompleted: boolean;
+  completedAt?: string;
+  checklist: ShadowChecklistItemDto[];
+}
+
+export interface ShadowCoachProgressDto {
+  _id: string;
+  coachId: string;
+  coachName?: string;
+  currentPhase: number;
+  phaseLabel: string;
+  status: "in_progress" | "completed_pending_review" | "promoted" | "retained";
+  startDate: string;
+  completedDate?: string;
+  phases: ShadowPhaseDto[];
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewDecision?: "promoted" | "retained";
+  reviewNotes?: string;
+}
+
+export interface ShadowCoachSummaryDto {
+  coachId: string;
+  coachName: string;
+  phoneNumber?: string;
+  userId?: string;
+  currentPhase: number;
+  phaseLabel: string;
+  status: "in_progress" | "completed_pending_review" | "promoted" | "retained";
+  startDate: string;
+  completedDate?: string;
+  completedCount: number;
+  totalCount: number;
+  progressPercent: number;
+  isCompleted: boolean;
+  canEvaluate: boolean;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewDecision?: "promoted" | "retained";
+  reviewNotes?: string;
+}
+
 export interface SessionDto {
   scheduledClassId: string;
   classTitle: string;
@@ -39,6 +103,7 @@ export interface SessionDto {
   coachNames?: string;
   allCoachNames?: string;
   coaches?: { id: string; name: string }[];
+  shadowCoach?: ShadowCoachRefDto | null;
   clients: CalendarClientDto[];
 }
 
@@ -80,6 +145,7 @@ export interface TodaySessionSummaryDto {
   coachNames?: string;
   allCoachNames?: string;
   coaches?: { id: string; name: string }[];
+  shadowCoach?: ShadowCoachRefDto | null;
 }
 
 export interface TodayPtAlertDto {

@@ -52,6 +52,14 @@ export type ScheduledClass = {
   waitlist?: WaitlistMember[];
   coachName: string;
   coachId?: string | string[];
+  shadowCoachId?: string;
+  shadowCoachName?: string;
+  shadowCoach?: {
+    id: string;
+    name: string;
+    currentPhase: number;
+    phaseLabel: string;
+  };
   category?: string;
   className?: string;
   classPrice?: string;
@@ -224,14 +232,29 @@ export const getColumns = (
   {
     accessorKey: "coachName",
     header: "Coach",
-    size: 100,
-    minSize: 80,
-    maxSize: 150,
+    size: 130,
+    minSize: 90,
+    maxSize: 180,
     cell: ({ row }) => {
       const scls = row.original;
+      const shadowName = scls.shadowCoach?.name || scls.shadowCoachName;
+      const shadowPhase = scls.shadowCoach?.currentPhase ? ` (${scls.shadowCoach.currentPhase}/3)` : "";
       return (
-        <div className="truncate text-sm" title={scls.coachName}>
-          {scls.coachName}
+        <div className="flex flex-col text-sm">
+          <span className="truncate font-medium" title={scls.coachName}>
+            {scls.coachName}
+          </span>
+          {shadowName && (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-normal"
+              title={`Shadow Coach: ${shadowName}${shadowPhase}`}
+            >
+              <span className="rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary font-semibold">
+                Shadow
+              </span>
+              <span className="truncate">{shadowName}{shadowPhase}</span>
+            </span>
+          )}
         </div>
       );
     },

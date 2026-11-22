@@ -4,6 +4,7 @@ export type AccountRole =
   | "admin"
   | "coach"
   | "managing_coach"
+  | "shadow_coach"
   | "mailer"
   | "accountant"
   | "sales"
