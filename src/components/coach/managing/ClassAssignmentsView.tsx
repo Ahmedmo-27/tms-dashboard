@@ -65,7 +65,7 @@ export function ClassAssignmentsView() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "unassigned" | "assigned">("all");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(() => new Date());
 
   // Selected session for assignment modal
   const [assignClass, setAssignClass] = useState<ScheduledClassItem | null>(null);
@@ -127,7 +127,18 @@ export function ClassAssignmentsView() {
   const counts = useMemo(() => {
     let unassigned = 0;
     let assigned = 0;
+    let total = 0;
     classes.forEach((c) => {
+      if (selectedDate) {
+        try {
+          const classDateStr = format(new Date(c.startTime), "yyyy-MM-dd");
+          const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+          if (classDateStr !== selectedDateStr) return;
+        } catch {
+          // ignore parsing error
+        }
+      }
+      total++;
       const hasSc = Boolean(
         c.shadowCoachName ||
         (typeof c.shadowCoachId === "object" && c.shadowCoachId?._id) ||
@@ -136,11 +147,22 @@ export function ClassAssignmentsView() {
       if (hasSc) assigned++;
       else unassigned++;
     });
-    return { all: classes.length, unassigned, assigned };
-  }, [classes]);
+    return { all: total, unassigned, assigned };
+  }, [classes, selectedDate]);
 
   const filteredClasses = useMemo(() => {
     return classes.filter((c) => {
+      // Date filter: only show classes belonging to the picked date
+      if (selectedDate) {
+        try {
+          const classDateStr = format(new Date(c.startTime), "yyyy-MM-dd");
+          const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+          if (classDateStr !== selectedDateStr) return false;
+        } catch {
+          // ignore parsing error
+        }
+      }
+
       const hasSc = Boolean(
         c.shadowCoachName ||
         (typeof c.shadowCoachId === "object" && c.shadowCoachId?._id) ||
@@ -173,7 +195,7 @@ export function ClassAssignmentsView() {
         scName.includes(q)
       );
     });
-  }, [classes, filter, search]);
+  }, [classes, filter, search, selectedDate]);
 
   return (
     <div className="space-y-4">
@@ -236,13 +258,16 @@ export function ClassAssignmentsView() {
       <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 bg-muted/20 border rounded-lg">
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-primary shrink-0" />
-          <span className="text-xs font-semibold text-foreground">Filter by Date:</span>
+          <span className="text-xs font-semibold text-foreground">Date:</span>
           {selectedDate ? (
-            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30 font-medium">
               {format(selectedDate, "EEE, MMM d, yyyy")}
+              {format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") ? " (Today)" : ""}
             </Badge>
           ) : (
-            <span className="text-xs text-muted-foreground">Showing all upcoming classes</span>
+            <Badge variant="secondary" className="text-xs font-normal">
+              All Upcoming Classes
+            </Badge>
           )}
         </div>
 
@@ -268,15 +293,24 @@ export function ClassAssignmentsView() {
             className="h-8 text-xs min-h-[32px] px-2.5"
           />
 
-          {selectedDate && (
+          {selectedDate ? (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="h-8 text-xs text-muted-foreground hover:text-foreground px-2"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground px-2.5"
               onClick={handleClearDate}
-              title="Show all upcoming classes"
+              title="Show all upcoming classes regardless of date"
             >
-              Clear Date
+              Show All Classes
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs px-2.5"
+              onClick={handleToday}
+            >
+              Back to Today
             </Button>
           )}
         </div>

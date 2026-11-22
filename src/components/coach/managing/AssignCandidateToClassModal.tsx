@@ -77,7 +77,7 @@ export function AssignCandidateToClassModal({
   const [classes, setClasses] = useState<ScheduledClassRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(() => new Date());
   const [assigningId, setAssigningId] = useState<string | null>(null);
 
   const fetchClasses = async (dateParam?: Date | null) => {
@@ -109,8 +109,9 @@ export function AssignCandidateToClassModal({
   useEffect(() => {
     if (!open) return;
     setSearch("");
-    setSelectedDate(undefined);
-    fetchClasses(null);
+    const today = new Date();
+    setSelectedDate(today);
+    fetchClasses(today);
   }, [open, coachApi]);
 
   const handleDateChange = (date: Date | undefined) => {
@@ -118,10 +119,28 @@ export function AssignCandidateToClassModal({
     fetchClasses(date || null);
   };
 
+  const handleToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    fetchClasses(today);
+  };
+
   const filteredClasses = useMemo(() => {
-    if (!search.trim()) return classes;
-    const q = search.toLowerCase();
     return classes.filter((c) => {
+      // Date filter: only show classes belonging to the picked date
+      if (selectedDate) {
+        try {
+          const classDateStr = format(new Date(c.startTime), "yyyy-MM-dd");
+          const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+          if (classDateStr !== selectedDateStr) return false;
+        } catch {
+          // ignore parsing error
+        }
+      }
+
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+
       const title = (c.cid?.name || c.cid?.title || "").toLowerCase();
       const loc = (c.locationId?.name || "").toLowerCase();
       const coaches = (
@@ -142,7 +161,7 @@ export function AssignCandidateToClassModal({
         shadow.includes(q)
       );
     });
-  }, [classes, search]);
+  }, [classes, search, selectedDate]);
 
   const handleAssign = async (classId: string) => {
     if (!candidate?.coachId) return;
@@ -246,22 +265,38 @@ export function AssignCandidateToClassModal({
             />
           </div>
           <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
+            <Button
+              type="button"
+              variant={
+                selectedDate &&
+                format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                  ? "default"
+                  : "outline"
+              }
+              size="sm"
+              className="h-9 text-xs px-2.5"
+              onClick={handleToday}
+            >
+              Today
+            </Button>
             <PaymentDatePicker
               selectedDate={selectedDate}
               onDateChange={handleDateChange}
               placeholder="Filter by date"
               className="h-9 text-xs"
             />
-            {selectedDate && (
+            {selectedDate ? (
               <Button
-                variant="ghost"
+                type="button"
+                variant="outline"
                 size="sm"
                 className="h-9 text-xs px-2 text-muted-foreground hover:text-foreground"
                 onClick={() => handleDateChange(undefined)}
+                title="View all upcoming classes regardless of date"
               >
-                Clear
+                All Dates
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -277,7 +312,11 @@ export function AssignCandidateToClassModal({
               <Calendar className="h-8 w-8 opacity-30 mb-2" />
               <p className="font-medium">No upcoming classes found</p>
               <p className="text-[11px] text-muted-foreground/80">
-                {search ? "Try a different search query" : "No classes scheduled starting today"}
+                {search
+                  ? "Try a different search query"
+                  : selectedDate
+                  ? `No classes scheduled on ${format(selectedDate, "EEEE, MMMM d, yyyy")}`
+                  : "No classes scheduled starting today"}
               </p>
             </div>
           ) : (
