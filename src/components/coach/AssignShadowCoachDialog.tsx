@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, UserCheck, UserX, Clock, MapPin, GraduationCap } from "lucide-react";
 import { useCoachApi } from "@/hooks/useCoachApi";
 import toast from "react-hot-toast";
+import { ShadowCoachChecklistModal } from "@/components/coach/ShadowCoachChecklistModal";
 import type { ShadowCoachSummaryDto } from "@/types/coach.types";
 
 interface AssignShadowCoachDialogProps {
@@ -66,6 +67,7 @@ export function AssignShadowCoachDialog({
   const [saving, setSaving] = useState(false);
   const [shadowCoaches, setShadowCoaches] = useState<ShadowCoachSummaryDto[]>([]);
   const [selectedCoachId, setSelectedCoachId] = useState<string>("none");
+  const [checklistOpen, setChecklistOpen] = useState(false);
 
   // Load active candidates when dialog opens
   useEffect(() => {
@@ -140,7 +142,33 @@ export function AssignShadowCoachDialog({
     }
   };
 
+  const handleOpenTargets = async () => {
+    if (selectedCoachId === "none" && !currentShadowCoachId) return;
+
+    // If a different coach was selected in the dropdown, persist it first so the backend associates this class with the coach
+    if (selectedCoachId !== "none" && selectedCoachId !== currentShadowCoachId) {
+      setSaving(true);
+      try {
+        await coachApi.patch(
+          `/api/coach/managing/classes/${scheduledClassId}/shadow-coach`,
+          { shadowCoachId: selectedCoachId }
+        );
+        toast.success("Assignment saved");
+        onAssigned?.();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || "Failed to update shadow coach assignment");
+        setSaving(false);
+        return;
+      } finally {
+        setSaving(false);
+      }
+    }
+
+    setChecklistOpen(true);
+  };
+
   const selectedCoachObj = shadowCoaches.find((c) => c.coachId === selectedCoachId);
+  const canViewTargets = selectedCoachId !== "none" || Boolean(currentShadowCoachId);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -241,7 +269,7 @@ export function AssignShadowCoachDialog({
           )}
 
           {selectedCoachObj && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-foreground flex items-center gap-1.5">
                   <UserCheck className="h-3.5 w-3.5 text-primary" />
@@ -259,38 +287,84 @@ export function AssignShadowCoachDialog({
                   Phone: {selectedCoachObj.phoneNumber}
                 </p>
               )}
+
+              <div className="pt-2 border-t border-primary/20 flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  Curriculum & Training Targets
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10 font-medium"
+                  onClick={handleOpenTargets}
+                  disabled={saving}
+                >
+                  <UserCheck className="h-3.5 w-3.5" />
+                  <span>Coach's Targets</span>
+                </Button>
+              </div>
             </div>
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            disabled={saving}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSave}
-            disabled={saving || loading}
-            className="gap-1.5"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Assignment"
-            )}
-          </Button>
+        <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t">
+          {canViewTargets ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleOpenTargets}
+              disabled={saving}
+              className="w-full sm:w-auto text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/5 font-medium"
+            >
+              <UserCheck className="h-3.5 w-3.5" />
+              <span>Coach's Targets</span>
+            </Button>
+          ) : (
+            <div />
+          )}
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSave}
+              disabled={saving || loading}
+              className="gap-1.5"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Assignment"
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Shadow Coach Targets Modal */}
+      {checklistOpen && (
+        <ShadowCoachChecklistModal
+          open={checklistOpen}
+          onClose={() => setChecklistOpen(false)}
+          scheduledClassId={scheduledClassId}
+          classTitle={classTitle}
+          shadowCoachName={selectedCoachObj?.coachName || currentShadowCoachName || undefined}
+        />
+      )}
     </Dialog>
   );
 }
