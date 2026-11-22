@@ -145,7 +145,9 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       router.replace("/coach/today");
     } else if (
       pathname.startsWith("/coach/managing/shadow-coaches") &&
-      role !== "managing_coach"
+      role !== "managing_coach" &&
+      role !== "management" &&
+      role !== "branch_admin"
     ) {
       toast.error("Shadow coach management is not enabled for your account");
       router.replace("/coach/today");
@@ -277,8 +279,11 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       : []),
   ];
 
+  const canManageShadowCoaches =
+    role === "managing_coach" || role === "management" || role === "branch_admin";
+
   const moreItems: NavItem[] = [
-    ...(role === "managing_coach"
+    ...(canManageShadowCoaches
       ? [
           {
             href: "/coach/managing/shadow-coaches",
@@ -287,6 +292,10 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
             match: (p: string) => p.startsWith("/coach/managing/shadow-coaches"),
             dataWalkthrough: "coach-nav-shadow-coaches",
           },
+        ]
+      : []),
+    ...(role === "managing_coach"
+      ? [
           {
             href: "/coach/mailing",
             label: "Mailing",

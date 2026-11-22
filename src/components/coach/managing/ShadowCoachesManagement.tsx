@@ -76,7 +76,17 @@ export function ShadowCoachesManagement() {
       else setLoading(true);
 
       try {
-        const res = await coachApi.get("/api/coach/managing/shadow-coaches");
+        let res;
+        try {
+          res = await coachApi.get("/api/coach/managing/shadow-coaches");
+        } catch (err: any) {
+          if (err.response?.status === 403 || err.response?.status === 404) {
+            res = await coachApi.get("/api/admin/shadow-coaches");
+          } else {
+            throw err;
+          }
+        }
+
         if (res.data?.success && Array.isArray(res.data.data)) {
           setCandidates(res.data.data);
         } else if (Array.isArray(res.data)) {
