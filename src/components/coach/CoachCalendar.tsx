@@ -19,9 +19,11 @@ import {
   CalendarDays,
   MapPin,
   GraduationCap,
+  UserCheck,
 } from "lucide-react";
 import { SessionClientsModal } from "@/components/coach/SessionClientsModal";
 import { AssignShadowCoachDialog } from "@/components/coach/AssignShadowCoachDialog";
+import { ShadowCoachChecklistModal } from "@/components/coach/ShadowCoachChecklistModal";
 import { canManageShadowCoaches } from "@/lib/config/roles";
 import type { RootState } from "@/lib/store/store";
 import type { DayDto, SessionDto } from "@/types/coach.types";
@@ -70,6 +72,7 @@ export function CoachCalendar() {
 
   const [clientsModalSession, setClientsModalSession] = useState<SessionDto | null>(null);
   const [assignSession, setAssignSession] = useState<SessionDto | null>(null);
+  const [shadowChecklistSession, setShadowChecklistSession] = useState<SessionDto | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     format(new Date(), "yyyy-MM-dd")
   );
@@ -488,6 +491,18 @@ export function CoachCalendar() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {session.shadowCoach && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="text-xs h-8 gap-1.5 cursor-pointer bg-primary/90 hover:bg-primary text-primary-foreground font-medium"
+                        onClick={() => setShadowChecklistSession(session)}
+                        title="View and update shadow coach checklist for this class"
+                      >
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span>Shadow Targets</span>
+                      </Button>
+                    )}
                     {isManager && (
                       <Button
                         size="sm"
@@ -496,7 +511,7 @@ export function CoachCalendar() {
                         onClick={() => setAssignSession(session)}
                       >
                         <GraduationCap className="h-3.5 w-3.5 mr-1 text-primary" />
-                        {session.shadowCoach ? "Shadow Coach" : "Assign Shadow"}
+                        {session.shadowCoach ? "Change Shadow" : "Assign Shadow"}
                       </Button>
                     )}
                     <Button
@@ -520,6 +535,14 @@ export function CoachCalendar() {
         session={clientsModalSession}
         onClose={() => setClientsModalSession(null)}
         onUpdated={() => setReloadKey((k) => k + 1)}
+      />
+
+      <ShadowCoachChecklistModal
+        scheduledClassId={shadowChecklistSession?.scheduledClassId ?? null}
+        classTitle={shadowChecklistSession?.classTitle}
+        shadowCoachName={shadowChecklistSession?.shadowCoach?.name}
+        open={Boolean(shadowChecklistSession)}
+        onClose={() => setShadowChecklistSession(null)}
       />
 
       {assignSession && (
