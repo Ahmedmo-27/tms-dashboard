@@ -28,7 +28,8 @@ import { EmptyState, FinanceError, FinanceLoading, FinancePage } from "../financ
 import { formatDateTime, formatMoney, formatNumber } from "../format";
 import { segmentLabel } from "../labels";
 import { StatGrid, StatTile } from "../stat-tile";
-import { useFinanceData, useFinanceFilters } from "../use-finance-data";
+import { useFinanceData, useFinanceFilters, useFinanceHref } from "../use-finance-data";
+import Link from "next/link";
 
 type EntryFilter = "all" | "packages" | "pt" | "dropins";
 
@@ -410,6 +411,8 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
         <StatTile label="Package session value" value={formatMoney(s.estimatedValue)} hint="Attended uses × price per session" className="col-span-2 xl:col-span-1" />
       </StatGrid>
 
+      <ByClassCard data={data} />
+
       <div className="grid gap-5 lg:grid-cols-2">
         <ChartCard
           title="Uses by package"
@@ -566,5 +569,116 @@ function CoachUsageBody({ data }: { data: CoachUsageData }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/** This coach's numbers and money in each class they taught, with the same rules as the class page. */
+function ByClassCard({ data }: { data: CoachUsageData }) {
+  const href = useFinanceHref();
+  const rows = data.byClass;
+  if (!rows) return null;
+  const total = rows.reduce((sum, r) => sum + r.totalRevenue, 0);
+
+  const exportCsv = () =>
+    downloadCsv(`coach-${data.coach.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-by-class-${data.range.startDate}-to-${data.range.endDate}`, rows, [
+      { header: "Class", value: (r) => r.classTitle },
+      { header: "Type", value: (r) => segmentLabel(r.category) },
+      { header: "Sessions", value: (r) => r.sessions },
+      { header: "Co-taught sessions", value: (r) => r.coTaughtSessions },
+      { header: "Hours", value: (r) => r.hours },
+      { header: "Booked", value: (r) => r.booked },
+      { header: "Attended", value: (r) => r.attended },
+      { header: "Show-up %", value: (r) => r.attendanceRate ?? "" },
+      { header: "Paid package bookings", value: (r) => r.packageUses },
+      { header: "Drop-ins", value: (r) => r.dropIns },
+      { header: "Drop-in revenue (EGP)", value: (r) => r.dropInRevenue },
+      { header: "Package value used (EGP)", value: (r) => r.packageValue },
+      { header: "Packages bought", value: (r) => r.packagesBought },
+      { header: "New", value: (r) => r.newPackages },
+      { header: "Renewals", value: (r) => r.renewals },
+      { header: "Package sales (EGP)", value: (r) => r.packageRevenue },
+      { header: "Total brought in (EGP)", value: (r) => r.totalRevenue },
+    ]);
+
+  return (
+    <Card className="gap-3 shadow-none">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1.5">
+          <CardTitle className="text-sm font-semibold">By class · {formatMoney(total)} brought in</CardTitle>
+          <CardDescription className="text-xs">
+            What {data.coach.name} did and brought in from each class: drop-ins paid, package sessions used (package
+            price ÷ sessions) and packages bought credited to them. Co-taught money is split. Click a class for its
+            day-by-day history.
+          </CardDescription>
+        </div>
+        <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportCsv} disabled={!rows.length}>
+          <Download className="h-4 w-4" />
+          Export
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <DataTable
+          rows={rows}
+          rowKey={(r) => r.classTitle}
+          initialSort={{ key: "total", dir: "desc" }}
+          pageSize={20}
+          emptyText="No classes in this period."
+          columns={[
+            {
+              key: "class",
+              header: "Class",
+              sortValue: (r) => r.classTitle,
+              cell: (r) => (
+                <Link
+                  href={href("/dashboard/finance/coach-hours/class", { classTitle: r.classTitle })}
+                  className="font-medium hover:underline"
+                >
+                  {r.classTitle}
+                </Link>
+              ),
+            },
+            { key: "type", header: "Type", sortValue: (r) => r.category, cell: (r) => segmentLabel(r.category) },
+            {
+              key: "sessions",
+              header: "Sessions",
+              align: "right",
+              sortValue: (r) => r.sessions,
+              cell: (r) => (
+                <span title={`${formatNumber(r.hours)} h${r.coTaughtSessions ? ` · ${r.coTaughtSessions} co-taught` : ""}`}>
+                  {formatNumber(r.sessions)}
+                </span>
+              ),
+            },
+            {
+              key: "attended",
+              header: "Attended / booked",
+              align: "right",
+              sortValue: (r) => r.attended,
+              cell: (r) => `${formatNumber(r.attended)} / ${formatNumber(r.booked)}`,
+            },
+            { key: "dropins", header: "Drop-ins", align: "right", sortValue: (r) => r.dropInRevenue, cell: (r) => formatMoney(r.dropInRevenue) },
+            { key: "value", header: "Package value used", align: "right", sortValue: (r) => r.packageValue, cell: (r) => formatMoney(r.packageValue) },
+            {
+              key: "bought",
+              header: "Packages bought",
+              align: "right",
+              sortValue: (r) => r.packageRevenue,
+              cell: (r) => (
+                <span title={`${r.packagesBought} bought · ${r.newPackages} new · ${r.renewals} renewals`}>
+                  {formatMoney(r.packageRevenue)} <span className="text-muted-foreground">({formatNumber(r.packagesBought)})</span>
+                </span>
+              ),
+            },
+            {
+              key: "total",
+              header: "Total brought in",
+              align: "right",
+              sortValue: (r) => r.totalRevenue,
+              cell: (r) => <span className="font-semibold">{formatMoney(r.totalRevenue)}</span>,
+            },
+          ]}
+        />
+      </CardContent>
+    </Card>
   );
 }

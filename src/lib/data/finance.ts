@@ -160,8 +160,74 @@ export type ClassDetailCoach = {
   newPackages: number;
   renewals: number;
   packageRevenue: number;
+  /** Drop-in money + package sessions used + packages bought credited to this coach. Absent on an older API. */
+  totalRevenue?: number;
   uniqueMembers: number;
   packages: { name: string; uses: number }[];
+};
+
+/** Everything that happened in a class on one Cairo calendar day. */
+export type ClassDetailDay = {
+  date: string;
+  sessions: number;
+  hours: number;
+  coaches: string[];
+  booked: number;
+  attended: number;
+  attendanceRate: number | null;
+  packageUses: number;
+  attendedPackageUses: number;
+  dropIns: number;
+  attendedDropIns: number;
+  dropInRevenue: number;
+  packageValue: number;
+  packagesBought: number;
+  newPackages: number;
+  renewals: number;
+  packageRevenue: number;
+  /** Purchases that day not linked to any coach of this class. */
+  otherPurchases: number;
+  totalRevenue: number;
+};
+
+export type ClassDetailTrendPoint = {
+  bucket: string;
+  sessions: number;
+  booked: number;
+  attended: number;
+  dropInRevenue: number;
+  packageValue: number;
+  packageRevenue: number;
+  totalRevenue: number;
+};
+
+export type ClassDayAttendee = {
+  name: string;
+  phone: string;
+  kind: "PACKAGE" | "DROP_IN" | "NON_MEMBER";
+  packageName: string;
+  attended: boolean;
+  paidAmount: number | null;
+  sessionValue: number | null;
+};
+
+export type ClassDayData = {
+  classTitle: string;
+  date: string;
+  purchases: ClassDetailPurchase[];
+  sessions: {
+    id: string;
+    start: string;
+    hours: number;
+    branch: string;
+    coaches: string[];
+    capacity: number;
+    booked: number;
+    attended: number;
+    dropInRevenue: number;
+    packageValue: number;
+    attendees: ClassDayAttendee[];
+  }[];
 };
 
 export type ClassDetailSession = {
@@ -225,9 +291,17 @@ export type ClassDetailData = {
     uncreditedPurchases: number;
     uncreditedRevenue: number;
     refundedPurchases: number;
+    /** Drop-ins + package sessions used + packages bought (credited). Absent on an older API. */
+    totalRevenue?: number;
   };
   coaches: ClassDetailCoach[];
   sessions: ClassDetailSession[];
+  /** Newest first. Absent on an older API. */
+  days?: ClassDetailDay[];
+  trend?: ClassDetailTrendPoint[];
+  granularity?: "day" | "month";
+  /** True when the range runs from the class's first session to today. */
+  allTime?: boolean;
   purchases: ClassDetailPurchase[];
 };
 
@@ -276,6 +350,28 @@ export type CoachUsageEntry = {
   branch: string;
 };
 
+export type CoachClassRow = {
+  classTitle: string;
+  category: string;
+  sessions: number;
+  coTaughtSessions: number;
+  hours: number;
+  booked: number;
+  attended: number;
+  attendanceRate: number | null;
+  packageUses: number;
+  attendedPackageUses: number;
+  packageValue: number;
+  dropIns: number;
+  dropInRevenue: number;
+  packagesBought: number;
+  newPackages: number;
+  renewals: number;
+  packageRevenue: number;
+  totalRevenue: number;
+  uniqueMembers: number;
+};
+
 export type CoachUsageData = {
   coach: { id: string; name: string };
   range: RangeInfo;
@@ -304,6 +400,8 @@ export type CoachUsageData = {
     estimatedValue: number;
   };
   coCoaches?: { coachId: string; name: string; sessions: number }[];
+  /** This coach's numbers in each class they taught (same rules as the class page). Absent on an older API. */
+  byClass?: CoachClassRow[];
   byPackage: { packageName: string; category: string | null; uses: number; attended: number; members: number; value: number }[];
   byMember: {
     memberId: string | null;
@@ -534,6 +632,7 @@ export const financeApi = {
   coaches: () => get<{ id: string; name: string }[]>("/coaches", {}),
   coachHours: (p: FinanceParams) => get<CoachHoursData>("/coach-hours", p),
   classDetail: (p: FinanceParams) => get<ClassDetailData>("/class-detail", p),
+  classDay: (p: FinanceParams) => get<ClassDayData>("/class-detail/day", p),
   coachUsage: (coachId: string, p: FinanceParams) =>
     get<CoachUsageData>(`/coaches/${encodeURIComponent(coachId)}/package-usage`, p),
   pt: (p: FinanceParams) => get<PtData>("/pt", p),

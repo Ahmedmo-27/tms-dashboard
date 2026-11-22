@@ -23,6 +23,8 @@ type FinancePageProps = {
   filters?: ReactNode;
   showDateRange?: boolean;
   note?: ReactNode;
+  /** Shown in the date picker instead of the URL range (e.g. the real span of an "all history" view). */
+  displayRange?: { startDate: string; endDate: string };
   children: ReactNode;
 };
 
@@ -34,10 +36,13 @@ export function FinancePage({
   filters,
   showDateRange = true,
   note,
+  displayRange,
   children,
 }: FinancePageProps) {
   const role = useAppSelector((state) => state.auth.user?.role as string | undefined);
-  const { startDate, endDate, setParams } = useFinanceFilters();
+  const { startDate: urlStart, endDate: urlEnd, setParams } = useFinanceFilters();
+  const startDate = displayRange?.startDate ?? urlStart;
+  const endDate = displayRange?.endDate ?? urlEnd;
 
   const range = useMemo<DateRange>(
     () => ({ from: parseISO(startDate), to: parseISO(endDate) }),
@@ -76,6 +81,7 @@ export function FinancePage({
                   startDate: format(next.from, "yyyy-MM-dd"),
                   endDate: format(next.to ?? next.from, "yyyy-MM-dd"),
                   page: undefined,
+                  allTime: undefined,
                 });
               }}
             />

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, Info, Presentation } from "lucide-react";
+import { ArrowLeft, Download, History, Info, Presentation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,12 +19,13 @@ import {
   type ClassDetailCoach,
   type ClassDetailData,
   type ClassDetailPurchase,
-  type ClassDetailSession,
 } from "@/lib/data/finance";
+import { ClassHistoryCard } from "./class-history-card";
 import { downloadCsv } from "../csv";
 import { DataTable } from "../data-table";
 import { EmptyState, FinanceError, FinanceLoading, FinancePage } from "../finance-page";
 import { formatDate, formatDateTime, formatMoney, formatNumber, formatPercent } from "../format";
+import { cn } from "@/lib/utils";
 import { segmentLabel } from "../labels";
 import { StatGrid, StatTile } from "../stat-tile";
 import { useFinanceData, useFinanceFilters, useFinanceHref } from "../use-finance-data";
@@ -35,12 +36,13 @@ const plural = (n: number, word: string) =>
   `${formatNumber(n)} ${n === 1 ? word : /(ch|sh|s|x)$/.test(word) ? `${word}es` : `${word}s`}`;
 
 export function ClassDetailView() {
-  const { searchParams } = useFinanceFilters();
+  const { searchParams, setParams } = useFinanceFilters();
   const href = useFinanceHref();
   const classTitle = (searchParams.get("classTitle") ?? "").trim();
+  const allTime = searchParams.get("allTime") === "1";
   const { data, loading, error, reload } = useFinanceData(
     financeApi.classDetail,
-    { classTitle },
+    { classTitle, allTime: allTime ? "1" : undefined },
     { enabled: Boolean(classTitle) },
   );
 
@@ -65,6 +67,7 @@ export function ClassDetailView() {
       { header: "New packages", value: (r) => r.newPackages },
       { header: "Renewals", value: (r) => r.renewals },
       { header: "Package sales (EGP)", value: (r) => r.packageRevenue },
+      { header: "Total brought in (EGP)", value: (r) => r.totalRevenue ?? coachTotal(r) },
       { header: "Members", value: (r) => r.uniqueMembers },
     ]);
 
@@ -77,8 +80,20 @@ export function ClassDetailView() {
           : "What each coach did in this class, and the packages their members bought."
       }
       icon={Presentation}
+      displayRange={allTime && data?.allTime ? data.range : undefined}
       actions={
         <>
+          <Button
+            variant={allTime ? "default" : "outline"}
+            size="sm"
+            className="h-10 gap-1.5"
+            aria-pressed={allTime}
+            title={allTime ? "Back to the picked dates" : "Show everything since this class's first session"}
+            onClick={() => setParams({ allTime: allTime ? undefined : "1" })}
+          >
+            <History className="h-4 w-4" />
+            All history
+          </Button>
           <Button asChild variant="outline" size="sm" className="h-10 gap-1.5">
             <Link href={href("/dashboard/finance/coach-hours")}>
               <ArrowLeft className="h-4 w-4" />
@@ -118,6 +133,8 @@ export function ClassDetailView() {
   );
 }
 
+const coachTotal = (r: ClassDetailCoach) => r.dropInRevenue + r.packageValue + r.packageRevenue;
+
 function slug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "class";
 }
@@ -132,7 +149,7 @@ function ClassDetailBody({ data }: { data: ClassDetailData }) {
         <CardContent>
           <EmptyState
             title="This class wasn't held in this period"
-            description="Pick another date range at the top of the page."
+            description="Pick another date range at the top of the page, or press All history."
           />
         </CardContent>
       </Card>
@@ -141,7 +158,12 @@ function ClassDetailBody({ data }: { data: ClassDetailData }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <StatGrid className="xl:grid-cols-6">
+      {data.allTime && (
+        <p className="-mt-2 text-xs text-muted-foreground">
+          All history: from the first {data.classTitle} session on {formatDate(data.range.startDate)} to today.
+        </p>
+      )}
+      <StatGrid className="lg:grid-cols-4 xl:grid-cols-7">
         <StatTile
           label="Sessions"
           value={formatNumber(s.sessions)}
@@ -173,6 +195,12 @@ function ClassDetailBody({ data }: { data: ClassDetailData }) {
           value={formatMoney(s.packageRevenue)}
           hint={`${plural(s.uniqueMembers, "member")} took this class`}
         />
+        <StatTile
+          label="Total brought in"
+          value={formatMoney(s.totalRevenue ?? s.dropInRevenue + s.packageValue + s.packageRevenue)}
+          hint="Drop-ins + package sessions used + packages bought"
+          emphasis
+        />
       </StatGrid>
 
       <Card className="gap-0 py-3 shadow-none">
@@ -201,8 +229,9 @@ function ClassDetailBody({ data }: { data: ClassDetailData }) {
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Coaches</CardTitle>
           <CardDescription className="text-xs">
-            Everything each coach did in {data.classTitle}. Hover a number for the breakdown; click a coach for every
-            package use across all their classes.
+            Everything each coach did in {data.classTitle}, and the money linked to them: drop-ins paid, the value of
+            package sessions their members used (package price ÷ sessions), and packages bought credited to them.
+            Hover a number for the breakdown; click a coach to see all their classes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -283,14 +312,41 @@ function ClassDetailBody({ data }: { data: ClassDetailData }) {
               { key: "new", header: "New", align: "right", sortValue: (r) => r.newPackages, cell: (r) => formatNumber(r.newPackages) },
               { key: "renewals", header: "Renewals", align: "right", sortValue: (r) => r.renewals, cell: (r) => formatNumber(r.renewals) },
               { key: "sales", header: "Package sales", align: "right", sortValue: (r) => r.packageRevenue, cell: (r) => formatMoney(r.packageRevenue) },
+              {
+                key: "value",
+                header: "Package value used",
+                align: "right",
+                sortValue: (r) => r.packageValue,
+                cell: (r) => (
+                  <span title={`${formatNumber(r.attendedPackageUses)} attended package sessions × package price ÷ sessions`}>
+                    {formatMoney(r.packageValue)}
+                  </span>
+                ),
+              },
+              {
+                key: "total",
+                header: "Total brought in",
+                align: "right",
+                sortValue: (r) => r.totalRevenue ?? coachTotal(r),
+                cell: (r) => (
+                  <span
+                    className={cn("font-semibold", r.coachId === "unassigned" && "font-normal text-muted-foreground")}
+                    title={`Drop-ins ${formatMoney(r.dropInRevenue)}
+Package sessions used ${formatMoney(r.packageValue)}
+Packages bought ${formatMoney(r.packageRevenue)}`}
+                  >
+                    {formatMoney(r.totalRevenue ?? coachTotal(r))}
+                  </span>
+                ),
+              },
               { key: "members", header: "Members", align: "right", sortValue: (r) => r.uniqueMembers, cell: (r) => formatNumber(r.uniqueMembers) },
             ]}
           />
         </CardContent>
       </Card>
 
+      <ClassHistoryCard data={data} />
       <PurchasesCard data={data} />
-      <SessionsCard data={data} />
     </div>
   );
 }
@@ -434,52 +490,6 @@ function PurchasesCard({ data }: { data: ClassDetailData }) {
                   </span>
                 ),
             },
-          ]}
-        />
-      </CardContent>
-    </Card>
-  );
-}
-
-function SessionsCard({ data }: { data: ClassDetailData }) {
-  return (
-    <Card className="gap-3 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-sm font-semibold">Sessions</CardTitle>
-        <CardDescription className="text-xs">Every {data.classTitle} session in this period.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTable<ClassDetailSession>
-          rows={data.sessions}
-          rowKey={(r) => r.id}
-          initialSort={{ key: "date", dir: "desc" }}
-          pageSize={25}
-          columns={[
-            { key: "date", header: "Date", sortValue: (r) => r.date, cell: (r) => formatDateTime(r.date) },
-            { key: "coach", header: "Coach", sortValue: (r) => r.coaches.join(", "), cell: (r) => r.coaches.join(", ") },
-            { key: "branch", header: "Branch", sortValue: (r) => r.branch, cell: (r) => r.branch },
-            {
-              key: "attended",
-              header: "Attended / booked",
-              align: "right",
-              sortValue: (r) => r.attended,
-              cell: (r) => `${formatNumber(r.attended)} / ${formatNumber(r.booked)}`,
-            },
-            {
-              key: "packages",
-              header: "Paid packages",
-              align: "right",
-              sortValue: (r) => r.packageUses,
-              cell: (r) => <span title={`${r.attendedPackageUses} attended`}>{formatNumber(r.packageUses)}</span>,
-            },
-            {
-              key: "dropins",
-              header: "Drop-ins",
-              align: "right",
-              sortValue: (r) => r.dropIns,
-              cell: (r) => <span title={`${r.attendedDropIns} attended`}>{formatNumber(r.dropIns)}</span>,
-            },
-            { key: "revenue", header: "Drop-in revenue", align: "right", sortValue: (r) => r.dropInRevenue, cell: (r) => formatMoney(r.dropInRevenue) },
           ]}
         />
       </CardContent>
