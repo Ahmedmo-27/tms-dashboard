@@ -133,7 +133,8 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       router.replace("/coach/today");
     } else if (
       pathname.startsWith("/coach/schedule") &&
-      !hasScheduledClasses
+      !hasScheduledClasses &&
+      role !== "shadow_coach"
     ) {
       toast.error("Scheduled Classes are not enabled for your account");
       router.replace("/coach/today");
@@ -183,6 +184,25 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     socket.on("coach:newPackage", (payload: CoachNewPackagePayload) => {
       dispatch(addNotification(payload));
       toast(`New package assigned to ${payload.memberName}`);
+    });
+
+    socket.on("coach:classAssignment", (payload: any) => {
+      dispatch(
+        addNotification({
+          id: payload.id || `ca-${Date.now()}`,
+          type: "class_assignment",
+          title: payload.title || "Class Assignment",
+          message: payload.message || `You have been assigned to shadow ${payload.classTitle || "a class"}`,
+          scheduledClassId: payload.scheduledClassId,
+          classTitle: payload.classTitle,
+          startTime: payload.startTime,
+          endTime: payload.endTime,
+          locationName: payload.locationName,
+          leadCoachName: payload.leadCoachName,
+          createdAt: payload.createdAt || new Date().toISOString(),
+        })
+      );
+      toast.success(payload.title || `You have been assigned to shadow ${payload.classTitle || "a class"}`);
     });
 
     return () => {
@@ -266,7 +286,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
           },
         ]
       : []),
-    ...(hasScheduledClasses
+    ...(hasScheduledClasses || role === "shadow_coach"
       ? [
           {
             href: "/coach/schedule",

@@ -82,6 +82,15 @@ export interface CurrentMonthProgressDto {
   remainingItems: ShadowChecklistItemDto[];
 }
 
+export interface AssignedShadowClassDto {
+  scheduledClassId: string;
+  classTitle: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  leadCoaches?: string;
+}
+
 export interface MyShadowChecklistDto {
   coachId: string;
   coachName?: string;
@@ -97,6 +106,7 @@ export interface MyShadowChecklistDto {
   progressPercent: number;
   isAllComplete: boolean;
   canEvaluate: boolean;
+  assignedClasses?: AssignedShadowClassDto[];
   reviewDecision?: "promoted" | "retained";
   reviewedAt?: string;
   reviewNotes?: string;

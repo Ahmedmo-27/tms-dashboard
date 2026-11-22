@@ -171,4 +171,56 @@ describe("Dashboard Shadow Coach Role & Schedule Integration", () => {
       );
     });
   });
+
+  describe("Shadow Coach Notifications & Assigned Classes Tracking", () => {
+    it("handles class_assignment notifications in coachSlice reducer", async () => {
+      const coachSliceModule = await import("@/lib/store/features/coachSlice");
+      const coachReducer = coachSliceModule.default;
+      const { addNotification } = coachSliceModule;
+
+      const initialState = {
+        coachId: "coach-shadow-1",
+        name: "Shadow Coach Sarah",
+        email: "sarah@tms.com",
+        phoneNumber: "01000000000",
+        role: "shadow_coach",
+        branchName: null,
+        token: "fake-jwt",
+        clients: [],
+        clientsLoading: false,
+        clientsTotalPages: 1,
+        clientsTotal: 0,
+        notifications: [],
+        schedule: null,
+        scheduleLoading: false,
+        hasPtSessions: false,
+        hasScheduledClasses: true,
+        scansCategories: [],
+        canViewPtReports: false,
+        capabilitiesLoaded: true,
+      };
+
+      const classNotificationPayload = {
+        id: "notif-class-1",
+        type: "class_assignment" as const,
+        title: "Class Assignment: Functional Strength",
+        message: "You have been assigned to shadow Functional Strength with lead coach Captain Ahmed.",
+        scheduledClassId: "sc-123",
+        classTitle: "Functional Strength",
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        locationName: "Zamalek Branch",
+        leadCoachName: "Captain Ahmed",
+        createdAt: new Date().toISOString(),
+      };
+
+      const nextState = coachReducer(initialState, addNotification(classNotificationPayload));
+
+      expect(nextState.notifications.length).toBe(1);
+      expect(nextState.notifications[0].type).toBe("class_assignment");
+      expect(nextState.notifications[0].title).toBe("Class Assignment: Functional Strength");
+      expect(nextState.notifications[0].scheduledClassId).toBe("sc-123");
+      expect(nextState.notifications[0].read).toBe(false);
+    });
+  });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useCoachApi } from "@/hooks/useCoachApi";
 import { getMyShadowChecklist } from "@/lib/data/coach-portal";
 import type { MyShadowChecklistDto } from "@/types/coach.types";
@@ -23,6 +24,7 @@ import {
   Info,
   ShieldCheck,
   Flame,
+  MapPin,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -36,6 +38,7 @@ export function ShadowCoachDashboardTracker({
   className,
   isStandalonePage = false,
 }: ShadowCoachDashboardTrackerProps) {
+  const router = useRouter();
   const coachApi = useCoachApi();
   const [data, setData] = useState<MyShadowChecklistDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +92,97 @@ export function ShadowCoachDashboardTracker({
 
   return (
     <div className={cn("space-y-4", className)}>
+      {/* Assigned Shadow Classes Card */}
+      <Card className="shadow-xs border overflow-hidden">
+        <CardHeader className="pb-3 bg-muted/20 flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-primary/10 rounded-md text-primary">
+                <Calendar className="h-4 w-4" />
+              </div>
+              <CardTitle className="text-base font-semibold">
+                My Assigned Shadow Classes
+              </CardTitle>
+              {data.assignedClasses && data.assignedClasses.length > 0 && (
+                <Badge variant="secondary" className="text-xs px-2 py-0">
+                  {data.assignedClasses.length} upcoming
+                </Badge>
+              )}
+            </div>
+            <CardDescription className="text-xs">
+              Upcoming schedule sessions where you are assigned to shadow lead coaches.
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            onClick={() => router.push("/coach/schedule")}
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            <span>View Full Schedule</span>
+          </Button>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {!data.assignedClasses || data.assignedClasses.length === 0 ? (
+            <div className="border border-dashed rounded-lg p-6 text-center bg-muted/10 text-xs text-muted-foreground space-y-1.5">
+              <Calendar className="h-6 w-6 text-muted-foreground/60 mx-auto" />
+              <p className="font-medium text-foreground">No upcoming shadow classes assigned</p>
+              <p className="text-[11px] max-w-md mx-auto">
+                Your managing coach will assign you to upcoming schedule sessions so lead coaches can observe and evaluate your practical competencies.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {data.assignedClasses.map((cls) => {
+                const startDate = new Date(cls.startTime);
+                const endDate = new Date(cls.endTime);
+                return (
+                  <div
+                    key={cls.scheduledClassId}
+                    className="p-3.5 rounded-lg border bg-card hover:bg-muted/20 transition-all text-xs space-y-2 border-l-4 border-l-primary shadow-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold text-foreground text-sm line-clamp-1">
+                        {cls.classTitle}
+                      </h4>
+                      <Badge variant="outline" className="text-[10px] shrink-0 border-primary/30 text-primary bg-primary/5">
+                        Shadowing
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1 text-muted-foreground text-[11px]">
+                      <div className="flex items-center gap-1.5 text-foreground font-medium">
+                        <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span>{format(startDate, "EEE, MMM d, yyyy")}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <span>
+                          {format(startDate, "hh:mm a")} – {format(endDate, "hh:mm a")}
+                        </span>
+                      </div>
+                      {cls.location && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="truncate">{cls.location}</span>
+                        </div>
+                      )}
+                      {cls.leadCoaches && (
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          <UserCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          <span>Lead Coach: <strong className="text-foreground">{cls.leadCoaches}</strong></span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Hero Banner Card */}
       <Card className="border-l-4 border-l-primary overflow-hidden shadow-xs">
         <CardHeader className="pb-3 bg-muted/20">
