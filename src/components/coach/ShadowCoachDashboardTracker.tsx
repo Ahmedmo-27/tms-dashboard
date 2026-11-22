@@ -105,12 +105,12 @@ export function ShadowCoachDashboardTracker({
               </CardTitle>
               {data.assignedClasses && data.assignedClasses.length > 0 && (
                 <Badge variant="secondary" className="text-xs px-2 py-0">
-                  {data.assignedClasses.length} upcoming
+                  {data.assignedClasses.length} assigned
                 </Badge>
               )}
             </div>
             <CardDescription className="text-xs">
-              Upcoming schedule sessions where you are assigned to shadow lead coaches.
+              Schedule sessions where you are assigned to shadow lead coaches.
             </CardDescription>
           </div>
           <Button
@@ -127,9 +127,9 @@ export function ShadowCoachDashboardTracker({
           {!data.assignedClasses || data.assignedClasses.length === 0 ? (
             <div className="border border-dashed rounded-lg p-6 text-center bg-muted/10 text-xs text-muted-foreground space-y-1.5">
               <Calendar className="h-6 w-6 text-muted-foreground/60 mx-auto" />
-              <p className="font-medium text-foreground">No upcoming shadow classes assigned</p>
+              <p className="font-medium text-foreground">No shadow classes assigned</p>
               <p className="text-[11px] max-w-md mx-auto">
-                Your managing coach will assign you to upcoming schedule sessions so lead coaches can observe and evaluate your practical competencies.
+                Your managing coach will assign you to schedule sessions so lead coaches can observe and evaluate your practical competencies.
               </p>
             </div>
           ) : (
@@ -146,9 +146,19 @@ export function ShadowCoachDashboardTracker({
                       <h4 className="font-semibold text-foreground text-sm line-clamp-1">
                         {cls.classTitle}
                       </h4>
-                      <Badge variant="outline" className="text-[10px] shrink-0 border-primary/30 text-primary bg-primary/5">
-                        Shadowing
-                      </Badge>
+                      {cls.status === "today" ? (
+                        <Badge variant="outline" className="text-[10px] shrink-0 border-amber-500/40 text-amber-500 bg-amber-500/10 font-semibold">
+                          Today
+                        </Badge>
+                      ) : cls.status === "completed" ? (
+                        <Badge variant="outline" className="text-[10px] shrink-0 border-muted-foreground/30 text-muted-foreground bg-muted/20">
+                          Completed
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] shrink-0 border-primary/30 text-primary bg-primary/5">
+                          Upcoming
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="space-y-1 text-muted-foreground text-[11px]">

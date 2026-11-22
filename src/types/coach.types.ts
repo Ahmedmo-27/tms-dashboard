@@ -89,6 +89,7 @@ export interface AssignedShadowClassDto {
   endTime: string;
   location?: string;
   leadCoaches?: string;
+  status?: "today" | "upcoming" | "completed";
 }
 
 export interface MyShadowChecklistDto {
