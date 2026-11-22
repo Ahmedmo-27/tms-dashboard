@@ -72,8 +72,13 @@ export function EditClassComponent({
     }
   };
 
-  const currentUser = useAppSelector((state) => state.auth.user);
-  const isManagingCoach = currentUser?.role === "managing_coach";
+  const authUser = useAppSelector((state) => state.auth.user);
+  const coachUserRole = useAppSelector((state) => state.coach.role);
+  const userRole = authUser?.role || coachUserRole;
+  const isManagingCoach =
+    userRole === "managing_coach" ||
+    userRole === "management" ||
+    userRole === "branch_admin";
 
   const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>(
     Array.isArray(scheduledClass.coachId)
