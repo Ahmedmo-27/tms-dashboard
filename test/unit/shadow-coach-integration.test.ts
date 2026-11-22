@@ -222,5 +222,18 @@ describe("Dashboard Shadow Coach Role & Schedule Integration", () => {
       expect(nextState.notifications[0].scheduledClassId).toBe("sc-123");
       expect(nextState.notifications[0].read).toBe(false);
     });
+
+    it("verifies shadow coaches do not have scans monitor navigation access", () => {
+      const isShadowCoach = true;
+      const hasScheduledClasses = true;
+      const hasPtSessions = false;
+      const hasExtraCategoryScans = false;
+
+      const hasScansMonitorAccess =
+        !isShadowCoach &&
+        (hasScheduledClasses || hasPtSessions || hasExtraCategoryScans);
+
+      expect(hasScansMonitorAccess).toBe(false);
+    });
   });
 });

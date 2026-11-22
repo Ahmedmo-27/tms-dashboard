@@ -110,9 +110,10 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     canViewPtReports: hasPtPrivilege,
   });
 
+  const isShadowCoach = role === "shadow_coach";
   const hasExtraCategoryScans = (scansCategories && scansCategories.length > 0) ||
     getCoachExtraScansCategories({ role, name, email, phoneNumber, coachId }).length > 0;
-  const hasScansMonitorAccess = hasScheduledClasses || hasPtSessions || hasExtraCategoryScans;
+  const hasScansMonitorAccess = !isShadowCoach && (hasScheduledClasses || hasPtSessions || hasExtraCategoryScans);
 
   const [moreOpen, setMoreOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -140,7 +141,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       router.replace("/coach/today");
     } else if (
       pathname.startsWith("/coach/scans") &&
-      !hasScansMonitorAccess
+      (!hasScansMonitorAccess || isShadowCoach)
     ) {
       toast.error("Scans monitor is not enabled for your account");
       router.replace("/coach/today");
