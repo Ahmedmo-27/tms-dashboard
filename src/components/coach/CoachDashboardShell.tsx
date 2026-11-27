@@ -40,6 +40,7 @@ import {
   Mail,
   HelpCircle,
   Award,
+  GraduationCap,
 } from "lucide-react";
 import { NotificationPanel } from "@/components/coach/NotificationPanel";
 import { HelpButton } from "@/components/tutorials/help-button";
@@ -109,9 +110,10 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     canViewPtReports: hasPtPrivilege,
   });
 
+  const isShadowCoach = role === "shadow_coach";
   const hasExtraCategoryScans = (scansCategories && scansCategories.length > 0) ||
     getCoachExtraScansCategories({ role, name, email, phoneNumber, coachId }).length > 0;
-  const hasScansMonitorAccess = hasScheduledClasses || hasPtSessions || hasExtraCategoryScans;
+  const hasScansMonitorAccess = !isShadowCoach && (hasScheduledClasses || hasPtSessions || hasExtraCategoryScans);
 
   const [moreOpen, setMoreOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -132,15 +134,24 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       router.replace("/coach/today");
     } else if (
       pathname.startsWith("/coach/schedule") &&
-      !hasScheduledClasses
+      !hasScheduledClasses &&
+      role !== "shadow_coach"
     ) {
       toast.error("Scheduled Classes are not enabled for your account");
       router.replace("/coach/today");
     } else if (
       pathname.startsWith("/coach/scans") &&
-      !hasScansMonitorAccess
+      (!hasScansMonitorAccess || isShadowCoach)
     ) {
       toast.error("Scans monitor is not enabled for your account");
+      router.replace("/coach/today");
+    } else if (
+      pathname.startsWith("/coach/managing/shadow-coaches") &&
+      role !== "managing_coach" &&
+      role !== "management" &&
+      role !== "branch_admin"
+    ) {
+      toast.error("Shadow coach management is not enabled for your account");
       router.replace("/coach/today");
     } else if (pathname.startsWith("/coach/mailing") && role !== "managing_coach") {
       toast.error("Mailing dashboard is not enabled for your account");
@@ -174,6 +185,25 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
     socket.on("coach:newPackage", (payload: CoachNewPackagePayload) => {
       dispatch(addNotification(payload));
       toast(`New package assigned to ${payload.memberName}`);
+    });
+
+    socket.on("coach:classAssignment", (payload: any) => {
+      dispatch(
+        addNotification({
+          id: payload.id || `ca-${Date.now()}`,
+          type: "class_assignment",
+          title: payload.title || "Class Assignment",
+          message: payload.message || `You have been assigned to shadow ${payload.classTitle || "a class"}`,
+          scheduledClassId: payload.scheduledClassId,
+          classTitle: payload.classTitle,
+          startTime: payload.startTime,
+          endTime: payload.endTime,
+          locationName: payload.locationName,
+          leadCoachName: payload.leadCoachName,
+          createdAt: payload.createdAt || new Date().toISOString(),
+        })
+      );
+      toast.success(payload.title || `You have been assigned to shadow ${payload.classTitle || "a class"}`);
     });
 
     return () => {
@@ -224,6 +254,17 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       match: (p) => p.startsWith("/coach/today") || p === "/coach" || p === "/coach/dashboard",
       dataWalkthrough: "coach-nav-today",
     },
+    ...(role === "shadow_coach"
+      ? [
+          {
+            href: "/coach/my-checklist",
+            label: "My Checklist",
+            icon: GraduationCap,
+            match: (p: string) => p.startsWith("/coach/my-checklist"),
+            dataWalkthrough: "coach-nav-my-checklist",
+          },
+        ]
+      : []),
     ...(hasPtSessions
       ? [
           {
@@ -246,7 +287,7 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
           },
         ]
       : []),
-    ...(hasScheduledClasses
+    ...(hasScheduledClasses || role === "shadow_coach"
       ? [
           {
             href: "/coach/schedule",
@@ -259,7 +300,21 @@ export function CoachDashboardShell({ children }: { children: ReactNode }) {
       : []),
   ];
 
+  const canManageShadowCoaches =
+    role === "managing_coach" || role === "management" || role === "branch_admin";
+
   const moreItems: NavItem[] = [
+    ...(canManageShadowCoaches
+      ? [
+          {
+            href: "/coach/managing/shadow-coaches",
+            label: "Shadow Coaches",
+            icon: GraduationCap,
+            match: (p: string) => p.startsWith("/coach/managing/shadow-coaches"),
+            dataWalkthrough: "coach-nav-shadow-coaches",
+          },
+        ]
+      : []),
     ...(role === "managing_coach"
       ? [
           {

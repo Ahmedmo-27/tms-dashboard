@@ -49,11 +49,19 @@ export function isStaffRole(role: string | null | undefined): boolean {
 }
 
 export function isCoachRole(role: string | null | undefined): boolean {
-  return role === "coach" || role === "managing_coach";
+  return role === "coach" || role === "managing_coach" || role === "shadow_coach";
+}
+
+export function isShadowCoachRole(role: string | null | undefined): boolean {
+  return role === "shadow_coach";
 }
 
 export function isManagingCoachRole(role: string | null | undefined): boolean {
   return role === "managing_coach";
+}
+
+export function canManageShadowCoaches(role: string | null | undefined): boolean {
+  return role === "managing_coach" || role === "management" || role === "branch_admin";
 }
 
 export interface CoachIdentity {
@@ -325,6 +333,8 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/accounts": ["management", "branch_admin"],
   "/dashboard/notifications": ["management"],
   "/dashboard/finance": ["accountant"],
+  "/dashboard/finance/pt": ["management", "accountant"],
+  "/dashboard/finance/coach-packages": ["management", "accountant"],
   "/dashboard/sales": [
     "management",
     "branch_admin",

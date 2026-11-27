@@ -3,10 +3,19 @@ import { ClientDto, ScheduleResponseDto } from "@/types/coach.types";
 
 export interface CoachNotification {
   id: string;
+  type?: "package_assignment" | "class_assignment";
+  title?: string;
+  message?: string;
+  scheduledClassId?: string;
+  classTitle?: string;
+  startTime?: string;
+  endTime?: string;
+  locationName?: string;
+  leadCoachName?: string;
   memberId?: string;
-  memberName: string;
-  packageName: string;
-  classesTotal: number;
+  memberName?: string;
+  packageName?: string;
+  classesTotal?: number;
   createdAt: string;
   read: boolean;
 }

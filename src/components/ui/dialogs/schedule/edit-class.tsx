@@ -10,6 +10,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useActionState } from "react";
 import { editClassAction } from "@/lib/actions/schedule-actions";
 import { MultiSelect } from "../../multiselect";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAppSelector } from "@/lib/hooks";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,12 +72,23 @@ export function EditClassComponent({
     }
   };
 
+  const authUser = useAppSelector((state) => state.auth.user);
+  const coachUserRole = useAppSelector((state) => state.coach.role);
+  const userRole = authUser?.role || coachUserRole;
+  const isManagingCoach =
+    userRole === "managing_coach" ||
+    userRole === "management" ||
+    userRole === "branch_admin";
+
   const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>(
     Array.isArray(scheduledClass.coachId)
       ? scheduledClass.coachId
       : scheduledClass.coachId
       ? [scheduledClass.coachId]
       : []
+  );
+  const [selectedShadowCoachId, setSelectedShadowCoachId] = useState<string>(
+    scheduledClass?.shadowCoach?.id || scheduledClass?.shadowCoachId || ""
   );
   const coachNameArray = scheduledClass.coachName ? scheduledClass.coachName.split(", ") : [];
   const [selectedCoachNames, setSelectedCoachNames] = useState<string[]>(
@@ -92,6 +111,9 @@ export function EditClassComponent({
     const names = scheduledClass.coachName ? scheduledClass.coachName.split(", ") : [];
     setSelectedCoachIds(coachIds);
     setSelectedCoachNames(names);
+    setSelectedShadowCoachId(
+      scheduledClass?.shadowCoach?.id || scheduledClass?.shadowCoachId || ""
+    );
 
     const startStr = scheduledClass?.startTime?.toString() || new Date().toString();
     let endStr = scheduledClass?.endTime?.toString();
@@ -243,13 +265,21 @@ export function EditClassComponent({
     setSelectedEndDate(updatedEnd.toString());
   };
 
-  const coachOptions = useMemo(() => {
-    return Array.from(new Set(coaches.map((c) => c.coachName?.trim()).filter(Boolean)));
+  const leadCoaches = useMemo(() => {
+    return coaches.filter((c) => !c.isShadowCoach);
   }, [coaches]);
+
+  const shadowCoaches = useMemo(() => {
+    return coaches.filter((c) => c.isShadowCoach);
+  }, [coaches]);
+
+  const coachOptions = useMemo(() => {
+    return Array.from(new Set(leadCoaches.map((c) => c.coachName?.trim()).filter(Boolean)));
+  }, [leadCoaches]);
 
   const coachMap = useMemo(() => {
     const map = new Map<string, string>();
-    const sorted = [...coaches].sort((a, b) => (b.userId ? 1 : 0) - (a.userId ? 1 : 0));
+    const sorted = [...leadCoaches].sort((a, b) => (b.userId ? 1 : 0) - (a.userId ? 1 : 0));
     for (const c of sorted) {
       const name = c.coachName?.trim();
       if (name && !map.has(name)) {
@@ -257,7 +287,7 @@ export function EditClassComponent({
       }
     }
     return map;
-  }, [coaches]);
+  }, [leadCoaches]);
 
   return (
     <>
@@ -299,6 +329,11 @@ export function EditClassComponent({
               name="endTime"
               value={new Date(selectedEndDate).toISOString()}
             />
+            <input
+              type="hidden"
+              name="shadowCoachId"
+              value={selectedShadowCoachId}
+            />
             {selectedCoachIds.map((id) => (
               <input key={id} type="hidden" name="coachId" value={id} />
             ))}
@@ -326,6 +361,32 @@ export function EditClassComponent({
                   </p>
                 ) : null}
               </div>
+
+              {isManagingCoach && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Shadow Coach (Optional)</Label>
+                    <span className="text-[11px] text-muted-foreground font-normal">Managing Coach only</span>
+                  </div>
+                  <Select
+                    value={selectedShadowCoachId || "none"}
+                    disabled={pending}
+                    onValueChange={(val) => setSelectedShadowCoachId(val === "none" ? "" : val)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a shadow coach" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {shadowCoaches.map((sc) => (
+                        <SelectItem key={sc._id} value={sc._id}>
+                          {sc.coachName} (Phase {sc.currentPhase || 1}/3)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Date Selection */}
               <div className="space-y-2">

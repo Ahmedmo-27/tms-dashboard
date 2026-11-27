@@ -16,10 +16,14 @@ import {
   Users,
   AlertTriangle,
   ChevronRight,
+  UserCheck,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { setSchedule } from "@/lib/store/features/coachSlice";
 import { SessionClientsModal } from "@/components/coach/SessionClientsModal";
+import { ShadowCoachChecklistModal } from "@/components/coach/ShadowCoachChecklistModal";
+import { ShadowCoachDashboardTracker } from "@/components/coach/ShadowCoachDashboardTracker";
+import { isShadowCoachRole } from "@/lib/config/roles";
 import { CoachTodaySkeleton } from "@/components/ui/loading/coach-skeletons";
 import { startOfWeek, format } from "date-fns";
 
@@ -38,6 +42,8 @@ export function CoachToday() {
   const hasPtSessions = useAppSelector((s) => s.coach.hasPtSessions);
   const hasScheduledClasses = useAppSelector((s) => s.coach.hasScheduledClasses);
   const schedule = useAppSelector((s) => s.coach.schedule);
+  const role = useAppSelector((s) => s.coach.role);
+  const isShadowCoach = isShadowCoachRole(role);
 
   const [data, setData] = useState<TodaySummaryDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,6 +52,11 @@ export function CoachToday() {
 
   const [selectedSession, setSelectedSession] = useState<SessionDto | null>(null);
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
+  const [shadowModalSession, setShadowModalSession] = useState<{
+    scheduledClassId: string;
+    classTitle?: string;
+    shadowCoachName?: string;
+  } | null>(null);
 
   const handleOpenRoster = async (
     scheduledClassId: string,
@@ -148,6 +159,8 @@ export function CoachToday() {
 
   return (
     <div className="space-y-4">
+      {isShadowCoach && <ShadowCoachDashboardTracker />}
+
       <Card data-walkthrough="coach-today-next">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Next session</CardTitle>
@@ -167,8 +180,31 @@ export function CoachToday() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {next.bookedCount} / {next.capacity} booked
                 </p>
+                {next.shadowCoach && (
+                  <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium">
+                    <UserCheck className="h-3 w-3" />
+                    <span>Shadow: {next.shadowCoach.name} ({next.shadowCoach.currentPhase}/3)</span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2">
+                {next.shadowCoach && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShadowModalSession({
+                        scheduledClassId: next.scheduledClassId,
+                        classTitle: next.classTitle,
+                        shadowCoachName: next.shadowCoach?.name,
+                      });
+                    }}
+                  >
+                    <UserCheck className="mr-1.5 h-3.5 w-3.5 text-primary" />
+                    Shadow Targets
+                  </Button>
+                )}
                 <Button asChild size="sm">
                   <Link href="/coach/schedule">Open schedule</Link>
                 </Button>
@@ -232,8 +268,31 @@ export function CoachToday() {
                         <span> · {s.coachName || s.coachNames}</span>
                       )}
                     </p>
+                    {s.shadowCoach && (
+                      <p className="text-xs text-primary font-medium mt-0.5">
+                        Shadow: {s.shadowCoach.name} ({s.shadowCoach.currentPhase}/3)
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
+                    {s.shadowCoach && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShadowModalSession({
+                            scheduledClassId: s.scheduledClassId,
+                            classTitle: s.classTitle,
+                            shadowCoachName: s.shadowCoach?.name,
+                          });
+                        }}
+                      >
+                        <UserCheck className="mr-1 h-3 w-3 text-primary" />
+                        Targets
+                      </Button>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {s.bookedCount}/{s.capacity}
                     </span>
@@ -247,7 +306,7 @@ export function CoachToday() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {(hasScheduledClasses || hasPtSessions) && (
+        {(hasScheduledClasses || hasPtSessions) && !isShadowCoach && (
           <Card data-walkthrough="coach-today-scans">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -348,6 +407,14 @@ export function CoachToday() {
           onClose={() => setSelectedSession(null)}
         />
       )}
+
+      <ShadowCoachChecklistModal
+        scheduledClassId={shadowModalSession?.scheduledClassId ?? null}
+        classTitle={shadowModalSession?.classTitle}
+        shadowCoachName={shadowModalSession?.shadowCoachName}
+        open={Boolean(shadowModalSession)}
+        onClose={() => setShadowModalSession(null)}
+      />
     </div>
   );
 }

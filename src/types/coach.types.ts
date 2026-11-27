@@ -26,6 +26,161 @@ export interface CalendarClientDto {
   activePackage: ActivePackageDto | null;
 }
 
+export interface ShadowCoachRefDto {
+  id: string;
+  name: string;
+  currentPhase: number;
+  phaseLabel: string;
+}
+
+export interface ShadowChecklistItemDto {
+  key: string;
+  title: string;
+  description: string;
+  isDone: boolean;
+  markedAt?: string;
+  markedByCoachName?: string;
+  notes?: string;
+}
+
+export interface ShadowPhaseDto {
+  phaseNumber: number;
+  title: string;
+  guideline: string;
+  isUnlocked: boolean;
+  isCompleted: boolean;
+  completedAt?: string;
+  checklist: ShadowChecklistItemDto[];
+}
+
+export interface ShadowCoachProgressDto {
+  _id?: string;
+  coachId: string;
+  coachName?: string;
+  phoneNumber?: string;
+  currentPhase: number;
+  phaseLabel: string;
+  status: "in_progress" | "completed_pending_review" | "promoted" | "graduated" | "retained";
+  startDate: string;
+  completedDate?: string;
+  phases: any[];
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewDecision?: "promoted" | "retained";
+  reviewNotes?: string;
+}
+
+export interface CurrentMonthProgressDto {
+  phaseNumber: number;
+  title: string;
+  guidelines?: string;
+  isPhaseComplete: boolean;
+  totalCount: number;
+  completedCount: number;
+  progressPercent: number;
+  checkedItems: ShadowChecklistItemDto[];
+  remainingItems: ShadowChecklistItemDto[];
+}
+
+export interface AssignedShadowClassDto {
+  scheduledClassId: string;
+  classTitle: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  leadCoaches?: string;
+  status?: "today" | "upcoming" | "completed";
+}
+
+export interface MyShadowChecklistDto {
+  coachId: string;
+  coachName?: string;
+  phoneNumber?: string;
+  userId?: string | null;
+  currentPhase: number;
+  phaseLabel: string;
+  status: "in_progress" | "completed_pending_review" | "graduated" | "retained";
+  startDate: string;
+  completedDate?: string;
+  totalCount: number;
+  completedCount: number;
+  progressPercent: number;
+  isAllComplete: boolean;
+  canEvaluate: boolean;
+  assignedClasses?: AssignedShadowClassDto[];
+  reviewDecision?: "promoted" | "retained";
+  reviewedAt?: string;
+  reviewNotes?: string;
+  phases: {
+    phaseNumber: number;
+    title: string;
+    guidelines?: string;
+    total: number;
+    done: number;
+    isPhaseComplete: boolean;
+    checklist: {
+      key: string;
+      task?: string;
+      title?: string;
+      description?: string;
+      isDone: boolean;
+      completedAt?: string;
+      completedByCoachName?: string;
+      notes?: string;
+    }[];
+  }[];
+  currentMonth: {
+    phaseNumber: number;
+    title: string;
+    guidelines?: string;
+    isPhaseComplete: boolean;
+    totalCount: number;
+    completedCount: number;
+    progressPercent: number;
+    checkedItems: {
+      key: string;
+      task?: string;
+      title?: string;
+      description?: string;
+      isDone: boolean;
+      completedAt?: string;
+      completedByCoachName?: string;
+      notes?: string;
+    }[];
+    remainingItems: {
+      key: string;
+      task?: string;
+      title?: string;
+      description?: string;
+      isDone: boolean;
+      completedAt?: string;
+      completedByCoachName?: string;
+      notes?: string;
+    }[];
+  };
+}
+
+export interface ShadowCoachSummaryDto {
+  coachId: string;
+  coachName: string;
+  phoneNumber?: string;
+  userId?: string;
+  currentPhase: number;
+  phaseLabel: string;
+  status: "in_progress" | "completed_pending_review" | "promoted" | "retained";
+  startDate: string;
+  completedDate?: string;
+  completedCount: number;
+  totalCount: number;
+  progressPercent: number;
+  isCompleted: boolean;
+  canEvaluate: boolean;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewDecision?: "promoted" | "retained";
+  reviewNotes?: string;
+}
+
 export interface SessionDto {
   scheduledClassId: string;
   classTitle: string;
@@ -39,6 +194,7 @@ export interface SessionDto {
   coachNames?: string;
   allCoachNames?: string;
   coaches?: { id: string; name: string }[];
+  shadowCoach?: ShadowCoachRefDto | null;
   clients: CalendarClientDto[];
 }
 
@@ -80,6 +236,7 @@ export interface TodaySessionSummaryDto {
   coachNames?: string;
   allCoachNames?: string;
   coaches?: { id: string; name: string }[];
+  shadowCoach?: ShadowCoachRefDto | null;
 }
 
 export interface TodayPtAlertDto {
@@ -130,6 +287,7 @@ export interface ClientAttendanceItemDto {
 }
 
 export type PtAchievementFilterType = "weekly" | "monthly" | "date";
+export type PtTypeFilter = "all" | "mindspace" | "online";
 
 export interface PtAchievementParams {
   filterType: PtAchievementFilterType;
@@ -138,6 +296,7 @@ export interface PtAchievementParams {
   startDate?: string; // yyyy-MM-dd (for date mode)
   endDate?: string;   // yyyy-MM-dd (for date mode)
   coachId?: string;
+  ptType?: PtTypeFilter;
 }
 
 export interface CoachAchievementRow {
@@ -210,7 +369,7 @@ export interface ExpiringPackageItem {
 }
 
 export interface PtAchievementReport {
-  range: { startDate: string; endDate: string; filterType: string };
+  range: { startDate: string; endDate: string; filterType: string; ptType?: PtTypeFilter };
   totals: {
     sessions: number;
     scanSessions: number;

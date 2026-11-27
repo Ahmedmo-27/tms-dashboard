@@ -6,6 +6,7 @@ import type {
   TodaySummaryDto,
   PtAchievementParams,
   PtAchievementReport,
+  MyShadowChecklistDto,
 } from "@/types/coach.types";
 import type { CoachNotification } from "@/lib/store/features/coachSlice";
 
@@ -69,4 +70,9 @@ export async function getPtAchievementReport(
   if (params.coachId) clean.coachId = params.coachId;
   const res = await api.get("/api/coach/managing/pt-achievement", { params: clean });
   return res.data.data as PtAchievementReport;
+}
+
+export async function getMyShadowChecklist(api: AxiosInstance): Promise<MyShadowChecklistDto> {
+  const res = await api.get("/api/coach/shadow/my-checklist");
+  return res.data.data as MyShadowChecklistDto;
 }

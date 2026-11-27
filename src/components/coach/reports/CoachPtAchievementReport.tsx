@@ -40,6 +40,7 @@ import { useCoachApi } from "@/hooks/useCoachApi";
 import { getPtAchievementReport } from "@/lib/data/coach-portal";
 import type {
   PtAchievementFilterType,
+  PtTypeFilter,
   PtAchievementParams,
   PtAchievementReport,
   CoachAchievementRow,
@@ -111,6 +112,7 @@ export function CoachPtAchievementReport() {
 
   // Filter state
   const [filterType, setFilterType] = useState<PtAchievementFilterType>("weekly");
+  const [ptType, setPtType] = useState<PtTypeFilter>("mindspace");
   const [currentWeekDate, setCurrentWeekDate] = useState<Date>(() => new Date());
   const [currentMonthDate, setCurrentMonthDate] = useState<Date>(() => new Date());
   const [dateRangeInput, setDateRangeInput] = useState<{ start: string; end: string }>(() => {
@@ -209,7 +211,7 @@ export function CoachPtAchievementReport() {
 
   // Build API params
   const currentParams: PtAchievementParams = useMemo(() => {
-    const params: PtAchievementParams = { filterType };
+    const params: PtAchievementParams = { filterType, ptType };
     if (filterType === "weekly") {
       params.date = weekInfo.startKey;
     } else if (filterType === "monthly") {
@@ -223,7 +225,7 @@ export function CoachPtAchievementReport() {
       params.coachId = selectedCoachId;
     }
     return params;
-  }, [filterType, weekInfo.startKey, monthInfo.monthKey, appliedDateRange, selectedCoachId]);
+  }, [filterType, ptType, weekInfo.startKey, monthInfo.monthKey, appliedDateRange, selectedCoachId]);
 
   const loadReport = useCallback(async () => {
     if (!isAuthorized) {
@@ -771,6 +773,31 @@ export function CoachPtAchievementReport() {
               >
                 By Date
               </button>
+            </div>
+
+            {/* Mindspace vs Online PT Switcher */}
+            <div className="inline-flex rounded-lg border bg-muted/40 p-1 text-xs shrink-0">
+              {(
+                [
+                  { value: "mindspace", label: "Mindspace PT" },
+                  { value: "online", label: "Online PT" },
+                  { value: "all", label: "All PT" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setPtType(opt.value)}
+                  className={cn(
+                    "rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer",
+                    ptType === opt.value
+                      ? "bg-background text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
 
             <div className="hidden h-5 w-px bg-border/60 sm:block" />

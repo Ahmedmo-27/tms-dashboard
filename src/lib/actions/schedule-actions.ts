@@ -16,6 +16,7 @@ export const scheduleClassAction = async (
       endTime: formData.get("endTime"),
       availableSlots: Number(formData.get("availableSlots")),
       coachId: formData.getAll("coachId"),
+      shadowCoachId: formData.get("shadowCoachId")?.toString() || null,
       locationId: formData.get("locationId"),
     };
     const validatedData = scheduledClassSchema.parse(scls);
@@ -25,6 +26,7 @@ export const scheduleClassAction = async (
       endTime: validatedData.endTime,
       availableSlots: validatedData.availableSlots,
       coachId: validatedData.coachId,
+      shadowCoachId: validatedData.shadowCoachId,
       locationId: validatedData.locationId,
     };
 
@@ -75,11 +77,15 @@ export const editClassAction = async (
 ) => {
   try {
     const scid = formData.get("scid")?.toString() || ""
-    const scls = {
+    const rawShadowCoach = formData.get("shadowCoachId");
+    const scls: any = {
       startTime: formData.get("startTime")?.toString(),
       endTime: formData.get("endTime")?.toString(),
       coachId: formData.getAll("coachId"),
     };
+    if (rawShadowCoach !== null) {
+      scls.shadowCoachId = rawShadowCoach.toString() || null;
+    }
 
     const response = await editClass(scid, scls);
 

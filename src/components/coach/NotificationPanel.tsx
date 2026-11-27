@@ -6,8 +6,8 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { markAllNotificationsRead } from "@/lib/store/features/coachSlice";
 import type { CoachNotification } from "@/lib/store/features/coachSlice";
 import type { RootState } from "@/lib/store/store";
-import { formatDistanceToNow } from "date-fns";
-import { Bell } from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
+import { Bell, GraduationCap, Calendar, MapPin, User } from "lucide-react";
 
 export function NotificationPanel({ onSelect }: { onSelect?: () => void }) {
   const dispatch = useAppDispatch();
@@ -34,25 +34,67 @@ export function NotificationPanel({ onSelect }: { onSelect?: () => void }) {
         const relativeTime = formatDistanceToNow(new Date(n.createdAt), {
           addSuffix: true,
         });
-        const href = n.memberId
+
+        const isClassAssignment =
+          n.type === "class_assignment" || Boolean(n.classTitle);
+
+        const href = isClassAssignment
+          ? "/coach/schedule"
+          : n.memberId
           ? `/coach/clients/${n.memberId}`
           : undefined;
+
+        let formattedTime = "";
+        if (n.startTime) {
+          try {
+            formattedTime = format(new Date(n.startTime), "EEE, MMM d · h:mm a");
+          } catch {
+            formattedTime = "";
+          }
+        }
 
         const body = (
           <>
             <div className="mt-0.5 shrink-0">
-              <Bell className="h-4 w-4 text-primary" />
+              {isClassAssignment ? (
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <GraduationCap className="h-4 w-4" />
+                </div>
+              ) : (
+                <Bell className="h-4 w-4 text-primary" />
+              )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">
-                {n.memberName}{" "}
-                <span className="font-normal text-muted-foreground">
-                  was assigned
-                </span>{" "}
-                {n.packageName}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {n.classesTotal} class{n.classesTotal !== 1 ? "es" : ""} ·{" "}
+              {isClassAssignment ? (
+                <>
+                  <p className="text-sm font-medium">
+                    Assigned to shadow:{" "}
+                    <span className="font-semibold text-foreground">
+                      {n.classTitle || "Class Session"}
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formattedTime}
+                    {n.locationName ? ` · ${n.locationName}` : ""}
+                    {n.leadCoachName ? ` · Lead: ${n.leadCoachName}` : ""}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium">
+                    {n.memberName}{" "}
+                    <span className="font-normal text-muted-foreground">
+                      was assigned
+                    </span>{" "}
+                    {n.packageName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {n.classesTotal} class{n.classesTotal !== 1 ? "es" : ""} ·{" "}
+                    {relativeTime}
+                  </p>
+                </>
+              )}
+              <p className="text-[10px] text-muted-foreground/70 mt-1">
                 {relativeTime}
               </p>
             </div>
