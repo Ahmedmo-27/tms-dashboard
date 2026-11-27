@@ -287,6 +287,7 @@ export interface ClientAttendanceItemDto {
 }
 
 export type PtAchievementFilterType = "weekly" | "monthly" | "date";
+export type PtTypeFilter = "all" | "mindspace" | "online";
 
 export interface PtAchievementParams {
   filterType: PtAchievementFilterType;
@@ -295,6 +296,7 @@ export interface PtAchievementParams {
   startDate?: string; // yyyy-MM-dd (for date mode)
   endDate?: string;   // yyyy-MM-dd (for date mode)
   coachId?: string;
+  ptType?: PtTypeFilter;
 }
 
 export interface CoachAchievementRow {
@@ -367,7 +369,7 @@ export interface ExpiringPackageItem {
 }
 
 export interface PtAchievementReport {
-  range: { startDate: string; endDate: string; filterType: string };
+  range: { startDate: string; endDate: string; filterType: string; ptType?: PtTypeFilter };
   totals: {
     sessions: number;
     scanSessions: number;

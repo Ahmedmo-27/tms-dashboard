@@ -13,13 +13,24 @@ import { DataTable } from "../data-table";
 import { FinanceError, FinanceLoading, FinancePage } from "../finance-page";
 import { formatBucket, formatDate, formatMoney, formatNumber, formatPercent } from "../format";
 import { StatGrid, StatTile } from "../stat-tile";
-import { useFinanceData, useFinanceHref } from "../use-finance-data";
+import { useFinanceData, useFinanceFilters, useFinanceHref } from "../use-finance-data";
+import { cn } from "@/lib/utils";
+
+type PtTypeFilter = "mindspace" | "online" | "all";
 
 export function PtView() {
-  const { data, loading, error, reload, startDate, endDate } = useFinanceData(financeApi.pt);
+  const { searchParams, setParams } = useFinanceFilters();
+  const rawPtType = searchParams.get("ptType");
+  const ptType: PtTypeFilter =
+    rawPtType === "online" || rawPtType === "all" ? rawPtType : "mindspace";
+
+  const { data, loading, error, reload, startDate, endDate } = useFinanceData(
+    financeApi.pt,
+    { ptType },
+  );
 
   const exportCsv = (d: PtData) =>
-    downloadCsv(`pt-analytics-${startDate}-to-${endDate}`, d.coaches, [
+    downloadCsv(`pt-analytics-${ptType}-${startDate}-to-${endDate}`, d.coaches, [
       { header: "Coach", value: (r) => r.name },
       { header: "Sessions", value: (r) => r.sessions },
       { header: "Check-in sessions", value: (r) => r.scanSessions },
@@ -39,6 +50,31 @@ export function PtView() {
       title="PT Analytics"
       description="Personal training sessions, client balances, sales and renewals by coach."
       icon={Dumbbell}
+      filters={
+        <div className="inline-flex rounded-lg border bg-muted/40 p-1 text-xs shrink-0">
+          {(
+            [
+              { value: "mindspace", label: "Mindspace PT" },
+              { value: "online", label: "Online PT" },
+              { value: "all", label: "All PT" },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setParams({ ptType: opt.value })}
+              className={cn(
+                "rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer",
+                ptType === opt.value
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      }
       actions={
         <Button variant="outline" size="sm" className="h-10 gap-1.5" disabled={!data} onClick={() => data && exportCsv(data)}>
           <Download className="h-4 w-4" />

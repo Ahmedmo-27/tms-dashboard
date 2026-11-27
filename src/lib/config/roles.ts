@@ -333,6 +333,8 @@ export const PAGE_ROLES: Record<string, readonly PermissionRole[]> = {
   "/dashboard/accounts": ["management", "branch_admin"],
   "/dashboard/notifications": ["management"],
   "/dashboard/finance": ["accountant"],
+  "/dashboard/finance/pt": ["management", "accountant"],
+  "/dashboard/finance/coach-packages": ["management", "accountant"],
   "/dashboard/sales": [
     "management",
     "branch_admin",
