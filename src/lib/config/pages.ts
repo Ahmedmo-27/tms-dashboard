@@ -54,7 +54,7 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
         { title: "Sales", url: "/dashboard/finance/sales", icon: PieChart, roles: FINANCE_ROLES },
         { title: "Coach Hours", url: "/dashboard/finance/coach-hours", icon: Timer, roles: FINANCE_ROLES },
         { title: "Coach Package Tracking", url: "/dashboard/finance/coach-packages", icon: ClipboardList, roles: FINANCE_ROLES },
-        { title: "PT Analytics", url: "/dashboard/finance/pt", icon: Dumbbell, roles: ["management", "accountant"] },
+        { title: "PT Analytics", url: "/dashboard/finance/pt", icon: Dumbbell, roles: FINANCE_ROLES },
         { title: "Deferred Revenue", url: "/dashboard/finance/deferred-revenue", icon: Hourglass, roles: FINANCE_ROLES },
         { title: "Branches", url: "/dashboard/finance/branches", icon: Building2, roles: FINANCE_ROLES },
         { title: "Retention", url: "/dashboard/finance/retention", icon: Repeat, roles: FINANCE_ROLES },
@@ -213,6 +213,12 @@ export const pagesMetadata: { navMain: NavGroup[] } = {
     {
       title: "Management",
       items: [
+        {
+          title: "PT Reports",
+          url: "/dashboard/pt-reports",
+          icon: Dumbbell,
+          roles: ["management"],
+        },
         {
           title: "Accounts",
           url: "/dashboard/accounts",

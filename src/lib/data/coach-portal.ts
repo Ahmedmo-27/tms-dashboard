@@ -9,6 +9,7 @@ import type {
   MyShadowChecklistDto,
 } from "@/types/coach.types";
 import type { CoachNotification } from "@/lib/store/features/coachSlice";
+import { tms } from "@/lib/tms-api";
 
 export async function getCoachMe(api: AxiosInstance): Promise<CoachMeDto> {
   const res = await api.get("/api/coach/me");
@@ -58,17 +59,34 @@ export async function getCoachClientAttendance(
   return (res.data.data?.attendance ?? []) as ClientAttendanceItemDto[];
 }
 
-export async function getPtAchievementReport(
-  api: AxiosInstance,
-  params: PtAchievementParams
-): Promise<PtAchievementReport> {
+function ptAchievementQuery(params: PtAchievementParams): Record<string, string> {
   const clean: Record<string, string> = { filterType: params.filterType };
   if (params.date) clean.date = params.date;
   if (params.month) clean.month = params.month;
   if (params.startDate) clean.startDate = params.startDate;
   if (params.endDate) clean.endDate = params.endDate;
   if (params.coachId) clean.coachId = params.coachId;
-  const res = await api.get("/api/coach/managing/pt-achievement", { params: clean });
+  if (params.ptType) clean.ptType = params.ptType;
+  return clean;
+}
+
+export async function getPtAchievementReport(
+  api: AxiosInstance,
+  params: PtAchievementParams
+): Promise<PtAchievementReport> {
+  const res = await api.get("/api/coach/managing/pt-achievement", {
+    params: ptAchievementQuery(params),
+  });
+  return res.data.data as PtAchievementReport;
+}
+
+/** Staff/management PT Reports — same payload as the coach managing endpoint. */
+export async function getStaffPtAchievementReport(
+  params: PtAchievementParams
+): Promise<PtAchievementReport> {
+  const res = await tms.get("/admin/pt-achievement", {
+    params: ptAchievementQuery(params),
+  });
   return res.data.data as PtAchievementReport;
 }
 

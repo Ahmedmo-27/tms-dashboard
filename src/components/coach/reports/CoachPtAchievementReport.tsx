@@ -37,7 +37,10 @@ import { useAppSelector } from "@/lib/hooks";
 import type { RootState } from "@/lib/store/store";
 import { canAccessPtReport } from "@/lib/config/roles";
 import { useCoachApi } from "@/hooks/useCoachApi";
-import { getPtAchievementReport } from "@/lib/data/coach-portal";
+import {
+  getPtAchievementReport,
+  getStaffPtAchievementReport,
+} from "@/lib/data/coach-portal";
 import type {
   PtAchievementFilterType,
   PtTypeFilter,
@@ -88,27 +91,38 @@ function getMonthRange(date: Date) {
   };
 }
 
-export function CoachPtAchievementReport() {
+type CoachPtAchievementReportProps = {
+  /** Staff dashboard embeds the same report; coach portal keeps privilege checks. */
+  audience?: "coach" | "management";
+};
+
+export function CoachPtAchievementReport({
+  audience = "coach",
+}: CoachPtAchievementReportProps) {
   const router = useRouter();
   const coachApi = useCoachApi();
+  const isManagementAudience = audience === "management";
 
   const { role, name, email, phoneNumber, coachId, canViewPtReports, capabilitiesLoaded } =
     useAppSelector((state: RootState) => state.coach);
 
-  const isAuthorized = canAccessPtReport({
-    role,
-    name,
-    email,
-    phoneNumber,
-    coachId,
-    canViewPtReports,
-  });
+  const isAuthorized = isManagementAudience
+    ? true
+    : canAccessPtReport({
+        role,
+        name,
+        email,
+        phoneNumber,
+        coachId,
+        canViewPtReports,
+      });
 
   useEffect(() => {
+    if (isManagementAudience) return;
     if (capabilitiesLoaded && !isAuthorized) {
       router.replace("/coach/today");
     }
-  }, [capabilitiesLoaded, isAuthorized, router]);
+  }, [capabilitiesLoaded, isAuthorized, isManagementAudience, router]);
 
   // Filter state
   const [filterType, setFilterType] = useState<PtAchievementFilterType>("weekly");
@@ -235,7 +249,9 @@ export function CoachPtAchievementReport() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getPtAchievementReport(coachApi, currentParams);
+      const res = isManagementAudience
+        ? await getStaffPtAchievementReport(currentParams)
+        : await getPtAchievementReport(coachApi, currentParams);
       setData(res);
       if (res.coaches?.length) {
         setAllCoachesList((prev) => {
@@ -251,7 +267,7 @@ export function CoachPtAchievementReport() {
     } finally {
       setLoading(false);
     }
-  }, [coachApi, currentParams, isAuthorized]);
+  }, [coachApi, currentParams, isAuthorized, isManagementAudience]);
 
   useEffect(() => {
     loadReport();
@@ -724,7 +740,7 @@ export function CoachPtAchievementReport() {
 
   const isDrillDown = selectedCoachId !== "all" && Boolean(data?.selectedCoach);
 
-  if (capabilitiesLoaded && !isAuthorized) {
+  if (!isManagementAudience && capabilitiesLoaded && !isAuthorized) {
     return null;
   }
 

@@ -192,6 +192,46 @@ async function main() {
   check("PT Reports: managing_coach without canViewPtReports privilege cannot access /coach/reports", canAccessPtReport({ role: "managing_coach" }) === false);
   check("PT Reports: regular coach with canViewPtReports=true cannot access /coach/reports", canAccessPtReport({ role: "coach", canViewPtReports: true }) === false);
   check("PT Reports: regular coach cannot access /coach/reports", canAccessPtReport({ role: "coach" }) === false);
+
+  // Staff dashboard: management gets PT Reports, not finance PT Analytics
+  const STAFF_PAGE_ROLES = {
+    "/dashboard/pt-reports": ["management"],
+    "/dashboard/finance": ["accountant"],
+  };
+  const canAccessStaffPage = (role, path) => {
+    const permissionRole =
+      role === "admin" || role === "management"
+        ? "management"
+        : role === "accountant"
+          ? "accountant"
+          : role === "branch_admin"
+            ? "branch_admin"
+            : null;
+    if (!permissionRole) return false;
+    const exact = STAFF_PAGE_ROLES[path];
+    if (exact) return exact.includes(permissionRole);
+    const parentPath = Object.keys(STAFF_PAGE_ROLES)
+      .filter((key) => path.startsWith(`${key}/`) || path === key)
+      .sort((a, b) => b.length - a.length)[0];
+    if (parentPath) return STAFF_PAGE_ROLES[parentPath].includes(permissionRole);
+    return false;
+  };
+  check(
+    "Staff PT Reports: management can access /dashboard/pt-reports",
+    canAccessStaffPage("management", "/dashboard/pt-reports") === true,
+  );
+  check(
+    "Staff PT Reports: accountant cannot access /dashboard/pt-reports",
+    canAccessStaffPage("accountant", "/dashboard/pt-reports") === false,
+  );
+  check(
+    "Staff PT Analytics: management cannot access /dashboard/finance/pt",
+    canAccessStaffPage("management", "/dashboard/finance/pt") === false,
+  );
+  check(
+    "Staff PT Analytics: accountant can access /dashboard/finance/pt via finance ACL",
+    canAccessStaffPage("accountant", "/dashboard/finance/pt") === true,
+  );
   check("PT Reports: getDashboardRouteForRole managing_coach -> /coach/today (not /coach/reports)",
     getDashboardRouteForRole("managing_coach") === "/coach/today");
 
