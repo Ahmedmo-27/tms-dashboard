@@ -96,10 +96,16 @@ export function DialogDatePicker({
           sideOffset={4}
           collisionPadding={16}
           onOpenAutoFocus={(event) => event.preventDefault()}
-          onInteractOutside={(event) => {
-            // Keep the parent dialog open when dismissing the calendar.
+          // Dialog focus trap moves focus back to the trigger when the calendar
+          // is portaled outside the dialog; ignore that so the popover stays open.
+          onFocusOutside={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => {
+            // Keep the parent dialog open, but close the calendar on real clicks.
             event.preventDefault();
             onOpenChange?.(false);
+          }}
+          onInteractOutside={(event) => {
+            event.preventDefault();
           }}
         >
           <Calendar
