@@ -77,7 +77,9 @@ export function ExportMembersDialog({
       const members = await getMembersForExport(dates.from, dates.to);
 
       if (members.length === 0) {
-        toast.error("No members found for the selected date range.");
+        toast.error(
+          "No members with a national ID found for the selected date range."
+        );
         return;
       }
 
@@ -114,8 +116,8 @@ export function ExportMembersDialog({
           <DialogHeader className="pr-8 text-left">
             <DialogTitle>Export Members with ID</DialogTitle>
             <DialogDescription>
-              Choose a creation date range. The Excel sheet includes each
-              member&apos;s national ID.
+              Choose a creation date range. Only members who have a national ID
+              are included in the Excel sheet.
             </DialogDescription>
           </DialogHeader>
 
@@ -142,7 +144,7 @@ export function ExportMembersDialog({
 
             {rangeSummary && (
               <p className="text-sm text-muted-foreground rounded-md border bg-muted/40 p-3">
-                Exporting members created from{" "}
+                Exporting members with a national ID created from{" "}
                 <span className="font-medium text-foreground">{rangeSummary}</span>
                 .
               </p>
