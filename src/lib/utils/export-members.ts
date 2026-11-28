@@ -55,12 +55,20 @@ function renderCell(cell: ExcelCell): string {
   return `<td${style}>${escapeHtml(cell.value)}</td>`;
 }
 
+/** Final guard: Excel export must never include members without a national ID. */
+export function membersWithNationalId(
+  members: ExportableMember[]
+): ExportableMember[] {
+  return members.filter((member) => Boolean(member.nationalId?.trim()));
+}
+
 export function buildMembersExcelHtml(members: ExportableMember[]): string {
+  const exportable = membersWithNationalId(members);
   const headerRow = EXPORT_HEADERS.map(
     (header) => `<th>${escapeHtml(header)}</th>`
   ).join("");
 
-  const bodyRows = members
+  const bodyRows = exportable
     .map((member) => {
       const cells = memberToRow(member).map(renderCell).join("");
       return `<tr>${cells}</tr>`;
