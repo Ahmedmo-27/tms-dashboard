@@ -12,7 +12,7 @@ import Loading from "../loading/members-table";
 import { Input } from "../input";
 import { Button } from "../button";
 import { Card, CardContent, CardHeader, CardTitle } from "../card";
-import { Search, RefreshCw, Users, AlertCircle } from "lucide-react";
+import { Search, RefreshCw, Users, AlertCircle, Download } from "lucide-react";
 import { Badge } from "../badge";
 import { cn } from "@/lib/utils";
 import NetworkErrorPage from "../error-pages/network-error";
@@ -20,6 +20,7 @@ import { NetworkError, NotFoundError, UnauthorizedError, RateLimitError } from "
 import NotFoundErrorPage from "../error-pages/not-found-error";
 import UnauthorizedPage from "../error-pages/UnauthorizedPage";
 import { RegisterMember } from "@/components/ui/dialogs/members/register-member";
+import { ExportMembersDialog } from "./export-members-dialog";
 
 export const MEMBERS_PAGE_SIZE = 25;
 
@@ -33,6 +34,7 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(
     () => searchParams.get("searchString") ?? ""
   );
@@ -147,8 +149,22 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
               className="pl-9 pr-4 min-h-[40px]"
             />
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {!pkgId && <RegisterMember />}
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {!pkgId && (
+              <>
+                <RegisterMember />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setExportOpen(true)}
+                  className="flex-1 sm:flex-initial min-h-[40px]"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Export Members with ID</span>
+                  <span className="sm:hidden">Export ID</span>
+                </Button>
+              </>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -163,6 +179,10 @@ export default function MembersContainer({ pkgId, packageName }: { pkgId?: strin
             </Button>
           </div>
         </div>
+
+        {!pkgId && (
+          <ExportMembersDialog open={exportOpen} onOpenChange={setExportOpen} />
+        )}
 
         {error && !(error instanceof NotFoundError) && (
           <div className="mt-4 p-3 sm:p-4 rounded-md border border-destructive/30 bg-destructive/10 text-destructive flex items-center justify-between gap-3">
