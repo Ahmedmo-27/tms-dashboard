@@ -19,6 +19,13 @@ describe("buildMembersExcelHtml", () => {
     expect(html).toContain("Habiba Nabil Elsayed");
     expect(html).toContain("01117008301");
     expect(html).toContain("Members");
+    // Phone / national ID must stay text so Excel keeps leading zeros.
+    expect(html).toMatch(
+      /mso-number-format:'\\@'[^>]*>01117008301</
+    );
+    expect(html).toMatch(
+      /mso-number-format:'\\@'[^>]*>30106010107145</
+    );
   });
 
   it("escapes HTML in member fields", () => {

@@ -26,13 +26,19 @@ function formatCreatedAt(createdAt: string): string {
   return formatInTimeZone(date, TIME_ZONE, "dd MMM yyyy, hh:mm a");
 }
 
-function memberToRow(member: ExportableMember): string[] {
+type ExcelCell = {
+  value: string;
+  /** Force text so Excel keeps leading zeros on phone / national ID. */
+  asText?: boolean;
+};
+
+function memberToRow(member: ExportableMember): ExcelCell[] {
   return [
-    member.name ?? "",
-    member.phone ?? "",
-    member.nationalId ?? "",
-    member.email ?? "",
-    formatCreatedAt(member.createdAt),
+    { value: member.name ?? "" },
+    { value: member.phone ?? "", asText: true },
+    { value: member.nationalId ?? "", asText: true },
+    { value: member.email ?? "" },
+    { value: formatCreatedAt(member.createdAt) },
   ];
 }
 
@@ -44,6 +50,11 @@ const EXPORT_HEADERS = [
   "Created At",
 ];
 
+function renderCell(cell: ExcelCell): string {
+  const style = cell.asText ? ` style="mso-number-format:'\\@';"` : "";
+  return `<td${style}>${escapeHtml(cell.value)}</td>`;
+}
+
 export function buildMembersExcelHtml(members: ExportableMember[]): string {
   const headerRow = EXPORT_HEADERS.map(
     (header) => `<th>${escapeHtml(header)}</th>`
@@ -51,9 +62,7 @@ export function buildMembersExcelHtml(members: ExportableMember[]): string {
 
   const bodyRows = members
     .map((member) => {
-      const cells = memberToRow(member)
-        .map((cell) => `<td>${escapeHtml(cell)}</td>`)
-        .join("");
+      const cells = memberToRow(member).map(renderCell).join("");
       return `<tr>${cells}</tr>`;
     })
     .join("");

@@ -41,9 +41,9 @@ export function ExportMembersDialog({
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen && !isExporting) {
-      resetForm();
-    }
+    // Keep the dialog open while the export request is in flight.
+    if (!nextOpen && isExporting) return;
+    if (!nextOpen) resetForm();
     onOpenChange(nextOpen);
   };
 
