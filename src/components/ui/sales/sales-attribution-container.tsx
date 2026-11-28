@@ -156,7 +156,7 @@ export function SalesAttributionContainer() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Assign a sales account to a member — it applies to all of their packages.
+            Assign a sales account to a member — it applies to all of their non-deleted packages.
           </p>
         </div>
         <Button
@@ -346,7 +346,7 @@ export function SalesAttributionContainer() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {canAssign && (
+                    {canAssign && statusKey(row.status) !== "DELETED" && (
                       <Button
                         variant="outline"
                         size="sm"

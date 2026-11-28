@@ -57,6 +57,7 @@ export default async function Page({
       ptAttendance: memberData.ptAttendance,
       deductions: memberData.deductions,
       owedPtSessions: memberData.owedPtSessions || [],
+      soldBy: memberData.soldBy ?? null,
     };
     return (
       <MemberPage

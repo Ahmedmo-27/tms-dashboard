@@ -206,10 +206,12 @@ describe("AssignSellerDialog", () => {
     expect(onAssigned).toHaveBeenCalledTimes(1);
   });
 
-  it("explains that attribution applies to the member and all packages", () => {
+  it("explains that attribution applies to the member and non-deleted packages", () => {
     setup();
     expect(
-      screen.getByText(/Credits the sales account for this member and all of their packages/)
+      screen.getByText(
+        /Credits the sales account for this member and all of their non-deleted packages/
+      )
     ).toBeInTheDocument();
   });
 

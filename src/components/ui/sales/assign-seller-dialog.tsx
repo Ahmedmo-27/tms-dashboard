@@ -66,7 +66,7 @@ export function AssignSellerDialog({
       const packageSuffix =
         typeof packagesUpdated === "number" && packagesUpdated > 0
           ? ` across ${packagesUpdated} package${packagesUpdated === 1 ? "" : "s"}`
-          : " for this member and their packages";
+          : " for this member and their non-deleted packages";
       toast.success(
         selected === UNASSIGNED
           ? `Sales attribution cleared${packageSuffix}`
@@ -96,8 +96,8 @@ export function AssignSellerDialog({
             Who sold this to the member?
           </DialogTitle>
           <DialogDescription>
-            Credits the sales account for this member and all of their packages,
-            not only the package shown here.
+            Credits the sales account for this member and all of their
+            non-deleted packages, not only the package shown here.
           </DialogDescription>
         </DialogHeader>
 
