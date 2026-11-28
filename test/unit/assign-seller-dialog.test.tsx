@@ -157,21 +157,33 @@ describe("AssignSellerDialog", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 
-  it("credits the sale to the chosen account and closes", async () => {
-    assign.mockResolvedValue({ memberPackageId: "mp-1" });
+  it("credits the member and their packages to the chosen account and closes", async () => {
+    assign.mockResolvedValue({
+      memberPackageId: "mp-1",
+      uid: "u-1",
+      soldBy: { _id: "sales-1", name: "Nour Saleh", role: "sales" },
+      packagesUpdated: 3,
+    });
     const { user, onAssigned, onOpenChange } = setup();
 
     await user.selectOptions(screen.getByLabelText("Sales account"), "sales-1");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith("mp-1", "sales-1"));
-    expect(toast.success).toHaveBeenCalledWith("Credited to Nour Saleh");
+    expect(toast.success).toHaveBeenCalledWith(
+      "Credited to Nour Saleh across 3 packages"
+    );
     expect(onAssigned).toHaveBeenCalledTimes(1);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("starts from the current salesperson and can clear it", async () => {
-    assign.mockResolvedValue({ memberPackageId: "mp-1", soldBy: null });
+    assign.mockResolvedValue({
+      memberPackageId: "mp-1",
+      uid: "u-1",
+      soldBy: null,
+      packagesUpdated: 2,
+    });
     const credited: SoldPackage = {
       ...SOLD,
       soldBy: { _id: "sales-1", name: "Nour Saleh", role: "sales" },
@@ -188,8 +200,17 @@ describe("AssignSellerDialog", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith("mp-1", null));
-    expect(toast.success).toHaveBeenCalledWith("Sales attribution cleared");
+    expect(toast.success).toHaveBeenCalledWith(
+      "Sales attribution cleared across 2 packages"
+    );
     expect(onAssigned).toHaveBeenCalledTimes(1);
+  });
+
+  it("explains that attribution applies to the member and all packages", () => {
+    setup();
+    expect(
+      screen.getByText(/Credits the sales account for this member and all of their packages/)
+    ).toBeInTheDocument();
   });
 
   it("shows who last set the attribution", () => {

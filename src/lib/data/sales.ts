@@ -1,8 +1,8 @@
 import { tms } from "@/lib/tms-api";
 import type {
+  AssignSellerResult,
   GetSoldPackagesParams,
   SalesAccount,
-  SoldPackage,
   SoldPackagesResponse,
 } from "@/types/sales";
 
@@ -32,11 +32,14 @@ export const getSoldPackages = async (
   return response.data.data;
 };
 
-/** Credits a sold package to a sales account; `null` clears the attribution. */
+/**
+ * Credits a sales account for the member that owns this package and all of
+ * their non-deleted packages. Pass `null` to clear the attribution.
+ */
 export const assignSoldPackageSeller = async (
   memberPackageId: string,
   soldBy: string | null
-): Promise<Pick<SoldPackage, "memberPackageId" | "uid" | "soldBy">> => {
+): Promise<AssignSellerResult> => {
   const response = await tms.patch(
     `/sales/packages/${memberPackageId}/seller`,
     { soldBy }

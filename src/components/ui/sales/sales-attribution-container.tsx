@@ -156,7 +156,7 @@ export function SalesAttributionContainer() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Set which sales account sold each package to which member.
+            Assign a sales account to a member — it applies to all of their packages.
           </p>
         </div>
         <Button

@@ -60,3 +60,13 @@ export interface GetSoldPackagesParams {
   endDate?: string;
   locationId?: string;
 }
+
+/** Result of assigning a seller — credits the member and all non-deleted packages. */
+export interface AssignSellerResult {
+  memberPackageId: string;
+  uid: string;
+  soldBy: SoldPackageSeller | null;
+  soldByAssignedAt?: string | null;
+  /** How many of the member's packages received the attribution. */
+  packagesUpdated?: number;
+}
