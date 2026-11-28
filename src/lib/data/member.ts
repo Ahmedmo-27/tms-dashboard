@@ -115,6 +115,11 @@ function mapExportRow(member: Record<string, unknown>): MemberExportRow {
   };
 }
 
+/** Export only includes members that have a real national ID value. */
+export function hasNationalId(nationalId?: string | null): boolean {
+  return Boolean(nationalId?.trim());
+}
+
 function isCreatedInRange(
   createdAt: string,
   startDate: string,
@@ -157,7 +162,10 @@ async function getMembersForExportViaPagination(
 
     for (const member of members) {
       const row = mapExportRow(member as Record<string, unknown>);
-      if (isCreatedInRange(row.createdAt, startDate, endDate)) {
+      if (
+        hasNationalId(row.nationalId) &&
+        isCreatedInRange(row.createdAt, startDate, endDate)
+      ) {
         rows.push(row);
       }
     }
@@ -189,7 +197,9 @@ export const getMembersForExport = async (
         ? payload
         : [];
 
-    return members.map((member: Record<string, unknown>) => mapExportRow(member));
+    return members
+      .map((member: Record<string, unknown>) => mapExportRow(member))
+      .filter((member) => hasNationalId(member.nationalId));
   } catch (error) {
     // Older API builds lack /members/export — fall back to paginated member list.
     if (error instanceof NotFoundError) {
