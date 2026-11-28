@@ -76,6 +76,7 @@ export function DialogDatePicker({
           <Button
             type="button"
             variant="outline"
+            aria-label={label ?? placeholder}
             aria-expanded={open}
             className={cn(
               "hidden w-full justify-start text-left font-normal min-h-[40px] md:flex",

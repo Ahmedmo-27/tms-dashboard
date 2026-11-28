@@ -7,6 +7,7 @@ export type PreviousSessionDateInput =
       scid?: string;
     };
 
+import { NotFoundError } from "@/core/api-error";
 import { tms } from "@/lib/tms-api";
 import { parseMembers } from "../utils/parsers/members-parser";
 
@@ -80,6 +81,120 @@ export const getMembers = async (
     };
   } catch (error) {
     console.log(error)
+    throw error;
+  }
+};
+
+export type MemberExportRow = {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  nationalId?: string;
+  createdAt: string;
+};
+
+function mapExportRow(member: Record<string, unknown>): MemberExportRow {
+  const uid =
+    member.uid && typeof member.uid === "object"
+      ? (member.uid as Record<string, unknown>)
+      : null;
+
+  return {
+    id: String(
+      member.id ??
+        uid?._id ??
+        member._id ??
+        ""
+    ),
+    name: String(member.name ?? uid?.name ?? ""),
+    phone: String(member.phone ?? member.phoneNumber ?? uid?.phoneNumber ?? ""),
+    email: String(member.email ?? uid?.email ?? ""),
+    nationalId: String(member.nationalId ?? uid?.nationalId ?? ""),
+    createdAt: String(member.createdAt ?? uid?.createdAt ?? ""),
+  };
+}
+
+function isCreatedInRange(
+  createdAt: string,
+  startDate: string,
+  endDate: string
+): boolean {
+  if (!createdAt) return false;
+  const created = new Date(createdAt);
+  if (Number.isNaN(created.getTime())) return false;
+
+  // Compare Cairo calendar days via yyyy-MM-dd keys when possible.
+  const key = createdAt.includes("T")
+    ? new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Africa/Cairo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(created)
+    : createdAt.slice(0, 10);
+
+  return key >= startDate && key <= endDate;
+}
+
+async function getMembersForExportViaPagination(
+  startDate: string,
+  endDate: string
+): Promise<MemberExportRow[]> {
+  const pageSize = 100;
+  let page = 1;
+  let total = Infinity;
+  const rows: MemberExportRow[] = [];
+
+  while ((page - 1) * pageSize < total) {
+    const response = await tms.get("/admin/member", {
+      params: { page, limit: pageSize },
+      timeout: 60000,
+    });
+    const payload = response.data?.data;
+    const members = Array.isArray(payload?.members) ? payload.members : [];
+    total = typeof payload?.total === "number" ? payload.total : members.length;
+
+    for (const member of members) {
+      const row = mapExportRow(member as Record<string, unknown>);
+      if (isCreatedInRange(row.createdAt, startDate, endDate)) {
+        rows.push(row);
+      }
+    }
+
+    if (members.length === 0) break;
+    page += 1;
+  }
+
+  rows.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+  return rows;
+}
+
+/** Lean members list for Excel export, filtered by account creation date range. */
+export const getMembersForExport = async (
+  startDate: string,
+  endDate: string
+): Promise<MemberExportRow[]> => {
+  try {
+    const response = await tms.get("/admin/members/export", {
+      params: { startDate, endDate },
+      timeout: 60000,
+    });
+    const payload = response.data?.data;
+    const members = Array.isArray(payload?.members)
+      ? payload.members
+      : Array.isArray(payload)
+        ? payload
+        : [];
+
+    return members.map((member: Record<string, unknown>) => mapExportRow(member));
+  } catch (error) {
+    // Older API builds lack /members/export — fall back to paginated member list.
+    if (error instanceof NotFoundError) {
+      return getMembersForExportViaPagination(startDate, endDate);
+    }
     throw error;
   }
 };
