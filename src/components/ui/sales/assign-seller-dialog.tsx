@@ -58,16 +58,21 @@ export function AssignSellerDialog({
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
-      await assignSoldPackageSeller(
+      const result = await assignSoldPackageSeller(
         soldPackage.memberPackageId,
         selected === UNASSIGNED ? null : selected
       );
+      const packagesUpdated = result?.packagesUpdated;
+      const packageSuffix =
+        typeof packagesUpdated === "number" && packagesUpdated > 0
+          ? ` across ${packagesUpdated} package${packagesUpdated === 1 ? "" : "s"}`
+          : " for this member and their non-deleted packages";
       toast.success(
         selected === UNASSIGNED
-          ? "Sales attribution cleared"
+          ? `Sales attribution cleared${packageSuffix}`
           : `Credited to ${
               accounts.find((a) => a._id === selected)?.name ?? "sales account"
-            }`
+            }${packageSuffix}`
       );
       onAssigned();
       onOpenChange(false);
@@ -88,10 +93,11 @@ export function AssignSellerDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <HandCoins className="h-4 w-4" />
-            Who sold this package?
+            Who sold this to the member?
           </DialogTitle>
           <DialogDescription>
-            Credit this sale to the sales account that sold it to the member.
+            Credits the sales account for this member and all of their
+            non-deleted packages, not only the package shown here.
           </DialogDescription>
         </DialogHeader>
 

@@ -119,10 +119,20 @@ describe("getSoldPackages", () => {
 });
 
 describe("assignSoldPackageSeller", () => {
-  it("patches the sold package with the chosen account", async () => {
-    patch.mockResolvedValue(envelope({ memberPackageId: "p1" }));
+  it("patches attribution for the member that owns the package", async () => {
+    patch.mockResolvedValue(
+      envelope({
+        memberPackageId: "p1",
+        uid: "u1",
+        soldBy: { _id: "a1", name: "Nour" },
+        packagesUpdated: 2,
+      })
+    );
 
-    await assignSoldPackageSeller("p1", "a1");
+    await expect(assignSoldPackageSeller("p1", "a1")).resolves.toMatchObject({
+      memberPackageId: "p1",
+      packagesUpdated: 2,
+    });
 
     expect(patch).toHaveBeenCalledWith("/sales/packages/p1/seller", {
       soldBy: "a1",
@@ -130,7 +140,9 @@ describe("assignSoldPackageSeller", () => {
   });
 
   it("sends null to clear the attribution", async () => {
-    patch.mockResolvedValue(envelope({ memberPackageId: "p1", soldBy: null }));
+    patch.mockResolvedValue(
+      envelope({ memberPackageId: "p1", uid: "u1", soldBy: null, packagesUpdated: 1 })
+    );
 
     await assignSoldPackageSeller("p1", null);
 

@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../dropdown-menu";
-import { Phone, Mail, Package, MoreHorizontal, User, CreditCard } from "lucide-react";
+import { Phone, Mail, Package, MoreHorizontal, User, CreditCard, HandCoins } from "lucide-react";
 import { Member } from "./columns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -124,6 +124,13 @@ export function MobileMemberCard({ member, pkgId }: MobileMemberCardProps) {
               </div>
             )}
           </div>
+
+          {member.soldBy?.name ? (
+            <Badge variant="secondary" className="text-xs w-fit gap-1 font-normal">
+              <HandCoins className="h-3 w-3" />
+              Sold by {member.soldBy.name}
+            </Badge>
+          ) : null}
 
           {/* Package status */}
           {member.activePkgs > 0 && (

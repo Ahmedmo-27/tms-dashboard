@@ -331,6 +331,16 @@ export const parseMembers = (members: any): Member[] => {
         new Date(a.attendanceDate ?? a.date).getTime()
     );
 
+    const rawSoldBy = member.soldBy;
+    const soldBy =
+      rawSoldBy && typeof rawSoldBy === "object" && (rawSoldBy._id || rawSoldBy.name)
+        ? {
+            _id: String(rawSoldBy._id ?? ""),
+            name: String(rawSoldBy.name ?? "Unknown"),
+            ...(rawSoldBy.role ? { role: String(rawSoldBy.role) } : {}),
+          }
+        : null;
+
     const parsedMember: Member = {
       id: member.uid._id?.toString() ?? String(member.uid._id ?? ""),
       name: member.uid.name ?? "Unknown",
@@ -347,6 +357,7 @@ export const parseMembers = (members: any): Member[] => {
       ptAttendance: parsedPtAttendance,
       deductions: allDeductions,
       owedPtSessions: member.owedPtSessions || [],
+      soldBy,
     };
     parsedMembers.push(parsedMember);
   });

@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   History,
   AlertTriangle,
+  HandCoins,
 } from "lucide-react";
 import { Member } from "@/components/ui/members/columns";
 import { Package as CatalogPackage } from "@/components/ui/packages/columns";
@@ -38,6 +39,7 @@ import { PtSettleDialog } from "@/components/ui/dialogs/pt/pt-settle-dialog";
 import { EditMemberDialog } from "@/components/ui/dialogs/members/edit-member-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,6 +105,25 @@ export function MemberWorkspace({
                 <Package className="h-3.5 w-3.5" />
                 {member.activePkgs} active
               </span>
+              {member.soldBy?.name ? (
+                <Badge
+                  variant="secondary"
+                  className="gap-1.5 font-normal"
+                  title="Sales rep assigned to this member"
+                >
+                  <HandCoins className="h-3.5 w-3.5" />
+                  Sold by {member.soldBy.name}
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 font-normal text-muted-foreground"
+                  title="No sales rep assigned yet"
+                >
+                  <HandCoins className="h-3.5 w-3.5" />
+                  No sales rep
+                </Badge>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

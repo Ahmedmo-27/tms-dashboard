@@ -91,6 +91,13 @@ export type OwedPtSessionItem = {
   note?: string;
 };
 
+/** Sales account credited with selling packages to this member. */
+export type MemberSoldBy = {
+  _id: string;
+  name: string;
+  role?: string;
+};
+
 export type Member = {
   id: string;
   name: string;
@@ -103,6 +110,8 @@ export type Member = {
   deductions?: AdjustmentRecord[];
   nationalId?: string;
   owedPtSessions?: OwedPtSessionItem[];
+  /** Sales rep assigned to this member (and their packages). */
+  soldBy?: MemberSoldBy | null;
 };
 
 function soonestActiveExpiry(packages: MemberPackage[]): Date | null {
