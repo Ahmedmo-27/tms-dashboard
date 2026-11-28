@@ -11,7 +11,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover-dialog";
 
 interface DialogDatePickerProps {
   className?: string;
@@ -66,10 +66,10 @@ export function DialogDatePicker({
       />
 
       {/*
-        Portaled popover for desktop: dialog-safe popover (no portal) gets clipped
-        by DialogContent's transform + overflow-hidden containing block. It is not
-        modal — a modal popover inside a modal dialog leaves pointer-events: none
-        on body and the trigger stops responding.
+        Use popover-dialog (portaled, non-modal). The default popover content is
+        not portaled, so DialogContent's overflow-hidden clips the calendar mid-
+        month. A modal popover inside a modal dialog also leaves pointer-events:
+        none on body and the trigger stops responding.
       */}
       <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
@@ -96,10 +96,16 @@ export function DialogDatePicker({
           sideOffset={4}
           collisionPadding={16}
           onOpenAutoFocus={(event) => event.preventDefault()}
-          onInteractOutside={(event) => {
-            // Keep the parent dialog open when dismissing the calendar.
+          // Dialog focus trap moves focus back to the trigger when the calendar
+          // is portaled outside the dialog; ignore that so the popover stays open.
+          onFocusOutside={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => {
+            // Keep the parent dialog open, but close the calendar on real clicks.
             event.preventDefault();
             onOpenChange?.(false);
+          }}
+          onInteractOutside={(event) => {
+            event.preventDefault();
           }}
         >
           <Calendar
